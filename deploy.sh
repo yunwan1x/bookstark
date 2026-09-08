@@ -8,6 +8,12 @@ cd "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 exec 9>"/tmp/bookstark-deploy-${UID}.lock"
 flock -n 9 || { echo "Another BookStark deployment is running." >&2; exit 1; }
 
+DEPLOY_TRANSPORT="${DEPLOY_TRANSPORT:-registry}"
+case "$DEPLOY_TRANSPORT" in
+    registry|ssh) ;;
+    *) echo "DEPLOY_TRANSPORT must be registry or ssh" >&2; exit 1 ;;
+esac
+
 BUILD_MEMORY_MAX="${BUILD_MEMORY_MAX:-850M}"
 BUILD_MEMORY_HIGH="${BUILD_MEMORY_HIGH:-700M}"
 BUILD_CPU_QUOTA="${BUILD_CPU_QUOTA:-100%}"
@@ -69,8 +75,12 @@ cp /etc/ssl/certs/ca-certificates.crt "${BUILD_DIR}/ca-certificates.crt"
 docker build -f Dockerfile.release -t "${FULL_IMAGE}" "${BUILD_DIR}"
 
 echo ""
-echo "[2/4] Pushing image..."
-docker push "${FULL_IMAGE}"
+echo "[2/4] Transferring image (${DEPLOY_TRANSPORT})..."
+if [ "$DEPLOY_TRANSPORT" = ssh ]; then
+    docker save "${FULL_IMAGE}" | gzip -1 | ssh -p "${REMOTE_PORT}" "${REMOTE}" 'gunzip | docker load'
+else
+    docker push "${FULL_IMAGE}"
+fi
 
 # 2. Copy source archive
 echo ""
@@ -144,10 +154,11 @@ scp -P "${REMOTE_PORT}" "${SOURCE_ARCHIVE}" "${REMOTE}:/root/bookstark.tgz"
 # 3. Remote deploy
 echo ""
 echo "[4/4] Deploying on remote server..."
-ssh -p "${REMOTE_PORT}" "${REMOTE}" bash -s "${FULL_IMAGE}" "${COMPOSE_FILE}" <<'REMOTE_SCRIPT'
+ssh -p "${REMOTE_PORT}" "${REMOTE}" bash -s "${FULL_IMAGE}" "${COMPOSE_FILE}" "${DEPLOY_TRANSPORT}" <<'REMOTE_SCRIPT'
 set -euo pipefail
 IMAGE="$1"
 COMPOSE_FILE="$2"
+DEPLOY_TRANSPORT="$3"
 
 cd /root/docker
 
@@ -158,7 +169,9 @@ sed -i "s|image: changhui/bookstark:.*|image: ${IMAGE}|" "${COMPOSE_FILE}"
 echo "Updated ${COMPOSE_FILE} -> image: ${IMAGE}"
 
 # Restart service
-docker compose -f "${COMPOSE_FILE}" pull bookstark
+if [ "$DEPLOY_TRANSPORT" = registry ]; then
+    docker compose -f "${COMPOSE_FILE}" pull bookstark
+fi
 docker compose -f "${COMPOSE_FILE}" up -d --no-deps bookstark
 
 

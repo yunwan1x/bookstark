@@ -6,6 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Use `./deploy.sh [version]` for remote deployments. Do not bypass it with manual
 binary uploads: the script also updates `/root/bookstark.tgz` on the remote host.
+Use `DEPLOY_TRANSPORT=ssh ./deploy.sh [version]` when Docker Hub push access is
+unavailable; this transfers the image with `docker save/load` over SSH and still
+uploads the source archive. The default `registry` transport uses push/pull.
 It serializes deployments and builds Go with systemd limits (850 MiB maximum,
 700 MiB pressure threshold, one CPU), `-p=1`, and `GOMEMLIMIT=300MiB` before
 building/pushing the runtime image. Run from a host with Go, Python, Docker and
