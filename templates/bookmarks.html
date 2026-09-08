@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v={{assetVer "/static/favicon.svg"}}">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{{call .T "meta.description"}}">
+    <title>{{call .T "page.bookmarks.title"}} - BookStark</title>
+    <link href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/bookmarks.css?v={{assetVer "/static/css/bookmarks.css"}}">
+    {{template "head-assets" .}}
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col">
+    {{template "header" .}}
+    <main class="flex-1" role="main">
+        <div class="bm-layout" id="bm-layout">
+        <div class="bm-layout-main">
+            <div class="page-sticky-header">
+            <!-- Search bar -->
+            <div class="flex gap-2">
+                <input id="bm-search" type="text" class="search-input" placeholder="{{call .T "bookmark.search.placeholder"}}" aria-label="{{call .T "bookmark.search.aria"}}" onkeydown="if(event.key==='Enter'){event.preventDefault();BM.doSearch()}">
+                <button onclick="BM.doSearch()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 whitespace-nowrap" title="{{call .T "bookmark.search.btn"}}" aria-label="{{call .T "bookmark.search.btn"}}"><i class="fa-solid fa-magnifying-glass text-xs"></i></button>
+                <button id="bm-tag-btn" onclick="BM.openTagDrawer()" class="bm-tool-btn" title="{{call .T "bookmark.tag_filter"}}" aria-label="{{call .T "bookmark.tag_filter"}}">
+                    <i class="fa-solid fa-sliders text-xs"></i>
+                </button>
+                {{if .IsLoggedIn}}
+                <button id="bm-edit-btn" onclick="BM.toggleEditMode()" class="bm-tool-btn" title="{{call .T "bookmark.edit"}}" aria-label="{{call .T "bookmark.edit"}}">
+                    <i class="fa-solid fa-pen text-xs"></i>
+                </button>
+                <button id="bm-add-btn" onclick="BM.showBookmarkDialog()" class="bm-tool-btn" title="{{call .T "bookmark.add"}}" aria-label="{{call .T "bookmark.add"}}">
+                    <i class="fa-solid fa-plus text-xs"></i>
+                </button>
+                {{end}}
+            </div>
+
+            <!-- Batch action bar (appears when items are selected) -->
+            <div id="bm-batch-bar" class="bm-batch-bar" style="display:none">
+                <div class="bm-batch-top">
+                    <label class="bm-batch-select-all"><input type="checkbox" id="bm-select-all" onchange="BM.toggleSelectAll()"><span>{{call .T "bookmark.batch.select_all"}}</span></label>
+                    <span class="bm-batch-count" id="bm-batch-count">{{call .T "bookmark.batch.count"}}</span>
+                    <div class="bm-batch-actions">
+                        <!-- Compact grouped actions used on all viewport sizes. -->
+                        <span class="bm-batch-dropdown bs-action-dropdown" data-group="manage">
+                            <button class="bm-batch-dd-btn bs-action-dd-btn" onclick="BM.toggleBatchDropdown('manage')" aria-label="{{call .T "bookmark.batch.manage"}}" aria-haspopup="true" aria-expanded="false"><i class="fa-solid fa-gear"></i><span>{{call .T "bookmark.batch.manage"}}</span><i class="fa-solid fa-chevron-down bm-batch-dd-arrow bs-action-dd-arrow"></i></button>
+                            <div class="bm-batch-dd-menu bs-action-dd-menu" id="bm-batch-dd-manage" style="display:none">
+                                <button class="bm-batch-menu-item bs-action-menu-item" onclick="BM.batchAction('pin');BM.closeAllBatchDropdowns()"><i class="fa-solid fa-thumbtack"></i>{{call .T "bookmark.batch.pin"}}</button>
+                                <button class="bm-batch-menu-item bs-action-menu-item" onclick="BM.batchAction('unpin');BM.closeAllBatchDropdowns()"><i class="fa-solid fa-thumbtack"></i>{{call .T "bookmark.batch.unpin"}}</button>
+                                <div class="bm-batch-menu-sep bs-action-menu-sep"></div>
+                                <button class="bm-batch-menu-item bs-action-menu-item" onclick="BM.batchAction('show-nav');BM.closeAllBatchDropdowns()"><i class="fa-solid fa-eye"></i>{{call .T "bookmark.batch.show_nav"}}</button>
+                                <button class="bm-batch-menu-item bs-action-menu-item" onclick="BM.batchAction('hide-nav');BM.closeAllBatchDropdowns()"><i class="fa-solid fa-eye-slash"></i>{{call .T "bookmark.batch.hide_nav"}}</button>
+                                <div class="bm-batch-menu-sep bs-action-menu-sep"></div>
+                                <button class="bm-batch-menu-item bs-action-menu-item" onclick="BM.batchAction('add-tag');BM.closeAllBatchDropdowns()"><i class="fa-solid fa-tag"></i>{{call .T "bookmark.batch.add_tag"}}</button>
+                                <button class="bm-batch-menu-item bm-batch-menu-item-danger bs-action-menu-item bs-action-menu-item-danger" onclick="BM.batchAction('remove-tag');BM.closeAllBatchDropdowns()"><i class="fa-solid fa-tag"></i>{{call .T "bookmark.batch.remove_tag"}}</button>
+                            </div>
+                        </span>
+                        <span class="bm-batch-dropdown bs-action-dropdown" data-group="action">
+                            <button class="bm-batch-dd-btn bs-action-dd-btn" onclick="BM.toggleBatchDropdown('action')" aria-label="{{call .T "bookmark.batch.action"}}" aria-haspopup="true" aria-expanded="false"><i class="fa-solid fa-bolt"></i><span>{{call .T "bookmark.batch.action"}}</span><i class="fa-solid fa-chevron-down bm-batch-dd-arrow bs-action-dd-arrow"></i></button>
+                            <div class="bm-batch-dd-menu bs-action-dd-menu" id="bm-batch-dd-action" style="display:none">
+                                <button class="bm-batch-menu-item bs-action-menu-item" onclick="BM.batchAction('share');BM.closeAllBatchDropdowns()"><i class="fa-solid fa-share-nodes"></i>{{call .T "bookmark.batch.share"}}</button>
+                                <button class="bm-batch-menu-item bm-batch-menu-item-danger bs-action-menu-item bs-action-menu-item-danger" onclick="BM.batchAction('unshare');BM.closeAllBatchDropdowns()"><i class="fa-solid fa-rotate-left"></i>{{call .T "bookmark.batch.unshare"}}</button>
+                                <div class="bm-batch-menu-sep bs-action-menu-sep"></div>
+                                <button class="bm-batch-menu-item bm-batch-menu-item-danger bs-action-menu-item bs-action-menu-item-danger" onclick="BM.batchAction('delete');BM.closeAllBatchDropdowns()"><i class="fa-solid fa-trash-can"></i>{{call .T "bookmark.batch.delete"}}</button>
+                            </div>
+                        </span>
+                    </div>
+                </div>
+                <div id="bm-batch-tag-row" class="bm-batch-tag-row" style="display:none">
+                    <div id="bm-batch-tag-container"></div>
+                    <button class="bm-batch-tag-confirm" id="bm-batch-tag-confirm" onclick="BM.confirmBatchTag()">{{call .T "bookmark.batch.tag_confirm"}}</button>
+                </div>
+            </div>
+            </div>
+
+            <!-- Selected tag chips / active filters -->
+            <div id="bm-selected-tags" class="flex flex-wrap gap-1 mb-3" style="display:none"></div>
+
+            <!-- Bookmark list (initial skeleton) -->
+            <div id="bm-list">
+                <div class="skeleton-bm-row"><div class="skeleton-bm-body"><div class="skeleton-bm-top"><div class="skeleton skeleton-bm-favicon"></div><div class="skeleton skeleton-bm-title"></div></div><div class="skeleton-bm-second"><div class="skeleton skeleton-bm-desc"></div><div class="skeleton skeleton-bm-tag"></div></div></div></div>
+                <div class="skeleton-bm-row"><div class="skeleton-bm-body"><div class="skeleton-bm-top"><div class="skeleton skeleton-bm-favicon"></div><div class="skeleton skeleton-bm-title" style="width:40%"></div></div><div class="skeleton-bm-second"><div class="skeleton skeleton-bm-desc" style="width:50%"></div><div class="skeleton skeleton-bm-tag"></div><div class="skeleton skeleton-bm-tag"></div></div></div></div>
+                <div class="skeleton-bm-row"><div class="skeleton-bm-body"><div class="skeleton-bm-top"><div class="skeleton skeleton-bm-favicon"></div><div class="skeleton skeleton-bm-title" style="width:60%"></div></div><div class="skeleton-bm-second"><div class="skeleton skeleton-bm-desc" style="width:30%"></div><div class="skeleton skeleton-bm-tag"></div></div></div></div>
+                <div class="skeleton-bm-row"><div class="skeleton-bm-body"><div class="skeleton-bm-top"><div class="skeleton skeleton-bm-favicon"></div><div class="skeleton skeleton-bm-title" style="width:55%"></div></div><div class="skeleton-bm-second"><div class="skeleton skeleton-bm-desc"></div></div></div></div>
+                <div class="skeleton-bm-row"><div class="skeleton-bm-body"><div class="skeleton-bm-top"><div class="skeleton skeleton-bm-favicon"></div><div class="skeleton skeleton-bm-title" style="width:45%"></div></div><div class="skeleton-bm-second"><div class="skeleton skeleton-bm-desc" style="width:40%"></div><div class="skeleton skeleton-bm-tag"></div></div></div></div>
+            </div>
+
+            <!-- Skeleton template (hidden, used by JS for reload) -->
+            <div id="bm-loading" style="display:none">
+                <div class="skeleton-bm-row"><div class="skeleton-bm-body"><div class="skeleton-bm-top"><div class="skeleton skeleton-bm-favicon"></div><div class="skeleton skeleton-bm-title"></div></div><div class="skeleton-bm-second"><div class="skeleton skeleton-bm-desc"></div><div class="skeleton skeleton-bm-tag"></div></div></div></div>
+                <div class="skeleton-bm-row"><div class="skeleton-bm-body"><div class="skeleton-bm-top"><div class="skeleton skeleton-bm-favicon"></div><div class="skeleton skeleton-bm-title" style="width:40%"></div></div><div class="skeleton-bm-second"><div class="skeleton skeleton-bm-desc" style="width:50%"></div><div class="skeleton skeleton-bm-tag"></div><div class="skeleton skeleton-bm-tag"></div></div></div></div>
+                <div class="skeleton-bm-row"><div class="skeleton-bm-body"><div class="skeleton-bm-top"><div class="skeleton skeleton-bm-favicon"></div><div class="skeleton skeleton-bm-title" style="width:60%"></div></div><div class="skeleton-bm-second"><div class="skeleton skeleton-bm-desc" style="width:30%"></div><div class="skeleton skeleton-bm-tag"></div></div></div></div>
+                <div class="skeleton-bm-row"><div class="skeleton-bm-body"><div class="skeleton-bm-top"><div class="skeleton skeleton-bm-favicon"></div><div class="skeleton skeleton-bm-title" style="width:55%"></div></div><div class="skeleton-bm-second"><div class="skeleton skeleton-bm-desc"></div></div></div></div>
+                <div class="skeleton-bm-row"><div class="skeleton-bm-body"><div class="skeleton-bm-top"><div class="skeleton skeleton-bm-favicon"></div><div class="skeleton skeleton-bm-title" style="width:45%"></div></div><div class="skeleton-bm-second"><div class="skeleton skeleton-bm-desc" style="width:40%"></div><div class="skeleton skeleton-bm-tag"></div></div></div></div>
+            </div>
+
+            <!-- Pagination -->
+            <div id="bm-pagination" class="bm-pagination" style="display:none"></div>
+
+            <!-- Add bookmark FAB (manage mode) -->
+            {{if .IsLoggedIn}}
+            <button id="bm-add-fab" onclick="BM.showBookmarkDialog()" class="bm-fab" aria-label="{{call .T "bookmark.fab"}}"><i class="fa-solid fa-plus"></i></button>
+            {{end}}
+        </div>
+
+        <!-- Desktop sidebar (≥768px) -->
+        <aside id="bm-sidebar" class="bm-sidebar">
+            <div class="bm-sidebar-inner">
+                <div class="bm-sidebar-header">
+                    <span class="bm-sidebar-title">{{call .T "bookmark.sidebar.title"}}</span>
+                    <button onclick="BM.closeTagDrawer()" class="bm-sidebar-close" aria-label="{{call .T "bookmark.sidebar.close"}}"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                <!-- Tabs -->
+                <div class="bm-panel-tabs">
+                    <div class="bm-panel-tab active" onclick="BM.switchPanelTab('tags')"><i class="fa-solid fa-tags"></i> {{call .T "bookmark.panel.tab.tags"}}</div>
+                    <div class="bm-panel-tab" onclick="BM.switchPanelTab('adv')"><i class="fa-solid fa-sliders"></i> {{call .T "bookmark.panel.tab.adv"}}</div>
+                </div>
+                <!-- Tab: Tags -->
+                <div id="bm-panel-tags" class="bm-panel-content active">
+                    <input id="bm-sidebar-search" class="bm-sidebar-search-input" placeholder="{{call .T "bookmark.sidebar.tag_search"}}" aria-label="{{call .T "bookmark.sidebar.tag_search"}}">
+                    <div id="bm-sidebar-selected" class="bm-sidebar-selected"></div>
+                    <div id="bm-sidebar-tags" class="bm-sidebar-tags"></div>
+                    <div class="bm-sidebar-footer">
+                        <button onclick="BM.clearLabelFilter()" class="bm-sidebar-clear">{{call .T "bookmark.sidebar.clear"}}</button>
+                    </div>
+                </div>
+                <!-- Tab: Advanced Search (shared template, rendered by JS) -->
+                <div id="bm-panel-adv" class="bm-panel-content"></div>
+            </div>
+        </aside>
+        </div>
+    </main>
+
+    <!-- Mobile left drawer overlay -->
+    <div id="bm-drawer-overlay" class="bm-drawer-overlay" onclick="BM.closeTagDrawer()" style="display:none"></div>
+    <!-- Mobile left drawer -->
+    <div id="bm-drawer" class="bm-drawer bm-drawer-mobile">
+        <div class="bm-drawer-inner">
+            <div class="bm-drawer-header">
+                <span class="bm-sidebar-title">{{call .T "bookmark.sidebar.title"}}</span>
+                <button onclick="BM.closeTagDrawer()" class="bm-sidebar-close" aria-label="{{call .T "bookmark.sidebar.close"}}"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <!-- Tabs -->
+            <div class="bm-panel-tabs">
+                <div class="bm-panel-tab active" onclick="BM.switchPanelTab('tags')"><i class="fa-solid fa-tags"></i> {{call .T "bookmark.panel.tab.tags"}}</div>
+                <div class="bm-panel-tab" onclick="BM.switchPanelTab('adv')"><i class="fa-solid fa-sliders"></i> {{call .T "bookmark.panel.tab.adv"}}</div>
+            </div>
+            <div class="bm-drawer-body">
+                <!-- Tab: Tags -->
+                <div id="bm-drawer-panel-tags" class="bm-panel-content active">
+                    <div id="bm-drawer-tags" class="bm-drawer-tags"></div>
+                </div>
+                <!-- Tab: Advanced Search (shared with desktop, rendered by JS) -->
+                <div id="bm-drawer-panel-adv" class="bm-panel-content"></div>
+            </div>
+        </div>
+    </div>
+
+    {{template "footer" .}}
+
+    <script>
+    window.BM_LABELS = {{.BookmarkLabelsJSON}};
+    window.BM_IS_LOGGED_IN = {{if .IsLoggedIn}}true{{else}}false{{end}};
+    window.BM_MEMBER_ID = {{.MemberID}};
+    window.BM_IS_ADMIN = {{if .IsAdmin}}true{{else}}false{{end}};
+window.BM_PAGE_SIZE = {{.PageSize}};
+    </script>
+    <script src="/static/js/tag-input.js?v={{assetVer "/static/js/tag-input.js"}}"></script>
+    <script src="/static/js/bookmarks.js?v={{assetVer "/static/js/bookmarks.js"}}"></script>
+</body>
+</html>

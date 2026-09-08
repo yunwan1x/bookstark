@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="{{.Lang}}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{{call .T "webdav.meta.description"}}">
+    <title>{{call .T "webdav.title"}} - BookStark</title>
+    <link href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}" rel="stylesheet">
+    {{template "head-assets" .}}
+    <link href="/static/css/webdav.css?v={{assetVer "/static/css/webdav.css"}}" rel="stylesheet">
+    <link href="/static/css/code-editor-modal.css?v={{assetVer "/static/css/code-editor-modal.css"}}" rel="stylesheet">
+</head>
+<body class="dav-body min-h-screen">
+    {{template "header" .}}
+    <main class="dav-page" id="davPage" data-hash-worker="/static/js/webdav-hash-worker.js?v={{assetVer "/static/js/webdav-hash-worker.js"}}">
+        <section class="dav-connection" aria-labelledby="davTitle">
+            <div class="dav-connection-main">
+                <div class="dav-service-icon"><i class="fa-solid fa-cloud"></i></div>
+                <div class="dav-service-copy">
+                    <h1 id="davTitle">BookStark WebDAV</h1>
+                    <p id="davEndpoint">{{call .T "webdav.endpoint.loading"}}</p>
+                </div>
+            </div>
+            <div class="dav-usage" aria-label="{{call .T "webdav.usage.label"}}">
+                <div class="dav-usage-copy"><span id="davUsageText">--</span><strong id="davUsagePercent">0%</strong></div>
+                <div class="dav-usage-track"><span id="davUsageBar"></span></div>
+                <div class="dav-usage-details" id="davUsageDetails" aria-live="polite">
+                    <span class="dav-usage-metric"><span>{{call .T "webdav.usage.files"}}</span><strong id="davUsageFileCount">--</strong></span>
+                    <span class="dav-usage-metric"><span>{{call .T "webdav.usage.stored"}}</span><strong id="davUsageStored">--</strong></span>
+                    <span class="dav-usage-metric"><span>{{call .T "webdav.usage.deduplicated"}}</span><strong id="davUsageDeduplicated">--</strong></span>
+                    <span class="dav-usage-metric"><span>{{call .T "webdav.usage.compressed"}}</span><strong id="davUsageCompressed">--</strong></span>
+                </div>
+            </div>
+            <div class="dav-connection-actions">
+                <button class="bs-btn bs-btn-cancel" id="copyEndpointBtn" type="button" title="{{call .T "webdav.copy_endpoint"}}"><i class="fa-regular fa-copy"></i><span>{{call .T "webdav.copy_endpoint"}}</span></button>
+                <button class="bs-btn bs-btn-cancel" id="passwordBtn" type="button" title="{{call .T "webdav.app_password"}}"><i class="fa-solid fa-key"></i><span>{{call .T "webdav.app_password"}}</span></button>
+            </div>
+        </section>
+
+        <section class="dav-workspace">
+            <div class="dav-toolbar page-sticky-header" id="davStickyToolbar">
+                <nav class="dav-breadcrumbs" id="davBreadcrumbs" aria-label="{{call .T "webdav.path.label"}}"></nav>
+                <div class="dav-toolbar-actions">
+                    <label class="dav-search"><i class="fa-solid fa-magnifying-glass"></i><input id="davSearch" type="search" placeholder="{{call .T "webdav.search.placeholder"}}"></label>
+                    <button class="bs-btn bs-btn-cancel" id="mkdirBtn" type="button" title="{{call .T "webdav.new_folder"}}"><i class="fa-solid fa-folder-plus"></i><span>{{call .T "webdav.new_folder"}}</span></button>
+                    <button class="bs-btn bs-btn-primary" id="uploadBtn" type="button" title="{{call .T "webdav.upload"}}"><i class="fa-solid fa-arrow-up-from-bracket"></i><span>{{call .T "webdav.upload"}}</span></button>
+                    <input id="uploadInput" type="file" multiple hidden>
+                </div>
+            </div>
+            <div class="dav-drop-zone" id="davDropZone">
+                <div class="dav-table-head" aria-hidden="true">
+                    <span>{{call .T "webdav.table.name"}}</span><span>{{call .T "webdav.table.size"}}</span><span>{{call .T "webdav.table.updated"}}</span><span>{{call .T "webdav.table.public"}}</span><span></span>
+                </div>
+                <div class="dav-file-list" id="davFileList"></div>
+                <div class="dav-empty" id="davEmpty" hidden>
+                    <i class="fa-regular fa-folder-open"></i>
+                    <strong>{{call .T "webdav.empty.title"}}</strong>
+                    <span class="dav-empty-desktop-hint">{{call .T "webdav.empty.desktop_hint"}}</span>
+                    <span class="dav-empty-mobile-hint">{{call .T "webdav.empty.mobile_hint"}}</span>
+                </div>
+                <div class="dav-load-error" id="davLoadError" role="alert" hidden>
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <strong>{{call .T "webdav.error.title"}}</strong>
+                    <span id="davLoadErrorMessage"></span>
+                    <button class="bs-btn bs-btn-cancel" id="davRetryBtn" type="button"><i class="fa-solid fa-rotate-right"></i>{{call .T "webdav.error.retry"}}</button>
+                </div>
+                <div class="dav-loading" id="davLoading" aria-label="{{call .T "webdav.loading"}}">
+                    <span></span><span></span><span></span><span></span>
+                </div>
+                <div class="dav-drop-overlay"><i class="fa-solid fa-cloud-arrow-up"></i><strong>{{call .T "webdav.drop_hint"}}</strong></div>
+            </div>
+        </section>
+    </main>
+
+    <div class="dav-modal asset-modal-backdrop" id="davModal" role="dialog" aria-modal="true" aria-labelledby="davModalTitle" aria-hidden="true" hidden
+         data-mobile-sheet data-mobile-sheet-panel=".asset-modal" data-mobile-sheet-close="BookStarkWebDAV.closeModal">
+        <section class="dav-modal-dialog asset-modal">
+            <header class="asset-modal-head">
+                <h2 class="asset-modal-title" id="davModalTitle">{{call .T "webdav.modal.operation"}}</h2>
+                <button class="dav-modal-close" type="button" data-modal-close aria-label="{{call .T "webdav.close"}}"><i class="fa-solid fa-xmark"></i></button>
+            </header>
+            <div class="dav-modal-body asset-modal-body" id="davModalBody"></div>
+            <footer class="dav-modal-footer asset-modal-foot" id="davModalFooter"></footer>
+        </section>
+    </div>
+
+    <div class="dav-toast" id="davToast" role="status" aria-live="polite"></div>
+    {{template "footer" .}}
+    <script src="/static/js/codemirror-html.min.js?v={{assetVer "/static/js/codemirror-html.min.js"}}"></script>
+    <script src="/static/js/code-editor-modal.js?v={{assetVer "/static/js/code-editor-modal.js"}}"></script>
+    <script src="/static/js/webdav.js?v={{assetVer "/static/js/webdav.js"}}"></script>
+</body>
+</html>

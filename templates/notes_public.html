@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="csrf-token" content="{{.CSRFToken}}">
+<title>{{call .T "note.public.title"}} - BookStark</title>
+<script>(function(){var k='bookstark-theme',s={light:'light',dark:'dark','notion-pro':'light','scholar-paper':'light','linear-saas':'dark','apple-minimal':'light'},t=localStorage.getItem(k);if(!s[t])t=window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';document.documentElement.setAttribute('data-theme',s[t]);document.documentElement.setAttribute('data-theme-style',t);})();</script>
+<link rel="stylesheet" href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}">
+<link rel="stylesheet" href="/static/css/font-awesome.min.css?v={{assetVer "/static/css/font-awesome.min.css"}}">
+<link rel="stylesheet" href="/static/css/variables.css?v={{assetVer "/static/css/variables.css"}}">
+<link rel="stylesheet" href="/static/css/components.css?v={{assetVer "/static/css/components.css"}}">
+<link rel="stylesheet" href="/static/css/notes.css?v={{assetVer "/static/css/notes.css"}}">
+</head>
+<body>
+<main role="main" class="notes-public-main">
+    <h1 class="notes-public-title">{{call .T "note.public.title"}}</h1>
+    <div id="publicTimeline"></div>
+</main>
+<script src="/static/js/utils.js?v={{assetVer "/static/js/utils.js"}}"></script>
+<script src="/static/js/theme.js?v={{assetVer "/static/js/theme.js"}}"></script>
+<script src="/static/js/bs-dialog.js?v={{assetVer "/static/js/bs-dialog.js"}}"></script>
+<script>
+window.__I18N_MESSAGES = {{.JSBundle}};
+window.__currentLang = "{{.Lang}}";
+window.__SHARE_COMMENTS_ENABLED__ = {{if .ShareCommentsEnabled}}true{{else}}false{{end}};
+window.__SHARE_COMMENT_ACCOUNT__ = {{jsonJS .Account}};
+window.__SHARE_COMMENT_MAX_LENGTH__ = {{.ShareCommentMaxLength}};
+</script>
+<script src="/static/js/i18n.js?v={{assetVer "/static/js/i18n.js"}}"></script>
+<script src="/static/js/notes.js?v={{assetVer "/static/js/notes.js"}}"></script>
+<script src="/static/js/share-comments.js?v={{assetVer "/static/js/share-comments.js"}}"></script>
+<script>
+var blogs = {{json .Blogs}};
+var container = document.getElementById('publicTimeline');
+if (blogs && blogs.length) {
+    blogs.forEach(function(b) {
+        var card = NotesApp.renderNoteCard(b, false);
+        if (window.__SHARE_COMMENTS_ENABLED__) {
+            card.appendChild(NotesApp.renderShareCommentsBlock(b.blog_identify, 'note-public-comments'));
+        }
+        container.appendChild(card);
+    });
+} else {
+    container.innerHTML = '<div class="notes-public-empty"><i class="fa-solid fa-note-sticky"></i><div>' + window.__('note.public.empty') + '</div></div>';
+}
+</script>
+</body>
+</html>

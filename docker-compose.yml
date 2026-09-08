@@ -1,0 +1,11 @@
+services:
+  mihomo:
+    image: docker.io/metacubex/mihomo:latest
+    container_name: mihomo
+    ports:
+      - "58080:58080"
+    volumes:
+      - ./mihomo/config.yaml:/root/.config/mihomo/config.yaml:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped

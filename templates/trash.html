@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v={{assetVer "/static/favicon.svg"}}">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{{call .T "meta.description"}}">
+    <title>{{call .T "page.trash.title"}} - BookStark</title>
+    <link href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}" rel="stylesheet">
+    <style>
+        .trash-type-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: var(--radius); white-space: nowrap; }
+        .trash-type-book { background: #dbeafe; color: #1d4ed8; }
+        .trash-type-blog { background: #fef3c7; color: #92400e; }
+        .trash-type-bookmark { background: #d1fae5; color: #065f46; }
+        .trash-type-document { background: #ede9fe; color: #5b21b6; }
+        .trash-type-task { background: var(--color-success-light, #dcfce7); color: var(--color-success, #16a34a); }
+        .trash-type-topic { background: #e0f2fe; color: #0369a1; }
+        [data-theme="dark"] .trash-type-book { background: #1e3a5f; color: #93c5fd; }
+        [data-theme="dark"] .trash-type-blog { background: #451a03; color: #fbbf24; }
+        [data-theme="dark"] .trash-type-bookmark { background: #052e16; color: #4ade80; }
+        [data-theme="dark"] .trash-type-document { background: #2e1065; color: #a78bfa; }
+        [data-theme="dark"] .trash-type-task { background: #052e16; color: #4ade80; }
+        [data-theme="dark"] .trash-type-topic { background: #082f49; color: #7dd3fc; }
+        .trash-actions { display: flex; gap: 4px; opacity: 0; transition: opacity 0.15s ease; }
+        .list-row:hover .trash-actions { opacity: 1; }
+        @media (max-width: 640px) { .trash-actions { opacity: 1; } }
+        .trash-action-btn { padding: 4px 10px; border-radius: var(--radius-md); font-size: 12px; cursor: pointer; border: none; transition: background-color 0.15s ease, color 0.15s ease; }
+        .trash-action-restore { background: var(--color-primary-light); color: var(--color-primary); }
+        .trash-action-restore:hover { background: var(--color-primary); color: white; }
+        .trash-action-delete { background: var(--color-danger-light, #fef2f2); color: var(--color-danger); }
+        .trash-action-delete:hover { background: var(--color-danger); color: white; }
+        .trash-checkbox { width: 16px; height: 16px; accent-color: var(--color-primary); cursor: pointer; flex-shrink: 0; }
+        .trash-batch-bar { display: none; align-items: center; gap: 8px; padding: 8px 12px; background: var(--color-primary-light); border-radius: var(--radius-md); margin-bottom: 8px; font-size: 13px; }
+        .trash-batch-bar.active { display: flex; }
+        .trash-count-all { font-weight: 600; color: var(--color-primary); }
+        .trash-batch-btn { padding: 4px 12px; border-radius: var(--radius-md); font-size: 12px; cursor: pointer; border: none; transition: background-color 0.15s ease; }
+        .trash-tip { background: var(--color-info-light, #eff6ff); border: 1px solid var(--color-info, #3b82f6); border-radius: var(--radius-md); padding: 8px 12px; font-size: 13px; color: var(--color-gray-700); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+        .filter-tab { padding: 6px 14px; border-radius: var(--radius-md); font-size: 13px; cursor: pointer; border: 1px solid transparent; background: transparent; color: var(--color-gray-500); transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease; }
+        .filter-tab:hover { background: var(--color-gray-100); color: var(--color-gray-700); }
+        .filter-tab.active { background: var(--color-primary); color: white; border-color: var(--color-primary); }
+    </style>
+{{template "head-assets" .}}
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col">
+    {{template "header" .}}
+    <main role="main" class="flex-1">
+        <div class="px-4 sm:px-6 md:px-8 py-6">
+            <div class="max-w-[720px] mx-auto">
+                <div class="page-sticky-header">
+                    <div class="flex flex-wrap items-center gap-2 mb-3">
+                        <h1 class="page-title mr-auto">{{call .T "trash.page.title"}}</h1>
+                        <span id="trash-count" class="text-xs text-slate-500"></span>
+                        <button onclick="purgeTrash()" class="px-3 py-1.5 text-xs text-red-600 bg-red-50 rounded-md hover:bg-red-100 transition-colors" style="display:none" id="purge-btn" aria-label="{{call .T "trash.purge.aria"}}"><i class="fa-solid fa-trash-can" style="margin-right:4px"></i>{{call .T "trash.purge.label"}}</button>
+                    </div>
+                    <div class="flex flex-wrap gap-1 mb-3" id="filter-tabs">
+                        <button class="filter-tab active" data-type="" onclick="switchType(this, '')">{{call .T "trash.filter.all"}}</button>
+                        <button class="filter-tab" data-type="book" onclick="switchType(this, 'book')">{{call .T "trash.filter.book"}}</button>
+                        <button class="filter-tab" data-type="blog" onclick="switchType(this, 'blog')">{{call .T "trash.filter.blog"}}</button>
+                        <button class="filter-tab" data-type="bookmark" onclick="switchType(this, 'bookmark')">{{call .T "trash.filter.bookmark"}}</button>
+                        <button class="filter-tab" data-type="document" onclick="switchType(this, 'document')">{{call .T "trash.filter.document"}}</button>
+                        <button class="filter-tab" data-type="task" onclick="switchType(this, 'task')">{{call .T "trash.filter.task"}}</button>
+                        <button class="filter-tab" data-type="topic" onclick="switchType(this, 'topic')">{{call .T "trash.filter.topic"}}</button>
+                    </div>
+                </div>
+                <div class="trash-tip">
+                    <i class="fa-solid fa-circle-info" style="color:var(--color-info)"></i>
+                    <span>{{call .T "trash.tip"}}</span>
+                </div>
+                <div class="trash-batch-bar" id="batch-bar">
+                    <label class="flex items-center gap-1 cursor-pointer select-none">
+                        <input type="checkbox" class="trash-checkbox" id="select-all" onchange="toggleSelectAll(this.checked)" aria-label="{{call .T "trash.batch.select_all"}}">
+                        <span>{{call .T "trash.batch.select_all"}}</span>
+                    </label>
+                    <span id="selected-count" class="text-slate-500">{{call .T "trash.batch.count"}}</span>
+                    <button class="trash-batch-btn trash-action-restore" onclick="batchRestore()" aria-label="{{call .T "trash.batch.restore"}}">{{call .T "trash.batch.restore"}}</button>
+                    <button class="trash-batch-btn trash-action-delete" onclick="batchDelete()" aria-label="{{call .T "trash.batch.delete"}}">{{call .T "trash.batch.delete"}}</button>
+                </div>
+                <div id="trash-loading" style="display:none">
+                    <div class="skeleton-row"><div class="skeleton skeleton-row-num"></div><div class="skeleton-row-body"><div class="skeleton skeleton-row-title" style="width:50%"></div><div class="skeleton-row-meta"><div class="skeleton skeleton-row-time"></div></div></div></div>
+                    <div class="skeleton-row"><div class="skeleton skeleton-row-num"></div><div class="skeleton-row-body"><div class="skeleton skeleton-row-title" style="width:65%"></div><div class="skeleton-row-meta"><div class="skeleton skeleton-row-time"></div></div></div></div>
+                    <div class="skeleton-row"><div class="skeleton skeleton-row-num"></div><div class="skeleton-row-body"><div class="skeleton skeleton-row-title" style="width:40%"></div><div class="skeleton-row-meta"><div class="skeleton skeleton-row-time"></div></div></div></div>
+                </div>
+                <div id="trash-list" class="list-container"></div>
+                <div id="trash-pagination" class="flex justify-center items-center gap-2 mt-6 text-sm"></div>
+            </div>
+        </div>
+    </main>
+    {{template "footer" .}}
+    <script src="/static/js/trash.js?v={{assetVer "/static/js/trash.js"}}"></script>
+</body>
+</html>

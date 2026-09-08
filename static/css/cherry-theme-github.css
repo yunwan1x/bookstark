@@ -1,0 +1,1421 @@
+/**
+ * Cherry Markdown - GitHub Theme
+ * Based on github-markdown-css (light)
+ * Adapted for Cherry Markdown's .cherry-previewer
+ */
+
+/* === Cherry Markdown editor chrome === */
+.cherry.theme__github {
+  --cherry-color: #1f2328;
+  --cherry-bg-color: #ffffff;
+  /* Override Cherry Markdown CSS variables to match GitHub style */
+  --base-editor-bg: #ffffff;
+  --base-font-color: #1f2328;
+  --base-previewer-bg: #ffffff;
+  --base-border-color: #d1d9e0;
+  --toolbar-bg: #f6f8fa;
+  --toolbar-btn-color: #1f2328;
+  --toolbar-btn-hover-color: #1f2328;
+  --toolbar-btn-hover-bg: rgba(208, 215, 222, 0.3);
+  --toolbar-btn-active-bg: rgba(208, 215, 222, 0.5);
+  --primary-color: #0969da;
+  --secondary-color: rgba(9, 105, 218, 0.08);
+  --md-heading-color: #1f2328;
+  --md-link-color: #0969da;
+  --md-blockquote-color: #656d76;
+  --md-table-border: #d1d9e0;
+  /* Editor syntax highlighting */
+  --editor-header-color: #1f2328;
+  --editor-comment-color: #656d76;
+  --editor-quote-color: #656d76;
+  --editor-string-color: #0a3069;
+  --editor-link-color: #0969da;
+  --editor-url-bg-color: #ddf4ff;
+  --editor-v2-color: #0969da;
+  --editor-v3-color: rgba(9, 105, 218, 0.08);
+  --editor-keyword-color: #cf222e;
+  --editor-cursor-color: #1f2328;
+  --editor-selection-bg: rgba(84, 174, 255, 0.25);
+  --editor-line-number-color: #8b949e;
+  --editor-active-line-bg: #f6f8fa;
+  /* Accordion / cherry-detail: flat style, no shadow */
+  --accordion-shadow: none;
+  --accordion-bg: #ffffff;
+  --accordion-border: #d1d9e0;
+  --accordion-summary-bg: #f6f8fa;
+  --accordion-summary-color: #1f2328;
+  --accordion-summary-hover-bg: #eaeef2;
+  --accordion-body-bg: #ffffff;
+  --accordion-body-color: #1f2328;
+  --accordion-body-border: #d1d9e0;
+}
+.cherry.theme__github .cherry-editor {
+  background-color: #ffffff;
+}
+.cherry.theme__github .cherry-toolbar {
+  background-color: #f6f8fa;
+  border-bottom: 1px solid #d1d9e0;
+}
+
+/* === CodeMirror editor area (GitHub style) === */
+.cherry.theme__github .cm-editor {
+  background-color: #ffffff;
+  color: #1f2328;
+}
+.cherry.theme__github .cm-gutters {
+  background-color: #f6f8fa;
+  color: #656d76;
+  border-right: 1px solid #d1d9e0;
+}
+.cherry.theme__github .cm-content {
+  color: #1f2328;
+}
+.cherry.theme__github .cm-line {
+  color: #1f2328;
+}
+.cherry.theme__github .cm-activeLine {
+  background-color: #f6f8fa;
+}
+.cherry.theme__github .cm-selectionLayer {
+  z-index: 0 !important;
+}
+.cherry.theme__github .cm-selectionBackground {
+  background-color: rgba(84, 174, 255, 0.25) !important;
+}
+.cherry.theme__github .cm-focused .cm-cursor {
+  border-left-color: #1f2328;
+}
+.cherry.theme__github .cm-matchingBracket {
+  background-color: rgba(84, 174, 255, 0.25);
+  color: inherit;
+}
+/* CodeMirror markdown syntax — GitHub style */
+.cherry.theme__github .cm-header { color: #1f2328; font-weight: 600; }
+.cherry.theme__github .cm-header-1 { font-size: 1.4em; }
+.cherry.theme__github .cm-header-2 { font-size: 1.2em; }
+.cherry.theme__github .cm-header-3 { font-size: 1.1em; }
+.cherry.theme__github .cm-meta { color: #656d76; }
+.cherry.theme__github .cm-comment { color: #656d76; }
+.cherry.theme__github .cm-quote { color: #656d76; }
+.cherry.theme__github .cm-list { color: #1f2328; }
+.cherry.theme__github .cm-link { color: #0969da; }
+.cherry.theme__github .cm-url { color: #0969da; }
+.cherry.theme__github .cm-strong { font-weight: 700; color: #1f2328; }
+.cherry.theme__github .cm-em { font-style: italic; }
+.cherry.theme__github .cm-hr { color: #d1d9e0; }
+.cherry.theme__github .cm-tag { color: #116329; }
+.cherry.theme__github .cm-attribute { color: #0550ae; }
+.cherry.theme__github .cm-string { color: #0a3069; }
+.cherry.theme__github .cm-keyword { color: #cf222e; }
+/* Cherry toolbar buttons */
+.cherry.theme__github .cherry-toolbar .toolbar-button {
+  color: #1f2328;
+}
+.cherry.theme__github .cherry-toolbar .toolbar-button:hover {
+  background-color: rgba(208, 215, 222, 0.3);
+}
+/* Cherry drag separator */
+.cherry.theme__github .cherry-drag {
+  background: #d1d9e0;
+  border-left: 1px solid #d1d9e0;
+  border-right: 1px solid #d1d9e0;
+}
+.cherry.theme__github .cherry-drag:hover {
+  background: #0969da;
+  border-color: #0969da;
+}
+
+/* === Code block: iTerm2 terminal style === */
+/* Syntax highlighting is handled by Cherry's built-in code theme (one-light in light mode, one-dark in dark mode).
+   We only add the terminal title bar and wrapper styling here. */
+
+/* Code block wrapper — light iTerm style */
+.cherry.theme__github .cherry-previewer div[data-type="codeBlock"] {
+  border-radius: 8px !important;
+  margin-bottom: 16px !important;
+  padding-top: 36px !important;
+  position: relative !important;
+  border: 1px solid #d1d9e0 !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+}
+/* Terminal title bar — light style */
+.cherry.theme__github .cherry-previewer div[data-type="codeBlock"]::before {
+  content: attr(data-lang);
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 36px;
+  line-height: 36px;
+  padding: 0 14px 0 56px;
+  background: #f6f8fa;
+  border-bottom: 1px solid #d1d9e0;
+  border-radius: 8px 8px 0 0;
+  font-size: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  color: #656d76;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  z-index: 1;
+  /* Three colored dots */
+  background-image: radial-gradient(circle at 14px 18px, #ff5f56 5px, transparent 5px),
+                    radial-gradient(circle at 30px 18px, #ffbd2e 5px, transparent 5px),
+                    radial-gradient(circle at 46px 18px, #27c93f 5px, transparent 5px);
+  background-repeat: no-repeat;
+}
+/* Hide Cherry's default language label (we show it in the title bar) */
+.cherry.theme__github .cherry-previewer div[data-type="codeBlock"] .code-Language {
+  display: none !important;
+}
+/* Code block pre: inherit one-light background, remove extra styling */
+.cherry.theme__github .cherry-previewer div[data-type="codeBlock"] pre {
+  border: none !important;
+  margin: 0 !important;
+  border-radius: 0 0 8px 8px !important;
+  background: #fafbfc !important;
+}
+/* Inline code — keep GitHub light style (not in code blocks) */
+.cherry.theme__github .cherry-previewer code:not(pre code) {
+  background-color: rgba(175, 184, 193, 0.2);
+  border-radius: 6px;
+  padding: 0.2em 0.4em;
+  font-size: 85%;
+  color: #24292e;
+  border: none !important;
+}
+
+/* === Override Cherry Markdown default preview styles (GitHub style) === */
+
+/* Headings - size and border are not covered by CSS vars */
+.cherry.theme__github .cherry-previewer h1 {
+  font-size: 2em !important;
+  padding-bottom: 0.3em !important;
+  border-bottom: 1px solid #d1d9e0b3 !important;
+  margin-top: 24px !important;
+  margin-bottom: 16px !important;
+}
+.cherry.theme__github .cherry-previewer h2 {
+  font-size: 1.5em !important;
+  padding-bottom: 0.3em !important;
+  border-bottom: 1px solid #d1d9e0b3 !important;
+  margin-top: 24px !important;
+  margin-bottom: 16px !important;
+}
+.cherry.theme__github .cherry-previewer h3 {
+  font-size: 1.25em !important;
+  margin-top: 24px !important;
+  margin-bottom: 16px !important;
+}
+.cherry.theme__github .cherry-previewer h4 { font-size: 1em !important; }
+.cherry.theme__github .cherry-previewer h5 { font-size: 0.875em !important; }
+.cherry.theme__github .cherry-previewer h6 { font-size: 0.85em !important; }
+
+/* Paragraphs */
+.cherry.theme__github .cherry-previewer p {
+  margin-top: 0 !important;
+  margin-bottom: 16px !important;
+  line-height: 1.5 !important;
+}
+
+/* Links - GitHub style with underline */
+.cherry.theme__github .cherry-previewer a {
+  text-decoration: underline !important;
+  text-underline-offset: 0.2rem !important;
+}
+
+/* Blockquote - GitHub left border + transparent bg */
+.cherry.theme__github .cherry-previewer blockquote {
+  border-left: 4px solid #d1d9e0 !important;
+  background: transparent !important;
+  padding: 0 16px !important;
+  margin: 0 0 16px 0 !important;
+}
+
+/* Lists — Tailwind fix handled by cherry-tailwind-fix.css */
+.cherry.theme__github .cherry-previewer ul,
+.cherry.theme__github .cherry-previewer ol {
+  margin-top: 0 !important;
+  margin-bottom: 16px !important;
+}
+
+/* Horizontal rule */
+.cherry.theme__github .cherry-previewer hr {
+  border: 0 !important;
+  height: 0.25em !important;
+  padding: 0 !important;
+  margin: 24px 0 !important;
+  background-color: #d1d9e0 !important;
+  overflow: hidden !important;
+}
+
+/* Table - GitHub style */
+.cherry.theme__github .cherry-previewer table th,
+.cherry.theme__github .cherry-previewer table td {
+  padding: 6px 13px !important;
+  border: 1px solid #d1d9e0 !important;
+}
+.cherry.theme__github .cherry-previewer table th {
+  font-weight: 600 !important;
+  background-color: #f6f8fa !important;
+}
+.cherry.theme__github .cherry-previewer table tr {
+  background-color: #ffffff !important;
+  border-top: 1px solid #d1d9e0 !important;
+}
+.cherry.theme__github .cherry-previewer table tr:nth-child(2n) {
+  background-color: #f6f8fa !important;
+}
+
+/* Strong / bold */
+.cherry.theme__github .cherry-previewer strong {
+  font-weight: 600 !important;
+}
+
+/* Images */
+.cherry.theme__github .cherry-previewer img {
+  max-width: 100% !important;
+  box-sizing: content-box !important;
+}
+
+/* Previewer base */
+.cherry.theme__github .cherry-previewer {
+  font-size: 16px !important;
+  line-height: 1.5 !important;
+  word-wrap: break-word !important;
+}
+
+/* === Preview area (github-markdown-css adapted) === */
+.cherry.theme__github .cherry-previewer {
+  color-scheme: light;
+  /** CSS default easing. Use for hover state changes and micro-interactions. */
+  /** Accelerating motion. Use for elements exiting the viewport (moving off-screen). */
+  /** Smooth acceleration and deceleration. Use for elements moving or morphing within the viewport. */
+  /** Decelerating motion. Use for elements entering the viewport or appearing on screen. */
+  /** Constant motion with no acceleration. Use for continuous animations like progress bars or loaders. */
+  -ms-text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+  margin: 0;
+  font-weight: 400;
+  color: #1f2328;
+  background-color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  font-size: 16px;
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+
+.cherry.theme__github .cherry-previewer a {
+  text-decoration: underline;
+  text-underline-offset: .2rem;
+}
+
+.cherry.theme__github .cherry-previewer .octicon {
+  display: inline-block;
+  fill: currentColor;
+  vertical-align: text-bottom;
+}
+
+.cherry.theme__github .cherry-previewer h1:hover .anchor .octicon-link:before,
+.cherry.theme__github .cherry-previewer h2:hover .anchor .octicon-link:before,
+.cherry.theme__github .cherry-previewer h3:hover .anchor .octicon-link:before,
+.cherry.theme__github .cherry-previewer h4:hover .anchor .octicon-link:before,
+.cherry.theme__github .cherry-previewer h5:hover .anchor .octicon-link:before,
+.cherry.theme__github .cherry-previewer h6:hover .anchor .octicon-link:before {
+  width: 16px;
+  height: 16px;
+  content: ' ';
+  display: inline-block;
+  background-color: currentColor;
+  -webkit-mask-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' version='1.1' aria-hidden='true'><path fill-rule='evenodd' d='M7.775 3.275a.75.75 0 001.06 1.06l1.25-1.25a2 2 0 112.83 2.83l-2.5 2.5a2 2 0 01-2.83 0 .75.75 0 00-1.06 1.06 3.5 3.5 0 004.95 0l2.5-2.5a3.5 3.5 0 00-4.95-4.95l-1.25 1.25zm-4.69 9.64a2 2 0 010-2.83l2.5-2.5a2 2 0 012.83 0 .75.75 0 001.06-1.06 3.5 3.5 0 00-4.95 0l-2.5 2.5a3.5 3.5 0 004.95 4.95l1.25-1.25a.75.75 0 00-1.06-1.06l-1.25 1.25a2 2 0 01-2.83 0z'></path></svg>");
+  mask-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' version='1.1' aria-hidden='true'><path fill-rule='evenodd' d='M7.775 3.275a.75.75 0 001.06 1.06l1.25-1.25a2 2 0 112.83 2.83l-2.5 2.5a2 2 0 01-2.83 0 .75.75 0 00-1.06 1.06 3.5 3.5 0 004.95 0l2.5-2.5a3.5 3.5 0 00-4.95-4.95l-1.25 1.25zm-4.69 9.64a2 2 0 010-2.83l2.5-2.5a2 2 0 012.83 0 .75.75 0 001.06-1.06 3.5 3.5 0 00-4.95 0l-2.5 2.5a3.5 3.5 0 004.95 4.95l1.25-1.25a.75.75 0 00-1.06-1.06l-1.25 1.25a2 2 0 01-2.83 0z'></path></svg>");
+}
+
+.cherry.theme__github .cherry-previewer details,
+.cherry.theme__github .cherry-previewer figcaption,
+.cherry.theme__github .cherry-previewer figure {
+  display: block;
+}
+
+.cherry.theme__github .cherry-previewer summary {
+  display: list-item;
+}
+
+.cherry.theme__github .cherry-previewer [hidden] {
+  display: none !important;
+}
+
+.cherry.theme__github .cherry-previewer a {
+  background-color: rgba(0,0,0,0);
+  color: #0969da;
+  text-decoration: none;
+}
+
+.cherry.theme__github .cherry-previewer abbr[title] {
+  border-bottom: none;
+  -webkit-text-decoration: underline dotted;
+  text-decoration: underline dotted;
+}
+
+.cherry.theme__github .cherry-previewer b,
+.cherry.theme__github .cherry-previewer strong {
+  font-weight: 600;
+}
+
+.cherry.theme__github .cherry-previewer dfn {
+  font-style: italic;
+}
+
+.cherry.theme__github .cherry-previewer h1 {
+  margin: .67em 0;
+  font-weight: 600;
+  padding-bottom: .3em;
+  font-size: 2em;
+  border-bottom: 1px solid #d1d9e0b3;
+}
+
+.cherry.theme__github .cherry-previewer mark {
+  background-color: #fff8c5;
+  color: #1f2328;
+}
+
+.cherry.theme__github .cherry-previewer small {
+  font-size: 90%;
+}
+
+.cherry.theme__github .cherry-previewer sub,
+.cherry.theme__github .cherry-previewer sup {
+  font-size: 75%;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+}
+
+.cherry.theme__github .cherry-previewer sub {
+  bottom: -0.25em;
+}
+
+.cherry.theme__github .cherry-previewer sup {
+  top: -0.5em;
+}
+
+.cherry.theme__github .cherry-previewer img {
+  border-style: none;
+  max-width: 100%;
+  box-sizing: content-box;
+}
+
+.cherry.theme__github .cherry-previewer code,
+.cherry.theme__github .cherry-previewer kbd,
+.cherry.theme__github .cherry-previewer pre,
+.cherry.theme__github .cherry-previewer samp {
+  font-family: monospace;
+  font-size: 1em;
+}
+
+.cherry.theme__github .cherry-previewer figure {
+  margin: 1em 2.5rem;
+}
+
+.cherry.theme__github .cherry-previewer hr {
+  box-sizing: content-box;
+  overflow: hidden;
+  background: rgba(0,0,0,0);
+  border-bottom: 1px solid #d1d9e0b3;
+  height: .25em;
+  padding: 0;
+  margin: 1.5rem 0;
+  background-color: #d1d9e0;
+  border: 0;
+}
+
+.cherry.theme__github .cherry-previewer input {
+  font: inherit;
+  margin: 0;
+  overflow: visible;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.cherry.theme__github .cherry-previewer [type=button],
+.cherry.theme__github .cherry-previewer [type=reset],
+.cherry.theme__github .cherry-previewer [type=submit] {
+  -webkit-appearance: button;
+  appearance: button;
+}
+
+.cherry.theme__github .cherry-previewer [type=checkbox],
+.cherry.theme__github .cherry-previewer [type=radio] {
+  box-sizing: border-box;
+  padding: 0;
+}
+
+.cherry.theme__github .cherry-previewer [type=number]::-webkit-inner-spin-button,
+.cherry.theme__github .cherry-previewer [type=number]::-webkit-outer-spin-button {
+  height: auto;
+}
+
+.cherry.theme__github .cherry-previewer [type=search]::-webkit-search-cancel-button,
+.cherry.theme__github .cherry-previewer [type=search]::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.cherry.theme__github .cherry-previewer ::-webkit-input-placeholder {
+  color: inherit;
+  opacity: .54;
+}
+
+.cherry.theme__github .cherry-previewer ::-webkit-file-upload-button {
+  -webkit-appearance: button;
+  appearance: button;
+  font: inherit;
+}
+
+.cherry.theme__github .cherry-previewer a:hover {
+  text-decoration: underline;
+}
+
+.cherry.theme__github .cherry-previewer ::placeholder {
+  color: #59636e;
+  opacity: 1;
+}
+
+.cherry.theme__github .cherry-previewer hr::before {
+  display: table;
+  content: "";
+}
+
+.cherry.theme__github .cherry-previewer hr::after {
+  display: table;
+  clear: both;
+  content: "";
+}
+
+.cherry.theme__github .cherry-previewer table {
+  border-spacing: 0;
+  border-collapse: collapse;
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow: auto;
+  font-variant: tabular-nums;
+}
+
+.cherry.theme__github .cherry-previewer td,
+.cherry.theme__github .cherry-previewer th {
+  padding: 0;
+}
+
+.cherry.theme__github .cherry-previewer details summary {
+  cursor: pointer;
+}
+
+.cherry.theme__github .cherry-previewer a:focus,
+.cherry.theme__github .cherry-previewer [role=button]:focus,
+.cherry.theme__github .cherry-previewer input[type=radio]:focus,
+.cherry.theme__github .cherry-previewer input[type=checkbox]:focus {
+  outline: 2px solid var(--borderColor-accent-emphasis);
+  outline-offset: -2px;
+  box-shadow: none;
+}
+
+.cherry.theme__github .cherry-previewer a:focus:not(:focus-visible),
+.cherry.theme__github .cherry-previewer [role=button]:focus:not(:focus-visible),
+.cherry.theme__github .cherry-previewer input[type=radio]:focus:not(:focus-visible),
+.cherry.theme__github .cherry-previewer input[type=checkbox]:focus:not(:focus-visible) {
+  outline: solid 1px rgba(0,0,0,0);
+}
+
+.cherry.theme__github .cherry-previewer a:focus-visible,
+.cherry.theme__github .cherry-previewer [role=button]:focus-visible,
+.cherry.theme__github .cherry-previewer input[type=radio]:focus-visible,
+.cherry.theme__github .cherry-previewer input[type=checkbox]:focus-visible {
+  outline: 2px solid var(--borderColor-accent-emphasis);
+  outline-offset: -2px;
+  box-shadow: none;
+}
+
+.cherry.theme__github .cherry-previewer a:not([class]):focus,
+.cherry.theme__github .cherry-previewer a:not([class]):focus-visible,
+.cherry.theme__github .cherry-previewer input[type=radio]:focus,
+.cherry.theme__github .cherry-previewer input[type=radio]:focus-visible,
+.cherry.theme__github .cherry-previewer input[type=checkbox]:focus,
+.cherry.theme__github .cherry-previewer input[type=checkbox]:focus-visible {
+  outline-offset: 0;
+}
+
+.cherry.theme__github .cherry-previewer kbd {
+  display: inline-block;
+  padding: 0.25rem;
+  font: 11px ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+  line-height: 10px;
+  color: #1f2328;
+  vertical-align: middle;
+  background-color: #f6f8fa;
+  border: solid 1px var(--borderColor-muted);
+  border-bottom-color: var(--borderColor-muted);
+  border-radius: 6px;
+  box-shadow: inset 0 -1px 0 var(--borderColor-muted);
+}
+
+.cherry.theme__github .cherry-previewer h1,
+.cherry.theme__github .cherry-previewer h2,
+.cherry.theme__github .cherry-previewer h3,
+.cherry.theme__github .cherry-previewer h4,
+.cherry.theme__github .cherry-previewer h5,
+.cherry.theme__github .cherry-previewer h6 {
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.cherry.theme__github .cherry-previewer h2 {
+  font-weight: 600;
+  padding-bottom: .3em;
+  font-size: 1.5em;
+  border-bottom: 1px solid #d1d9e0b3;
+}
+
+.cherry.theme__github .cherry-previewer h3 {
+  font-weight: 600;
+  font-size: 1.25em;
+}
+
+.cherry.theme__github .cherry-previewer h4 {
+  font-weight: 600;
+  font-size: 1em;
+}
+
+.cherry.theme__github .cherry-previewer h5 {
+  font-weight: 600;
+  font-size: .875em;
+}
+
+.cherry.theme__github .cherry-previewer h6 {
+  font-weight: 600;
+  font-size: .85em;
+  color: #59636e;
+}
+
+.cherry.theme__github .cherry-previewer p {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.cherry.theme__github .cherry-previewer blockquote {
+  margin: 0;
+  padding: 0 1em;
+  color: #59636e;
+  border-left: .25em solid #d1d9e0;
+}
+
+.cherry.theme__github .cherry-previewer ul,
+.cherry.theme__github .cherry-previewer ol {
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-left: 2em;
+}
+
+.cherry.theme__github .cherry-previewer ol ol,
+.cherry.theme__github .cherry-previewer ul ol {
+  list-style-type: lower-roman;
+}
+
+.cherry.theme__github .cherry-previewer ul ul ol,
+.cherry.theme__github .cherry-previewer ul ol ol,
+.cherry.theme__github .cherry-previewer ol ul ol,
+.cherry.theme__github .cherry-previewer ol ol ol {
+  list-style-type: lower-alpha;
+}
+
+.cherry.theme__github .cherry-previewer dd {
+  margin-left: 0;
+}
+
+.cherry.theme__github .cherry-previewer tt,
+.cherry.theme__github .cherry-previewer code,
+.cherry.theme__github .cherry-previewer samp {
+  font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+  font-size: 12px;
+}
+
+.cherry.theme__github .cherry-previewer pre {
+  margin-top: 0;
+  margin-bottom: 0;
+  font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+  font-size: 12px;
+  word-wrap: normal;
+}
+
+.cherry.theme__github .cherry-previewer .octicon {
+  display: inline-block;
+  overflow: visible !important;
+  vertical-align: text-bottom;
+  fill: currentColor;
+}
+
+.cherry.theme__github .cherry-previewer input::-webkit-outer-spin-button,
+.cherry.theme__github .cherry-previewer input::-webkit-inner-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+.cherry.theme__github .cherry-previewer .mr-2 {
+  margin-right: 0.5rem !important;
+}
+
+.cherry.theme__github .cherry-previewer::before {
+  display: table;
+  content: "";
+}
+
+.cherry.theme__github .cherry-previewer::after {
+  display: table;
+  clear: both;
+  content: "";
+}
+
+.cherry.theme__github .cherry-previewer>*:first-child {
+  margin-top: 0 !important;
+}
+
+.cherry.theme__github .cherry-previewer>*:last-child {
+  margin-bottom: 0 !important;
+}
+
+.cherry.theme__github .cherry-previewer a:not([href]) {
+  color: inherit;
+  text-decoration: none;
+}
+
+.cherry.theme__github .cherry-previewer .absent {
+  color: #d1242f;
+}
+
+.cherry.theme__github .cherry-previewer .anchor {
+  float: left;
+  padding-right: 0.25rem;
+  margin-left: -20px;
+  line-height: 1;
+}
+
+.cherry.theme__github .cherry-previewer .anchor:focus {
+  outline: none;
+}
+
+.cherry.theme__github .cherry-previewer p,
+.cherry.theme__github .cherry-previewer blockquote,
+.cherry.theme__github .cherry-previewer ul,
+.cherry.theme__github .cherry-previewer ol,
+.cherry.theme__github .cherry-previewer dl,
+.cherry.theme__github .cherry-previewer table,
+.cherry.theme__github .cherry-previewer pre,
+.cherry.theme__github .cherry-previewer details {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.cherry.theme__github .cherry-previewer blockquote>:first-child {
+  margin-top: 0;
+}
+
+.cherry.theme__github .cherry-previewer blockquote>:last-child {
+  margin-bottom: 0;
+}
+
+.cherry.theme__github .cherry-previewer h1 .octicon-link,
+.cherry.theme__github .cherry-previewer h2 .octicon-link,
+.cherry.theme__github .cherry-previewer h3 .octicon-link,
+.cherry.theme__github .cherry-previewer h4 .octicon-link,
+.cherry.theme__github .cherry-previewer h5 .octicon-link,
+.cherry.theme__github .cherry-previewer h6 .octicon-link {
+  color: #1f2328;
+  vertical-align: middle;
+  visibility: hidden;
+}
+
+.cherry.theme__github .cherry-previewer h1:hover .anchor,
+.cherry.theme__github .cherry-previewer h2:hover .anchor,
+.cherry.theme__github .cherry-previewer h3:hover .anchor,
+.cherry.theme__github .cherry-previewer h4:hover .anchor,
+.cherry.theme__github .cherry-previewer h5:hover .anchor,
+.cherry.theme__github .cherry-previewer h6:hover .anchor {
+  text-decoration: none;
+}
+
+.cherry.theme__github .cherry-previewer h1:hover .anchor .octicon-link,
+.cherry.theme__github .cherry-previewer h2:hover .anchor .octicon-link,
+.cherry.theme__github .cherry-previewer h3:hover .anchor .octicon-link,
+.cherry.theme__github .cherry-previewer h4:hover .anchor .octicon-link,
+.cherry.theme__github .cherry-previewer h5:hover .anchor .octicon-link,
+.cherry.theme__github .cherry-previewer h6:hover .anchor .octicon-link {
+  visibility: visible;
+}
+
+.cherry.theme__github .cherry-previewer h1 tt,
+.cherry.theme__github .cherry-previewer h1 code,
+.cherry.theme__github .cherry-previewer h2 tt,
+.cherry.theme__github .cherry-previewer h2 code,
+.cherry.theme__github .cherry-previewer h3 tt,
+.cherry.theme__github .cherry-previewer h3 code,
+.cherry.theme__github .cherry-previewer h4 tt,
+.cherry.theme__github .cherry-previewer h4 code,
+.cherry.theme__github .cherry-previewer h5 tt,
+.cherry.theme__github .cherry-previewer h5 code,
+.cherry.theme__github .cherry-previewer h6 tt,
+.cherry.theme__github .cherry-previewer h6 code {
+  padding: 0 .2em;
+  font-size: inherit;
+}
+
+.cherry.theme__github .cherry-previewer summary h1,
+.cherry.theme__github .cherry-previewer summary h2,
+.cherry.theme__github .cherry-previewer summary h3,
+.cherry.theme__github .cherry-previewer summary h4,
+.cherry.theme__github .cherry-previewer summary h5,
+.cherry.theme__github .cherry-previewer summary h6 {
+  display: inline-block;
+}
+
+.cherry.theme__github .cherry-previewer summary h1 .anchor,
+.cherry.theme__github .cherry-previewer summary h2 .anchor,
+.cherry.theme__github .cherry-previewer summary h3 .anchor,
+.cherry.theme__github .cherry-previewer summary h4 .anchor,
+.cherry.theme__github .cherry-previewer summary h5 .anchor,
+.cherry.theme__github .cherry-previewer summary h6 .anchor {
+  margin-left: -40px;
+}
+
+.cherry.theme__github .cherry-previewer summary h1,
+.cherry.theme__github .cherry-previewer summary h2 {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.cherry.theme__github .cherry-previewer ul.no-list,
+.cherry.theme__github .cherry-previewer ol.no-list {
+  padding: 0;
+  list-style-type: none;
+}
+
+.cherry.theme__github .cherry-previewer ol[type="a s"] {
+  list-style-type: lower-alpha;
+}
+
+.cherry.theme__github .cherry-previewer ol[type="A s"] {
+  list-style-type: upper-alpha;
+}
+
+.cherry.theme__github .cherry-previewer ol[type="i s"] {
+  list-style-type: lower-roman;
+}
+
+.cherry.theme__github .cherry-previewer ol[type="I s"] {
+  list-style-type: upper-roman;
+}
+
+.cherry.theme__github .cherry-previewer ol[type="1"] {
+  list-style-type: decimal;
+}
+
+.cherry.theme__github .cherry-previewer div>ol:not([type]) {
+  list-style-type: decimal;
+}
+
+.cherry.theme__github .cherry-previewer ul ul,
+.cherry.theme__github .cherry-previewer ul ol,
+.cherry.theme__github .cherry-previewer ol ol,
+.cherry.theme__github .cherry-previewer ol ul {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.cherry.theme__github .cherry-previewer li>p {
+  margin-top: 1rem;
+}
+
+.cherry.theme__github .cherry-previewer li+li {
+  margin-top: .25em;
+}
+
+.cherry.theme__github .cherry-previewer dl {
+  padding: 0;
+}
+
+.cherry.theme__github .cherry-previewer dl dt {
+  padding: 0;
+  margin-top: 1rem;
+  font-size: 1em;
+  font-style: italic;
+  font-weight: 600;
+}
+
+.cherry.theme__github .cherry-previewer dl dd {
+  padding: 0 1rem;
+  margin-bottom: 1rem;
+}
+
+.cherry.theme__github .cherry-previewer table th {
+  font-weight: 600;
+}
+
+.cherry.theme__github .cherry-previewer table th,
+.cherry.theme__github .cherry-previewer table td {
+  padding: 6px 13px;
+  border: 1px solid #d1d9e0;
+}
+
+.cherry.theme__github .cherry-previewer table td>:last-child {
+  margin-bottom: 0;
+}
+
+.cherry.theme__github .cherry-previewer table tr {
+  background-color: #ffffff;
+  border-top: 1px solid #d1d9e0b3;
+}
+
+.cherry.theme__github .cherry-previewer table tr:nth-child(2n) {
+  background-color: #f6f8fa;
+}
+
+.cherry.theme__github .cherry-previewer table img {
+  background-color: rgba(0,0,0,0);
+}
+
+.cherry.theme__github .cherry-previewer img[align=right] {
+  padding-left: 20px;
+}
+
+.cherry.theme__github .cherry-previewer img[align=left] {
+  padding-right: 20px;
+}
+
+.cherry.theme__github .cherry-previewer .emoji {
+  max-width: none;
+  vertical-align: text-top;
+  background-color: rgba(0,0,0,0);
+}
+
+.cherry.theme__github .cherry-previewer span.frame {
+  display: block;
+  overflow: hidden;
+}
+
+.cherry.theme__github .cherry-previewer span.frame>span {
+  display: block;
+  float: left;
+  width: auto;
+  padding: 7px;
+  margin: 13px 0 0;
+  overflow: hidden;
+  border: 1px solid #d1d9e0;
+}
+
+.cherry.theme__github .cherry-previewer span.frame span img {
+  display: block;
+  float: left;
+}
+
+.cherry.theme__github .cherry-previewer span.frame span span {
+  display: block;
+  padding: 5px 0 0;
+  clear: both;
+  color: #1f2328;
+}
+
+.cherry.theme__github .cherry-previewer span.align-center {
+  display: block;
+  overflow: hidden;
+  clear: both;
+}
+
+.cherry.theme__github .cherry-previewer span.align-center>span {
+  display: block;
+  margin: 13px auto 0;
+  overflow: hidden;
+  text-align: center;
+}
+
+.cherry.theme__github .cherry-previewer span.align-center span img {
+  margin: 0 auto;
+  text-align: center;
+}
+
+.cherry.theme__github .cherry-previewer span.align-right {
+  display: block;
+  overflow: hidden;
+  clear: both;
+}
+
+.cherry.theme__github .cherry-previewer span.align-right>span {
+  display: block;
+  margin: 13px 0 0;
+  overflow: hidden;
+  text-align: right;
+}
+
+.cherry.theme__github .cherry-previewer span.align-right span img {
+  margin: 0;
+  text-align: right;
+}
+
+.cherry.theme__github .cherry-previewer span.float-left {
+  display: block;
+  float: left;
+  margin-right: 13px;
+  overflow: hidden;
+}
+
+.cherry.theme__github .cherry-previewer span.float-left span {
+  margin: 13px 0 0;
+}
+
+.cherry.theme__github .cherry-previewer span.float-right {
+  display: block;
+  float: right;
+  margin-left: 13px;
+  overflow: hidden;
+}
+
+.cherry.theme__github .cherry-previewer span.float-right>span {
+  display: block;
+  margin: 13px auto 0;
+  overflow: hidden;
+  text-align: right;
+}
+
+.cherry.theme__github .cherry-previewer code,
+.cherry.theme__github .cherry-previewer tt {
+  padding: .2em .4em;
+  margin: 0;
+  font-size: 85%;
+  white-space: break-spaces;
+  background-color: #818b981f;
+  border-radius: 6px;
+}
+
+.cherry.theme__github .cherry-previewer code br,
+.cherry.theme__github .cherry-previewer tt br {
+  display: none;
+}
+
+.cherry.theme__github .cherry-previewer del code {
+  text-decoration: inherit;
+}
+
+.cherry.theme__github .cherry-previewer samp {
+  font-size: 85%;
+}
+
+.cherry.theme__github .cherry-previewer pre code {
+  font-size: 100%;
+}
+
+.cherry.theme__github .cherry-previewer pre>code {
+  padding: 0;
+  margin: 0;
+  word-break: normal;
+  white-space: pre;
+  background: rgba(0,0,0,0);
+  border: 0;
+}
+
+.cherry.theme__github .cherry-previewer .highlight {
+  margin-bottom: 1rem;
+}
+
+.cherry.theme__github .cherry-previewer .highlight pre {
+  margin-bottom: 0;
+  word-break: normal;
+}
+
+.cherry.theme__github .cherry-previewer .highlight pre,
+.cherry.theme__github .cherry-previewer pre {
+  padding: 1rem;
+  overflow: auto;
+  font-size: 85%;
+  line-height: 1.45;
+  color: #1f2328;
+  background-color: #f6f8fa;
+  border-radius: 6px;
+}
+
+.cherry.theme__github .cherry-previewer pre code,
+.cherry.theme__github .cherry-previewer pre tt {
+  display: inline;
+  padding: 0;
+  margin: 0;
+  overflow: visible;
+  line-height: inherit;
+  word-wrap: normal;
+  background-color: rgba(0,0,0,0);
+  border: 0;
+}
+
+.cherry.theme__github .cherry-previewer .csv-data td,
+.cherry.theme__github .cherry-previewer .csv-data th {
+  padding: 5px;
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 1;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.cherry.theme__github .cherry-previewer .csv-data .blob-num {
+  padding: 10px 0.5rem 9px;
+  text-align: right;
+  background: #ffffff;
+  border: 0;
+}
+
+.cherry.theme__github .cherry-previewer .csv-data tr {
+  border-top: 0;
+}
+
+.cherry.theme__github .cherry-previewer .csv-data th {
+  font-weight: 600;
+  background: #f6f8fa;
+  border-top: 0;
+}
+
+.cherry.theme__github .cherry-previewer [data-footnote-ref]::before {
+  content: "[";
+}
+
+.cherry.theme__github .cherry-previewer [data-footnote-ref]::after {
+  content: "]";
+}
+
+.cherry.theme__github .cherry-previewer .footnotes {
+  font-size: 12px;
+  color: #59636e;
+  border-top: 1px solid #d1d9e0;
+}
+
+.cherry.theme__github .cherry-previewer .footnotes ol {
+  padding-left: 1rem;
+}
+
+.cherry.theme__github .cherry-previewer .footnotes ol ul {
+  display: inline-block;
+  padding-left: 1rem;
+  margin-top: 1rem;
+}
+
+.cherry.theme__github .cherry-previewer .footnotes li {
+  position: relative;
+}
+
+.cherry.theme__github .cherry-previewer .footnotes li:target::before {
+  position: absolute;
+  top: calc(0.5rem*-1);
+  right: calc(0.5rem*-1);
+  bottom: calc(0.5rem*-1);
+  left: calc(1.5rem*-1);
+  pointer-events: none;
+  content: "";
+  border: 2px solid #0969da;
+  border-radius: 6px;
+}
+
+.cherry.theme__github .cherry-previewer .footnotes li:target {
+  color: #1f2328;
+}
+
+.cherry.theme__github .cherry-previewer .footnotes .data-footnote-backref g-emoji {
+  font-family: monospace;
+}
+
+.cherry.theme__github .cherry-previewer .pl-c {
+  color: #59636e;
+}
+
+.cherry.theme__github .cherry-previewer .pl-c1,
+.cherry.theme__github .cherry-previewer .pl-s .pl-v {
+  color: #0550ae;
+}
+
+.cherry.theme__github .cherry-previewer .pl-e,
+.cherry.theme__github .cherry-previewer .pl-en {
+  color: #6639ba;
+}
+
+.cherry.theme__github .cherry-previewer .pl-smi,
+.cherry.theme__github .cherry-previewer .pl-s .pl-s1 {
+  color: #1f2328;
+}
+
+.cherry.theme__github .cherry-previewer .pl-ent {
+  color: #0550ae;
+}
+
+.cherry.theme__github .cherry-previewer .pl-k {
+  color: #cf222e;
+}
+
+.cherry.theme__github .cherry-previewer .pl-s,
+.cherry.theme__github .cherry-previewer .pl-pds,
+.cherry.theme__github .cherry-previewer .pl-s .pl-pse .pl-s1,
+.cherry.theme__github .cherry-previewer .pl-sr,
+.cherry.theme__github .cherry-previewer .pl-sr .pl-cce,
+.cherry.theme__github .cherry-previewer .pl-sr .pl-sre,
+.cherry.theme__github .cherry-previewer .pl-sr .pl-sra {
+  color: #0a3069;
+}
+
+.cherry.theme__github .cherry-previewer .pl-v,
+.cherry.theme__github .cherry-previewer .pl-smw {
+  color: #953800;
+}
+
+.cherry.theme__github .cherry-previewer .pl-bu {
+  color: #82071e;
+}
+
+.cherry.theme__github .cherry-previewer .pl-ii {
+  color: var(--fgColor-danger);
+  background-color: var(--bgColor-danger-muted);
+}
+
+.cherry.theme__github .cherry-previewer .pl-c2 {
+  color: #f6f8fa;
+  background-color: #cf222e;
+}
+
+.cherry.theme__github .cherry-previewer .pl-sr .pl-cce {
+  font-weight: bold;
+  color: #116329;
+}
+
+.cherry.theme__github .cherry-previewer .pl-ml {
+  color: #3b2300;
+}
+
+.cherry.theme__github .cherry-previewer .pl-mh,
+.cherry.theme__github .cherry-previewer .pl-mh .pl-en,
+.cherry.theme__github .cherry-previewer .pl-ms {
+  font-weight: bold;
+  color: #0550ae;
+}
+
+.cherry.theme__github .cherry-previewer .pl-mi {
+  font-style: italic;
+  color: #1f2328;
+}
+
+.cherry.theme__github .cherry-previewer .pl-mb {
+  font-weight: bold;
+  color: #1f2328;
+}
+
+.cherry.theme__github .cherry-previewer .pl-md {
+  color: #82071e;
+  background-color: #ffebe9;
+}
+
+.cherry.theme__github .cherry-previewer .pl-mi1 {
+  color: #116329;
+  background-color: #dafbe1;
+}
+
+.cherry.theme__github .cherry-previewer .pl-mc {
+  color: #953800;
+  background-color: #ffd8b5;
+}
+
+.cherry.theme__github .cherry-previewer .pl-mi2 {
+  color: #d1d9e0;
+  background-color: #0550ae;
+}
+
+.cherry.theme__github .cherry-previewer .pl-mdr {
+  font-weight: bold;
+  color: #8250df;
+}
+
+.cherry.theme__github .cherry-previewer .pl-ba {
+  color: #59636e;
+}
+
+.cherry.theme__github .cherry-previewer .pl-sg {
+  color: #818b98;
+}
+
+.cherry.theme__github .cherry-previewer .pl-corl {
+  text-decoration: underline;
+  color: #0a3069;
+}
+
+.cherry.theme__github .cherry-previewer [role=button]:focus:not(:focus-visible),
+.cherry.theme__github .cherry-previewer [role=tabpanel][tabindex="0"]:focus:not(:focus-visible),
+.cherry.theme__github .cherry-previewer button:focus:not(:focus-visible),
+.cherry.theme__github .cherry-previewer summary:focus:not(:focus-visible),
+.cherry.theme__github .cherry-previewer a:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+
+.cherry.theme__github .cherry-previewer [tabindex="0"]:focus:not(:focus-visible),
+.cherry.theme__github .cherry-previewer details-dialog:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.cherry.theme__github .cherry-previewer g-emoji {
+  display: inline-block;
+  min-width: 1ch;
+  font-family: "Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
+  font-size: 1em;
+  font-style: normal !important;
+  font-weight: 400;
+  line-height: 1;
+  vertical-align: -0.075em;
+}
+
+.cherry.theme__github .cherry-previewer g-emoji img {
+  width: 1em;
+  height: 1em;
+}
+
+.cherry.theme__github .cherry-previewer a:has(>p,>div,>pre,>blockquote) {
+  display: block;
+}
+
+.cherry.theme__github .cherry-previewer a:has(>p,>div,>pre,>blockquote):not(:has(.snippet-clipboard-content,>pre)) {
+  width: fit-content;
+}
+
+.cherry.theme__github .cherry-previewer a:has(>p,>div,>pre,>blockquote):has(.snippet-clipboard-content,>pre):focus-visible {
+  outline: 2px solid var(--borderColor-accent-emphasis);
+  outline-offset: 2px;
+}
+
+.cherry.theme__github .cherry-previewer .task-list-item {
+  list-style-type: none;
+}
+
+.cherry.theme__github .cherry-previewer .task-list-item label {
+  font-weight: 400;
+}
+
+.cherry.theme__github .cherry-previewer .task-list-item.enabled label {
+  cursor: pointer;
+}
+
+.cherry.theme__github .cherry-previewer .task-list-item+.task-list-item {
+  margin-top: 0.25rem;
+}
+
+.cherry.theme__github .cherry-previewer .task-list-item .handle {
+  display: none;
+}
+
+.cherry.theme__github .cherry-previewer .task-list-item-checkbox {
+  margin: 0 .2em .25em -1.4em;
+  vertical-align: middle;
+}
+
+.cherry.theme__github .cherry-previewer ul:dir(rtl) .task-list-item-checkbox {
+  margin: 0 -1.6em .25em .2em;
+}
+
+.cherry.theme__github .cherry-previewer ol:dir(rtl) .task-list-item-checkbox {
+  margin: 0 -1.6em .25em .2em;
+}
+
+.cherry.theme__github .cherry-previewer .contains-task-list:hover .task-list-item-convert-container,
+.cherry.theme__github .cherry-previewer .contains-task-list:focus-within .task-list-item-convert-container {
+  display: block;
+  width: auto;
+  height: 24px;
+  overflow: visible;
+  clip-path: none;
+}
+
+.cherry.theme__github .cherry-previewer ::-webkit-calendar-picker-indicator {
+  filter: invert(50%);
+}
+
+.cherry.theme__github .cherry-previewer .markdown-alert {
+  padding: 0.5rem 1rem;
+  margin-bottom: 1rem;
+  color: inherit;
+  border-left: .25em solid #d1d9e0;
+}
+
+.cherry.theme__github .cherry-previewer .markdown-alert>:first-child {
+  margin-top: 0;
+}
+
+.cherry.theme__github .cherry-previewer .markdown-alert>:last-child {
+  margin-bottom: 0;
+}
+
+.cherry.theme__github .cherry-previewer .markdown-alert .markdown-alert-title {
+  display: flex;
+  font-weight: 500;
+  align-items: center;
+  line-height: 1;
+}
+
+.cherry.theme__github .cherry-previewer .markdown-alert.markdown-alert-note {
+  border-left-color: #0969da;
+}
+
+.cherry.theme__github .cherry-previewer .markdown-alert.markdown-alert-note .markdown-alert-title {
+  color: #0969da;
+}
+
+.cherry.theme__github .cherry-previewer .markdown-alert.markdown-alert-important {
+  border-left-color: #8250df;
+}
+
+.cherry.theme__github .cherry-previewer .markdown-alert.markdown-alert-important .markdown-alert-title {
+  color: #8250df;
+}
+
+.cherry.theme__github .cherry-previewer .markdown-alert.markdown-alert-warning {
+  border-left-color: #9a6700;
+}
+
+.cherry.theme__github .cherry-previewer .markdown-alert.markdown-alert-warning .markdown-alert-title {
+  color: #9a6700;
+}
+
+.cherry.theme__github .cherry-previewer .markdown-alert.markdown-alert-tip {
+  border-left-color: #1a7f37;
+}
+
+.cherry.theme__github .cherry-previewer .markdown-alert.markdown-alert-tip .markdown-alert-title {
+  color: #1a7f37;
+}
+
+.cherry.theme__github .cherry-previewer .markdown-alert.markdown-alert-caution {
+  border-left-color: #cf222e;
+}
+
+.cherry.theme__github .cherry-previewer .markdown-alert.markdown-alert-caution .markdown-alert-title {
+  color: #d1242f;
+}
+
+.cherry.theme__github .cherry-previewer>*:first-child>.heading-element:first-child {
+  margin-top: 0 !important;
+}
+
+.cherry.theme__github .cherry-previewer .highlight pre:has(+.zeroclipboard-container) {
+  min-height: 52px;
+}
+
+/* === Accordion (cherry-detail) reduced motion === */
+@media (prefers-reduced-motion: reduce) {
+  .cherry.theme__github .cherry-detail details,
+  .cherry.theme__github .cherry-detail details summary,
+  .cherry.theme__github .cherry-detail details summary::before {
+    transition: none !important;
+  }
+}
+

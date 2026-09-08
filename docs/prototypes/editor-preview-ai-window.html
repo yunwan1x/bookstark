@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Editor Preview AI Window Prototype</title>
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --panel: #ffffff;
+      --panel-soft: #f8fafc;
+      --text: #172033;
+      --muted: #64748b;
+      --border: #dde5ef;
+      --border-strong: #cbd5e1;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-soft: #eff6ff;
+      --shadow: 0 18px 42px rgba(15, 23, 42, 0.16);
+      --radius: 8px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: 52px 1fr 34px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel);
+    }
+
+    .back {
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--panel-soft);
+      color: var(--muted);
+      font-size: 18px;
+    }
+
+    .crumbs {
+      display: flex;
+      align-items: center;
+      min-width: 0;
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .crumbs strong { color: var(--text); font-weight: 650; }
+
+    .toolbar {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tool-btn {
+      height: 32px;
+      min-width: 32px;
+      padding: 0 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--panel);
+      color: var(--muted);
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .tool-btn:hover {
+      background: var(--panel-soft);
+      color: var(--text);
+    }
+
+    .tool-btn.ai {
+      color: var(--primary);
+      background: var(--primary-soft);
+      border-color: rgba(37, 99, 235, 0.25);
+      font-weight: 650;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 260px;
+      min-height: 0;
+    }
+
+    .preview-shell {
+      min-width: 0;
+      overflow: auto;
+      padding: 30px 42px 60px;
+      background: #fff;
+    }
+
+    .markdown-preview {
+      max-width: 860px;
+      margin: 0 auto;
+      line-height: 1.78;
+      font-size: 16px;
+    }
+
+    .markdown-preview h1 {
+      margin: 0 0 20px;
+      font-size: 32px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    .markdown-preview h2 {
+      margin: 34px 0 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      font-size: 23px;
+      letter-spacing: 0;
+    }
+
+    .markdown-preview p { margin: 12px 0; }
+    .markdown-preview blockquote {
+      margin: 18px 0;
+      padding: 10px 14px;
+      border-left: 3px solid var(--primary);
+      background: var(--panel-soft);
+      color: #334155;
+    }
+
+    .side {
+      border-left: 1px solid var(--border);
+      background: var(--panel-soft);
+      padding: 18px 14px;
+      overflow: auto;
+    }
+
+    .side h3 {
+      margin: 0 0 12px;
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 650;
+    }
+
+    .outline {
+      display: grid;
+      gap: 4px;
+      font-size: 13px;
+      color: #475569;
+    }
+
+    .outline span {
+      padding: 6px 8px;
+      border-radius: 5px;
+    }
+
+    .outline span.active {
+      color: var(--primary);
+      background: var(--primary-soft);
+      font-weight: 650;
+    }
+
+    .statusbar {
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      gap: 12px;
+      border-top: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .ai-window {
+      position: fixed;
+      right: 34px;
+      bottom: 58px;
+      width: min(390px, calc(100vw - 24px));
+      max-height: min(640px, calc(100vh - 80px));
+      display: none;
+      flex-direction: column;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      z-index: 20;
+      overflow: hidden;
+    }
+
+    .ai-window.open { display: flex; }
+    .ai-window.max {
+      left: 50%;
+      top: 50%;
+      right: auto;
+      bottom: auto;
+      width: min(780px, calc(100vw - 32px));
+      height: min(78vh, 720px);
+      transform: translate(-50%, -50%);
+    }
+
+    .ai-head {
+      height: 44px;
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 12px;
+      border-bottom: 1px solid var(--border);
+      cursor: move;
+      user-select: none;
+    }
+
+    .ai-title {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .ai-title-icon { color: var(--primary); }
+    .ai-actions {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .icon-btn {
+      width: 28px;
+      height: 28px;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    .icon-btn:hover {
+      background: var(--panel-soft);
+      color: var(--text);
+    }
+
+    .ai-body {
+      min-height: 0;
+      display: grid;
+      grid-template-rows: auto auto minmax(88px, auto) auto auto;
+      gap: 9px;
+      padding: 12px;
+      overflow: auto;
+    }
+
+    .ai-window.max .ai-body {
+      flex: 1;
+      grid-template-rows: auto minmax(130px, 0.9fr) minmax(190px, 1.1fr) auto auto;
+      gap: 10px;
+    }
+
+    .context-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .context-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex: 0 0 auto;
+    }
+
+    .quick {
+      height: 30px;
+      padding: 0 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--panel-soft);
+      color: #475569;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .quick:hover {
+      border-color: rgba(37, 99, 235, 0.35);
+      background: var(--primary-soft);
+      color: var(--primary);
+    }
+
+    .context-status {
+      min-width: 0;
+      margin-left: auto;
+      color: var(--muted);
+      font-size: 13px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .context-locator {
+      appearance: none;
+      border: 0;
+      padding: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      cursor: pointer;
+    }
+
+    .context-locator:hover {
+      color: var(--primary);
+    }
+
+    .context-preview {
+      display: none;
+      min-height: 62px;
+      max-height: 88px;
+      overflow: auto;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel-soft);
+      color: #475569;
+      font-size: 13px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+
+    .context-preview.show { display: block; }
+    .ai-window.max .context-preview {
+      height: 100%;
+      max-height: none;
+    }
+
+    .prompt {
+      width: 100%;
+      min-height: 96px;
+      resize: vertical;
+      padding: 10px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      outline: none;
+      color: var(--text);
+      font: inherit;
+      line-height: 1.55;
+    }
+
+    .prompt:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    .ai-window.max .prompt {
+      height: 100%;
+      min-height: 190px;
+      resize: none;
+    }
+
+    .quick-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .ai-foot {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 10px 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .primary,
+    .secondary {
+      height: 34px;
+      padding: 0 13px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .primary {
+      background: var(--primary);
+      color: #fff;
+      font-weight: 650;
+    }
+
+    .primary:hover { background: var(--primary-hover); }
+    .secondary {
+      background: var(--panel);
+      color: var(--primary);
+      border-color: rgba(37, 99, 235, 0.4);
+    }
+
+    .secondary.hidden { display: none; }
+
+    .floating-hint {
+      position: fixed;
+      left: 20px;
+      bottom: 48px;
+      width: 330px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+      color: #475569;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    ::selection {
+      background: rgba(37, 99, 235, 0.2);
+    }
+
+    @media (max-width: 720px) {
+      .workspace { grid-template-columns: 1fr; }
+      .side { display: none; }
+      .preview-shell { padding: 22px 18px 80px; }
+      .toolbar .tool-btn:not(.ai) { display: none; }
+      .ai-window {
+        left: 10px;
+        right: 10px;
+        top: 58px;
+        bottom: auto;
+        width: auto;
+        max-height: calc(100vh - 78px);
+      }
+      .ai-window.max {
+        left: 10px;
+        top: 16px;
+        width: auto;
+        height: calc(100vh - 32px);
+        transform: none;
+      }
+      .context-row {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+      .context-status { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <button class="back" type="button" aria-label="返回">‹</button>
+      <div class="crumbs"><strong>预览</strong><span>&nbsp;/&nbsp;推荐系统方案.md</span></div>
+      <div class="toolbar">
+        <button class="tool-btn" type="button">编辑</button>
+        <button class="tool-btn" type="button">搜索</button>
+        <button class="tool-btn ai" id="openAI" type="button">✦ AI</button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <section class="preview-shell" id="previewShell">
+        <article class="markdown-preview" id="markdownPreview">
+          <h1>推荐系统方案</h1>
+          <p>推荐系统的目标不是简单地提升点击率，而是在用户目标、业务目标与内容生态之间建立稳定的匹配机制。一个可持续的推荐系统需要同时处理召回、排序、重排、反馈学习和安全治理。</p>
+          <h2>一、问题定义</h2>
+          <p>在产品早期，推荐系统最容易犯的错误是直接进入模型优化，而没有定义清楚推荐场景。不同场景下，用户意图、时效性、内容消费成本和业务约束都不同。</p>
+          <blockquote>原型交互：在预览态里选中任意一段文字，然后点击右上角 AI。AI 窗口会把选中文本作为上下文。</blockquote>
+          <p>例如首页信息流更关注探索效率，详情页相关推荐更关注主题连续性，搜索后的推荐则更接近意图补全。系统设计必须先把这些场景拆开。</p>
+          <h2>二、整体架构</h2>
+          <p>一个成熟的推荐系统通常包含多路召回、粗排、精排、重排和策略后处理。召回负责覆盖可能相关的候选集，排序负责从候选集中找出最可能满足用户目标的内容。</p>
+          <p>重排层需要考虑多样性、去重、疲劳控制、业务规则和安全过滤。最终展示结果不应该只由模型分数决定，而应该由模型和策略共同决定。</p>
+          <h2>三、数据闭环</h2>
+          <p>推荐系统的长期效果来自反馈闭环。曝光、点击、停留、收藏、跳出、不感兴趣等行为都应该进入统一的事件体系，并在训练、评估和线上诊断中复用。</p>
+        </article>
+      </section>
+
+      <aside class="side">
+        <h3>大纲</h3>
+        <div class="outline">
+          <span class="active">推荐系统方案</span>
+          <span>一、问题定义</span>
+          <span>二、整体架构</span>
+          <span>三、数据闭环</span>
+        </div>
+      </aside>
+    </main>
+
+    <footer class="statusbar">
+      <span>预览模式</span>
+      <span>Markdown</span>
+      <span>已保存</span>
+    </footer>
+  </div>
+
+  <section class="ai-window" id="aiWindow" role="dialog" aria-label="AI 对话">
+    <header class="ai-head" id="aiHead">
+      <div class="ai-title"><span class="ai-title-icon">✦</span><span>AI 对话</span></div>
+      <div class="ai-actions">
+        <button class="icon-btn" id="maxAI" type="button" title="最大化">□</button>
+        <button class="icon-btn" id="closeAI" type="button" title="关闭">×</button>
+      </div>
+    </header>
+    <div class="ai-body">
+      <div class="context-row">
+        <div class="context-actions">
+          <button class="quick" id="useSelection" type="button">选区</button>
+          <button class="quick" id="useAll" type="button">全文</button>
+          <button class="quick" id="clearContext" type="button">清空</button>
+        </div>
+        <div class="context-status" id="contextStatus">未选择上下文</div>
+      </div>
+      <div class="context-preview" id="contextPreview"></div>
+      <textarea class="prompt" id="prompt" placeholder="基于选中的预览内容提问，或让 AI 总结、改写、提炼要点。"></textarea>
+      <div class="quick-row" id="quickRow"></div>
+    </div>
+    <footer class="ai-foot">
+      <button class="secondary hidden" id="replaceBtn" type="button">替换选区</button>
+      <button class="primary" id="askBtn" type="button">发送</button>
+    </footer>
+  </section>
+
+  <div class="floating-hint">
+    预览态 AI 是“对话/提问”优先：默认不修改文档。选中预览内容后，窗口切到选区上下文；点击“选区”可重新定位到原文。
+  </div>
+
+  <script>
+    const preview = document.getElementById('markdownPreview');
+    const ai = document.getElementById('aiWindow');
+    const openAI = document.getElementById('openAI');
+    const closeAI = document.getElementById('closeAI');
+    const maxAI = document.getElementById('maxAI');
+    const useSelection = document.getElementById('useSelection');
+    const useAll = document.getElementById('useAll');
+    const clearContext = document.getElementById('clearContext');
+    const contextStatus = document.getElementById('contextStatus');
+    const contextPreview = document.getElementById('contextPreview');
+    const quickRow = document.getElementById('quickRow');
+    const replaceBtn = document.getElementById('replaceBtn');
+    const prompt = document.getElementById('prompt');
+
+    const defaultActions = [
+      ['总结全文', '请总结这篇文档的核心观点。'],
+      ['提出问题', '请基于全文提出 5 个值得继续研究的问题。'],
+      ['提炼要点', '请提炼全文的关键要点。'],
+      ['生成结论', '请基于全文写一段结论。']
+    ];
+
+    const selectionActions = [
+      ['解释这段', '请解释选中内容的含义。'],
+      ['改写这段', '请把选中内容改写得更清晰。'],
+      ['提炼要点', '请提炼选中内容的要点。'],
+      ['继续追问', '请基于选中内容提出追问。']
+    ];
+
+    let context = { type: 'none', text: '', range: null };
+
+    function selectedText() {
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) return null;
+      if (!preview.contains(selection.anchorNode) || !preview.contains(selection.focusNode)) return null;
+      const text = selection.toString().trim();
+      if (!text) return null;
+      return { text, range: selection.getRangeAt(0).cloneRange() };
+    }
+
+    function setActions(actions) {
+      quickRow.innerHTML = actions.map(([label, value]) => (
+        '<button class="quick" type="button" data-prompt="' + value.replace(/"/g, '&quot;') + '">' + label + '</button>'
+      )).join('');
+    }
+
+    function setContext(next) {
+      context = next;
+      if (next.type === 'selection') {
+        contextStatus.innerHTML = '<button class="context-locator" type="button" title="定位到选区">选区</button> · ' + next.text.length + ' 字';
+        contextPreview.textContent = next.text;
+        contextPreview.classList.add('show');
+        replaceBtn.classList.remove('hidden');
+        setActions(selectionActions);
+      } else if (next.type === 'all') {
+        contextStatus.textContent = '全文 · ' + next.text.length + ' 字';
+        contextPreview.textContent = next.text.slice(0, 420);
+        contextPreview.classList.add('show');
+        replaceBtn.classList.add('hidden');
+        setActions(defaultActions);
+      } else {
+        contextStatus.textContent = '未选择上下文';
+        contextPreview.textContent = '';
+        contextPreview.classList.remove('show');
+        replaceBtn.classList.add('hidden');
+        setActions(defaultActions);
+      }
+    }
+
+    function locateSelection() {
+      if (!context.range) return;
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(context.range);
+      const rect = context.range.getBoundingClientRect();
+      const shell = document.getElementById('previewShell');
+      shell.scrollTo({
+        top: shell.scrollTop + rect.top - (window.innerHeight / 2),
+        behavior: 'smooth'
+      });
+      preview.focus({ preventScroll: true });
+    }
+
+    openAI.addEventListener('click', () => {
+      const current = selectedText();
+      if (current) setContext({ type: 'selection', text: current.text, range: current.range });
+      else setContext({ type: 'none', text: '', range: null });
+      ai.classList.add('open');
+      prompt.focus();
+    });
+
+    closeAI.addEventListener('click', () => ai.classList.remove('open'));
+    maxAI.addEventListener('click', () => ai.classList.toggle('max'));
+    useSelection.addEventListener('click', () => {
+      const current = selectedText();
+      if (current) setContext({ type: 'selection', text: current.text, range: current.range });
+    });
+    useAll.addEventListener('click', () => setContext({ type: 'all', text: preview.textContent.trim(), range: null }));
+    clearContext.addEventListener('click', () => {
+      window.getSelection().removeAllRanges();
+      setContext({ type: 'none', text: '', range: null });
+    });
+
+    contextStatus.addEventListener('click', event => {
+      if (event.target.closest('.context-locator')) locateSelection();
+    });
+
+    quickRow.addEventListener('click', event => {
+      const btn = event.target.closest('button[data-prompt]');
+      if (!btn) return;
+      prompt.value = btn.dataset.prompt;
+      prompt.focus();
+    });
+
+    setActions(defaultActions);
+  </script>
+</body>
+</html>

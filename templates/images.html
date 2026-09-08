@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v={{assetVer "/static/favicon.svg"}}">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{{call .T "meta.description"}}">
+    <title>{{call .T "page.images.title"}} - BookStark</title>
+    <link href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}" rel="stylesheet">
+    <style>
+    /* === Page Layout === */
+    .images-layout { max-width: 960px; margin: 0 auto; padding: 0 16px 24px; }
+
+    /* === Toolbar === */
+    .images-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 16px; }
+    .images-toolbar .search-wrap { position: relative; flex: 1; min-width: 160px; }
+    .images-toolbar .search-wrap i { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--color-gray-400); font-size: 12px; pointer-events: none; }
+    .images-toolbar .search-input { width: 100%; padding: 7px 10px 7px 30px; border: 1px solid var(--color-gray-300); border-radius: var(--radius-md); font-size: 13px; background: var(--color-bg-card); color: var(--color-text); transition: border-color 0.15s ease, box-shadow 0.15s ease; }
+    .images-toolbar .search-input:focus { border-color: var(--color-focus); box-shadow: 0 0 0 2px var(--color-focus-ring); outline: none; }
+    .images-toolbar .search-input::placeholder { color: var(--color-text-placeholder); }
+    .images-stats { font-size: 12px; color: var(--color-gray-500); white-space: nowrap; }
+    .images-view-toggle { display: flex; border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+    .images-view-toggle button { background: var(--color-bg-card); border: none; padding: 5px 10px; cursor: pointer; color: var(--color-gray-500); font-size: 13px; transition: background-color 0.15s ease, color 0.15s ease; }
+    .images-view-toggle button:hover { color: var(--color-gray-700); background: var(--color-gray-50); }
+    .images-view-toggle button.active { background: var(--color-primary); color: #fff; }
+    .images-view-toggle button + button { border-left: 1px solid var(--color-border); }
+    .btn-upload { background: var(--color-primary); color: #fff; border: none; padding: 7px 14px; border-radius: var(--radius-md); font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: background-color 0.15s ease; white-space: nowrap; }
+    .btn-upload:hover { background: var(--color-primary-hover); }
+    .btn-upload i { font-size: 12px; }
+
+    /* === Grid View === */
+    .images-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    @media (min-width: 768px) { .images-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (min-width: 1024px) { .images-grid { grid-template-columns: repeat(4, 1fr); } }
+    .img-card { background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; cursor: pointer; transition: box-shadow 0.15s ease, border-color 0.15s ease; position: relative; }
+    .img-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-color: var(--color-primary); }
+    .img-card.selected { border-color: var(--color-primary); box-shadow: 0 0 0 2px var(--color-focus-ring); }
+    .img-card-check { position: absolute; top: 6px; left: 6px; z-index: 2; width: 20px; height: 20px; border-radius: 4px; border: 2px solid var(--color-gray-300); background: rgba(255,255,255,0.85); cursor: pointer; display: none; align-items: center; justify-content: center; font-size: 11px; color: #fff; transition: background 0.15s ease, border-color 0.15s ease; }
+    .select-mode .img-card-check { display: flex; }
+    .img-card-check.checked { background: var(--color-primary); border-color: var(--color-primary); }
+    [data-theme="dark"] .img-card-check { background: rgba(30,41,59,0.85); }
+    .img-card-thumb { position: relative; width: 100%; padding-top: 66.67%; background: var(--color-gray-100); overflow: hidden; }
+    .img-card-thumb img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transition: opacity 0.2s ease; }
+    .img-card-info { padding: 8px 10px; }
+    .img-card-name { font-size: 13px; font-weight: 600; color: var(--color-gray-800); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.4; }
+    .img-card-meta { font-size: 11px; color: var(--color-gray-500); margin-top: 2px; }
+
+    /* === List View === */
+    .images-list { display: flex; flex-direction: column; gap: 2px; }
+    .images-list-header { display: flex; align-items: center; gap: 10px; padding: 8px 12px; font-size: 11px; color: var(--color-gray-500); font-weight: 600; background: var(--color-gray-50); border: 1px solid var(--color-border); border-radius: var(--radius-lg) var(--radius-lg) 0 0; border-bottom: none; }
+    .img-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--color-bg-card); border: 1px solid var(--color-border); border-top: none; transition: background-color 0.15s ease; }
+    .img-row:last-child { border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
+    .img-row:hover { background: var(--color-bg-hover); }
+    .img-row.selected { background: var(--color-primary-light); }
+    .img-row-check { width: 20px; height: 20px; border-radius: 4px; border: 2px solid var(--color-gray-300); cursor: pointer; display: none; align-items: center; justify-content: center; font-size: 11px; color: #fff; flex-shrink: 0; transition: background 0.15s ease, border-color 0.15s ease; }
+    .select-mode .img-row-check { display: flex; }
+    .img-row-check.checked { background: var(--color-primary); border-color: var(--color-primary); }
+    .col-check { width: 20px; flex-shrink: 0; display: none; }
+    .select-mode .col-check { display: block; }
+    .img-row-thumb { width: 36px; height: 36px; border-radius: var(--radius-sm); overflow: hidden; flex-shrink: 0; background: var(--color-gray-100); cursor: pointer; }
+    .img-row-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .img-row-name { flex: 1; min-width: 0; font-size: 13px; font-weight: 600; color: var(--color-gray-800); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+    .img-row-name:hover { color: var(--color-primary); }
+    .img-row-dims { font-size: 11px; color: var(--color-gray-500); white-space: nowrap; width: 80px; text-align: center; }
+    .img-row-size { font-size: 11px; color: var(--color-gray-500); white-space: nowrap; width: 70px; text-align: right; }
+    .img-row-date { font-size: 11px; color: var(--color-gray-500); white-space: nowrap; width: 80px; text-align: center; }
+    .img-row-url { display: flex; align-items: center; gap: 4px; min-width: 0; flex: 1; }
+    .img-row-url-text { font-size: 11px; color: var(--color-gray-500); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+    .img-row-copy { background: none; border: none; cursor: pointer; color: var(--color-gray-500); padding: 3px 6px; border-radius: var(--radius-sm); font-size: 11px; flex-shrink: 0; transition: color 0.15s ease, background-color 0.15s ease; }
+    .img-row-copy:hover { color: var(--color-primary); background: var(--color-primary-light); }
+    .img-row-del { background: none; border: none; cursor: pointer; color: var(--color-gray-500); padding: 3px 6px; border-radius: var(--radius-sm); font-size: 12px; flex-shrink: 0; transition: color 0.15s ease, background-color 0.15s ease; }
+    .img-row-del:hover { color: var(--color-danger); background: var(--color-danger-light); }
+
+    /* List header/row column widths */
+    .col-thumb { width: 36px; flex-shrink: 0; }
+    .col-name { flex: 1; min-width: 0; }
+    .col-dims { width: 80px; text-align: center; }
+    .col-size { width: 70px; text-align: right; }
+    .col-date { width: 80px; text-align: center; }
+    .col-url { flex: 1; min-width: 0; }
+    .col-actions { width: 56px; text-align: center; flex-shrink: 0; }
+
+    /* === Empty State === */
+    .images-empty { text-align: center; padding: 80px 20px; color: var(--color-gray-500); }
+    .images-empty i { font-size: 48px; margin-bottom: 16px; display: block; color: var(--color-gray-300); }
+    .images-empty p { font-size: 14px; }
+
+    /* === Loading Skeleton === */
+    .images-skeleton { position: relative; overflow: hidden; }
+    .images-skeleton::after { content: ''; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.58) 48%, transparent 100%); animation: images-skeleton-shimmer 1.3s ease-in-out infinite; pointer-events: none; }
+    [data-theme="dark"] .images-skeleton::after { background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 48%, transparent 100%); }
+    .images-skeleton-block { background: var(--color-gray-100); border-radius: 6px; }
+    .images-skeleton-card { background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; }
+    .images-skeleton-thumb { width: 100%; padding-top: 66.67%; border-radius: 0; }
+    .images-skeleton-info { padding: 8px 10px 10px; }
+    .images-skeleton-title { height: 13px; width: 72%; margin-bottom: 8px; }
+    .images-skeleton-meta { height: 11px; width: 48%; }
+    .images-skeleton-list { display: flex; flex-direction: column; gap: 2px; }
+    .images-skeleton-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--color-bg-card); border: 1px solid var(--color-border); border-top: none; }
+    .images-skeleton-row:first-child { border-top: 1px solid var(--color-border); border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+    .images-skeleton-row:last-child { border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
+    .images-skeleton-row-thumb { width: 36px; height: 36px; flex-shrink: 0; border-radius: var(--radius-sm); }
+    .images-skeleton-row-name { height: 13px; flex: 1; min-width: 120px; }
+    .images-skeleton-row-dim { height: 11px; width: 70px; flex-shrink: 0; }
+    .images-skeleton-row-url { height: 11px; flex: 1; min-width: 90px; }
+    .images-skeleton-row-action { width: 28px; height: 20px; flex-shrink: 0; }
+    @keyframes images-skeleton-shimmer {
+        100% { transform: translateX(100%); }
+    }
+
+    /* === Drag & Drop overlay === */
+    .images-content { position: relative; min-height: 300px; transition: border-color 0.15s ease, background-color 0.15s ease; border: 2px dashed transparent; border-radius: var(--radius-lg); }
+    .images-content.drag-over { border-color: var(--color-primary); background: var(--color-primary-light); }
+    .images-content.drag-over::after { content: attr(data-drag-hint); position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 600; color: var(--color-primary); background: rgba(255,255,255,0.7); border-radius: var(--radius-lg); z-index: 5; pointer-events: none; }
+    [data-theme="dark"] .images-content.drag-over::after { background: rgba(15,23,42,0.7); }
+
+    /* === Preview Dialog === */
+    .img-preview-dialog { text-align: center; }
+    .img-preview-dialog img { max-width: 100%; max-height: 60vh; border-radius: var(--radius-md); background: var(--color-gray-100); }
+    .img-preview-info { margin-top: 12px; font-size: 12px; color: var(--color-gray-500); line-height: 1.8; text-align: left; }
+    .img-preview-info span { margin-right: 12px; }
+    .img-preview-actions { margin-top: 16px; display: flex; gap: 8px; justify-content: flex-end; }
+
+    /* === Upload Progress === */
+    .upload-progress { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 6px; }
+    .upload-item { background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 8px 14px; font-size: 12px; color: var(--color-gray-700); box-shadow: 0 4px 12px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 8px; animation: slideInRight 0.2s ease-out; min-width: 200px; max-width: 300px; }
+    .upload-item i { flex-shrink: 0; }
+    .upload-item .upload-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+    .upload-item.success i { color: var(--color-success); }
+    .upload-item.error i { color: var(--color-danger); }
+    .upload-item.uploading i { color: var(--color-primary); }
+
+    /* === Select Mode === */
+    .btn-select { background: none; border: 1px solid var(--color-border); padding: 6px 12px; border-radius: var(--radius-md); font-size: 13px; cursor: pointer; color: var(--color-gray-700); display: inline-flex; align-items: center; gap: 4px; transition: background 0.15s ease, border-color 0.15s ease; white-space: nowrap; }
+    .btn-select:hover { background: var(--color-gray-50); border-color: var(--color-gray-400); }
+    .btn-select.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+    .btn-select i { font-size: 12px; }
+    .select-bar { display: none; align-items: center; gap: 10px; padding: 10px 14px; margin-bottom: 12px; background: var(--color-bg-card); border: 1px solid var(--color-primary); border-radius: var(--radius-lg); font-size: 13px; color: var(--color-gray-700); }
+    .select-bar.visible { display: flex; }
+    .select-bar-count { color: var(--color-primary); font-weight: 600; }
+    .btn-select-all { background: none; border: none; cursor: pointer; color: var(--color-primary); font-size: 13px; padding: 2px 6px; border-radius: var(--radius-sm); }
+    .btn-select-all:hover { background: var(--color-primary-light); }
+    .btn-batch-del { background: none; border: 1px solid var(--color-danger); color: var(--color-danger); padding: 4px 12px; border-radius: var(--radius-md); font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; transition: background 0.15s ease; }
+    .btn-batch-del:hover { background: var(--color-danger-light); }
+    .btn-batch-del:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-batch-del i { font-size: 12px; }
+    .btn-cancel-select { background: none; border: none; cursor: pointer; color: var(--color-gray-500); font-size: 13px; padding: 2px 6px; margin-left: auto; }
+    .btn-cancel-select:hover { color: var(--color-gray-700); }
+
+    /* === Responsive === */
+    @media (max-width: 768px) {
+        .images-list-header { display: none; }
+        .img-row { flex-wrap: wrap; padding: 10px 12px; }
+        .img-row-name { flex: 1 1 calc(100% - 50px); }
+        .img-row-dims, .img-row-size, .img-row-date { width: auto; flex: 0 0 auto; font-size: 10px; }
+        .img-row-url { flex: 1 1 100%; margin-top: 4px; }
+        .col-dims, .col-size, .col-date, .col-url { display: none; }
+        .col-actions { width: auto; }
+        .images-stats { font-size: 11px; }
+        .images-skeleton-row { flex-wrap: wrap; padding: 10px 12px; }
+        .images-skeleton-row-name { flex: 1 1 calc(100% - 50px); }
+        .images-skeleton-row-dim { width: 58px; }
+        .images-skeleton-row-url { flex-basis: 100%; }
+    }
+    @media (max-width: 640px) {
+        .images-toolbar { gap: 6px; }
+        .images-grid { gap: 8px; }
+        .select-bar { flex-wrap: wrap; gap: 6px; }
+        .btn-upload, .btn-select { padding: 7px; font-size: 0; }
+        .btn-upload i, .btn-select i { font-size: 14px; }
+    }
+
+    /* === Reduced motion === */
+    @media (prefers-reduced-motion: reduce) {
+        .img-card, .img-row, .images-content, .btn-upload, .images-view-toggle button, .img-row-copy, .img-row-del { transition: none; }
+        .upload-item { animation: none; }
+        .images-skeleton::after { display: none; }
+    }
+    </style>
+    {{template "head-assets" .}}
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col">
+    {{template "header" .}}
+    <main class="flex-1" role="main">
+        <div class="images-layout">
+            <div class="page-sticky-header">
+                <h1 class="page-title mt-6 mb-3">{{call .T "image.page.title"}}</h1>
+                <div class="images-toolbar">
+                    <div class="search-wrap">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input id="img-search" type="text" class="search-input" placeholder="{{call .T "image.search.placeholder"}}" aria-label="{{call .T "image.search.aria"}}">
+                    </div>
+                    <div class="images-view-toggle">
+                        <button id="view-grid" class="active" aria-label="{{call .T "image.view.grid"}}" title="{{call .T "image.view.grid"}}"><i class="fa-solid fa-table-cells"></i></button>
+                        <button id="view-list" aria-label="{{call .T "image.view.list"}}" title="{{call .T "image.view.list"}}"><i class="fa-solid fa-list"></i></button>
+                    </div>
+                    
+                    <input type="file" id="img-file-input" multiple accept="image/*" style="display:none" aria-label="{{call .T "image.upload.aria"}}">
+                    <button id="btn-upload" class="btn-upload" aria-label="{{call .T "image.upload.aria"}}"><i class="fa-solid fa-cloud-arrow-up"></i>{{call .T "image.upload"}}</button>
+                    <button id="btn-select-mode" class="btn-select" aria-label="{{call .T "image.select"}}"><i class="fa-regular fa-square-check"></i>{{call .T "image.select"}}</button>
+                </div>
+            </div>
+
+            <div id="select-bar" class="select-bar">
+                <span>{{call .T "image.select.count"}} <span id="select-count" class="select-bar-count">0</span> {{call .T "image.select.count_suffix"}}</span>
+                <button id="btn-select-all" class="btn-select-all" type="button">{{call .T "image.select.all"}}</button>
+                <button id="btn-batch-del" class="btn-batch-del" type="button" disabled><i class="fa-solid fa-trash-can"></i>{{call .T "image.select.delete"}}</button>
+                <button id="btn-cancel-select" class="btn-cancel-select" type="button">{{call .T "image.select.cancel"}}</button>
+            </div>
+
+            <div class="images-content" id="images-content" data-drag-hint="{{call .T "image.drag_hint"}}">
+                <span id="img-stats" class="images-stats"></span>
+                <div id="img-list"></div>
+                <div id="img-empty" class="images-empty" style="display:none">
+                    <i class="fa-solid fa-images"></i>
+                    <p>{{call .T "image.empty"}}</p>
+                </div>
+            </div>
+
+            <div id="img-pagination" class="flex justify-center items-center gap-2 py-4 text-sm"></div>
+        </div>
+    </main>
+
+    <div class="upload-progress" id="upload-progress"></div>
+
+    {{template "footer" .}}
+
+    <script src="/static/js/uploads.js?v={{assetVer "/static/js/uploads.js"}}"></script>
+</body>
+</html>

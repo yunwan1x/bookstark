@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    {{template "editor_head" .}}
+    <title>{{if eq .EditorType "blog"}}{{.Blog.BlogTitle}}{{else}}{{.Book.BookName}}{{end}} - BookStark</title>
+</head>
+<body class="bg-slate-50 flex flex-col overflow-hidden editor-full-height">
+    <!-- Drawer overlay (mobile) -->
+    <div class="drawer-overlay" id="drawerOverlay"></div>
+
+    <div class="flex flex-1 overflow-hidden editor-shell">
+        <!-- Sidebar -->
+        <div id="sidebar" class="bg-white border-r border-slate-200 flex flex-col shrink-0{{if eq .EditorType "blog"}} collapsed{{end}}">
+            <!-- Tab bar -->
+            <div class="sidebar-tabs" role="tablist" aria-label="{{call .T "editor.sidebar.aria"}}">
+                {{if eq .EditorType "book"}}
+                <button class="sidebar-tab active" id="tab-tree" role="tab" aria-selected="true" aria-controls="panel-tree" onclick="switchSidebarTab('tree')">
+                    <i class="fa-solid fa-folder-tree"></i> {{call .T "editor.sidebar.tab.toc"}}
+                </button>
+                {{end}}
+                <button class="sidebar-tab{{if eq .EditorType "blog"}} active{{end}}" id="tab-outline" role="tab" aria-selected="{{if eq .EditorType "blog"}}true{{else}}false{{end}}" aria-controls="panel-outline" onclick="switchSidebarTab('outline')">
+                    <i class="fa-solid fa-list-ul"></i> {{call .T "editor.sidebar.tab.outline"}}
+                </button>
+                <button onclick="toggleSidebar()" class="sidebar-tab-close" title="{{call .T "editor.sidebar.collapse"}}" aria-label="{{call .T "editor.sidebar.collapse"}}">
+                    <i class="fa-solid fa-chevron-left" style="font-size:10px;"></i>
+                </button>
+            </div>
+
+            {{if eq .EditorType "book"}}
+            <!-- Tab panel: 目录 -->
+            <div class="tab-panel active" id="panel-tree" role="tabpanel" aria-labelledby="tab-tree">
+                <!-- Search -->
+                <div class="py-2 px-3 border-b border-slate-100">
+                    <div class="sidebar-search-wrapper">
+                        <i class="fa-solid fa-magnifying-glass sidebar-search-icon"></i>
+                        <input id="doc-search" type="text" class="sidebar-search-input" placeholder="{{call .T "editor.sidebar.search"}}" aria-label="{{call .T "editor.sidebar.search.aria"}}" oninput="searchDocs(this.value)">
+                    </div>
+                </div>
+                <!-- Toolbar -->
+                <div class="sidebar-toolbar">
+                    {{if .AIEnabled}}<button class="toolbar-btn toolbar-btn-ai" onclick="openBookAIOutline()" aria-label="{{call .T "editor.sidebar.ai_outline.aria"}}" title="{{call .T "editor.sidebar.ai_outline"}}"><i class="fa-solid fa-wand-magic-sparkles"></i> AI</button>{{end}}
+                    <button class="toolbar-btn" onclick="toggleExpandAll()" id="btn-expand-all" aria-label="{{call .T "editor.sidebar.expand_all.aria"}}"><i class="fa-solid fa-compress"></i></button>
+                    <div class="toolbar-spacer"></div>
+                    <button class="toolbar-btn toolbar-icon-btn" onclick="addDocFromToolbar()" id="tb-new-child" title="{{call .T "editor.create_doc.aria"}}" aria-label="{{call .T "editor.create_doc.aria"}}"><i class="fa-solid fa-file-circle-plus"></i></button>
+                    <button class="toolbar-btn toolbar-icon-btn" onclick="renameCurrentDoc()" id="tb-rename" title="{{call .T "editor.doc.rename"}}" aria-label="{{call .T "editor.doc.rename"}}" style="display:none;"><i class="fa-solid fa-pen"></i></button>
+                    <button class="toolbar-btn toolbar-icon-btn toolbar-icon-danger" onclick="deleteCurrentDoc()" id="tb-delete" title="{{call .T "editor.doc.delete"}}" aria-label="{{call .T "editor.doc.delete"}}" style="display:none;"><i class="fa-solid fa-trash-can"></i></button>
+                </div>
+                <!-- Tree -->
+                <div id="doc-tree" class="flex-1 overflow-y-auto"></div>
+            </div>
+            {{end}}
+
+            <!-- Tab panel: 大纲 -->
+            <div class="tab-panel{{if eq .EditorType "blog"}} active{{end}}" id="panel-outline" role="tabpanel" aria-labelledby="tab-outline">
+                <div class="outline-toolbar">
+                    <button class="toolbar-btn" onclick="expandOutlineAll()" aria-label="{{call .T "editor.outline.expand_all.aria"}}"><i class="fa-solid fa-angles-down"></i> {{call .T "editor.outline.expand"}}</button>
+                    <button class="toolbar-btn" onclick="collapseOutlineAll()" aria-label="{{call .T "editor.outline.collapse_all.aria"}}"><i class="fa-solid fa-angles-up"></i> {{call .T "editor.outline.collapse"}}</button>
+                    <div class="toolbar-spacer"></div>
+                </div>
+                <div class="outline-container" id="outline-content"></div>
+            </div>
+
+            {{if eq .EditorType "book"}}
+            <!-- Footer: current doc actions -->
+            <div id="doc-footer" class="sidebar-footer" style="display:none;">
+                <div class="footer-move-row">
+                    <button onclick="moveDocUp()" id="btn-move-up" class="move-btn" aria-label="{{call .T "editor.doc.move_up"}}" title="{{call .T "editor.doc.move_up"}}"><i class="fa-solid fa-arrow-up"></i><span class="move-btn-text">{{call .T "editor.doc.move_up"}}</span></button>
+                    <button onclick="moveDocDown()" id="btn-move-down" class="move-btn" aria-label="{{call .T "editor.doc.move_down"}}" title="{{call .T "editor.doc.move_down"}}"><i class="fa-solid fa-arrow-down"></i><span class="move-btn-text">{{call .T "editor.doc.move_down"}}</span></button>
+                    <button onclick="indentDoc()" id="btn-indent" class="move-btn" aria-label="{{call .T "editor.doc.indent"}}" title="{{call .T "editor.doc.indent"}}"><i class="fa-solid fa-arrow-right"></i><span class="move-btn-text">{{call .T "editor.doc.indent"}}</span></button>
+                    <button onclick="outdentDoc()" id="btn-outdent" class="move-btn" aria-label="{{call .T "editor.doc.outdent"}}" title="{{call .T "editor.doc.outdent"}}"><i class="fa-solid fa-arrow-left"></i><span class="move-btn-text">{{call .T "editor.doc.outdent"}}</span></button>
+                </div>
+            </div>
+            {{end}}
+        </div>
+
+        <!-- Main content area -->
+        <div class="flex-1 flex flex-col overflow-hidden editor-main">
+            <!-- Top bar -->
+            <div class="h-10 bg-white border-b border-slate-200 flex items-center px-3 text-[13px] shrink-0 gap-2 relative">
+                {{if eq .EditorType "book"}}
+                <!-- Mobile hamburger -->
+                <button class="hamburger-btn tb-btn tb-btn-slate" id="hamburgerBtn" title="{{call .T "editor.topbar.open_toc"}}" aria-label="{{call .T "editor.topbar.open_toc"}}" onclick="openDrawer()"><i class="fa-solid fa-bars"></i></button>
+                <!-- Desktop collapse btn (shown when sidebar collapsed) -->
+                <button class="sidebar-collapse-btn tb-btn tb-btn-slate" id="collapseBtn" title="{{call .T "editor.topbar.expand_toc"}}" aria-label="{{call .T "editor.topbar.expand_toc"}}" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+                {{else}}
+                <!-- Blog: outline toggle button -->
+                <button class="tb-btn tb-btn-slate" id="outlineToggleBtn" title="{{call .T "editor.sidebar.tab.outline"}}" aria-label="{{call .T "editor.sidebar.tab.outline"}}" onclick="toggleSidebar()"><i class="fa-solid fa-list-ul"></i></button>
+                {{end}}
+                <!-- Back button -->
+                <a href="{{if eq .EditorType "blog"}}/notes{{else}}/{{end}}" id="editorBackBtn" class="tb-btn tb-btn-blue editor-back-btn" title="{{if eq .EditorType "blog"}}{{call .T "editor.topbar.back_notes"}}{{else}}{{call .T "editor.topbar.back_shelf"}}{{end}}" aria-label="{{if eq .EditorType "blog"}}{{call .T "editor.topbar.back_notes.aria"}}{{else}}{{call .T "editor.topbar.back_shelf.aria"}}{{end}}"><i class="fa-solid fa-arrow-left"></i><span class="editor-back-label">返回</span></a>
+                <!-- Breadcrumb -->
+                <nav class="breadcrumb" id="breadcrumb" aria-label="{{call .T "editor.breadcrumb.aria"}}">
+                    {{if eq .EditorType "blog"}}
+                    <span class="breadcrumb-item">{{call .T "editor.topbar.breadcrumb.blog"}}</span>
+                    <i class="fa-solid fa-chevron-right breadcrumb-sep"></i>
+                    <span class="breadcrumb-item breadcrumb-current">{{.Blog.BlogTitle}}</span>
+                    {{else}}
+                    <span class="breadcrumb-item breadcrumb-current">{{.Book.BookName}}</span>
+                    {{end}}
+                </nav>
+                <!-- Right actions -->
+                <div class="flex items-center gap-1.5 shrink-0">
+                    <!-- Save button (hidden in preview mode) -->
+                    <button class="topbar-save-btn saved" id="save-btn" onclick="manualSave()" aria-label="{{call .T "editor.topbar.save"}}" style="display:none;"><i class="fa-solid fa-floppy-disk" style="margin-right:4px;font-size:11px;"></i><span class="btn-label">{{call .T "editor.topbar.save"}}</span></button>
+                    <!-- Share button -->
+                    <button class="topbar-save-btn" id="share-btn" onclick="openEditorShare()" aria-label="{{call .T "share.action.share"}}" title="{{call .T "share.action.share"}}" style="display:none;"><i class="fa-solid fa-share-nodes" style="margin-right:4px;font-size:11px;"></i><span class="btn-label">{{call .T "share.action.share"}}</span></button>
+                    <!-- Preview search (markdown preview mode) -->
+                    <button class="topbar-save-btn preview-search-topbar-btn" id="preview-search-btn" onclick="openMarkdownPreviewSearch()" aria-label="{{call .T "editor.topbar.search.aria"}}" title="{{call .T "editor.topbar.search"}}" style="display:none;"><i class="fa-solid fa-magnifying-glass" style="margin-right:4px;font-size:11px;"></i><span class="btn-label">{{call .T "editor.topbar.search"}}</span></button>
+                    <!-- Tag toggle button (hidden in preview mode) -->
+                    <button class="tag-toggle-btn" id="tagToggleBtn" title="{{call .T "editor.topbar.tag"}}" aria-label="{{call .T "editor.topbar.tag.aria"}}" onclick="toggleTagRow()" style="display:none;">
+                        <i class="fa-solid fa-tags" style="font-size:11px;"></i>
+                        <span class="tag-label">{{call .T "editor.topbar.tag"}}</span>
+                        <span class="tag-count-badge" id="tagCountBadge" style="display:none;">0</span>
+                    </button>
+                    {{if .AIEnabled}}
+                    <!-- AI assistant -->
+                    <button class="topbar-save-btn topbar-ai-btn" id="ai-btn" onclick="openEditorAI()" aria-label="{{call .T "editor.topbar.ai.aria"}}" title="{{call .T "editor.topbar.ai"}}" style="display:none;"><i class="fa-solid fa-wand-magic-sparkles" style="margin-right:4px;font-size:11px;"></i><span class="btn-label">{{call .T "editor.topbar.ai"}}</span></button>
+                    {{end}}
+                    <!-- Mode toggle -->
+                    <button class="mode-toggle-btn active" id="mode-toggle" onclick="toggleMode()" aria-label="{{call .T "editor.mode.toggle.aria"}}"><i class="fa-solid fa-eye" id="mode-icon" style="margin-right:3px;font-size:10px;"></i><span class="btn-label" id="mode-label">{{call .T "editor.mode.preview"}}</span></button>
+                    <!-- Theme toggle -->
+                    <button class="topbar-theme-btn" id="themeToggle" aria-label="{{call .T "editor.theme.toggle"}}" title="{{call .T "editor.theme.toggle"}}" onclick="BookStarkTheme.toggle()"><i class="fa-solid fa-moon" id="theme-icon"></i></button>
+                </div>
+            </div>
+
+            <!-- Tag popover (desktop: dropdown, mobile: top sheet) -->
+            <div class="tag-popover-overlay" id="tagPopoverOverlay"></div>
+            <div class="tag-popover" id="tagPopover" data-mobile-sheet data-mobile-sheet-panel="self" data-mobile-sheet-close="closeEditorTagPopover">
+                <div class="tag-popover-header">
+                    <span class="tag-popover-title">{{call .T "editor.tag.title"}}</span>
+                    <button class="tag-popover-close" id="tagPopoverClose" aria-label="{{call .T "editor.tag.close_panel"}}">&times;</button>
+                </div>
+                <div class="tag-popover-body">
+                    <div id="tagContainer" class="tag-popover-chips">
+                        <!-- Tag chips rendered by JS -->
+                    </div>
+                    <div class="tag-input-wrap" id="tagInputWrap">
+                        <i class="fa-solid fa-magnifying-glass tag-input-icon"></i>
+                        <input id="tagInput" type="text" class="tag-input" placeholder="{{call .T "editor.tag.placeholder"}}" aria-label="{{call .T "editor.tag.input.aria"}}" oninput="editorTagSearch()" onkeydown="editorTagKey(event)" onfocus="editorTagSearch()" autocomplete="off">
+                    </div>
+                </div>
+                <div id="tagDropdown" class="tag-popover-dropdown" style="display:none;"></div>
+                <span class="tag-save-indicator" id="tagSaveIndicator">{{call .T "editor.tag.saved"}}</span>
+            </div>
+
+            <!-- Content -->
+            <div class="content-pager" id="contentPager">
+                <div class="pager-track" id="pagerTrack">
+                    <div class="pager-page" id="editor-page">
+                        <div id="editor-area" class="h-full"></div>
+                    <div id="univer-container" class="h-full hidden">
+                        <div id="univer-loading" class="flex items-center justify-center h-full">
+                        </div>
+                        <div id="univer-sheet" style="width:100%;height:100%;"></div>
+                    </div>
+                    <div id="presentation-container" class="h-full hidden">
+                        <div id="pptist-editor" style="width:100%;height:100%;"></div>
+                    </div>
+                    <div id="excalidraw-container" class="h-full hidden">
+                        <div id="excalidraw-loading" class="flex items-center justify-center h-full">
+                        </div>
+                        <div id="excalidraw-canvas" style="width:100%;height:100%;"></div>
+                    </div>
+                    <div id="mindmap-container" class="h-full hidden">
+                        <div id="mindmap-loading" class="flex items-center justify-center h-full">
+                        </div>
+                        <div id="mindmap-el" style="width:100%;height:100%;"></div>
+                    </div>
+                    </div>
+                    <div class="pager-page" id="preview-page">
+                        <div id="preview-area" class="max-w-[960px] mx-auto px-4 sm:px-6 py-6"></div>
+                    </div>
+                </div>
+            </div>
+            <!-- Mobile pager tabs (hidden on desktop) -->
+            <div class="pager-tabs" id="pagerTabs">
+                <button class="pager-tab active" id="tabEdit" aria-label="{{call .T "editor.pager.edit.aria"}}" onclick="switchPagerPage('edit')"><i class="fa-solid fa-pen-to-square"></i> {{call .T "editor.pager.edit"}}</button>
+                <button class="pager-tab" id="tabPreview" aria-label="{{call .T "editor.pager.preview.aria"}}" onclick="switchPagerPage('preview')"><i class="fa-solid fa-eye"></i> {{call .T "editor.pager.preview"}}</button>
+                <div class="pager-indicator" id="pagerIndicator"></div>
+            </div>
+
+            <!-- Status bar -->
+            <div id="editorStatusbar" class="h-6 bg-white border-t border-slate-200 flex items-center px-3 text-[11px] shrink-0 gap-1 editor-statusbar">
+                {{if eq .EditorType "book"}}
+                <button id="btn-prev-doc" class="statusbar-nav-btn" title="{{call .T "editor.statusbar.prev.doc.aria"}}" aria-label="{{call .T "editor.statusbar.prev.doc.aria"}}" onclick="goPrevDoc()"><i class="fa-solid fa-chevron-left"></i> <span class="statusbar-nav-label">{{call .T "editor.statusbar.prev"}}</span></button>
+                <button id="btn-next-doc" class="statusbar-nav-btn" title="{{call .T "editor.statusbar.next.doc.aria"}}" aria-label="{{call .T "editor.statusbar.next.doc.aria"}}" onclick="goNextDoc()"><span class="statusbar-nav-label">{{call .T "editor.statusbar.next"}}</span> <i class="fa-solid fa-chevron-right"></i></button>
+                <span class="statusbar-sep">|</span>
+                {{end}}
+                <button id="statusbar-doc-title" class="statusbar-doc-title" type="button" onclick="openStatusbarPathSheet()" title="{{if eq .EditorType "blog"}}{{.Blog.BlogTitle}}{{else}}{{.Book.BookName}}{{end}}" aria-label="{{if eq .EditorType "blog"}}{{.Blog.BlogTitle}}{{else}}{{.Book.BookName}}{{end}}">
+                    {{if eq .EditorType "blog"}}{{.Blog.BlogTitle}}{{else}}{{.Book.BookName}}{{end}}
+                </button>
+                <span class="statusbar-sep statusbar-doc-title-sep statusbar-char-sep">|</span>
+                <span id="char-count" class="text-slate-400 statusbar-word-count" title="{{call .T "editor.statusbar.chars.aria"}}"><i class="fa-solid fa-font" style="font-size:9px;margin-right:2px;"></i><span class="statusbar-text-label">{{call .T "editor.statusbar.chars"}}</span> 0</span>
+                <span class="statusbar-sep statusbar-modify-sep">|</span>
+                <span id="doc-modify-time" class="text-slate-400 statusbar-modify-time" title=""><i class="fa-regular fa-clock" style="font-size:9px;margin-right:2px;"></i><span class="statusbar-time-full"></span><span class="statusbar-time-short"></span></span>
+                <span id="save-status" class="ml-auto text-green-600" style="flex-shrink:0;">{{call .T "editor.statusbar.saved"}}</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    window.EDITOR_TYPE = "{{.EditorType}}";
+    {{if eq .EditorType "blog"}}
+    window.BLOG_ID = {{.Blog.BlogID}};
+    window.BLOG_TITLE = {{jsonJS .Blog.BlogTitle}};
+    window.BLOG_CONTENT = {{jsonJS .BlogContentJS}};
+    window.BLOG_CONTENT_URL = {{if .BlogContentURL}}{{jsonJS .BlogContentURL}}{{else}}""{{end}};
+    window.BLOG_HAS_PASSWORD = {{if .HasPassword}}true{{else}}false{{end}};
+    window.BLOG_MODIFY_TIME = {{jsonJS (formatTime .Blog.ModifyTime)}};
+    window.BLOG_EDITOR_TYPE = {{jsonJS .BlogEditorType}};
+    {{else}}
+    window.BOOK_ID = {{.Book.BookID}};
+    window.BOOK_NAME = {{jsonJS .Book.BookName}};
+    {{end}}
+    window.EDITOR_LABELS = {{if .Labels}}{{jsonJS .Labels}}{{else}}""{{end}};
+    </script>
+    {{template "editor_scripts" .}}
+    <script src="/static/js/editor.js?v={{assetVer "/static/js/editor.js"}}"></script>
+<script src="/static/js/offline-queue.js?v={{assetVer "/static/js/offline-queue.js"}}"></script>
+<script src="/static/js/sw-register.js?v={{assetVer "/static/js/sw-register.js"}}"></script>
+<script>(function(){var p=new URLSearchParams(window.location.search);var f=p.get('from');if(f&&f.charAt(0)==='/'){var btn=document.getElementById('editorBackBtn');if(btn)btn.href=f;}})();</script>
+
+<!-- Share dialog -->
+<style>
+.toggle-switch { position: relative; display: inline-block; width: 36px; height: 20px; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute; cursor: pointer; inset: 0; background-color: var(--color-border);
+  border-radius: 20px; transition: background-color 0.2s ease;
+}
+.toggle-slider::before {
+  content: ""; position: absolute; height: 16px; width: 16px; left: 2px; bottom: 2px;
+  background-color: white; border-radius: 50%; transition: transform 0.2s ease;
+}
+.toggle-switch input:checked + .toggle-slider { background-color: var(--color-primary); }
+.toggle-switch input:checked + .toggle-slider::before { transform: translateX(16px); }
+@media (prefers-reduced-motion: reduce) {
+    .toggle-slider, .toggle-slider::before { transition: none; }
+}
+</style>
+<div class="share-popover-overlay" id="sharePopoverOverlay" onclick="closeShareDialog()"></div>
+<div class="share-popover" id="shareSettingOverlay" role="dialog" aria-modal="true" aria-label="{{call .T "share.dialog.title"}}" data-mobile-sheet data-mobile-sheet-panel="self" data-mobile-sheet-close="closeShareDialog">
+    <div class="share-popover-header">
+      <span class="share-popover-title">{{call .T "share.dialog.title"}}</span>
+      <button class="share-popover-close" onclick="closeShareDialog()" aria-label="{{call .T "share.dialog.close"}}">&times;</button>
+    </div>
+    <div class="share-popover-body" id="shareDialogBody">
+      <div style="margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <i class="fa-solid fa-eye" style="color:var(--color-primary);font-size:13px;"></i>
+          <span style="font-size:13px;font-weight:600;color:var(--color-text);">{{call .T "share.dialog.view_link"}}</span>
+          <span class="tag-badge" style="background:var(--color-bg-hover);color:var(--color-text-secondary);">{{call .T "share.dialog.readonly"}}</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="shareViewUrl" readonly class="dialog-input" style="flex:1;font-size:12px;background:var(--color-bg-hover);">
+          <button class="share-done-btn" style="padding:5px 12px;font-size:12px;white-space:nowrap;" onclick="copyShareUrl('shareViewUrl')">{{call .T "share.dialog.copy"}}</button>
+        </div>
+      </div>
+      <div style="border-top:1px dashed var(--color-border);margin:12px 0;"></div>
+      <div id="shareEditSection">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <i class="fa-solid fa-pen" id="shareEditIcon" style="color:var(--color-warning);font-size:13px;"></i>
+          <span id="shareEditLabel" style="font-size:13px;font-weight:600;color:var(--color-text);">{{call .T "share.dialog.edit_link"}}</span>
+          <span id="shareEditBadge" class="tag-badge" style="background:#fef3c7;color:#b45309;">{{call .T "share.dialog.editable"}}</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <span style="font-size:12px;color:var(--color-text-secondary);">{{call .T "share.dialog.edit_toggle_desc"}}</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="shareEditToggle" onchange="toggleShareEdit()">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div id="shareEditUrlSection" style="display:none;">
+          <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <input type="text" id="shareEditUrl" readonly class="dialog-input" style="flex:1;font-size:12px;background:#fffbeb;border-color:#fde68a;color:#92400e;">
+            <button style="padding:5px 12px;font-size:12px;white-space:nowrap;background:var(--color-warning);color:white;border:none;border-radius:var(--radius-md);cursor:pointer;" onclick="copyShareUrl('shareEditUrl')">{{call .T "share.dialog.copy"}}</button>
+          </div>
+          <div style="padding:6px 8px;background:#fef3c7;border-radius:var(--radius-md);display:flex;gap:6px;align-items:flex-start;margin-bottom:10px;">
+            <i class="fa-solid fa-triangle-exclamation" style="color:#d97706;font-size:11px;margin-top:2px;"></i>
+            <span style="font-size:11px;color:#92400e;line-height:1.4;">{{call .T "share.dialog.edit_warning"}}</span>
+          </div>
+          <div style="border-top:1px dashed var(--color-border);margin:10px 0;"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:12px;color:var(--color-text-secondary);">{{call .T "share.dialog.reset_edit_link"}}</span>
+            <button style="background:none;border:1px solid #fca5a5;color:var(--color-danger);border-radius:var(--radius-md);padding:3px 10px;font-size:11px;cursor:pointer;" onclick="resetEditToken()">{{call .T "share.dialog.reset_token"}}</button>
+          </div>
+        </div>
+        <div id="shareEditOffHint">
+          <p style="font-size:11px;color:var(--color-text-muted);line-height:1.4;">
+            {{call .T "share.dialog.edit_off_hint"}}
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="share-popover-footer">
+      <button class="share-cancel-btn" onclick="unpublishFromDialog()">{{call .T "share.dialog.unpublish"}}</button>
+      <button class="share-done-btn" onclick="closeShareDialog()">{{call .T "share.dialog.done"}}</button>
+    </div>
+</div>
+
+</body>
+</html>

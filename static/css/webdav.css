@@ -1,0 +1,998 @@
+.dav-body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.dav-page {
+  width: 100%;
+  max-width: 1180px;
+  flex: 1 0 auto;
+  margin: 0 auto;
+  padding: 20px 16px 36px;
+  color: var(--color-text);
+}
+
+.dav-page .bs-btn,
+.dav-modal .bs-btn {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.dav-connection {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "main actions"
+    "usage usage";
+  gap: 14px 20px;
+  align-items: center;
+  padding: 16px;
+  margin-bottom: 16px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.dav-connection-main,
+.dav-connection-actions,
+.dav-toolbar-actions,
+.dav-usage-copy {
+  display: flex;
+  align-items: center;
+}
+
+.dav-connection-main {
+  grid-area: main;
+  min-width: 0;
+  gap: 12px;
+}
+
+.dav-service-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  flex: none;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+  font-size: 18px;
+}
+
+.dav-service-copy {
+  min-width: 0;
+}
+
+.dav-service-copy h1 {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.4;
+  font-weight: 700;
+}
+
+.dav-service-copy p {
+  margin: 3px 0 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dav-usage-copy {
+  justify-content: space-between;
+  margin-bottom: 6px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.dav-usage {
+  grid-area: usage;
+  min-width: 0;
+}
+
+.dav-usage-copy strong {
+  color: var(--color-text-secondary);
+}
+
+.dav-usage-track {
+  height: 6px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--color-bg-hover);
+}
+
+.dav-usage-track span {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: var(--color-primary);
+  transition: width .2s ease;
+}
+
+.dav-usage-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 18px;
+  margin-top: 7px;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.dav-usage-metric {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.dav-usage-metric strong {
+  color: var(--color-text-secondary);
+  font-weight: 600;
+}
+
+.dav-connection-actions {
+  grid-area: actions;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.dav-workspace {
+  min-width: 0;
+}
+
+.dav-toolbar {
+  top: 40px;
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  padding: 8px 0;
+  background: transparent;
+  transition: none;
+}
+
+.dav-toolbar.is-stuck {
+  padding-left: 8px;
+  padding-right: 8px;
+  background: var(--color-gray-50);
+  border-bottom-color: var(--color-border);
+}
+
+.dav-breadcrumbs {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.dav-breadcrumbs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 6px 7px;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.dav-breadcrumbs button:hover {
+  color: var(--color-primary);
+}
+
+.dav-breadcrumbs button:last-child {
+  color: var(--color-text);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dav-breadcrumbs > i {
+  margin: 0 2px;
+  color: var(--color-text-placeholder);
+  font-size: 9px;
+}
+
+.dav-toolbar-actions {
+  gap: 8px;
+  flex: none;
+}
+
+.dav-search {
+  position: relative;
+  display: block;
+}
+
+.dav-search i {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-placeholder);
+  font-size: 12px;
+}
+
+.dav-search input {
+  width: 220px;
+  height: 34px;
+  padding: 0 10px 0 30px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-card);
+  color: var(--color-text);
+  font-size: 13px;
+}
+
+.dav-search input:focus {
+  border-color: var(--color-primary);
+  outline: 2px solid color-mix(in srgb, var(--color-primary) 18%, transparent);
+  outline-offset: 0;
+}
+
+.dav-drop-zone {
+  position: relative;
+  min-height: 310px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-card);
+}
+
+.dav-table-head,
+.dav-file-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) 100px 150px 120px 44px;
+  align-items: center;
+}
+
+.dav-table-head {
+  height: 38px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-gray-50);
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.dav-table-head span:last-child {
+  text-align: right;
+}
+
+.dav-file-row {
+  min-height: 54px;
+  padding: 5px 12px;
+  border-bottom: 1px solid var(--color-border);
+  transition: background .14s ease;
+}
+
+.dav-file-row:last-child {
+  border-bottom: 0;
+}
+
+.dav-file-row:hover {
+  background: var(--color-bg-hover);
+}
+
+.dav-file-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.dav-file-name > i {
+  width: 24px;
+  flex: none;
+  text-align: center;
+  color: var(--color-primary);
+  font-size: 16px;
+}
+
+.dav-file-name button {
+  min-width: 0;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  text-align: left;
+}
+
+.dav-file-name button:hover {
+  color: var(--color-primary);
+}
+
+.dav-file-meta {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.dav-file-public {
+  min-width: 0;
+}
+
+.dav-public-action {
+  min-width: 0;
+  max-width: 112px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: copy;
+}
+
+.dav-public-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  padding: 3px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--color-success-light);
+  color: var(--color-success);
+  font-size: 11px;
+}
+
+.dav-public-badge span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dav-private-badge {
+  color: var(--color-text-placeholder);
+  font-size: 11px;
+}
+
+.dav-file-row.is-dir .dav-file-public {
+  visibility: hidden;
+}
+
+.dav-row-menu {
+  position: relative;
+  justify-self: end;
+}
+
+.dav-row-menu > button {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.dav-row-menu > button:hover,
+.dav-row-menu.open > button {
+  background: var(--color-bg-hover);
+  color: var(--color-text);
+}
+
+.dav-menu-backdrop {
+  display: none;
+}
+
+.dav-menu {
+  position: fixed;
+  z-index: 90;
+  width: 158px;
+  padding: 4px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, .14);
+}
+
+.dav-menu-head,
+.dav-menu-handle {
+  display: none;
+}
+
+.dav-menu-actions button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 34px;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dav-menu-actions button:hover {
+  background: var(--color-bg-hover);
+}
+
+.dav-menu-actions button.danger {
+  color: var(--color-danger);
+}
+
+.dav-menu-actions hr {
+  margin: 4px;
+  border: 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.dav-empty[hidden],
+.dav-load-error[hidden],
+.dav-loading[hidden] {
+  display: none;
+}
+
+.dav-empty,
+.dav-load-error {
+  min-height: 270px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.dav-empty i,
+.dav-load-error > i {
+  margin-bottom: 10px;
+  color: var(--color-text-placeholder);
+  font-size: 32px;
+}
+
+.dav-empty strong,
+.dav-load-error strong {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+.dav-empty span,
+.dav-load-error span {
+  max-width: 420px;
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.dav-empty-mobile-hint {
+  display: none;
+}
+
+.dav-load-error > i {
+  color: var(--color-danger);
+}
+
+.dav-load-error .bs-btn {
+  margin-top: 14px;
+}
+
+.dav-loading {
+  padding: 12px;
+}
+
+.dav-loading span {
+  display: block;
+  height: 44px;
+  margin-bottom: 8px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-hover);
+  animation: davPulse 1.2s ease-in-out infinite;
+}
+
+.dav-loading span:nth-child(2) { animation-delay: .1s; }
+.dav-loading span:nth-child(3) { animation-delay: .2s; }
+.dav-loading span:nth-child(4) { animation-delay: .3s; }
+
+@keyframes davPulse {
+  50% { opacity: .46; }
+}
+
+.dav-drop-overlay {
+  display: none;
+  position: absolute;
+  inset: 8px;
+  z-index: 30;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  border: 2px dashed var(--color-primary);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--color-bg-card) 92%, transparent);
+  color: var(--color-primary);
+}
+
+.dav-drop-zone.dragging .dav-drop-overlay {
+  display: flex;
+}
+
+.dav-modal-close {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-hover);
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.dav-modal-close:hover {
+  color: var(--color-text);
+  filter: brightness(.98);
+}
+
+.dav-field {
+  display: block;
+  margin-bottom: 12px;
+}
+
+.dav-field:last-child {
+  margin-bottom: 0;
+}
+
+.dav-field > span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.dav-field input,
+.dav-field textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 13px;
+}
+
+.dav-password-explain {
+  margin: 0 0 14px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.dav-password-control {
+  position: relative;
+  display: block;
+}
+
+.dav-field .dav-password-control input {
+  padding-right: 42px;
+}
+
+.dav-password-control button {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.dav-password-control button:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text);
+}
+
+.dav-field-error {
+  margin: -4px 0 8px;
+  color: var(--color-danger);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.dav-field textarea {
+  min-height: 240px;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.dav-secret {
+  padding: 10px;
+  border: 1px dashed var(--color-primary);
+  border-radius: var(--radius-md);
+  background: var(--color-primary-bg);
+  font: 13px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  word-break: break-all;
+}
+
+.dav-hint {
+  margin-top: 8px;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.dav-modal .bs-btn-danger {
+  border-color: var(--color-danger);
+  background: var(--color-danger);
+  color: #fff;
+}
+
+.dav-modal .bs-btn-danger:hover {
+  filter: brightness(.94);
+}
+
+.dav-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 140;
+  transform: translate(-50%, 12px);
+  max-width: calc(100vw - 24px);
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-gray-900);
+  color: #fff;
+  font-size: 12px;
+  opacity: 0;
+  pointer-events: none;
+  transition: .16s;
+}
+
+.dav-toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+@media (max-width: 760px) {
+  .dav-page {
+    padding: 10px 8px 24px;
+  }
+
+  .dav-page.has-open-menu {
+    z-index: 30;
+  }
+
+  .dav-connection {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "main"
+      "actions"
+      "usage";
+    gap: 10px 12px;
+    padding: 12px;
+  }
+
+  .dav-connection-main,
+  .dav-connection-actions,
+  .dav-usage {
+    grid-column: 1;
+  }
+
+  .dav-service-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .dav-usage-details {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px 12px;
+    font-size: 11px;
+  }
+
+  .dav-usage-metric {
+    min-width: 0;
+    justify-content: space-between;
+  }
+
+  .dav-connection-actions {
+    gap: 6px;
+    justify-content: stretch;
+  }
+
+  .dav-connection-actions .bs-btn {
+    min-width: 0;
+    min-height: 44px;
+    flex: 1;
+    padding: 0 10px;
+  }
+
+  .dav-connection-actions span {
+    display: inline;
+    font-size: 12px;
+  }
+
+  .dav-toolbar {
+    top: 48px;
+    display: block;
+    padding: 4px 0;
+    background: transparent;
+  }
+
+  .dav-toolbar.is-stuck {
+    padding: 4px 0;
+    background: var(--color-gray-50);
+    box-shadow: 0 1px 0 var(--color-border);
+  }
+
+  .dav-breadcrumbs {
+    min-height: 44px;
+    margin-bottom: 4px;
+  }
+
+  .dav-toolbar.is-root .dav-breadcrumbs {
+    display: none;
+  }
+
+  .dav-breadcrumbs button {
+    min-height: 44px;
+  }
+
+  .dav-toolbar-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 44px 44px;
+    gap: 6px;
+  }
+
+  .dav-search input {
+    width: 100%;
+    height: 44px;
+    font-size: 14px;
+  }
+
+  .dav-toolbar-actions .bs-btn {
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    padding: 0;
+  }
+
+  .dav-toolbar-actions .bs-btn span {
+    display: none;
+  }
+
+  .dav-drop-zone {
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .dav-table-head {
+    display: none;
+  }
+
+  .dav-file-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .dav-file-row {
+    position: relative;
+    grid-template-columns: minmax(0, 1fr) 44px;
+    grid-template-rows: auto auto;
+    gap: 2px 8px;
+    min-height: 74px;
+    padding: 8px 10px;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+  }
+
+  .dav-file-row:hover {
+    background: var(--color-bg-card);
+  }
+
+  .dav-file-name button {
+    min-height: 44px;
+    font-size: 14px;
+  }
+
+  .dav-file-meta.size {
+    grid-column: 1;
+    grid-row: 2;
+    padding-left: 34px;
+  }
+
+  .dav-file-meta.date {
+    display: none;
+  }
+
+  .dav-file-public {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: end;
+    align-self: center;
+  }
+
+  .dav-public-action {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+
+  .dav-row-menu {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    align-self: center;
+  }
+
+  .dav-row-menu > button {
+    width: 44px;
+    height: 44px;
+  }
+
+  .dav-menu-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 88;
+    padding: 0;
+    border: 0;
+    background: rgba(15, 23, 42, .38);
+  }
+
+  .dav-menu {
+    left: 8px !important;
+    right: 8px;
+    bottom: max(8px, env(safe-area-inset-bottom));
+    top: auto !important;
+    z-index: 89;
+    width: auto;
+    max-height: min(72dvh, 560px);
+    overflow-y: auto;
+    padding: 8px;
+    background: var(--color-gray-50);
+    border-radius: var(--radius-lg);
+    animation: davMenuIn .16s ease-out;
+  }
+
+  .dav-menu-handle {
+    display: block;
+    width: 36px;
+    height: 4px;
+    margin: 0 auto 7px;
+    border-radius: 2px;
+    background: var(--color-border);
+  }
+
+  .dav-menu-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 44px;
+    padding: 0 4px 7px;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .dav-menu-file {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    color: var(--color-primary);
+  }
+
+  .dav-menu-file strong {
+    overflow: hidden;
+    color: var(--color-text);
+    font-size: 14px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .dav-menu-head button {
+    width: 44px;
+    height: 44px;
+    flex: none;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-md);
+    background: var(--color-bg-hover);
+    color: var(--color-text-muted);
+  }
+
+  .dav-menu-actions {
+    padding-top: 5px;
+  }
+
+  .dav-menu-actions button {
+    min-height: 44px;
+    font-size: 14px;
+  }
+
+  .dav-empty,
+  .dav-load-error {
+    min-height: 240px;
+    padding: 24px 16px;
+  }
+
+  .dav-empty-desktop-hint {
+    display: none;
+  }
+
+  .dav-empty-mobile-hint {
+    display: inline;
+  }
+
+  .dav-load-error .bs-btn,
+  .dav-modal-close {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .dav-modal-footer {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .dav-modal-footer .bs-btn {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  @keyframes davMenuIn {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+@media (max-width: 360px) {
+  .dav-modal-footer {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dav-modal-footer .bs-btn:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dav-menu,
+  .dav-loading span,
+  .dav-usage-track span,
+  .dav-toast {
+    animation: none;
+    transition: none;
+  }
+}

@@ -1,0 +1,2226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    {{template "editor_head" .}}
+    <title>{{.Share.Title}} - BookStark</title>
+    <script src="/static/js/tab-url.js?v={{assetVer "/static/js/tab-url.js"}}"></script>
+    <style>
+        /* Password overlay */
+        .share-pwd-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(255,255,255,0.95);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        [data-theme="dark"] .share-pwd-overlay { background: rgba(15, 23, 42, 0.95); }
+
+        /* Sidebar width for share view */
+        #sidebar {
+            width: 220px;
+            min-width: 220px;
+            transition: width 0.22s ease, min-width 0.22s ease, opacity 0.18s ease, transform 0.22s ease, padding 0.22s ease, border-color 0.18s ease;
+        }
+
+        /* Meta panel items */
+        .share-meta-item { padding: 8px 12px; border-bottom: 1px solid var(--color-gray-100,#f1f5f9); }
+        .share-meta-label { font-size: 10px; color: var(--color-gray-400,#94a3b8); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px; }
+        .share-meta-value { font-size: 12px; color: var(--color-gray-700,#334155); font-weight: 500; word-break: break-word; }
+        .share-type-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 600;
+        }
+        .share-type-blog { background: #e0f2fe; color: #0369a1; }
+        .share-type-note { background: #fce7f3; color: #be185d; }
+        .share-type-document { background: #fef3c7; color: #92400e; }
+        [data-theme="dark"] .share-type-blog { background: #172554; color: #38bdf8; }
+        [data-theme="dark"] .share-type-note { background: #4c0519; color: #f472b6; }
+        [data-theme="dark"] .share-type-document { background: #451a03; color: #fbbf24; }
+        .share-label-chip {
+            display: inline-flex; align-items: center;
+            font-size: 11px; padding: 2px 7px; border-radius: 4px;
+            background: var(--color-gray-100,#f1f5f9); color: var(--color-gray-600,#475569);
+            border: 1px solid var(--color-gray-200,#e2e8f0);
+        }
+        .share-action-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            font-size: 12px; padding: 5px 10px; border-radius: 5px;
+            border: 1px solid var(--color-gray-200,#e2e8f0);
+            background: var(--color-white,#fff); color: var(--color-gray-600,#475569);
+            cursor: pointer; width: 100%;
+            transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+        }
+        .share-action-btn:hover { background: var(--color-primary-light,#eff6ff); color: var(--color-primary,#2563eb); border-color: #bfdbfe; }
+        .share-action-btn:focus-visible { outline: 2px solid var(--color-primary,#2563eb); outline-offset: 2px; }
+
+        .share-comments {
+            margin-top: 28px;
+            padding-top: 22px;
+            border-top: 1px solid var(--color-border,#e2e8f0);
+        }
+        .share-comments-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 68;
+            border: 0;
+            background: rgba(15,23,42,0.18);
+            cursor: default;
+        }
+        .share-comments-backdrop[hidden] { display: none !important; }
+        .share-comments-panel {
+            position: fixed;
+            top: 56px;
+            right: 16px;
+            bottom: 16px;
+            z-index: 69;
+            width: min(440px, calc(100vw - 32px));
+            margin: 0;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            border: 1px solid var(--color-border,#e2e8f0);
+            border-radius: 8px;
+            background: color-mix(in srgb, var(--color-bg-card,#fff) 96%, transparent);
+            box-shadow: 0 18px 48px rgba(15,23,42,0.18);
+        }
+        @keyframes shareCommentsSlideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-16px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .share-comments-panel[hidden] { display: none !important; }
+        .share-comments-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 14px;
+            flex-shrink: 0;
+        }
+        .share-comments-title {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--color-text,#1e293b);
+        }
+        .share-comments-head-actions {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        .share-comments-count {
+            font-size: 12px;
+            color: var(--color-text-secondary,#64748b);
+        }
+        .share-comments-close {
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--color-border,#e2e8f0);
+            border-radius: 7px;
+            background: var(--color-bg-card,#fff);
+            color: var(--color-text-muted,#94a3b8);
+            cursor: pointer;
+        }
+        .share-comments-close:hover {
+            color: var(--color-text,#1e293b);
+            background: var(--color-gray-100,#f1f5f9);
+        }
+        .share-comments-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .share-comment-item {
+            border: 1px solid var(--color-border,#e2e8f0);
+            border-radius: 8px;
+            background: color-mix(in srgb, var(--color-bg-card,#fff) 88%, transparent);
+            padding: 12px 14px;
+        }
+        .share-comment-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+        .share-comment-author {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--color-text,#1e293b);
+        }
+        .share-comment-time {
+            font-size: 11px;
+            color: var(--color-text-muted,#94a3b8);
+        }
+        .share-comment-content {
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-size: 14px;
+            line-height: 1.7;
+            color: var(--color-text-secondary,#475569);
+        }
+        .share-comment-tools { display: inline-flex; align-items: center; gap: 4px; }
+        .share-comment-delete,
+        .share-comment-reply {
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            background: transparent;
+            color: var(--color-text-muted,#94a3b8);
+            cursor: pointer;
+            padding: 0;
+            border-radius: 4px;
+            font-size: 16px;
+            line-height: 1;
+        }
+        .share-comment-delete:hover { color: var(--color-danger,#ef4444); background: color-mix(in srgb, var(--color-danger,#ef4444) 8%, transparent); }
+        .share-comment-reply:hover { color: var(--color-primary,#2563eb); background: color-mix(in srgb, var(--color-primary,#2563eb) 8%, transparent); }
+        .share-comment-replies { margin-top: 10px; margin-left: 14px; padding-left: 12px; border-left: 2px solid var(--color-border-light,#f1f5f9); display: flex; flex-direction: column; gap: 8px; }
+        .share-comment-reply-item { background: color-mix(in srgb, var(--color-bg-card,#fff) 72%, transparent); }
+        .share-comment-reply-context { margin-bottom: 5px; color: var(--color-text-muted,#94a3b8); font-size: 12px; }
+        .share-comment-reply-slot { margin-top: 10px; }
+        .share-comment-reply-form { margin-top: 0; }
+        .share-comment-replies-toggle { align-self: flex-start; border: none; background: transparent; color: var(--color-primary,#2563eb); cursor: pointer; font-size: 12px; padding: 2px 0; }
+        .share-comment-content.is-deleted { color: var(--color-text-muted,#94a3b8); font-style: italic; }
+        .share-comments-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            border: 1px solid var(--color-border,#e2e8f0);
+            border-radius: 8px;
+            padding: 12px;
+            background: color-mix(in srgb, var(--color-bg-card,#fff) 82%, transparent);
+        }
+        .share-comments-fields {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 10px;
+        }
+        .share-comment-input,
+        .share-comment-textarea {
+            width: 100%;
+            border: 1px solid var(--color-border,#e2e8f0);
+            border-radius: 7px;
+            background: var(--color-bg-card,#fff);
+            color: var(--color-text,#1e293b);
+            font-size: 13px;
+            padding: 8px 10px;
+            outline: none;
+        }
+        .share-comment-textarea {
+            min-height: 84px;
+            resize: vertical;
+        }
+        .share-comment-input:focus,
+        .share-comment-textarea:focus {
+            border-color: var(--color-primary,#2563eb);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary,#2563eb) 15%, transparent);
+        }
+        .share-comments-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .share-comments-identity,
+        .share-comments-state {
+            font-size: 12px;
+            color: var(--color-text-muted,#94a3b8);
+        }
+        .share-comments-submit {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: none;
+            border-radius: 7px;
+            background: var(--color-primary,#2563eb);
+            color: #fff;
+            font-size: 13px;
+            font-weight: 700;
+            padding: 8px 14px;
+            cursor: pointer;
+        }
+        .share-comments-submit:disabled { opacity: 0.62; cursor: not-allowed; }
+        @media (max-width: 640px) {
+            .share-comments-fields { grid-template-columns: 1fr; }
+            .share-comments-actions { align-items: stretch; flex-direction: column; }
+            .share-comments-submit { justify-content: center; }
+            .share-comments-panel {
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: auto;
+                width: auto;
+                max-height: calc(var(--bs-vvh, 100dvh) - 8px);
+                padding: 16px;
+                border-radius: 0 0 12px 12px;
+                overflow-y: auto;
+                overscroll-behavior: contain;
+                animation: shareCommentsSlideDown 0.22s ease-out;
+            }
+        }
+
+        /* Topbar title */
+        .share-topbar {
+            transition: height 0.22s ease, opacity 0.18s ease, transform 0.22s ease, border-color 0.18s ease, padding 0.22s ease;
+        }
+        .share-topbar-title {
+            font-size: 12px; color: var(--color-gray-500,#64748b); font-weight: 500;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px;
+        }
+        @media (max-width: 640px) { .share-topbar-title { display: none; } }
+        .share-reader-fullscreen-btn { width: 28px; height: 28px; padding: 0; }
+        .share-reader-exit-btn {
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            z-index: 120;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border: 1px solid rgba(148,163,184,0.34);
+            border-radius: 8px;
+            background: color-mix(in srgb, var(--color-bg-card,#fff) 82%, transparent);
+            color: var(--color-gray-600,#475569);
+            font-size: 14px;
+            box-shadow: 0 12px 32px rgba(15,23,42,0.14);
+            backdrop-filter: blur(14px);
+            cursor: pointer;
+            touch-action: none;
+            user-select: none;
+            opacity: 0.78;
+            transform: translateY(-4px);
+            transition: transform 0.16s ease, opacity 0.16s ease, background-color 0.16s ease, color 0.16s ease, border-color 0.16s ease;
+        }
+        .share-reader-exit-btn.is-dragging {
+            cursor: grabbing;
+            opacity: 1;
+            transition: none;
+        }
+        .share-reader-exit-btn:hover,
+        .share-reader-exit-btn:focus-visible {
+            opacity: 1;
+            transform: translateY(0);
+            color: var(--color-primary,#2563eb);
+            background: var(--color-bg-card,#fff);
+            border-color: color-mix(in srgb, var(--color-primary,#2563eb) 38%, rgba(148,163,184,0.34));
+            outline: none;
+        }
+        body.share-reader-fullscreen #sidebar {
+            width: 0 !important;
+            min-width: 0 !important;
+            padding: 0 !important;
+            border-right-width: 0 !important;
+            opacity: 0;
+            pointer-events: none;
+            overflow: hidden;
+            transform: translateX(-18px);
+        }
+        body.share-reader-fullscreen .share-topbar {
+            height: 0 !important;
+            min-height: 0 !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            border-bottom-width: 0 !important;
+            border-bottom-color: transparent !important;
+            opacity: 0;
+            pointer-events: none;
+            overflow: hidden;
+            transform: translateY(-12px);
+        }
+        body.share-reader-fullscreen #content-scroll {
+            flex-basis: 100%;
+        }
+        body.share-reader-fullscreen #preview-wrap {
+            max-width: none !important;
+            padding: 0 !important;
+        }
+        body.share-reader-fullscreen .share-reader-exit-btn {
+            display: inline-flex;
+        }
+        body.share-reader-fullscreen #share-footer {
+            display: none !important;
+        }
+        body.share-reader-fullscreen #share-comments {
+            display: none !important;
+        }
+        @media (max-width: 768px) {
+            body.share-reader-fullscreen #sidebar {
+                transform: translateX(-100%) !important;
+                transition: none !important;
+            }
+        }
+        [data-theme="dark"] .share-reader-exit-btn {
+            border-color: rgba(71,85,105,0.62);
+            background: rgba(15,23,42,0.82);
+            color: var(--color-gray-300,#cbd5e1);
+        }
+        [data-theme="dark"] .share-reader-exit-btn:hover,
+        [data-theme="dark"] .share-reader-exit-btn:focus-visible {
+            background: rgba(15,23,42,0.96);
+            color: var(--color-primary,#60a5fa);
+        }
+        @media (max-width: 640px) {
+            .share-reader-exit-btn {
+                top: 10px;
+                right: 10px;
+                width: 40px;
+                height: 40px;
+            }
+        }
+
+        /* Mindmap export buttons (hidden until mindmap loads) */
+        #share-mindmap-export { display: none; flex-wrap: wrap; gap: 6px; padding: 8px 12px; }
+
+        /* Cherry preview: #content-scroll scrolls (scrollbar at far right), #preview-wrap centers content */
+        #content-scroll { background: var(--color-bg-card, #fff); }
+        #preview-area .cherry { box-shadow: none !important; border: none !important; }
+        body:not(.share-edit-mode) #preview-area .cherry-toolbar { display: none !important; }
+        @media (max-width: 640px) {
+            #preview-wrap { padding: 16px 16px !important; }
+            #preview-area .cherry-previewer { padding-left: 0 !important; padding-right: 0 !important; }
+        }
+        /* Non-markdown types (spreadsheet/drawing/mindmap) need full width and height */
+        .spreadsheet-fullpage #preview-wrap { max-width: none !important; padding: 0 !important; height: 100%; }
+        .spreadsheet-fullpage #preview-wrap #preview-area { height: 100%; }
+
+        @media (prefers-reduced-motion: reduce) {
+            #sidebar { transition: none; }
+        }
+
+        /* Show Excalidraw main-menu (三横线按钮) in share view，与 editor 风格统一；
+           viewMode 下隐藏写入类菜单项，仅保留导出/主题/帮助等 view 相关功能 */
+        #preview-area .excalidraw [data-testid="load-button"],
+        #preview-area .excalidraw [data-testid="save-button"],
+        #preview-area .excalidraw [data-testid="save-as-button"],
+        #preview-area .excalidraw [data-testid="json-export-button"],
+        #preview-area .excalidraw [data-testid="clear-canvas-button"] {
+            display: none !important;
+        }
+        /* share view 中 renderContent 给 #excalidraw-canvas 设了 min-height:600px，
+           小屏/低高度场景下底部会被 #content-scroll(overflow:hidden) 裁掉，
+           这里在 fullpage 模式下让画布严格填满父容器，不再溢出。 */
+        .spreadsheet-fullpage #preview-area #excalidraw-canvas {
+            min-height: 0 !important;
+            height: 100% !important;
+        }
+        /* zoom toolbar 与 topbar 其他按钮保持等高 */
+        #share-drawing-zoom .tb-btn { padding: 4px 8px; font-size: 12px; }
+
+        /* Book share: doc tree */
+        .share-book-header { padding: 10px 12px; border-bottom: 1px solid var(--color-border,#e2e8f0); background: var(--color-bg-card,#fff); display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; }
+        .share-book-title { font-size: 13px; font-weight: 700; color: var(--color-text,#1e293b); word-break: break-word; line-height: 1.4; flex: 1 1 100%; }
+        .share-book-meta { font-size: 11px; color: var(--color-gray-400,#94a3b8); flex: 1 1 auto; }
+        #share-book-tree { flex: 1; overflow-y: auto; padding: 4px 0; }
+        .share-book-welcome { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 24px; text-align: center; color: var(--color-gray-500,#64748b); flex: 1; }
+        .share-book-welcome-icon { font-size: 48px; color: var(--color-primary,#2563eb); margin-bottom: 20px; opacity: 0.85; }
+        .share-book-welcome-title { font-size: 18px; font-weight: 700; color: var(--color-text,#1e293b); margin-bottom: 8px; }
+        .share-book-welcome-desc { font-size: 13px; line-height: 1.7; }
+        @media (max-width: 768px) {
+            .share-view-shell #sidebar.drawer-open {
+                z-index: 120;
+                pointer-events: auto;
+            }
+            #drawerOverlay.active {
+                left: 0;
+                z-index: 110;
+            }
+        }
+        @media (min-width: 769px) {
+            #drawerOverlay {
+                display: none !important;
+                pointer-events: none !important;
+            }
+        }
+
+        /* Spreadsheet: disable outer scroll */
+        #content-scroll.spreadsheet-mode { overflow: hidden !important; }
+        #content-scroll.presentation-mode { overflow: hidden !important; }
+        #content-scroll.drawing-mode { overflow: hidden !important; }
+        #content-scroll.mindmap-mode { overflow: hidden !important; }
+        #content-scroll.html-mode { overflow: hidden !important; }
+        #content-scroll.html-mode #preview-wrap {
+            max-width: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        #content-scroll.html-mode #preview-wrap,
+        #content-scroll.html-mode #preview-area,
+        #content-scroll.html-mode #html-preview-container,
+        #content-scroll.html-mode .html-preview-iframe {
+            height: 100% !important;
+            min-height: 0 !important;
+        }
+        #content-scroll.html-mode .html-preview-iframe {
+            display: block !important;
+            width: 100% !important;
+        }
+        @media (max-width: 768px), (max-width: 960px) and (max-height: 520px) {
+            #content-scroll.html-mode + #share-footer {
+                display: none !important;
+            }
+        }
+        @media (max-width: 960px) and (max-height: 520px) {
+            .share-topbar {
+                height: 36px !important;
+                min-height: 36px !important;
+                padding-left: 6px !important;
+                padding-right: 6px !important;
+            }
+            .share-topbar .breadcrumb-item:not(.breadcrumb-current),
+            .share-topbar .breadcrumb-sep {
+                display: none;
+            }
+            body.share-html-tool-mode:not(.share-reader-fullscreen) .share-main {
+                position: relative;
+            }
+            body.share-html-tool-mode:not(.share-reader-fullscreen) .share-topbar {
+                position: absolute;
+                z-index: 80;
+                top: max(0px, env(safe-area-inset-top, 0px));
+                right: max(0px, env(safe-area-inset-right, 0px));
+                left: auto;
+                width: auto;
+                height: 32px !important;
+                min-height: 32px !important;
+                padding: 2px 4px !important;
+                gap: 3px;
+                border: 1px solid var(--color-gray-200,#e2e8f0);
+                border-top: 0;
+                border-right: 0;
+                border-radius: 0 0 0 6px;
+                background: color-mix(in srgb, var(--color-bg-card,#fff) 88%, transparent);
+                box-shadow: 0 6px 18px rgba(15,23,42,0.14);
+                backdrop-filter: blur(10px);
+            }
+            body.share-html-tool-mode:not(.share-reader-fullscreen) .share-topbar .hamburger-btn,
+            body.share-html-tool-mode:not(.share-reader-fullscreen) .share-topbar #share-expand-btn,
+            body.share-html-tool-mode:not(.share-reader-fullscreen) .share-topbar .breadcrumb {
+                display: none !important;
+            }
+            body.share-html-tool-mode:not(.share-reader-fullscreen) .share-topbar .tb-btn {
+                width: 28px;
+                min-width: 28px;
+                height: 28px;
+                padding: 0;
+            }
+            body.share-html-tool-mode #content-scroll.html-mode {
+                flex: 1 1 100%;
+                height: 100%;
+            }
+        }
+
+        /* Edit mode styles */
+        #edit-save-btn { padding: 4px 12px; font-size: 12px; }
+        #edit-save-btn .btn-text { margin-left: 2px; }
+        #edit-save-btn.saved { color: var(--color-success); }
+        body.share-edit-mode #preview-wrap { max-width: 100% !important; padding: 0 !important; margin: 0 !important; height: 100%; }
+        body.share-edit-mode #preview-area { height: 100%; max-width: none !important; padding: 0 !important; margin: 0 !important; }
+        body.share-edit-mode #share-editor,
+        body.share-edit-mode #share-html-editor { height: 100%; }
+        body.share-edit-mode #content-scroll { overflow: hidden; }
+        body.share-edit-mode #share-footer { display: none; }
+        @media (max-width: 640px) {
+            #edit-mode-badge { font-size: 9px; padding: 1px 4px; }
+            #edit-save-btn .btn-text { display: none; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 flex flex-col overflow-hidden editor-full-height">
+    <button type="button" id="share-reader-exit-btn" class="share-reader-exit-btn" onclick="exitShareReaderFullscreen()" aria-label="{{call .T "share_view.reader.exit_fullscreen"}}" title="{{call .T "share_view.reader.exit_fullscreen"}}">
+        <i class="fa-solid fa-compress"></i>
+    </button>
+
+    <div class="flex flex-1 overflow-hidden share-view-shell" style="position:relative;">
+        <!-- Mobile drawer overlay: same stacking context as sidebar so it covers content during slide-in without blocking the drawer. -->
+        <div class="drawer-overlay" id="drawerOverlay" onclick="closeMobileDrawer()"></div>
+        <!-- Sidebar -->
+        <div id="sidebar" class="bg-white border-r border-slate-200 flex flex-col shrink-0" aria-label="{{call .T "share_view.sidebar.aria"}}">
+            <!-- Sidebar header -->
+            <div class="px-3 py-2 border-b border-slate-100 flex items-center justify-between gap-2 shrink-0">
+                <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--color-gray-400,#94a3b8);">{{if eq .Share.ShareType "book"}}{{call .T "share_view.sidebar.type.book"}}{{else}}Public Share{{end}}</span>
+                <button type="button" class="tb-btn tb-btn-slate" onclick="toggleShareSidebar()" title="{{call .T "share_view.sidebar.collapse"}}" aria-label="{{call .T "share_view.sidebar.collapse"}}" style="padding:2px 4px;">
+                    <i class="fa-solid fa-angles-left" style="font-size:10px;"></i>
+                </button>
+            </div>
+
+            {{if eq .Share.ShareType "book"}}
+            <!-- Book header: title + meta + toolbar -->
+            <div class="share-book-header">
+                <span class="share-book-title">{{.Share.Title}}</span>
+                <div class="share-book-meta"><i class="fa-regular fa-file-lines" style="margin-right:3px;"></i>{{.Share.DocCount}} {{call .T "share_view.book.doc_count_unit"}}{{if .Share.Author}} · {{.Share.Author}}{{end}}</div>
+                <div class="sidebar-toolbar" style="border-bottom:none;">
+                    <button class="toolbar-btn" onclick="toggleExpandAll()" id="btn-expand-all" aria-label="{{call .T "share_view.book.collapse_all"}}" title="{{call .T "share_view.book.collapse_all"}}">
+                        <i class="fa-solid fa-compress"></i>
+                    </button>
+                    <div class="toolbar-spacer"></div>
+                </div>
+            </div>
+            <!-- Book: tabs -->
+            <div class="sidebar-tabs" role="tablist" aria-label="{{call .T "share_view.book.tab.tree"}}">
+                <button id="share-tab-tree" class="sidebar-tab active" type="button" role="tab"
+                        aria-selected="true" aria-controls="share-panel-tree"
+                        onclick="switchBookTab('tree')">
+                    <i class="fa-solid fa-list-tree"></i> {{call .T "share_view.book.tab.tree"}}
+                </button>
+                <button id="share-tab-outline" class="sidebar-tab" type="button" role="tab"
+                        aria-selected="false" aria-controls="share-panel-outline"
+                        onclick="switchBookTab('outline')">
+                    <i class="fa-solid fa-list-ul"></i> {{call .T "share_view.book.tab.outline"}}
+                </button>
+            </div>
+            <!-- Panel: 目录树 -->
+            <div id="share-panel-tree" class="tab-panel active" role="tabpanel" aria-labelledby="share-tab-tree">
+                <!-- Search -->
+                <div class="py-2 px-3 border-b border-slate-100">
+                    <div class="sidebar-search-wrapper">
+                        <i class="fa-solid fa-magnifying-glass sidebar-search-icon"></i>
+                        <input id="doc-search" type="text" class="sidebar-search-input" placeholder="{{call .T "share_view.book.search.placeholder"}}" aria-label="{{call .T "share_view.book.search.aria"}}" oninput="searchShareDocs(this.value)">
+                    </div>
+                </div>
+                <div id="share-book-tree" role="tree" aria-label="{{call .T "share_view.book.tab.tree"}}"></div>
+            </div>
+            <!-- Panel: 大纲 -->
+            <div id="share-panel-outline" class="tab-panel" role="tabpanel" aria-labelledby="share-tab-outline">
+                <div class="outline-toolbar">
+                    <button class="toolbar-btn" onclick="expandOutlineAll()" aria-label="{{call .T "editor.outline.expand_all.aria"}}"><i class="fa-solid fa-angles-down"></i> {{call .T "share_view.outline.expand"}}</button>
+                    <button class="toolbar-btn" onclick="collapseOutlineAll()" aria-label="{{call .T "editor.outline.collapse_all.aria"}}"><i class="fa-solid fa-angles-up"></i> {{call .T "share_view.outline.collapse"}}</button>
+                    <div class="toolbar-spacer"></div>
+                </div>
+                <div class="outline-container" id="outline-content"></div>
+                <div id="share-toc-empty" class="outline-empty" style="display:none;">
+                    <i class="fa-solid fa-list-ul"></i><p>{{call .T "share_view.outline.empty"}}</p>
+                </div>
+            </div>
+            {{else}}
+            <!-- Tabs -->
+            <div class="sidebar-tabs" role="tablist" aria-label="{{call .T "share_view.tab.meta"}}">
+                <button id="share-tab-meta" class="sidebar-tab active" type="button" role="tab"
+                        aria-selected="true" aria-controls="share-panel-meta"
+                        onclick="switchShareTab('meta')">
+                    <i class="fa-regular fa-rectangle-list"></i> {{call .T "share_view.tab.meta"}}
+                </button>
+                <button id="share-tab-outline" class="sidebar-tab" type="button" role="tab"
+                        aria-selected="false" aria-controls="share-panel-outline"
+                        onclick="switchShareTab('outline')">
+                    <i class="fa-solid fa-list-ul"></i> {{call .T "share_view.tab.outline"}}
+                </button>
+            </div>
+
+            <!-- Panel: 信息 -->
+            <div id="share-panel-meta" class="tab-panel active" role="tabpanel" aria-labelledby="share-tab-meta"
+                 style="overflow-y:auto;flex:1;">
+                <div class="share-meta-item">
+                    <div class="share-meta-label">{{call .T "share_view.meta.author"}}</div>
+                    <div class="share-meta-value">{{if .Share.Author}}{{.Share.Author}}{{else}}{{call .T "share_view.meta.anonymous"}}{{end}}</div>
+                </div>
+                <div class="share-meta-item">
+                    <div class="share-meta-label">{{call .T "share_view.meta.publish_time"}}</div>
+                    <div class="share-meta-value">{{formatTime .Share.ShareTime}}</div>
+                </div>
+                <div class="share-meta-item">
+                    <div class="share-meta-label">{{call .T "share_view.meta.share_type"}}</div>
+                    <div class="share-meta-value">
+                        <span class="share-type-badge {{if eq .Share.BlogType "note"}}share-type-note{{else if eq .Share.ShareType "blog"}}share-type-blog{{else}}share-type-document{{end}}">
+                            <i class="fa-solid {{if eq .Share.DocType "spreadsheet"}}fa-table-cells{{else if eq .Share.DocType "presentation"}}fa-display{{else if eq .Share.DocType "drawing"}}fa-paintbrush{{else if eq .Share.DocType "html"}}fa-code{{else if eq .Share.DocType "mindmap"}}fa-diagram-project{{else if eq .Share.BlogType "note"}}fa-bolt{{else if eq .Share.ShareType "blog"}}fa-pen-nib{{else}}fa-file-lines{{end}}"></i>
+                            {{if eq .Share.DocType "spreadsheet"}}{{call .T "share_view.meta.spreadsheet"}}{{else if eq .Share.DocType "presentation"}}{{call .T "share_view.meta.presentation"}}{{else if eq .Share.DocType "drawing"}}{{call .T "share_view.meta.drawing"}}{{else if eq .Share.DocType "html"}}HTML{{else if eq .Share.DocType "mindmap"}}{{call .T "share_view.meta.mindmap"}}{{else if eq .Share.BlogType "note"}}{{call .T "share_view.meta.note"}}{{else if eq .Share.ShareType "blog"}}{{call .T "share_view.meta.blog"}}{{else}}{{call .T "share_view.meta.doc"}}{{end}}
+                        </span>
+                    </div>
+                </div>
+                {{if and (eq .Share.ShareType "blog") .Share.Description}}
+                <div class="share-meta-item">
+                    <div class="share-meta-label">{{call .T "share_view.meta.description"}}</div>
+                    <div class="share-meta-value">{{.Share.Description}}</div>
+                </div>
+                {{end}}
+                {{if .Share.BookName}}
+                <div class="share-meta-item">
+                    <div class="share-meta-label">{{call .T "share_view.meta.book"}}</div>
+                    <div class="share-meta-value">《{{.Share.BookName}}》</div>
+                </div>
+                {{end}}
+                {{if .Share.Labels}}
+                <div class="share-meta-item">
+                    <div class="share-meta-label">{{call .T "share_view.meta.labels"}}</div>
+                    <div class="share-meta-value" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">
+                        {{range .Share.Labels}}<span class="share-label-chip">{{.}}</span>{{end}}
+                    </div>
+                </div>
+                {{end}}
+                <div class="share-meta-item" style="display:flex;flex-direction:column;gap:6px;border-bottom:none;">
+                    {{if .ShareCommentsEnabled}}
+                    <button type="button" class="share-action-btn" data-share-comments-trigger onclick="scrollToShareComments()" aria-expanded="false" aria-label="{{call .T "share_comments.title"}}">
+                        <i class="fa-regular fa-comments"></i> {{call .T "share_comments.title"}}
+                    </button>
+                    {{end}}
+                    <button type="button" class="share-action-btn" onclick="copyShareUrl(this)" aria-label="{{call .T "share_view.action.copy_link"}}">
+                        <i class="fa-solid fa-link"></i> {{call .T "share_view.action.copy_link"}}
+                    </button>
+                    <button type="button" id="share-copy-content-btn" class="share-action-btn" onclick="copyShareContent(this)" aria-label="{{call .T "share_view.action.copy_content"}}">
+                        <i class="fa-regular fa-copy"></i> {{call .T "share_view.action.copy_content"}}
+                    </button>
+                </div>
+                <!-- Mindmap export buttons (hidden until mindmap loads) -->
+                <div id="share-mindmap-export">
+                    <button type="button" class="share-action-btn" onclick="shareExportMindmapPng()" aria-label="{{call .T "share_view.action.export_png"}}">
+                        <i class="fa-solid fa-image"></i> {{call .T "share_view.action.export_png"}}
+                    </button>
+                    <button type="button" class="share-action-btn" onclick="shareExportMindmapSvg()" aria-label="{{call .T "share_view.action.export_svg"}}">
+                        <i class="fa-solid fa-code"></i> {{call .T "share_view.action.export_svg"}}
+                    </button>
+                </div>
+            </div>
+
+            <!-- Panel: 目录 -->
+            <div id="share-panel-outline" class="tab-panel" role="tabpanel" aria-labelledby="share-tab-outline">
+                <div class="outline-toolbar">
+                    <button class="toolbar-btn" onclick="expandOutlineAll()" aria-label="{{call .T "editor.outline.expand_all.aria"}}"><i class="fa-solid fa-angles-down"></i> {{call .T "share_view.outline.expand"}}</button>
+                    <button class="toolbar-btn" onclick="collapseOutlineAll()" aria-label="{{call .T "editor.outline.collapse_all.aria"}}"><i class="fa-solid fa-angles-up"></i> {{call .T "share_view.outline.collapse"}}</button>
+                    <div class="toolbar-spacer"></div>
+                </div>
+                <div class="outline-container" id="outline-content"></div>
+                <div id="share-toc-empty" class="outline-empty" style="display:none;">
+                    <i class="fa-solid fa-list-ul"></i><p>{{call .T "share_view.outline.empty"}}</p>
+                </div>
+            </div>
+            {{end}}
+        </div>
+
+        <!-- Main area -->
+        <div class="flex-1 flex flex-col overflow-hidden share-main">
+            <!-- Topbar -->
+            <div class="share-topbar h-10 bg-white border-b border-slate-200 flex items-center px-3 shrink-0 gap-2">
+                <!-- Mobile hamburger -->
+                <button class="hamburger-btn tb-btn tb-btn-slate" title="{{call .T "share_view.topbar.open"}}" aria-label="{{call .T "share_view.topbar.open"}}" onclick="openMobileDrawer()">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <!-- Desktop: show sidebar expand button when collapsed -->
+                <button id="share-expand-btn" class="sidebar-collapse-btn tb-btn tb-btn-slate" title="{{call .T "share_view.topbar.expand"}}" aria-label="{{call .T "share_view.topbar.expand"}}" onclick="toggleShareSidebar()">
+                    <i class="fa-solid fa-angles-right" style="font-size:10px;"></i>
+                </button>
+                <!-- Back to shares list -->
+                <a href="/shares" class="tb-btn tb-btn-blue" title="{{call .T "share_view.topbar.back"}}" aria-label="{{call .T "share_view.topbar.back"}}">
+                    <i class="fa-solid fa-arrow-left"></i>
+                </a>
+                <!-- Breadcrumb -->
+                <nav class="breadcrumb" aria-label="{{call .T "share_view.breadcrumb.aria"}}" style="flex:1;min-width:0;overflow:hidden;">
+                    <span class="breadcrumb-item">{{call .T "share_view.breadcrumb.shares"}}</span>
+                    <i class="fa-solid fa-chevron-right breadcrumb-sep"></i>
+                    <span class="breadcrumb-item breadcrumb-current share-topbar-title">{{.Share.Title}}{{if .Share.HasPassword}} <i class="fa-solid fa-lock" style="font-size:10px;" title="{{call .T "share_view.encrypted"}}"></i>{{end}}</span>
+                </nav>
+                <!-- Drawing zoom toolbar（仅画板类型显示，与 editor 风格一致） -->
+                <div id="share-drawing-zoom" style="display:none;align-items:center;gap:4px;">
+                    <button type="button" class="tb-btn tb-btn-slate" onclick="shareDrawingZoom('out')" title="{{call .T "share_view.drawing.zoom_out"}}" aria-label="{{call .T "share_view.drawing.zoom_out"}}">
+                        <i class="fa-solid fa-magnifying-glass-minus"></i>
+                    </button>
+                    <button type="button" class="tb-btn tb-btn-slate" onclick="shareDrawingZoom('reset')" title="{{call .T "share_view.drawing.zoom_reset"}}" aria-label="{{call .T "share_view.drawing.zoom_reset"}}">
+                        <i class="fa-solid fa-arrows-to-dot"></i>
+                    </button>
+                    <button type="button" class="tb-btn tb-btn-slate" onclick="shareDrawingZoom('in')" title="{{call .T "share_view.drawing.zoom_in"}}" aria-label="{{call .T "share_view.drawing.zoom_in"}}">
+                        <i class="fa-solid fa-magnifying-glass-plus"></i>
+                    </button>
+                </div>
+                <!-- Edit mode badge + save status + save button (hidden by default, shown in edit mode) -->
+                <span id="edit-mode-badge" style="display:none;font-size:10px;color:#b45309;background:#fef3c7;padding:1px 6px;border-radius:4px;font-weight:500;">{{call .T "share.edit.mode_badge"}}</span>
+                <span id="edit-save-status" style="display:none;font-size:11px;color:var(--color-gray-500,#64748b);"></span>
+                <button id="edit-save-btn" style="display:none;" class="tb-btn tb-btn-blue" onclick="saveShareEdit()">
+                    <i class="fa-solid fa-floppy-disk"></i> <span class="btn-text">{{call .T "share.edit.save_btn"}}</span>
+                </button>
+                {{if .ShareCommentsEnabled}}
+                <button type="button" class="tb-btn tb-btn-slate" id="share-comments-jump-btn" data-share-comments-trigger aria-expanded="false" aria-label="{{call .T "share_comments.title"}}" title="{{call .T "share_comments.title"}}" onclick="scrollToShareComments()">
+                    <i class="fa-regular fa-comments"></i>
+                </button>
+                {{end}}
+                <!-- Fullscreen reader -->
+                <button type="button" class="tb-btn tb-btn-slate share-reader-fullscreen-btn" id="share-reader-fullscreen-btn" aria-label="{{call .T "share_view.reader.fullscreen"}}" title="{{call .T "share_view.reader.fullscreen"}}" onclick="enterShareReaderFullscreen()">
+                    <i class="fa-solid fa-expand"></i>
+                </button>
+                <!-- Theme toggle -->
+                <button type="button" class="tb-btn tb-btn-slate" id="shareThemeToggle" aria-label="{{call .T "share_view.topbar.theme"}}" title="{{call .T "share_view.topbar.theme"}}" onclick="BookStarkTheme.toggle()">
+                    <i class="fa-solid fa-moon" id="theme-icon"></i>
+                </button>
+            </div>
+
+            {{if .ShareCommentsEnabled}}
+            <button type="button" id="share-comments-backdrop" class="share-comments-backdrop" onclick="closeShareCommentsPanel()" aria-label="{{call .T "common.close"}}" hidden></button>
+            {{end}}
+
+            <!-- Content scroll area -->
+            <div id="content-scroll" style="flex:1;position:relative;overflow-y:auto;">
+                <div id="preview-wrap" style="max-width:960px;margin:0 auto;padding:24px 40px;">
+                    <div id="preview-area"></div>
+                    {{if .ShareCommentsEnabled}}
+                    <section id="share-comments" class="share-comments share-comments-panel" data-account="{{.Account}}" data-comments-lazy="1" hidden aria-label="{{call .T "share_comments.title"}}">
+                        <div class="share-comments-head">
+                            <h2 class="share-comments-title"><i class="fa-regular fa-comments"></i>{{call .T "share_comments.title"}}</h2>
+                            <div class="share-comments-head-actions">
+                                <div id="share-comments-count" class="share-comments-count"></div>
+                                <button type="button" class="share-comments-close" onclick="closeShareCommentsPanel()" aria-label="{{call .T "common.close"}}" title="{{call .T "common.close"}}"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+                        </div>
+                        <div id="share-comments-list" class="share-comments-list" aria-live="polite"></div>
+                        <form id="share-comments-form" class="share-comments-form">
+                            {{if .Account}}
+                            <div class="share-comments-identity">{{call .T "share_comments.identity_prefix"}} {{.Account}}</div>
+                            {{else}}
+                            <div class="share-comments-fields">
+                                <input id="share-comment-author" class="share-comment-input" type="text" maxlength="40" autocomplete="name" placeholder="{{call .T "share_comments.name_placeholder"}}" aria-label="{{call .T "share_comments.name_placeholder"}}">
+                                <input id="share-comment-email" class="share-comment-input" type="email" maxlength="200" autocomplete="email" placeholder="{{call .T "share_comments.email_placeholder"}}" aria-label="{{call .T "share_comments.email_placeholder"}}">
+                            </div>
+                            {{end}}
+                            <textarea id="share-comment-content" class="share-comment-textarea" maxlength="{{.ShareCommentMaxLength}}" placeholder="{{call .T "share_comments.content_placeholder"}}" aria-label="{{call .T "share_comments.content_placeholder"}}"></textarea>
+                            <div class="share-comments-actions">
+                                <div id="share-comments-state" class="share-comments-state"></div>
+                                <button id="share-comments-submit" class="share-comments-submit" type="submit"><i class="fa-solid fa-paper-plane"></i>{{call .T "share_comments.submit"}}</button>
+                            </div>
+                        </form>
+                    </section>
+                    {{end}}
+                </div>
+            </div>
+            <footer id="share-footer" class="flex flex-col items-center justify-center text-xs px-4 py-3 gap-1 shrink-0" style="border-top:1px solid var(--color-border);color:var(--color-text-secondary);background:var(--color-bg-card)">
+                <div>{{call .T "share_view.footer.brand"}}</div>
+                {{if .FriendLinks}}
+                <div class="flex flex-wrap items-center justify-center gap-2 text-xs">
+                    <span style="color:var(--color-text-muted)">{{call .T "share_view.footer.friend_links"}}</span>
+                    {{range $index, $item := .FriendLinks}}
+                        {{if gt $index 0}}<span style="color:var(--color-gray-300)">|</span>{{end}}
+                        <a href="{{$item.LinkURL}}" target="_blank" rel="noopener noreferrer" style="color:var(--color-primary)">{{$item.LinkName}}</a>
+                    {{end}}
+                </div>
+                {{end}}
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        window.__univerCssVer__ = '{{assetVer "/static/js/univer/univer.css"}}';
+        window.__univerJsVer__ = '{{assetVer "/static/js/univer/univer.js"}}';
+    </script>
+    <script src="/static/js/bs-dialog.js?v={{assetVer "/static/js/bs-dialog.js"}}"></script>
+    <script src="/static/js/univer-adapter.js?v={{assetVer "/static/js/univer-adapter.js"}}"></script>
+    <script src="/static/js/pptist-adapter.js?v={{assetVer "/static/js/pptist-adapter.js"}}"></script>
+    <script src="/static/js/editor-common.js?v={{assetVer "/static/js/editor-common.js"}}"></script>
+    <script src="/static/js/richdoc-editor.js?v={{assetVer "/static/js/richdoc-editor.js"}}"></script>
+    <script src="/static/js/i18n.js?v={{assetVer "/static/js/i18n.js"}}"></script>
+    <script>
+    window.__I18N_MESSAGES = {{.JSBundle}};
+    window.__currentLang = "{{.Lang}}";
+    window.__SAVE_INTERVAL__ = {{if .SaveInterval}}{{.SaveInterval}}{{else}}30{{end}};
+    </script>
+
+    <script>
+    var shareContent = {{jsonJS .Share.Content}};
+    var shareTitle = {{jsonJS .Share.Title}};
+    var shareContentURL = {{if .Share.ContentURL}}{{jsonJS .Share.ContentURL}}{{else}}""{{end}};
+    var shareDocType = {{jsonJS .Share.DocType}};
+    var shareHasPassword = {{if .Share.HasPassword}}true{{else}}false{{end}};
+    var shareIdentify = {{jsonJS .Share.ShareIdentify}};
+    if (shareDocType === 'html') document.body.classList.add('share-html-tool-mode');
+    var shareType = {{jsonJS .Share.ShareType}};
+    var shareDocTree = {{json .Share.DocTree}};
+    window.__SHARE_COMMENTS_ENABLED__ = {{if .ShareCommentsEnabled}}true{{else}}false{{end}};
+    window.__SHARE_COMMENT_ACCOUNT__ = {{jsonJS .Account}};
+    window.__SHARE_COMMENT_MAX_LENGTH__ = {{.ShareCommentMaxLength}};
+
+    function fetchShareRawHTMLContent(url, options) {
+        if (!url) return Promise.resolve('');
+        options = options || {};
+        if (!options.cache) options.cache = 'no-store';
+        return fetch(url, options).then(function(r) {
+            return r.text().then(function(text) {
+                if (r.ok) return text;
+                var message = text || 'HTML 内容加载失败';
+                try {
+                    var data = JSON.parse(text);
+                    message = data.message || message;
+                } catch(e) {}
+                var err = new Error(message);
+                if (r.status === 400 || r.status === 401 || r.status === 403) err.isAuthError = true;
+                throw err;
+            });
+        });
+    }
+
+    var OfflineShareVault = (function() {
+        var DB_NAME = 'bookstark-offline-vault';
+        var DB_VERSION = 2;
+        var STORE = 'encrypted_shares';
+
+        function supported() {
+            return !!(window.indexedDB && window.crypto && window.crypto.subtle && window.TextEncoder && window.TextDecoder);
+        }
+
+        function openDB() {
+            return new Promise(function(resolve, reject) {
+                if (!supported()) {
+                    reject(new Error('当前浏览器不支持本地加密缓存'));
+                    return;
+                }
+                var req = indexedDB.open(DB_NAME, DB_VERSION);
+                req.onupgradeneeded = function() {
+                    var db = req.result;
+                    if (!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE, { keyPath: 'id' });
+                    if (!db.objectStoreNames.contains('encrypted_blogs')) db.createObjectStore('encrypted_blogs', { keyPath: 'id' });
+                };
+                req.onsuccess = function() { resolve(req.result); };
+                req.onerror = function() { reject(req.error || new Error('打开本地缓存失败')); };
+            });
+        }
+
+        function txStore(mode) {
+            return openDB().then(function(db) {
+                return db.transaction(STORE, mode).objectStore(STORE);
+            });
+        }
+
+        function bytesToB64(bytes) {
+            var binary = '';
+            var chunkSize = 0x8000;
+            for (var i = 0; i < bytes.length; i += chunkSize) {
+                binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+            }
+            return btoa(binary);
+        }
+
+        function b64ToBytes(str) {
+            var binary = atob(str);
+            var bytes = new Uint8Array(binary.length);
+            for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            return bytes;
+        }
+
+        function deriveKey(password, salt) {
+            var enc = new TextEncoder();
+            return crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']).then(function(baseKey) {
+                return crypto.subtle.deriveKey(
+                    { name: 'PBKDF2', salt: salt, iterations: 100000, hash: 'SHA-256' },
+                    baseKey,
+                    { name: 'AES-GCM', length: 256 },
+                    false,
+                    ['encrypt', 'decrypt']
+                );
+            });
+        }
+
+        function put(record) {
+            return txStore('readwrite').then(function(store) {
+                return new Promise(function(resolve, reject) {
+                    var req = store.put(record);
+                    req.onsuccess = function() { resolve(); };
+                    req.onerror = function() { reject(req.error || new Error('写入本地缓存失败')); };
+                });
+            });
+        }
+
+        function get(id) {
+            return txStore('readonly').then(function(store) {
+                return new Promise(function(resolve, reject) {
+                    var req = store.get(String(id));
+                    req.onsuccess = function() { resolve(req.result || null); };
+                    req.onerror = function() { reject(req.error || new Error('读取本地缓存失败')); };
+                });
+            });
+        }
+
+        function save(id, password, content, docType) {
+            if (!password || shareType !== 'blog') return Promise.resolve();
+            var salt = crypto.getRandomValues(new Uint8Array(16));
+            var nonce = crypto.getRandomValues(new Uint8Array(12));
+            var enc = new TextEncoder();
+            return deriveKey(password, salt).then(function(key) {
+                return crypto.subtle.encrypt({ name: 'AES-GCM', iv: nonce }, key, enc.encode(content || ''));
+            }).then(function(cipher) {
+                return put({
+                    id: String(id),
+                    shareType: shareType,
+                    docType: docType || shareDocType || 'markdown',
+                    updatedAt: Date.now(),
+                    salt: bytesToB64(salt),
+                    nonce: bytesToB64(nonce),
+                    cipher: bytesToB64(new Uint8Array(cipher))
+                });
+            }).catch(function(err) {
+                console.warn('Encrypted offline share cache save failed:', err);
+            });
+        }
+
+        function load(id, password) {
+            return get(id).then(function(record) {
+                if (!record) throw new Error('没有可用的本地离线缓存');
+                return deriveKey(password, b64ToBytes(record.salt)).then(function(key) {
+                    return crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64ToBytes(record.nonce) }, key, b64ToBytes(record.cipher));
+                }).then(function(plain) {
+                    return {
+                        content: new TextDecoder().decode(plain),
+                        docType: record.docType || shareDocType || 'markdown'
+                    };
+                });
+            }).catch(function(err) {
+                if (/本地离线缓存/.test(err.message || '')) throw err;
+                throw new Error('本地缓存解密失败，密码可能不正确');
+            });
+        }
+
+        return { save: save, load: load, supported: supported };
+    })();
+
+    // ── Sidebar ──────────────────────────────────────────────────────────
+    var SHARE_LAYOUT_STORAGE_KEY = 'bookstark:share-view-layout:v1';
+    var _sidebarCollapsed = false;
+    var _shareReaderExitDragState = null;
+    var _shareReaderExitDragSuppressClick = false;
+
+    function getShareLayoutStorage() {
+        try {
+            return window.localStorage || null;
+        } catch(e) {
+            return null;
+        }
+    }
+
+    function readShareLayoutState() {
+        var storage = getShareLayoutStorage();
+        if (!storage) return {};
+        try {
+            var raw = storage.getItem(SHARE_LAYOUT_STORAGE_KEY);
+            if (!raw) return {};
+            var state = JSON.parse(raw);
+            return state && typeof state === 'object' ? state : {};
+        } catch(e) {
+            return {};
+        }
+    }
+
+    function writeShareLayoutState(patch) {
+        var storage = getShareLayoutStorage();
+        if (!storage || !patch) return;
+        var state = readShareLayoutState();
+        if (typeof patch.sidebarCollapsed === 'boolean') state.sidebarCollapsed = patch.sidebarCollapsed;
+        if (typeof patch.readerFullscreen === 'boolean') state.readerFullscreen = patch.readerFullscreen;
+        try {
+            storage.setItem(SHARE_LAYOUT_STORAGE_KEY, JSON.stringify(state));
+        } catch(e) {}
+    }
+
+    function setShareSidebarCollapsed(collapsed, persist) {
+        var sb = document.getElementById('sidebar');
+        var expandBtn = document.getElementById('share-expand-btn');
+        if (!sb) return;
+        _sidebarCollapsed = !!collapsed;
+        if (_sidebarCollapsed) {
+            sb.classList.add('collapsed');
+            if (expandBtn) expandBtn.classList.add('visible');
+        } else {
+            sb.classList.remove('collapsed');
+            if (expandBtn) expandBtn.classList.remove('visible');
+        }
+        if (persist) writeShareLayoutState({ sidebarCollapsed: _sidebarCollapsed });
+    }
+
+    function isCompactShareViewport() {
+        return window.innerWidth <= 768 || (window.innerWidth <= 960 && window.innerHeight <= 520);
+    }
+
+    function applyShareLayoutState() {
+        var state = readShareLayoutState();
+        if (state.readerFullscreen === true) {
+            document.body.classList.add('share-reader-fullscreen');
+            var readerBtn = document.getElementById('share-reader-fullscreen-btn');
+            if (readerBtn) readerBtn.setAttribute('aria-pressed', 'true');
+        }
+        if (window.innerWidth > 768 && isCompactShareViewport()) {
+            setShareSidebarCollapsed(true, false);
+        } else if (state.sidebarCollapsed === true && window.innerWidth > 768) {
+            setShareSidebarCollapsed(true, false);
+        } else {
+            setShareSidebarCollapsed(false, false);
+        }
+    }
+
+    function clampShareReaderExitPosition(left, top, rect) {
+        var margin = 8;
+        var width = rect && rect.width ? rect.width : 36;
+        var height = rect && rect.height ? rect.height : 36;
+        var maxLeft = Math.max(margin, window.innerWidth - width - margin);
+        var maxTop = Math.max(margin, window.innerHeight - height - margin);
+        return {
+            left: Math.min(Math.max(left, margin), maxLeft),
+            top: Math.min(Math.max(top, margin), maxTop)
+        };
+    }
+
+    function initShareReaderExitDrag() {
+        var btn = document.getElementById('share-reader-exit-btn');
+        if (!btn || !window.PointerEvent) return;
+
+        btn.addEventListener('click', function(ev) {
+            if (!_shareReaderExitDragSuppressClick) return;
+            _shareReaderExitDragSuppressClick = false;
+            ev.preventDefault();
+            ev.stopImmediatePropagation();
+        }, true);
+
+        btn.addEventListener('pointerdown', function(ev) {
+            if (ev.button !== undefined && ev.button !== 0) return;
+            if (!document.body.classList.contains('share-reader-fullscreen')) return;
+            var rect = btn.getBoundingClientRect();
+            _shareReaderExitDragState = {
+                pointerId: ev.pointerId,
+                startX: ev.clientX,
+                startY: ev.clientY,
+                left: rect.left,
+                top: rect.top,
+                rect: rect,
+                moved: false
+            };
+            btn.classList.add('is-dragging');
+            if (btn.setPointerCapture) btn.setPointerCapture(ev.pointerId);
+        });
+
+        document.addEventListener('pointermove', function(ev) {
+            var state = _shareReaderExitDragState;
+            if (!state || ev.pointerId !== state.pointerId) return;
+            var dx = ev.clientX - state.startX;
+            var dy = ev.clientY - state.startY;
+            if (!state.moved && Math.abs(dx) + Math.abs(dy) < 4) return;
+            state.moved = true;
+            ev.preventDefault();
+            var next = clampShareReaderExitPosition(state.left + dx, state.top + dy, state.rect);
+            btn.style.left = next.left + 'px';
+            btn.style.top = next.top + 'px';
+            btn.style.right = 'auto';
+            btn.style.transform = 'none';
+        });
+
+        function endDrag(ev) {
+            var state = _shareReaderExitDragState;
+            if (!state || ev.pointerId !== state.pointerId) return;
+            if (state.moved) _shareReaderExitDragSuppressClick = true;
+            _shareReaderExitDragState = null;
+            btn.classList.remove('is-dragging');
+            if (btn.releasePointerCapture) {
+                try { btn.releasePointerCapture(ev.pointerId); } catch(e) {}
+            }
+        }
+        document.addEventListener('pointerup', endDrag);
+        document.addEventListener('pointercancel', endDrag);
+
+        window.addEventListener('resize', function() {
+            if (!document.body.classList.contains('share-reader-fullscreen')) return;
+            var rect = btn.getBoundingClientRect();
+            if (!rect.width || !rect.height) return;
+            var next = clampShareReaderExitPosition(rect.left, rect.top, rect);
+            btn.style.left = next.left + 'px';
+            btn.style.top = next.top + 'px';
+            btn.style.right = 'auto';
+        });
+    }
+
+    function enterShareReaderFullscreen() {
+        closeMobileDrawer();
+        document.body.classList.add('share-reader-fullscreen');
+        var btn = document.getElementById('share-reader-fullscreen-btn');
+        if (btn) btn.setAttribute('aria-pressed', 'true');
+        writeShareLayoutState({ readerFullscreen: true });
+    }
+
+    function exitShareReaderFullscreen() {
+        document.body.classList.remove('share-reader-fullscreen');
+        var btn = document.getElementById('share-reader-fullscreen-btn');
+        if (btn) {
+            btn.setAttribute('aria-pressed', 'false');
+            try { btn.focus(); } catch(e) {}
+        }
+        writeShareLayoutState({ readerFullscreen: false });
+    }
+
+    document.addEventListener('keydown', function(ev) {
+        if (ev.key === 'Escape' && document.body.classList.contains('share-reader-fullscreen')) {
+            exitShareReaderFullscreen();
+        } else if (ev.key === 'Escape') {
+            closeShareCommentsPanel();
+        }
+    });
+
+    function toggleShareSidebar() {
+        var sb = document.getElementById('sidebar');
+        if (!sb) return;
+        if (window.innerWidth <= 768) {
+            closeMobileDrawer();
+            return;
+        }
+        setShareSidebarCollapsed(!_sidebarCollapsed, true);
+    }
+
+    function openMobileDrawer() {
+        var sb = document.getElementById('sidebar');
+        var overlay = document.getElementById('drawerOverlay');
+        if (sb) {
+            sb.classList.remove('collapsed');
+            sb.classList.add('drawer-open');
+        }
+        if (overlay) overlay.classList.add('active');
+    }
+
+    function closeMobileDrawer() {
+        var sb = document.getElementById('sidebar');
+        var overlay = document.getElementById('drawerOverlay');
+        if (sb) sb.classList.remove('drawer-open');
+        if (overlay) overlay.classList.remove('active');
+    }
+
+    window.addEventListener('resize', function() {
+        if (window.innerWidth > 768 && isCompactShareViewport()) {
+            closeMobileDrawer();
+            setShareSidebarCollapsed(true, false);
+        } else if (window.innerWidth > 768) {
+            closeMobileDrawer();
+            setShareSidebarCollapsed(readShareLayoutState().sidebarCollapsed === true, false);
+        }
+    });
+
+    applyShareLayoutState();
+    initShareReaderExitDrag();
+
+    function switchShareTab(tab, opts) {
+        opts = opts || {};
+        if (opts.updateUrl !== false && window.BookStarkTabURL) window.BookStarkTabURL.set('shareTab', tab);
+        var isMeta = (tab === 'meta');
+        document.getElementById('share-tab-meta').classList.toggle('active', isMeta);
+        document.getElementById('share-tab-outline').classList.toggle('active', !isMeta);
+        document.getElementById('share-tab-meta').setAttribute('aria-selected', isMeta ? 'true' : 'false');
+        document.getElementById('share-tab-outline').setAttribute('aria-selected', !isMeta ? 'true' : 'false');
+        document.getElementById('share-panel-meta').classList.toggle('active', isMeta);
+        document.getElementById('share-panel-outline').classList.toggle('active', !isMeta);
+    }
+
+    function switchBookTab(tab, opts) {
+        opts = opts || {};
+        if (opts.updateUrl !== false && window.BookStarkTabURL) window.BookStarkTabURL.set('shareTab', tab);
+        var isTree = (tab === 'tree');
+        document.getElementById('share-tab-tree').classList.toggle('active', isTree);
+        document.getElementById('share-tab-outline').classList.toggle('active', !isTree);
+        document.getElementById('share-tab-tree').setAttribute('aria-selected', isTree ? 'true' : 'false');
+        document.getElementById('share-tab-outline').setAttribute('aria-selected', !isTree ? 'true' : 'false');
+        document.getElementById('share-panel-tree').classList.toggle('active', isTree);
+        document.getElementById('share-panel-outline').classList.toggle('active', !isTree);
+    }
+
+    // ── Fullpage callback (spreadsheet / drawing / mindmap) ───────────────
+    function onFullpage() {
+        document.documentElement.classList.add('spreadsheet-fullpage');
+        var outlineTab = document.getElementById('share-tab-outline');
+        if (outlineTab) outlineTab.style.display = 'none';
+        var copyBtn = document.getElementById('share-copy-content-btn');
+        if (copyBtn) copyBtn.style.display = 'none';
+        // Keep footer visible and scrolling enabled in share view.
+        // Only lock scroll in editor context (checked by presence of editor-specific elements).
+    }
+
+    // ── TOC ───────────────────────────────────────────────────────────────
+    var _shareHeadings = [];
+
+    function buildShareToc() {
+        var previewer = document.querySelector('#preview-area .cherry-previewer');
+        var outlineEl = document.getElementById('outline-content');
+        var emptyEl = document.getElementById('share-toc-empty');
+        if (!outlineEl) return;
+
+        var nodes = previewer ? previewer.querySelectorAll('h1,h2,h3,h4') : [];
+        _shareHeadings = [];
+        outlineEl.innerHTML = '';
+
+        if (!nodes.length) {
+            if (emptyEl) emptyEl.style.display = '';
+            return;
+        }
+        if (emptyEl) emptyEl.style.display = 'none';
+
+        Array.prototype.forEach.call(nodes, function(node, i) {
+            var text = (node.textContent || '').trim();
+            if (!text) return;
+            if (!node.id) node.id = 'sh-' + i + '-' + text.slice(0, 10).replace(/\s+/g, '-');
+            var level = parseInt(node.tagName.substring(1)) || 2;
+            _shareHeadings.push({ id: node.id, text: text, level: level });
+
+            var btn = document.createElement('div');
+            btn.className = 'outline-item outline-h' + level;
+            btn.setAttribute('data-target', node.id);
+            btn.setAttribute('tabindex', '0');
+            btn.setAttribute('role', 'link');
+            btn.setAttribute('aria-label', window.__('share_view.toc.jump_aria_prefix') + text);
+            btn.title = text;
+            btn.innerHTML = '<span class="outline-item-text">' + escHtml(text) + '</span><span class="outline-item-badge">H' + level + '</span>';
+            btn.addEventListener('click', function() {
+                var target = document.getElementById(node.id);
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    setActiveTocItem(node.id);
+                    if (window.innerWidth <= 768) closeMobileDrawer();
+                }
+            });
+            btn.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    var target = document.getElementById(node.id);
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        setActiveTocItem(node.id);
+                        if (window.innerWidth <= 768) closeMobileDrawer();
+                    }
+                }
+            });
+            outlineEl.appendChild(btn);
+        });
+
+        bindTocObserver();
+    }
+
+    function expandOutlineAll() {
+        document.querySelectorAll('.outline-h2.collapsed, .outline-h3.collapsed, .outline-h4.collapsed').forEach(function(el) {
+            el.classList.remove('collapsed');
+        });
+    }
+    function collapseOutlineAll() {
+        document.querySelectorAll('.outline-h2, .outline-h3, .outline-h4').forEach(function(el) {
+            el.classList.add('collapsed');
+        });
+    }
+
+    function setActiveTocItem(id) {
+        document.querySelectorAll('#outline-content .outline-item').forEach(function(btn) {
+            btn.classList.toggle('active', btn.getAttribute('data-target') === id);
+        });
+    }
+
+    function bindTocObserver() {
+        if (!('IntersectionObserver' in window) || !_shareHeadings.length) return;
+        var headings = _shareHeadings.map(function(h) { return document.getElementById(h.id); }).filter(Boolean);
+        if (!headings.length) return;
+        var observer = new IntersectionObserver(function(entries) {
+            var visible = entries.filter(function(e) { return e.isIntersecting; })
+                .sort(function(a, b) { return Math.abs(a.boundingClientRect.top) - Math.abs(b.boundingClientRect.top); });
+            if (visible.length) setActiveTocItem(visible[0].target.id);
+        }, { rootMargin: '-80px 0px -60% 0px', threshold: [0, 0.2, 1] });
+        headings.forEach(function(h) { observer.observe(h); });
+        if (headings[0]) setActiveTocItem(headings[0].id);
+    }
+
+    // ── Copy actions ──────────────────────────────────────────────────────
+    function markShareCopySuccess(btn) {
+        if (!btn) return;
+        var icon = btn.querySelector('i');
+        if (icon) {
+            var prev = icon.className;
+            icon.className = 'fa-solid fa-check';
+            setTimeout(function() { icon.className = prev; }, 1500);
+        }
+    }
+
+    function writeShareClipboard(text, btn) {
+        var value = text || '';
+        var done = function() { markShareCopySuccess(btn); };
+        var fail = function() {
+            if (window.BSDialog && BSDialog.toast) BSDialog.toast(window.__('share.code.copy_error'), 'error');
+        };
+        var fallback = function() {
+            var textarea = document.createElement('textarea');
+            textarea.value = value;
+            textarea.setAttribute('readonly', '');
+            textarea.style.position = 'fixed';
+            textarea.style.left = '-9999px';
+            textarea.style.top = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                if (document.execCommand('copy')) done();
+                else fail();
+            } catch(e) {
+                fail();
+            } finally {
+                document.body.removeChild(textarea);
+            }
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(value).then(done).catch(fallback);
+            return;
+        }
+        fallback();
+    }
+
+    function copyShareUrl(btn) {
+        writeShareClipboard(window.location.href, btn);
+    }
+
+    function copyShareContent(btn) {
+        writeShareClipboard(shareContent, btn);
+    }
+
+    function setShareCommentsTriggers(open) {
+        document.querySelectorAll('[data-share-comments-trigger]').forEach(function(btn) {
+            btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+    }
+
+    function openShareCommentsPanel() {
+        var comments = document.getElementById('share-comments');
+        if (!comments) return;
+        var backdrop = document.getElementById('share-comments-backdrop');
+        comments.hidden = false;
+        if (backdrop) backdrop.hidden = false;
+        setShareCommentsTriggers(true);
+        closeMobileDrawer();
+        if (window.BookStarkShareComments && typeof BookStarkShareComments.init === 'function') {
+            BookStarkShareComments.init(comments);
+        }
+        var input = document.getElementById('share-comment-content') || document.getElementById('share-comment-author');
+        if (input) setTimeout(function() { try { input.focus({ preventScroll: true }); } catch(e) { input.focus(); } }, 160);
+    }
+
+    function closeShareCommentsPanel() {
+        var comments = document.getElementById('share-comments');
+        var backdrop = document.getElementById('share-comments-backdrop');
+        if (comments) comments.hidden = true;
+        if (backdrop) backdrop.hidden = true;
+        setShareCommentsTriggers(false);
+    }
+
+    function scrollToShareComments() {
+        openShareCommentsPanel();
+    }
+
+    // ── Drawing zoom controls ─────────────────────────────────────────────
+    function shareDrawingZoom(action) {
+        if (!window.BookStarkExcalidraw) return;
+        if (action === 'in' && BookStarkExcalidraw.zoomIn) BookStarkExcalidraw.zoomIn();
+        else if (action === 'out' && BookStarkExcalidraw.zoomOut) BookStarkExcalidraw.zoomOut();
+        else if (action === 'reset' && BookStarkExcalidraw.resetZoom) BookStarkExcalidraw.resetZoom();
+    }
+
+    // ── Mindmap export ────────────────────────────────────────────────────
+    function shareExportMindmapPng() {
+        if (!window._shareMindElixir) return;
+        window._shareMindElixir.exportPng().then(function(blob) {
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'mindmap.png';
+            a.click();
+            setTimeout(function() { URL.revokeObjectURL(a.href); }, 1000);
+        });
+    }
+
+    function shareExportMindmapSvg() {
+        if (!window._shareMindElixir) return;
+        var blob = window._shareMindElixir.exportSvg();
+        if (!blob) return;
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'mindmap.svg';
+        a.click();
+        setTimeout(function() { URL.revokeObjectURL(a.href); }, 1000);
+    }
+
+    // ── Password overlay ──────────────────────────────────────────────────
+    function showPasswordOverlay() {
+        var contentScroll = document.getElementById('content-scroll');
+        if (!contentScroll) return;
+
+        var overlay = document.createElement('div');
+        overlay.id = 'share-pwd-overlay';
+        overlay.className = 'share-pwd-overlay';
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.setAttribute('aria-labelledby', 'share-pwd-title');
+        overlay.innerHTML =
+            '<div style="text-align:center;padding:32px;max-width:340px;">' +
+            '<i class="fa-solid fa-lock" style="font-size:32px;color:var(--color-gray-400,#94a3b8);margin-bottom:16px;display:block;"></i>' +
+            '<h3 id="share-pwd-title" style="margin:0 0 8px;font-size:16px;font-weight:600;color:var(--color-text,#1e293b);">' + window.__('share_view.pwd.title') + '</h3>' +
+            '<p style="margin:0 0 16px;font-size:13px;color:var(--color-gray-500,#64748b);">' + window.__('share_view.pwd.desc') + '</p>' +
+            '<label for="share-pwd-input" class="sr-only">' + window.__('share_view.pwd.label') + '</label>' +
+            '<input id="share-pwd-input" type="password" style="width:100%;border:1px solid var(--color-gray-300,#cbd5e1);border-radius:6px;padding:8px 12px;font-size:14px;box-sizing:border-box;margin-bottom:8px;background:var(--color-white,#fff);color:var(--color-text,#1e293b);" placeholder="' + window.__('share_view.pwd.placeholder') + '" autofocus>' +
+            '<div id="share-pwd-error" role="alert" style="color:var(--color-danger,#ef4444);font-size:12px;margin-bottom:8px;display:none;"></div>' +
+            '<button id="share-pwd-ok" type="button" style="width:100%;padding:8px 16px;border:none;border-radius:6px;font-size:14px;background:var(--color-primary,#2563eb);color:#fff;cursor:pointer;">' + window.__('share_view.pwd.btn') + '</button>' +
+            '</div>';
+        contentScroll.appendChild(overlay);
+
+        var inp = document.getElementById('share-pwd-input');
+        var errEl = document.getElementById('share-pwd-error');
+        inp.focus();
+
+        // Focus trap within overlay
+        var pwdTrapHandler = function(e) {
+            if (e.key !== 'Tab') return;
+            var focusable = Array.prototype.slice.call(overlay.querySelectorAll('input,button')).filter(function(el) { return el.offsetParent !== null; });
+            if (!focusable.length) return;
+            var first = focusable[0], last = focusable[focusable.length - 1];
+            if (e.shiftKey) { if (document.activeElement === first) { e.preventDefault(); last.focus(); } }
+            else { if (document.activeElement === last) { e.preventDefault(); first.focus(); } }
+        };
+        document.addEventListener('keydown', pwdTrapHandler);
+
+        function doVerify() {
+            var pwd = inp.value;
+            if (!pwd) return;
+            errEl.style.display = 'none';
+            if (shareDocType === 'html' || shareDocType === 'richdoc') {
+                fetchShareRawHTMLContent('/api/shares/' + shareIdentify + '/verify-password/raw', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: pwd })
+                }).then(function(content) {
+                    shareContent = content || '';
+                    OfflineShareVault.save(shareIdentify, pwd, shareContent, shareDocType);
+                    document.removeEventListener('keydown', pwdTrapHandler);
+                    overlay.remove();
+                    renderShareContent(shareContent, shareDocType);
+                }).catch(function(err) {
+                    if (err && err.isAuthError) {
+                        errEl.textContent = err.message || window.__('share_view.pwd.error.failed');
+                        errEl.style.display = 'block';
+                        return;
+                    }
+                    OfflineShareVault.load(shareIdentify, pwd).then(function(cached) {
+                        shareContent = cached.content;
+                        shareDocType = cached.docType || shareDocType;
+                        document.removeEventListener('keydown', pwdTrapHandler);
+                        overlay.remove();
+                        if (window.BSDialog && BSDialog.toast) BSDialog.toast('已从本地加密缓存打开', 'info');
+                        renderShareContent(shareContent, shareDocType);
+                    }).catch(function(localErr) {
+                        errEl.textContent = (err && err.message) || (localErr && localErr.message) || window.__('share_view.pwd.error.failed');
+                        errEl.style.display = 'block';
+                    });
+                });
+                return;
+            }
+            fetch('/api/shares/' + shareIdentify + '/verify-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: pwd })
+            }).then(function(r) {
+                return r.json().then(function(d) {
+                    if (!r.ok || d.code !== 0) {
+                        var err = new Error(d.message || window.__('share_view.pwd.error.wrong'));
+                        err.isAuthError = true;
+                        throw err;
+                    }
+                    return d;
+                });
+            }).then(function(d) {
+                if (d.data && d.data.content !== undefined) {
+                    shareContent = d.data.content;
+                    OfflineShareVault.save(shareIdentify, pwd, shareContent, shareDocType);
+                    document.removeEventListener('keydown', pwdTrapHandler);
+                    overlay.remove();
+                    renderShareContent(shareContent, shareDocType);
+                } else {
+                    errEl.textContent = d.message || window.__('share_view.pwd.error.wrong');
+                    errEl.style.display = 'block';
+                    inp.value = '';
+                    inp.focus();
+                }
+            }).catch(function(err) {
+                if (err && err.isAuthError) {
+                    errEl.textContent = err.message || window.__('share_view.pwd.error.wrong');
+                    errEl.style.display = 'block';
+                    inp.value = '';
+                    inp.focus();
+                    return;
+                }
+                OfflineShareVault.load(shareIdentify, pwd).then(function(cached) {
+                    shareContent = cached.content;
+                    shareDocType = cached.docType || shareDocType;
+                    document.removeEventListener('keydown', pwdTrapHandler);
+                    overlay.remove();
+                    if (window.BSDialog && BSDialog.toast) BSDialog.toast('已从本地加密缓存打开', 'info');
+                    renderShareContent(shareContent, shareDocType);
+                }).catch(function(localErr) {
+                    errEl.textContent = (localErr && localErr.message) || window.__('share_view.pwd.error.failed');
+                    errEl.style.display = 'block';
+                });
+            });
+        }
+
+        document.getElementById('share-pwd-ok').onclick = doVerify;
+        inp.addEventListener('keydown', function(e) { if (e.key === 'Enter') doVerify(); });
+    }
+
+    // ── Book share ────────────────────────────────────────────────────────
+    var _currentBookDocIdentify = null;
+
+    function getDocIcon(docType, hasChildren) {
+        if (hasChildren) return '<i class="fa-solid fa-folder"></i>';
+        switch (docType) {
+            case 'spreadsheet': return '<i class="fa-solid fa-table"></i>';
+            case 'presentation': return '<i class="fa-solid fa-display"></i>';
+            case 'drawing': return '<i class="fa-solid fa-pen-fancy"></i>';
+            case 'mindmap': return '<i class="fa-solid fa-diagram-project"></i>';
+            case 'richdoc': return '<i class="fa-solid fa-file-word"></i>';
+            case 'html': return '<i class="fa-solid fa-code"></i>';
+            default: return '<i class="fa-solid fa-file-lines"></i>';
+        }
+    }
+
+    function renderBookTree(nodes, container, depth) {
+        if (!nodes || !nodes.length) return;
+        nodes.forEach(function(n) {
+            var hasChildren = n.children && n.children.length > 0;
+            var btn = document.createElement('div');
+            btn.className = 'tree-node';
+            if (depth > 0) btn.style.paddingLeft = (12 + depth * 12) + 'px';
+            btn.dataset.identify = n.identify;
+            btn.dataset.docType = n.doc_type || 'markdown';
+            btn.title = n.document_name;
+
+            var toggleHtml = '';
+            if (hasChildren) {
+                toggleHtml = '<span class="tree-toggle"><i class="fa-solid fa-caret-down"></i></span>';
+            } else {
+                toggleHtml = '<span class="tree-toggle"><span class="toggle-icon-space"></span></span>';
+            }
+            var iconHtml = getDocIcon(n.doc_type, hasChildren);
+            if (hasChildren) {
+                iconHtml = '<i class="fa-solid fa-folder-open"></i>';
+            }
+            btn.innerHTML = toggleHtml + '<span class="tree-icon">' + iconHtml + '</span><span class="doc-name">' + escHtml(n.document_name) + '</span>';
+
+            btn.onclick = function() {
+                if (hasChildren) {
+                    toggleExpand(btn);
+                }
+                loadBookDoc(n.identify, n.doc_type || 'markdown');
+                if (window.innerWidth <= 768) closeMobileDrawer();
+            };
+            container.appendChild(btn);
+            if (hasChildren) {
+                var sub = document.createElement('div');
+                sub.className = 'tree-children';
+                renderBookTree(n.children, sub, depth + 1);
+                container.appendChild(sub);
+            }
+        });
+    }
+
+    function toggleExpand(nodeEl) {
+        var children = nodeEl.nextElementSibling;
+        if (!children || !children.classList.contains('tree-children')) return;
+        var isCollapsed = children.style.display === 'none';
+        if (isCollapsed) {
+            children.style.display = '';
+            nodeEl.querySelector('.tree-toggle i').className = 'fa-solid fa-caret-down';
+            nodeEl.querySelector('.tree-icon i').className = 'fa-solid fa-folder-open';
+        } else {
+            children.style.display = 'none';
+            nodeEl.querySelector('.tree-toggle i').className = 'fa-solid fa-caret-right';
+            nodeEl.querySelector('.tree-icon i').className = 'fa-solid fa-folder';
+        }
+    }
+
+    var _allExpanded = true;
+
+    function toggleExpandAll() {
+        _allExpanded = !_allExpanded;
+        var btn = document.getElementById('btn-expand-all');
+        var tree = document.getElementById('share-book-tree');
+        if (!tree) return;
+        var children = tree.querySelectorAll('.tree-children');
+        var nodes = tree.querySelectorAll('.tree-node');
+        if (_allExpanded) {
+            children.forEach(function(c) { c.style.display = ''; });
+            nodes.forEach(function(n) {
+                var toggle = n.querySelector('.tree-toggle i');
+                var icon = n.querySelector('.tree-icon i');
+                if (toggle && toggle.classList.contains('fa-caret-right')) {
+                    toggle.className = 'fa-solid fa-caret-down';
+                }
+                if (icon && icon.classList.contains('fa-folder')) {
+                    icon.className = 'fa-solid fa-folder-open';
+                }
+            });
+            if (btn) {
+                btn.innerHTML = '<i class="fa-solid fa-compress"></i>';
+                btn.setAttribute('aria-label', window.__('share_view.book.collapse_all'));
+                btn.title = window.__('share_view.book.collapse_all');
+            }
+        } else {
+            children.forEach(function(c) { c.style.display = 'none'; });
+            nodes.forEach(function(n) {
+                var toggle = n.querySelector('.tree-toggle i');
+                var icon = n.querySelector('.tree-icon i');
+                if (toggle && toggle.classList.contains('fa-caret-down')) {
+                    toggle.className = 'fa-solid fa-caret-right';
+                }
+                if (icon && icon.classList.contains('fa-folder-open')) {
+                    icon.className = 'fa-solid fa-folder';
+                }
+            });
+            if (btn) {
+                btn.innerHTML = '<i class="fa-solid fa-expand"></i>';
+                btn.setAttribute('aria-label', window.__('share_view.outline.expand'));
+                btn.title = window.__('share_view.outline.expand');
+            }
+        }
+    }
+
+    function flattenShareTree(nodes, result) {
+        result = result || [];
+        nodes.forEach(function(n) {
+            result.push(n);
+            if (n.children) flattenShareTree(n.children, result);
+        });
+        return result;
+    }
+
+    function searchShareDocs(query) {
+        var container = document.getElementById('share-book-tree');
+        if (!container) return;
+        if (!query) {
+            container.innerHTML = '';
+            renderBookTree(shareDocTree, container, 0);
+            return;
+        }
+        var flat = flattenShareTree(shareDocTree);
+        var filtered = flat.filter(function(n) {
+            return n.document_name.toLowerCase().indexOf(query.toLowerCase()) !== -1;
+        });
+        container.innerHTML = '';
+        if (!filtered.length) {
+            container.innerHTML = '<div style="padding:16px;text-align:center;color:var(--color-gray-400,#94a3b8);font-size:12px;">' + window.__('share_view.book.no_match') + '</div>';
+            return;
+        }
+        filtered.forEach(function(n) {
+            var hasChildren = n.children && n.children.length > 0;
+            var btn = document.createElement('div');
+            btn.className = 'tree-node';
+            btn.dataset.identify = n.identify;
+            btn.dataset.docType = n.doc_type || 'markdown';
+            var toggleHtml = hasChildren
+                ? '<span class="tree-toggle"><i class="fa-solid fa-caret-down"></i></span>'
+                : '<span class="tree-toggle"><span class="toggle-icon-space"></span></span>';
+            btn.innerHTML = toggleHtml + '<span class="tree-icon">' + getDocIcon(n.doc_type, hasChildren) + '</span><span class="doc-name">' + escHtml(n.document_name) + '</span>';
+            btn.onclick = function() {
+                var input = document.getElementById('doc-search');
+                if (input) input.value = '';
+                searchShareDocs('');  // restore full tree
+                loadBookDoc(n.identify, n.doc_type || 'markdown');
+                if (window.innerWidth <= 768) closeMobileDrawer();
+            };
+            container.appendChild(btn);
+        });
+    }
+
+    function setActiveBookNode(identify) {
+        _currentBookDocIdentify = identify;
+        document.querySelectorAll('#share-book-tree .tree-node').forEach(function(btn) {
+            btn.classList.toggle('active', btn.dataset.identify === identify);
+        });
+    }
+
+    function showBookWelcome() {
+        var area = document.getElementById('preview-area');
+        area.innerHTML = '<div class="share-book-welcome">' +
+            '<div class="share-book-welcome-icon"><i class="fa-solid fa-book-open"></i></div>' +
+            '<div class="share-book-welcome-title">{{.Share.Title}}</div>' +
+            '<div class="share-book-welcome-desc">' + window.__('share_view.book.welcome_prefix') + '{{.Share.DocCount}} ' + window.__('share_view.book.welcome_suffix') + '<br>' + window.__('share_view.book.welcome_cta') + '</div>' +
+            '</div>';
+    }
+
+    async function loadBookDoc(docIdentify, docType) {
+        if (_currentBookDocIdentify === docIdentify) return;
+        setActiveBookNode(docIdentify);
+        var area = document.getElementById('preview-area');
+        // Remove fullpage state and restore UI elements hidden by onFullpage
+        document.documentElement.classList.remove('spreadsheet-fullpage');
+        var outlineTab = document.getElementById('share-tab-outline');
+        if (outlineTab) outlineTab.style.display = '';
+        var copyBtn = document.getElementById('share-copy-content-btn');
+        if (copyBtn) copyBtn.style.display = '';
+        var zoomBar = document.getElementById('share-drawing-zoom');
+        if (zoomBar) zoomBar.style.display = 'none';
+        // Remove mode classes before showing loading
+        var cs = document.getElementById('content-scroll');
+        if (cs) cs.classList.remove('spreadsheet-mode', 'presentation-mode', 'drawing-mode', 'mindmap-mode', 'html-mode', 'richdoc-mode', 'markdown-mode');
+        area.innerHTML = '<div style="padding:40px;text-align:center;color:var(--color-gray-400,#94a3b8);"><i class="fa-solid fa-spinner fa-spin"></i> ' + window.__('share_view.book.loading') + '</div>';
+        try {
+            var r = await fetch('/api/shares/' + shareIdentify + '/docs/' + docIdentify);
+            var d = await r.json();
+            if (d.data) {
+                var loadedType = d.data.doc_type || docType;
+                var content = d.data.content || '';
+                if ((loadedType === 'html' || loadedType === 'richdoc') && d.data.content_url) {
+                    content = await fetchShareRawHTMLContent(d.data.content_url);
+                }
+                if (!content || content.trim() === '') {
+                    area.innerHTML = '<div class="share-book-welcome">' +
+                        '<div class="share-book-welcome-icon"><i class="fa-regular fa-file-lines"></i></div>' +
+                        '<div class="share-book-welcome-title">' + window.__('share_view.book.doc_empty.title') + '</div>' +
+                        '<div class="share-book-welcome-desc">' + window.__('share_view.book.doc_empty.desc') + '</div>' +
+                    '</div>';
+                    return;
+                }
+                renderShareContent(content, loadedType, d.data.title || '');
+                // Scroll to top
+                if (cs) cs.scrollTop = 0;
+            } else {
+                area.innerHTML = '<div style="padding:40px;text-align:center;color:var(--color-danger,#ef4444);">' + window.__('share_view.book.load_error') + '</div>';
+            }
+        } catch(e) {
+            area.innerHTML = '<div style="padding:40px;text-align:center;color:var(--color-danger,#ef4444);">' + window.__('share_view.book.load_error') + '</div>';
+        }
+    }
+
+    function initBookShare() {
+        var treeEl = document.getElementById('share-book-tree');
+        if (treeEl && shareDocTree) {
+            renderBookTree(shareDocTree, treeEl, 0);
+        }
+        showBookWelcome();
+    }
+
+    // ── Main render ───────────────────────────────────────────────────────
+    function renderShareContent(content, docType, contentTitle) {
+        var type = docType || shareDocType;
+        document.body.classList.toggle('share-html-tool-mode', type === 'html');
+        // 画板类型显示放大/缩小/重置工具栏（mobile 模式下 Excalidraw 自带 footer 不渲染）
+        var zoomBar = document.getElementById('share-drawing-zoom');
+        if (zoomBar) zoomBar.style.display = (type === 'drawing') ? 'inline-flex' : 'none';
+        BookStarkEditor.renderContent('preview-area', content, type, {
+            title: contentTitle || shareTitle,
+            onTocReady: function() {
+                buildShareToc();
+            },
+            onFullpage: type === 'html' ? null : onFullpage
+        });
+    }
+
+    // ── Edit mode ────────────────────────────────────────────────────────
+    var shareEditToken = null;
+    var shareEditCherry = null;
+    var shareEditHtmlEditor = null;
+    var shareEditRichdoc = null;
+    var shareEditPassword = '';
+    var shareEditDocType = 'markdown';
+    var shareAutoSaver = null;
+    var shareAutoSavePoll = null;
+    var shareHasSavedSuccessfully = false;
+    var shareEditServerContent = '';
+    var shareApplyingDraft = false;
+
+    function _onShareEditContentChange() {
+        if (!shareApplyingDraft && shareAutoSaver) shareAutoSaver.onContentChange();
+    }
+
+    function _shareSaveStatusText(s) {
+        if (s === 'saving') return window.__('share.edit.status.saving') || '保存中...';
+        if (s === 'unsaved') return window.__('share.edit.status.unsaved') || '未保存';
+        return window.__('share.edit.status.saved') || '已保存';
+    }
+
+    function _updateShareSaveStatus(s) {
+        var el = document.getElementById('edit-save-status');
+        if (el) el.textContent = _shareSaveStatusText(s);
+        var btn = document.getElementById('edit-save-btn');
+        if (!btn) return;
+        btn.disabled = (s === 'saving');
+        if (s === 'saved' && shareHasSavedSuccessfully) {
+            btn.classList.add('saved');
+        } else {
+            btn.classList.remove('saved');
+        }
+    }
+
+    function _readShareEditContent() {
+        if (shareEditDocType === 'spreadsheet') return BookStarkEditor.getSpreadsheetContent() || (shareAutoSaver ? shareAutoSaver._lastSaved || '' : '');
+        if (shareEditDocType === 'presentation') return BookStarkPPTist.getContent() || (shareAutoSaver ? shareAutoSaver._lastSaved || '' : '');
+        if (shareEditDocType === 'drawing') return BookStarkEditor.getDrawingContent() || (shareAutoSaver ? shareAutoSaver._lastSaved || '' : '');
+        if (shareEditDocType === 'mindmap') return BookStarkEditor.getMindElixirData() || (shareAutoSaver ? shareAutoSaver._lastSaved || '' : '');
+        if (shareEditDocType === 'html') return shareEditHtmlEditor ? shareEditHtmlEditor.getMarkdown() : '';
+        if (shareEditDocType === 'richdoc') {
+            if (!shareEditRichdoc) return shareAutoSaver ? shareAutoSaver._lastSaved || '' : '';
+            try { return shareEditRichdoc.getContent(); } catch (e) { BSDialog.toast(e.message, 'error'); return shareAutoSaver ? shareAutoSaver._lastSaved || '' : ''; }
+        }
+        return shareEditCherry ? shareEditCherry.getValue() : '';
+    }
+
+    function _shareSaveFn(content) {
+        return fetch('/api/shares/' + shareIdentify + '/edit?token=' + encodeURIComponent(shareEditToken), {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            cache: 'no-store',
+            body: JSON.stringify({ content: content, password: shareEditPassword || '' }),
+        }).then(function(r) {
+            return r.json().catch(function() { return null; }).then(function(data) {
+                return { response: r, data: data };
+            });
+        }).then(function(result) {
+            var data = result.data;
+            if (result.response.ok && data && data.code === 0 && !data.offlineQueued) {
+                shareHasSavedSuccessfully = true;
+                if (data.data && data.data.modify_time) updateModifyTime(data.data.modify_time);
+                return data;
+            }
+            if (result.response.status === 403 || data && data.code === 403) {
+                BSDialog.toast(window.__('share.edit.permission_expired'), 'error', 3000);
+                exitEditMode();
+            }
+            throw new Error(data && data.message || 'save failed');
+        });
+    }
+
+    function _hideShareDraftBanner() {
+        var banner = document.getElementById('share-edit-draft-banner');
+        if (banner && banner.parentNode) banner.parentNode.removeChild(banner);
+    }
+
+    function _applyShareDraftContent(content, markChanged) {
+        content = content || '';
+        shareApplyingDraft = true;
+        if (shareEditDocType === 'spreadsheet') {
+            BookStarkEditor.loadSpreadsheetData(content, { readonly: false });
+        } else if (shareEditDocType === 'presentation') {
+            BookStarkPPTist.setContent(content);
+        } else if (shareEditDocType === 'drawing') {
+            BookStarkEditor.loadDrawingData(content, { readonly: false, onChange: _onShareEditContentChange });
+        } else if (shareEditDocType === 'mindmap') {
+            BookStarkEditor.loadMindElixirData(content, { readonly: false, onChange: _onShareEditContentChange });
+        } else if (shareEditDocType === 'html') {
+            if (shareEditHtmlEditor) shareEditHtmlEditor.setMarkdown(content);
+        } else if (shareEditDocType === 'richdoc') {
+            if (shareEditRichdoc) {
+                try { shareEditRichdoc.destroy(); } catch (e) {}
+                shareEditRichdoc = null;
+            }
+            BookStarkRichDoc.mount('share-richdoc-editor', content || BookStarkRichDoc.defaultContent(), {
+                readonly: false,
+                author: '共享编辑者',
+                uploadURL: '/api/shares/' + shareIdentify + '/edit/uploads?token=' + encodeURIComponent(shareEditToken),
+                uploadPassword: shareEditPassword || '',
+                onChange: _onShareEditContentChange
+            }).then(function(instance) {
+                shareEditRichdoc = instance;
+                shareApplyingDraft = false;
+                if (markChanged && shareAutoSaver) shareAutoSaver.onContentChange();
+            }).catch(function(error) {
+                shareApplyingDraft = false;
+                BSDialog.toast(error.message, 'error');
+            });
+        } else if (shareEditCherry) {
+            shareEditCherry.setMarkdown(content);
+        }
+        if (shareEditDocType !== 'richdoc') {
+            shareApplyingDraft = false;
+            if (markChanged && shareAutoSaver) shareAutoSaver.onContentChange();
+        }
+    }
+
+    function _showShareDraftBanner(serverContent, draftContent) {
+        _hideShareDraftBanner();
+        var topbar = document.querySelector('.share-topbar');
+        if (!topbar || !topbar.parentNode) return;
+        var banner = document.createElement('div');
+        banner.id = 'share-edit-draft-banner';
+        banner.className = 'draft-banner';
+        banner.innerHTML = '<i class="fa-solid fa-clock-rotate-left"></i>' +
+            '<span class="draft-banner-text">检测到未保存的分享编辑草稿，是否恢复？</span>' +
+            '<div class="draft-banner-actions">' +
+                '<button type="button" class="draft-banner-btn restore" data-share-draft-restore>恢复草稿</button>' +
+                '<button type="button" class="draft-banner-btn discard" data-share-draft-discard>丢弃草稿</button>' +
+            '</div>';
+        topbar.parentNode.insertBefore(banner, topbar.nextSibling);
+        banner.querySelector('[data-share-draft-restore]').onclick = function() {
+            _applyShareDraftContent(draftContent, true);
+            if (shareAutoSaver) {
+                shareAutoSaver.setSaveStatus('unsaved');
+            }
+            _hideShareDraftBanner();
+            BSDialog.toast('已恢复草稿', 'success');
+        };
+        banner.querySelector('[data-share-draft-discard]').onclick = function() {
+            _applyShareDraftContent(serverContent, false);
+            if (shareAutoSaver) {
+                shareAutoSaver.setLastSaved(serverContent);
+                shareAutoSaver.discardDraft();
+            }
+            _hideShareDraftBanner();
+            BSDialog.toast('已丢弃草稿', 'success');
+        };
+    }
+
+    function _initShareAutoSave() {
+        if (typeof BookStarkEditor === 'undefined' || typeof BookStarkEditor.setupAutoSave !== 'function') return;
+        if (shareAutoSaver) return;
+        shareEditServerContent = _readShareEditContent();
+        shareAutoSaver = BookStarkEditor.setupAutoSave({
+            getContent: _readShareEditContent,
+            saveFn: _shareSaveFn,
+            draftKey: 'share-edit-draft-' + shareIdentify,
+            onStatusChange: _updateShareSaveStatus
+        });
+        shareAutoSaver.setLastSaved(shareEditServerContent);
+        _updateShareSaveStatus('saved');
+        var saveButton = document.getElementById('edit-save-btn');
+        if (saveButton) saveButton.disabled = true;
+        shareAutoSaver.loadDraft(shareEditServerContent).then(function(draftResult) {
+            if (draftResult.hasDraft) {
+                _showShareDraftBanner(draftResult.serverContent, draftResult.draftContent);
+            }
+        }).finally(function() {
+            if (saveButton) saveButton.disabled = false;
+        });
+        // For non-text editors that don't emit onChange callbacks, poll every 2s.
+        if (shareEditDocType === 'spreadsheet' || shareEditDocType === 'drawing' || shareEditDocType === 'mindmap') {
+            shareAutoSavePoll = setInterval(function() {
+                if (shareAutoSaver) shareAutoSaver.onContentChange();
+            }, 2000);
+        }
+    }
+
+    function checkEditMode() {
+        var params = new URLSearchParams(window.location.search);
+        var token = params.get('token');
+        if (!token) return;
+
+        fetch('/api/shares/' + shareIdentify + '/edit?token=' + encodeURIComponent(token), { cache: 'no-store' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.code === 0 && data.data && data.data.editable) {
+                    shareEditToken = token;
+                    shareEditDocType = data.data.doc_type || 'markdown';
+                    if (data.data.has_password) {
+                        var password = window.prompt('请输入文章密码');
+                        if (!password) return;
+                        fetch('/api/shares/' + shareIdentify + '/edit/content/unlock?token=' + encodeURIComponent(token), {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ password: password })
+                        }).then(function(response) {
+                            if (!response.ok) throw new Error('文章密码错误');
+                            return response.text();
+                        }).then(function(content) {
+                            shareEditPassword = password;
+                            data.data.content = content || '';
+                            enterEditMode(data.data);
+                        }).catch(function(error) { BSDialog.toast(error.message, 'error'); });
+                    } else if ((shareEditDocType === 'html' || shareEditDocType === 'richdoc') && data.data.content_url) {
+                        fetchShareRawHTMLContent(data.data.content_url).then(function(content) {
+                            data.data.content = content || '';
+                            enterEditMode(data.data);
+                        }).catch(function() {});
+                    } else {
+                        enterEditMode(data.data);
+                    }
+                }
+            })
+            .catch(function() {});
+    }
+
+    function enterEditMode(data) {
+        shareHasSavedSuccessfully = false;
+        document.body.classList.add('share-edit-mode');
+        document.getElementById('edit-mode-badge').style.display = '';
+        document.getElementById('edit-save-btn').style.display = '';
+        document.getElementById('edit-save-btn').disabled = true;
+        var statusEl = document.getElementById('edit-save-status');
+        if (statusEl) statusEl.style.display = '';
+
+        var contentScroll = document.getElementById('content-scroll');
+        var previewWrap = document.getElementById('preview-wrap');
+        var previewArea = document.getElementById('preview-area');
+        var sidebar = document.getElementById('sidebar');
+        if (sidebar) sidebar.style.display = 'none';
+
+        var editContent = data.content || '';
+
+        if (shareEditDocType === 'presentation') {
+            if (contentScroll) contentScroll.classList.add('presentation-mode');
+            previewWrap.style.maxWidth = 'none';
+            previewWrap.style.height = '100%';
+            previewArea.style.height = '100%';
+            previewArea.innerHTML = '<div id="share-presentation-editor" style="width:100%;height:100%;"></div>';
+            BookStarkPPTist.mount('share-presentation-editor', editContent, {
+                title: shareTitle,
+                readonly: false,
+                loadingText: window.__('editor.presentation.loading'),
+                uploadURL: '/api/shares/' + shareIdentify + '/edit/uploads?token=' + encodeURIComponent(shareEditToken),
+                uploadPassword: shareEditPassword || '',
+                onChange: _onShareEditContentChange,
+                onReady: function() { _initShareAutoSave(); }
+            });
+        } else if (shareEditDocType === 'spreadsheet') {
+            if (contentScroll) contentScroll.classList.add('spreadsheet-mode');
+            previewWrap.style.maxWidth = 'none';
+            previewWrap.style.height = '100%';
+            previewArea.style.height = '100%';
+            previewArea.innerHTML = '<div id="univer-sheet" style="width:100%;height:100%;"></div>';
+            BookStarkEditor.loadUniverAssets(function() {
+                BookStarkEditor.initUniver('univer-sheet', editContent, { readonly: false });
+            });
+        } else if (shareEditDocType === 'drawing') {
+            if (contentScroll) contentScroll.classList.add('drawing-mode');
+            previewWrap.style.maxWidth = 'none';
+            previewWrap.style.height = '100%';
+            previewArea.style.height = '100%';
+            previewArea.innerHTML = '<div id="excalidraw-canvas" style="width:100%;height:100%;"></div>';
+            BookStarkEditor.loadExcalidrawAssets(function() {
+                BookStarkEditor.initExcalidraw('excalidraw-canvas', editContent, function() {
+                    BookStarkEditor.setDrawingDirty(true);
+                });
+                if (window.BookStarkExcalidraw) {
+                    var _t = document.documentElement.getAttribute('data-theme');
+                    window.BookStarkExcalidraw.setTheme(_t === 'dark' ? 'dark' : 'light');
+                }
+            });
+        } else if (shareEditDocType === 'mindmap') {
+            if (contentScroll) contentScroll.classList.add('mindmap-mode');
+            previewWrap.style.maxWidth = 'none';
+            previewWrap.style.height = '100%';
+            previewArea.style.height = '100%';
+            previewArea.innerHTML = '<div id="mindmap-el" style="width:100%;height:100%;"></div>';
+            BookStarkEditor.loadMindElixirAssets(function() {
+                var mind = BookStarkEditor.initMindElixir(editContent, { readonly: false });
+                if (mind) setTimeout(function() { mind.toCenter(); }, 100);
+            });
+        } else if (shareEditDocType === 'html') {
+            previewArea.innerHTML = '<div id="share-html-editor" style="height:100%"></div>';
+            shareEditHtmlEditor = BookStarkEditor.initHtmlEditor('share-html-editor', editContent, function() {
+                _onShareEditContentChange();
+            });
+        } else if (shareEditDocType === 'richdoc') {
+            if (contentScroll) contentScroll.classList.add('richdoc-mode');
+            previewWrap.style.maxWidth = 'none';
+            previewWrap.style.height = '100%';
+            previewArea.style.height = '100%';
+            previewArea.innerHTML = '<div id="share-richdoc-editor" class="richdoc-container"></div>';
+            BookStarkRichDoc.mount('share-richdoc-editor', editContent || BookStarkRichDoc.defaultContent(), {
+                readonly: false,
+                author: '共享编辑者',
+                uploadURL: '/api/shares/' + shareIdentify + '/edit/uploads?token=' + encodeURIComponent(shareEditToken),
+                uploadPassword: shareEditPassword || '',
+                onChange: _onShareEditContentChange
+            }).then(function(instance) {
+                shareEditRichdoc = instance;
+                _initShareAutoSave();
+            }).catch(function(error) { BSDialog.toast(error.message, 'error'); });
+        } else {
+            previewArea.innerHTML = '<div id="share-editor" style="height:100%"></div>';
+            shareEditCherry = BookStarkEditor.initCherry('share-editor', editContent, function() {
+                _onShareEditContentChange();
+            });
+        }
+
+        updateModifyTime(data.modify_time);
+        // Rich editors mount asynchronously; defer a tick before snapshotting.
+        if (shareEditDocType !== 'richdoc' && shareEditDocType !== 'presentation') setTimeout(_initShareAutoSave, 200);
+
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                saveShareEdit();
+            }
+        });
+    }
+
+    function saveShareEdit() {
+        if (!shareEditToken) return;
+        if (shareAutoSaver) {
+            shareAutoSaver.manualSave()
+                .then(function() { BSDialog.toast(window.__('share.edit.save_success'), 'success'); })
+                .catch(function(error) { BSDialog.toast(error && error.message || window.__('share.edit.network_error'), 'error'); });
+            return;
+        }
+        // The editor is still mounting; saving now could submit an empty
+        // spreadsheet/drawing/rich-document snapshot.
+        BSDialog.toast(_shareSaveStatusText('saving'), 'info');
+    }
+
+    function exitEditMode() {
+        if (shareAutoSaver && shareAutoSaver.destroy) shareAutoSaver.destroy();
+        shareEditToken = null;
+        shareEditPassword = '';
+        shareHasSavedSuccessfully = false;
+        if (shareEditRichdoc) { try { shareEditRichdoc.destroy(); } catch(e) {} shareEditRichdoc = null; }
+        if (window.BookStarkPPTist) BookStarkPPTist.destroy();
+        if (shareAutoSavePoll) { clearInterval(shareAutoSavePoll); shareAutoSavePoll = null; }
+        shareAutoSaver = null;
+        shareEditServerContent = '';
+        _hideShareDraftBanner();
+        document.body.classList.remove('share-edit-mode');
+        document.getElementById('edit-mode-badge').style.display = 'none';
+        document.getElementById('edit-save-btn').style.display = 'none';
+        var statusEl = document.getElementById('edit-save-status');
+        if (statusEl) statusEl.style.display = 'none';
+        window.location.href = window.location.pathname;
+    }
+
+    function updateModifyTime(timeStr) {
+        var footer = document.getElementById('share-footer');
+        if (!footer) return;
+        var el = footer.querySelector('.modify-time');
+        if (el) el.textContent = window.__('share.edit.last_modified') + timeStr;
+    }
+
+    window.addEventListener('beforeunload', function(event) {
+        if (!shareAutoSaver) return;
+        var status = shareAutoSaver.getSaveStatus();
+        if (status !== 'unsaved' && status !== 'saving') return;
+        event.preventDefault();
+        event.returnValue = '';
+    });
+
+    // ── Boot ──────────────────────────────────────────────────────────────
+    var _bootParams = new URLSearchParams(window.location.search);
+    if (_bootParams.get('token')) {
+        checkEditMode();
+    } else if (shareType === 'book') {
+        initBookShare();
+    } else if (shareHasPassword && !shareContent) {
+        showPasswordOverlay();
+    } else if ((shareDocType === 'html' || shareDocType === 'richdoc') && shareContentURL) {
+        fetchShareRawHTMLContent(shareContentURL).then(function(content) {
+            shareContent = content || '';
+            renderShareContent(shareContent, shareDocType);
+        }).catch(function(err) {
+            var area = document.getElementById('preview-area');
+            if (area) area.innerHTML = '<div style="padding:40px;text-align:center;color:var(--color-danger,#ef4444);">' + ((err && err.message) || 'HTML 内容加载失败') + '</div>';
+        });
+    } else {
+        renderShareContent(shareContent, shareDocType);
+    }
+    (function() {
+        if (!window.BookStarkTabURL) return;
+        var tab = window.BookStarkTabURL.get('shareTab', ['meta', 'outline', 'tree'], '');
+        if (!tab) return;
+        if (shareType === 'book' && (tab === 'tree' || tab === 'outline') && document.getElementById('share-tab-tree')) {
+            switchBookTab(tab, { updateUrl: false });
+        } else if (shareType !== 'book' && (tab === 'meta' || tab === 'outline') && document.getElementById('share-tab-meta')) {
+            switchShareTab(tab, { updateUrl: false });
+        }
+    })();
+
+    </script>
+
+    <script src="/static/js/offline-queue.js?v={{assetVer "/static/js/offline-queue.js"}}"></script>
+    <script src="/static/js/share-comments.js?v={{assetVer "/static/js/share-comments.js"}}"></script>
+    <script src="/static/js/sw-register.js?v={{assetVer "/static/js/sw-register.js"}}"></script>
+</body>
+</html>

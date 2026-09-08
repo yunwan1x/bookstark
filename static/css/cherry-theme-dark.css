@@ -1,0 +1,1528 @@
+/**
+ * Cherry Markdown - Dark Theme
+ * Based on GitHub dark mode colors (github-markdown-css dark)
+ * Adapted for Cherry Markdown's .cherry-previewer
+ * Selector: .cherry.theme__dark
+ */
+
+/* === Cherry Markdown editor chrome === */
+.cherry.theme__dark {
+  --cherry-color: #e6edf3;
+  --cherry-bg-color: #0d1117;
+  --base-editor-bg: #0f172a;
+  --base-font-color: #e6edf3;
+  --base-previewer-bg: #0f172a;
+  --base-border-color: #30363d;
+  --toolbar-bg: #161b22;
+  --toolbar-btn-color: #e6edf3;
+  --toolbar-btn-hover-color: #e6edf3;
+  --toolbar-btn-hover-bg: rgba(110,118,129,0.2);
+  --toolbar-btn-active-bg: rgba(110,118,129,0.3);
+  --primary-color: #58a6ff;
+  --secondary-color: rgba(56,139,253,0.08);
+  --md-heading-color: #e6edf3;
+  --md-link-color: #58a6ff;
+  --md-blockquote-color: #8b949e;
+  --md-table-border: #30363d;
+  /* Editor syntax highlighting */
+  --editor-header-color: #e6edf3;
+  --editor-comment-color: #8b949e;
+  --editor-quote-color: #8b949e;
+  --editor-string-color: #a5d6ff;
+  --editor-link-color: #58a6ff;
+  --editor-url-bg-color: rgba(56,139,253,0.15);
+  --editor-v2-color: #58a6ff;
+  --editor-v3-color: rgba(56,139,253,0.08);
+  --editor-keyword-color: #ff7b72;
+  --editor-cursor-color: #e6edf3;
+  --editor-selection-bg: rgba(56,139,253,0.25);
+  --editor-line-number-color: #6e7681;
+  --editor-active-line-bg: #161b22;
+  /* Accordion / cherry-detail: flat dark style, no shadow, no orange */
+  --accordion-shadow: none;
+  --accordion-bg: #0f172a;
+  --accordion-border: #30363d;
+  --accordion-summary-bg: #161b22;
+  --accordion-summary-color: #e6edf3;
+  --accordion-summary-hover-bg: #1c2128;
+  --accordion-body-bg: #0f172a;
+  --accordion-body-color: #e6edf3;
+  --accordion-body-border: #30363d;
+}
+
+.cherry.theme__dark .cherry-editor {
+  background-color: #0f172a;
+}
+
+.cherry.theme__dark .cherry-toolbar {
+  background-color: #161b22;
+  border-bottom: 1px solid #30363d;
+}
+
+/* === CodeMirror editor area (Dark style) === */
+.cherry.theme__dark .cm-editor {
+  background-color: #0f172a;
+  color: #e6edf3;
+}
+
+.cherry.theme__dark .cm-gutters {
+  background-color: #161b22;
+  color: #6e7681;
+  border-right: 1px solid #30363d;
+}
+
+.cherry.theme__dark .cm-content {
+  color: #e6edf3;
+}
+
+.cherry.theme__dark .cm-line {
+  color: #e6edf3;
+}
+
+.cherry.theme__dark .cm-activeLine {
+  background-color: #161b22;
+}
+
+.cherry.theme__dark .cm-selectionLayer {
+  z-index: 0 !important;
+}
+
+.cherry.theme__dark .cm-selectionBackground {
+  background-color: rgba(56,139,253,0.25) !important;
+}
+
+.cherry.theme__dark .cm-focused .cm-cursor {
+  border-left-color: #e6edf3;
+}
+
+.cherry.theme__dark .cm-matchingBracket {
+  background-color: rgba(56,139,253,0.25);
+  color: inherit;
+}
+
+/* CodeMirror markdown syntax — Dark style */
+.cherry.theme__dark .cm-header { color: #e6edf3; font-weight: 600; }
+.cherry.theme__dark .cm-header-1 { font-size: 1.4em; }
+.cherry.theme__dark .cm-header-2 { font-size: 1.2em; }
+.cherry.theme__dark .cm-header-3 { font-size: 1.1em; }
+.cherry.theme__dark .cm-meta { color: #8b949e; }
+.cherry.theme__dark .cm-comment { color: #8b949e; }
+.cherry.theme__dark .cm-quote { color: #8b949e; }
+.cherry.theme__dark .cm-list { color: #e6edf3; }
+.cherry.theme__dark .cm-link { color: #58a6ff; }
+.cherry.theme__dark .cm-url { color: #58a6ff; }
+.cherry.theme__dark .cm-strong { font-weight: 700; color: #e6edf3; }
+.cherry.theme__dark .cm-em { font-style: italic; }
+.cherry.theme__dark .cm-hr { color: #30363d; }
+.cherry.theme__dark .cm-tag { color: #7ee787; }
+.cherry.theme__dark .cm-attribute { color: #79c0ff; }
+.cherry.theme__dark .cm-string { color: #a5d6ff; }
+.cherry.theme__dark .cm-keyword { color: #ff7b72; }
+
+/* Cherry toolbar buttons */
+.cherry.theme__dark .cherry-toolbar .toolbar-button {
+  color: #e6edf3;
+}
+
+.cherry.theme__dark .cherry-toolbar .toolbar-button:hover {
+  background-color: rgba(110,118,129,0.2);
+}
+
+/* Cherry drag separator */
+.cherry.theme__dark .cherry-drag {
+  background: #30363d;
+  border-left: 1px solid #30363d;
+  border-right: 1px solid #30363d;
+}
+
+.cherry.theme__dark .cherry-drag:hover {
+  background: #58a6ff;
+  border-color: #58a6ff;
+}
+
+/* === Cherry sidebar === */
+.cherry.theme__dark .cherry-sidebar {
+  background-color: #161b22;
+}
+
+/* === Code block: iTerm2 terminal style (dark) === */
+/* Syntax highlighting is handled by Cherry's built-in one-dark theme (data-code-block-theme).
+   We only add the terminal title bar and wrapper styling here. */
+
+/* Code block wrapper */
+.cherry.theme__dark .cherry-previewer div[data-type="codeBlock"] {
+  border-radius: 8px !important;
+  margin-bottom: 16px !important;
+  padding-top: 36px !important;
+  position: relative !important;
+  border: 1px solid #30363d !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+}
+
+/* Terminal title bar with three colored dots + language label */
+.cherry.theme__dark .cherry-previewer div[data-type="codeBlock"]::before {
+  content: attr(data-lang);
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 36px;
+  line-height: 36px;
+  padding: 0 14px 0 56px;
+  background: #1c2128;
+  border-radius: 8px 8px 0 0;
+  font-size: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  color: #8b949e;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  z-index: 1;
+  background-image: radial-gradient(circle at 14px 18px, #ff5f56 5px, transparent 5px),
+                    radial-gradient(circle at 30px 18px, #ffbd2e 5px, transparent 5px),
+                    radial-gradient(circle at 46px 18px, #27c93f 5px, transparent 5px);
+  background-repeat: no-repeat;
+}
+
+/* Hide Cherry's default language label (we show it in the title bar) */
+.cherry.theme__dark .cherry-previewer div[data-type="codeBlock"] .code-Language {
+  display: none !important;
+}
+
+/* Code block pre: inherit one-dark background, remove extra styling */
+.cherry.theme__dark .cherry-previewer div[data-type="codeBlock"] pre {
+  border: none !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+}
+
+/* Inline code — dark style */
+.cherry.theme__dark .cherry-previewer code:not(pre code) {
+  background-color: rgba(110,118,129,0.2);
+  border-radius: 6px;
+  padding: 0.2em 0.4em;
+  font-size: 85%;
+  color: #e6edf3;
+  border: none !important;
+}
+
+/* === Override Cherry Markdown default preview styles (Dark style) === */
+
+/* Headings - size and border are not covered by CSS vars */
+.cherry.theme__dark .cherry-previewer h1 {
+  font-size: 2em !important;
+  padding-bottom: 0.3em !important;
+  border-bottom: 1px solid #30363db3 !important;
+  margin-top: 24px !important;
+  margin-bottom: 16px !important;
+}
+
+.cherry.theme__dark .cherry-previewer h2 {
+  font-size: 1.5em !important;
+  padding-bottom: 0.3em !important;
+  border-bottom: 1px solid #30363db3 !important;
+  margin-top: 24px !important;
+  margin-bottom: 16px !important;
+}
+
+.cherry.theme__dark .cherry-previewer h3 {
+  font-size: 1.25em !important;
+  margin-top: 24px !important;
+  margin-bottom: 16px !important;
+}
+
+.cherry.theme__dark .cherry-previewer h4 { font-size: 1em !important; }
+.cherry.theme__dark .cherry-previewer h5 { font-size: 0.875em !important; }
+.cherry.theme__dark .cherry-previewer h6 { font-size: 0.85em !important; }
+
+/* Paragraphs */
+.cherry.theme__dark .cherry-previewer p {
+  margin-top: 0 !important;
+  margin-bottom: 16px !important;
+  line-height: 1.5 !important;
+}
+
+/* Links - dark style with underline */
+.cherry.theme__dark .cherry-previewer a {
+  text-decoration: underline !important;
+  text-underline-offset: 0.2rem !important;
+}
+
+/* Blockquote - dark left border + transparent bg */
+.cherry.theme__dark .cherry-previewer blockquote {
+  border-left: 4px solid #3b434b !important;
+  background: transparent !important;
+  padding: 0 16px !important;
+  margin: 0 0 16px 0 !important;
+  color: #8b949e !important;
+}
+
+/* Lists */
+.cherry.theme__dark .cherry-previewer ul,
+.cherry.theme__dark .cherry-previewer ol {
+  margin-top: 0 !important;
+  margin-bottom: 16px !important;
+}
+
+/* Horizontal rule */
+.cherry.theme__dark .cherry-previewer hr {
+  border: 0 !important;
+  height: 0.25em !important;
+  padding: 0 !important;
+  margin: 24px 0 !important;
+  background-color: #30363d !important;
+  overflow: hidden !important;
+}
+
+/* Table - dark style */
+.cherry.theme__dark .cherry-previewer table th,
+.cherry.theme__dark .cherry-previewer table td {
+  padding: 6px 13px !important;
+  border: 1px solid #30363d !important;
+}
+
+.cherry.theme__dark .cherry-previewer table th {
+  font-weight: 600 !important;
+  background-color: #161b22 !important;
+  color: #e6edf3 !important;
+}
+
+.cherry.theme__dark .cherry-previewer table tr {
+  background-color: #0f172a !important;
+  border-top: 1px solid #30363d !important;
+}
+
+.cherry.theme__dark .cherry-previewer table tr:nth-child(2n) {
+  background-color: #161b22 !important;
+}
+
+/* Strong / bold */
+.cherry.theme__dark .cherry-previewer strong {
+  font-weight: 600 !important;
+  color: #e6edf3 !important;
+}
+
+/* Images */
+.cherry.theme__dark .cherry-previewer img {
+  max-width: 100% !important;
+  box-sizing: content-box !important;
+}
+
+/* === Previewer base === */
+.cherry.theme__dark .cherry-previewer {
+  font-size: 16px !important;
+  line-height: 1.5 !important;
+  word-wrap: break-word !important;
+}
+
+/* === Preview area (github-markdown-css dark adapted) === */
+.cherry.theme__dark .cherry-previewer {
+  color-scheme: dark;
+  -ms-text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+  margin: 0;
+  font-weight: 400;
+  color: #e6edf3;
+  background-color: #0f172a;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  font-size: 16px;
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+
+.cherry.theme__dark .cherry-previewer a {
+  text-decoration: underline;
+  text-underline-offset: .2rem;
+}
+
+.cherry.theme__dark .cherry-previewer .octicon {
+  display: inline-block;
+  fill: currentColor;
+  vertical-align: text-bottom;
+}
+
+.cherry.theme__dark .cherry-previewer h1:hover .anchor .octicon-link:before,
+.cherry.theme__dark .cherry-previewer h2:hover .anchor .octicon-link:before,
+.cherry.theme__dark .cherry-previewer h3:hover .anchor .octicon-link:before,
+.cherry.theme__dark .cherry-previewer h4:hover .anchor .octicon-link:before,
+.cherry.theme__dark .cherry-previewer h5:hover .anchor .octicon-link:before,
+.cherry.theme__dark .cherry-previewer h6:hover .anchor .octicon-link:before {
+  width: 16px;
+  height: 16px;
+  content: ' ';
+  display: inline-block;
+  background-color: currentColor;
+  -webkit-mask-image: url("image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' version='1.1' aria-hidden='true'><path fill-rule='evenodd' d='M7.775 3.275a.75.75 0 001.06 1.06l1.25-1.25a2 2 0 112.83 2.83l-2.5 2.5a2 2 0 01-2.83 0 .75.75 0 00-1.06 1.06 3.5 3.5 0 004.95 0l2.5-2.5a3.5 3.5 0 00-4.95-4.95l-1.25 1.25zm-4.69 9.64a2 2 0 010-2.83l2.5-2.5a2 2 0 012.83 0 .75.75 0 001.06-1.06 3.5 3.5 0 00-4.95 0l-2.5 2.5a3.5 3.5 0 004.95 4.95l1.25-1.25a.75.75 0 00-1.06-1.06l-1.25 1.25a2 2 0 01-2.83 0z'></path></svg>");
+  mask-image: url("image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' version='1.1' aria-hidden='true'><path fill-rule='evenodd' d='M7.775 3.275a.75.75 0 001.06 1.06l1.25-1.25a2 2 0 112.83 2.83l-2.5 2.5a2 2 0 01-2.83 0 .75.75 0 00-1.06 1.06 3.5 3.5 0 004.95 0l2.5-2.5a3.5 3.5 0 00-4.95-4.95l-1.25 1.25zm-4.69 9.64a2 2 0 010-2.83l2.5-2.5a2 2 0 012.83 0 .75.75 0 001.06-1.06 3.5 3.5 0 00-4.95 0l-2.5 2.5a3.5 3.5 0 004.95 4.95l1.25-1.25a.75.75 0 00-1.06-1.06l-1.25 1.25a2 2 0 01-2.83 0z'></path></svg>");
+}
+
+.cherry.theme__dark .cherry-previewer details,
+.cherry.theme__dark .cherry-previewer figcaption,
+.cherry.theme__dark .cherry-previewer figure {
+  display: block;
+}
+
+.cherry.theme__dark .cherry-previewer summary {
+  display: list-item;
+}
+
+.cherry.theme__dark .cherry-previewer [hidden] {
+  display: none !important;
+}
+
+.cherry.theme__dark .cherry-previewer a {
+  background-color: rgba(0,0,0,0);
+  color: #58a6ff;
+  text-decoration: none;
+}
+
+.cherry.theme__dark .cherry-previewer abbr[title] {
+  border-bottom: none;
+  -webkit-text-decoration: underline dotted;
+  text-decoration: underline dotted;
+}
+
+.cherry.theme__dark .cherry-previewer b,
+.cherry.theme__dark .cherry-previewer strong {
+  font-weight: 600;
+}
+
+.cherry.theme__dark .cherry-previewer dfn {
+  font-style: italic;
+}
+
+.cherry.theme__dark .cherry-previewer h1 {
+  margin: .67em 0;
+  font-weight: 600;
+  padding-bottom: .3em;
+  font-size: 2em;
+  border-bottom: 1px solid #30363db3;
+}
+
+.cherry.theme__dark .cherry-previewer mark {
+  background-color: #bb800926;
+  color: #e6edf3;
+}
+
+.cherry.theme__dark .cherry-previewer small {
+  font-size: 90%;
+}
+
+.cherry.theme__dark .cherry-previewer sub,
+.cherry.theme__dark .cherry-previewer sup {
+  font-size: 75%;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+}
+
+.cherry.theme__dark .cherry-previewer sub {
+  bottom: -0.25em;
+}
+
+.cherry.theme__dark .cherry-previewer sup {
+  top: -0.5em;
+}
+
+.cherry.theme__dark .cherry-previewer img {
+  border-style: none;
+  max-width: 100%;
+  box-sizing: content-box;
+}
+
+.cherry.theme__dark .cherry-previewer code,
+.cherry.theme__dark .cherry-previewer kbd,
+.cherry.theme__dark .cherry-previewer pre,
+.cherry.theme__dark .cherry-previewer samp {
+  font-family: monospace;
+  font-size: 1em;
+}
+
+.cherry.theme__dark .cherry-previewer figure {
+  margin: 1em 2.5rem;
+}
+
+.cherry.theme__dark .cherry-previewer hr {
+  box-sizing: content-box;
+  overflow: hidden;
+  background: rgba(0,0,0,0);
+  border-bottom: 1px solid #30363db3;
+  height: .25em;
+  padding: 0;
+  margin: 1.5rem 0;
+  background-color: #30363d;
+  border: 0;
+}
+
+.cherry.theme__dark .cherry-previewer input {
+  font: inherit;
+  margin: 0;
+  overflow: visible;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.cherry.theme__dark .cherry-previewer [type=button],
+.cherry.theme__dark .cherry-previewer [type=reset],
+.cherry.theme__dark .cherry-previewer [type=submit] {
+  -webkit-appearance: button;
+  appearance: button;
+}
+
+.cherry.theme__dark .cherry-previewer [type=checkbox],
+.cherry.theme__dark .cherry-previewer [type=radio] {
+  box-sizing: border-box;
+  padding: 0;
+}
+
+.cherry.theme__dark .cherry-previewer [type=number]::-webkit-inner-spin-button,
+.cherry.theme__dark .cherry-previewer [type=number]::-webkit-outer-spin-button {
+  height: auto;
+}
+
+.cherry.theme__dark .cherry-previewer [type=search]::-webkit-search-cancel-button,
+.cherry.theme__dark .cherry-previewer [type=search]::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.cherry.theme__dark .cherry-previewer ::-webkit-input-placeholder {
+  color: inherit;
+  opacity: .54;
+}
+
+.cherry.theme__dark .cherry-previewer ::-webkit-file-upload-button {
+  -webkit-appearance: button;
+  appearance: button;
+  font: inherit;
+}
+
+.cherry.theme__dark .cherry-previewer a:hover {
+  text-decoration: underline;
+}
+
+.cherry.theme__dark .cherry-previewer ::placeholder {
+  color: #8b949e;
+  opacity: 1;
+}
+
+.cherry.theme__dark .cherry-previewer hr::before {
+  display: table;
+  content: "";
+}
+
+.cherry.theme__dark .cherry-previewer hr::after {
+  display: table;
+  clear: both;
+  content: "";
+}
+
+.cherry.theme__dark .cherry-previewer table {
+  border-spacing: 0;
+  border-collapse: collapse;
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow: auto;
+  font-variant: tabular-nums;
+}
+
+.cherry.theme__dark .cherry-previewer td,
+.cherry.theme__dark .cherry-previewer th {
+  padding: 0;
+}
+
+.cherry.theme__dark .cherry-previewer details summary {
+  cursor: pointer;
+}
+
+.cherry.theme__dark .cherry-previewer a:focus,
+.cherry.theme__dark .cherry-previewer [role=button]:focus,
+.cherry.theme__dark .cherry-previewer input[type=radio]:focus,
+.cherry.theme__dark .cherry-previewer input[type=checkbox]:focus {
+  outline: 2px solid #58a6ff;
+  outline-offset: -2px;
+  box-shadow: none;
+}
+
+.cherry.theme__dark .cherry-previewer a:focus:not(:focus-visible),
+.cherry.theme__dark .cherry-previewer [role=button]:focus:not(:focus-visible),
+.cherry.theme__dark .cherry-previewer input[type=radio]:focus:not(:focus-visible),
+.cherry.theme__dark .cherry-previewer input[type=checkbox]:focus:not(:focus-visible) {
+  outline: solid 1px rgba(0,0,0,0);
+}
+
+.cherry.theme__dark .cherry-previewer a:focus-visible,
+.cherry.theme__dark .cherry-previewer [role=button]:focus-visible,
+.cherry.theme__dark .cherry-previewer input[type=radio]:focus-visible,
+.cherry.theme__dark .cherry-previewer input[type=checkbox]:focus-visible {
+  outline: 2px solid #58a6ff;
+  outline-offset: -2px;
+  box-shadow: none;
+}
+
+.cherry.theme__dark .cherry-previewer a:not([class]):focus,
+.cherry.theme__dark .cherry-previewer a:not([class]):focus-visible,
+.cherry.theme__dark .cherry-previewer input[type=radio]:focus,
+.cherry.theme__dark .cherry-previewer input[type=radio]:focus-visible,
+.cherry.theme__dark .cherry-previewer input[type=checkbox]:focus,
+.cherry.theme__dark .cherry-previewer input[type=checkbox]:focus-visible {
+  outline-offset: 0;
+}
+
+.cherry.theme__dark .cherry-previewer kbd {
+  display: inline-block;
+  padding: 0.25rem;
+  font: 11px ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+  line-height: 10px;
+  color: #e6edf3;
+  vertical-align: middle;
+  background-color: #1c2128;
+  border: solid 1px #30363d;
+  border-bottom-color: #30363d;
+  border-radius: 6px;
+  box-shadow: inset 0 -1px 0 #30363d;
+}
+
+.cherry.theme__dark .cherry-previewer h1,
+.cherry.theme__dark .cherry-previewer h2,
+.cherry.theme__dark .cherry-previewer h3,
+.cherry.theme__dark .cherry-previewer h4,
+.cherry.theme__dark .cherry-previewer h5,
+.cherry.theme__dark .cherry-previewer h6 {
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: #e6edf3;
+}
+
+.cherry.theme__dark .cherry-previewer h2 {
+  font-weight: 600;
+  padding-bottom: .3em;
+  font-size: 1.5em;
+  border-bottom: 1px solid #30363db3;
+}
+
+.cherry.theme__dark .cherry-previewer h3 {
+  font-weight: 600;
+  font-size: 1.25em;
+}
+
+.cherry.theme__dark .cherry-previewer h4 {
+  font-weight: 600;
+  font-size: 1em;
+}
+
+.cherry.theme__dark .cherry-previewer h5 {
+  font-weight: 600;
+  font-size: .875em;
+}
+
+.cherry.theme__dark .cherry-previewer h6 {
+  font-weight: 600;
+  font-size: .85em;
+  color: #8b949e;
+}
+
+.cherry.theme__dark .cherry-previewer p {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #e6edf3;
+}
+
+.cherry.theme__dark .cherry-previewer blockquote {
+  margin: 0;
+  padding: 0 1em;
+  color: #8b949e;
+  border-left: .25em solid #3b434b;
+}
+
+.cherry.theme__dark .cherry-previewer ul,
+.cherry.theme__dark .cherry-previewer ol {
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-left: 2em;
+}
+
+.cherry.theme__dark .cherry-previewer ol ol,
+.cherry.theme__dark .cherry-previewer ul ol {
+  list-style-type: lower-roman;
+}
+
+.cherry.theme__dark .cherry-previewer ul ul ol,
+.cherry.theme__dark .cherry-previewer ul ol ol,
+.cherry.theme__dark .cherry-previewer ol ul ol,
+.cherry.theme__dark .cherry-previewer ol ol ol {
+  list-style-type: lower-alpha;
+}
+
+.cherry.theme__dark .cherry-previewer dd {
+  margin-left: 0;
+}
+
+.cherry.theme__dark .cherry-previewer tt,
+.cherry.theme__dark .cherry-previewer code,
+.cherry.theme__dark .cherry-previewer samp {
+  font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+  font-size: 12px;
+}
+
+.cherry.theme__dark .cherry-previewer pre {
+  margin-top: 0;
+  margin-bottom: 0;
+  font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+  font-size: 12px;
+  word-wrap: normal;
+}
+
+.cherry.theme__dark .cherry-previewer .octicon {
+  display: inline-block;
+  overflow: visible !important;
+  vertical-align: text-bottom;
+  fill: currentColor;
+}
+
+.cherry.theme__dark .cherry-previewer input::-webkit-outer-spin-button,
+.cherry.theme__dark .cherry-previewer input::-webkit-inner-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+.cherry.theme__dark .cherry-previewer .mr-2 {
+  margin-right: 0.5rem !important;
+}
+
+.cherry.theme__dark .cherry-previewer::before {
+  display: table;
+  content: "";
+}
+
+.cherry.theme__dark .cherry-previewer::after {
+  display: table;
+  clear: both;
+  content: "";
+}
+
+.cherry.theme__dark .cherry-previewer>*:first-child {
+  margin-top: 0 !important;
+}
+
+.cherry.theme__dark .cherry-previewer>*:last-child {
+  margin-bottom: 0 !important;
+}
+
+.cherry.theme__dark .cherry-previewer a:not([href]) {
+  color: inherit;
+  text-decoration: none;
+}
+
+.cherry.theme__dark .cherry-previewer .absent {
+  color: #f85149;
+}
+
+.cherry.theme__dark .cherry-previewer .anchor {
+  float: left;
+  padding-right: 0.25rem;
+  margin-left: -20px;
+  line-height: 1;
+}
+
+.cherry.theme__dark .cherry-previewer .anchor:focus {
+  outline: none;
+}
+
+.cherry.theme__dark .cherry-previewer p,
+.cherry.theme__dark .cherry-previewer blockquote,
+.cherry.theme__dark .cherry-previewer ul,
+.cherry.theme__dark .cherry-previewer ol,
+.cherry.theme__dark .cherry-previewer dl,
+.cherry.theme__dark .cherry-previewer table,
+.cherry.theme__dark .cherry-previewer pre,
+.cherry.theme__dark .cherry-previewer details {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.cherry.theme__dark .cherry-previewer blockquote>:first-child {
+  margin-top: 0;
+}
+
+.cherry.theme__dark .cherry-previewer blockquote>:last-child {
+  margin-bottom: 0;
+}
+
+.cherry.theme__dark .cherry-previewer h1 .octicon-link,
+.cherry.theme__dark .cherry-previewer h2 .octicon-link,
+.cherry.theme__dark .cherry-previewer h3 .octicon-link,
+.cherry.theme__dark .cherry-previewer h4 .octicon-link,
+.cherry.theme__dark .cherry-previewer h5 .octicon-link,
+.cherry.theme__dark .cherry-previewer h6 .octicon-link {
+  color: #e6edf3;
+  vertical-align: middle;
+  visibility: hidden;
+}
+
+.cherry.theme__dark .cherry-previewer h1:hover .anchor,
+.cherry.theme__dark .cherry-previewer h2:hover .anchor,
+.cherry.theme__dark .cherry-previewer h3:hover .anchor,
+.cherry.theme__dark .cherry-previewer h4:hover .anchor,
+.cherry.theme__dark .cherry-previewer h5:hover .anchor,
+.cherry.theme__dark .cherry-previewer h6:hover .anchor {
+  text-decoration: none;
+}
+
+.cherry.theme__dark .cherry-previewer h1:hover .anchor .octicon-link,
+.cherry.theme__dark .cherry-previewer h2:hover .anchor .octicon-link,
+.cherry.theme__dark .cherry-previewer h3:hover .anchor .octicon-link,
+.cherry.theme__dark .cherry-previewer h4:hover .anchor .octicon-link,
+.cherry.theme__dark .cherry-previewer h5:hover .anchor .octicon-link,
+.cherry.theme__dark .cherry-previewer h6:hover .anchor .octicon-link {
+  visibility: visible;
+}
+
+.cherry.theme__dark .cherry-previewer h1 tt,
+.cherry.theme__dark .cherry-previewer h1 code,
+.cherry.theme__dark .cherry-previewer h2 tt,
+.cherry.theme__dark .cherry-previewer h2 code,
+.cherry.theme__dark .cherry-previewer h3 tt,
+.cherry.theme__dark .cherry-previewer h3 code,
+.cherry.theme__dark .cherry-previewer h4 tt,
+.cherry.theme__dark .cherry-previewer h4 code,
+.cherry.theme__dark .cherry-previewer h5 tt,
+.cherry.theme__dark .cherry-previewer h5 code,
+.cherry.theme__dark .cherry-previewer h6 tt,
+.cherry.theme__dark .cherry-previewer h6 code {
+  padding: 0 .2em;
+  font-size: inherit;
+}
+
+.cherry.theme__dark .cherry-previewer summary h1,
+.cherry.theme__dark .cherry-previewer summary h2,
+.cherry.theme__dark .cherry-previewer summary h3,
+.cherry.theme__dark .cherry-previewer summary h4,
+.cherry.theme__dark .cherry-previewer summary h5,
+.cherry.theme__dark .cherry-previewer summary h6 {
+  display: inline-block;
+}
+
+.cherry.theme__dark .cherry-previewer summary h1 .anchor,
+.cherry.theme__dark .cherry-previewer summary h2 .anchor,
+.cherry.theme__dark .cherry-previewer summary h3 .anchor,
+.cherry.theme__dark .cherry-previewer summary h4 .anchor,
+.cherry.theme__dark .cherry-previewer summary h5 .anchor,
+.cherry.theme__dark .cherry-previewer summary h6 .anchor {
+  margin-left: -40px;
+}
+
+.cherry.theme__dark .cherry-previewer summary h1,
+.cherry.theme__dark .cherry-previewer summary h2 {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.cherry.theme__dark .cherry-previewer ul.no-list,
+.cherry.theme__dark .cherry-previewer ol.no-list {
+  padding: 0;
+  list-style-type: none;
+}
+
+.cherry.theme__dark .cherry-previewer ol[type="a s"] {
+  list-style-type: lower-alpha;
+}
+
+.cherry.theme__dark .cherry-previewer ol[type="A s"] {
+  list-style-type: upper-alpha;
+}
+
+.cherry.theme__dark .cherry-previewer ol[type="i s"] {
+  list-style-type: lower-roman;
+}
+
+.cherry.theme__dark .cherry-previewer ol[type="I s"] {
+  list-style-type: upper-roman;
+}
+
+.cherry.theme__dark .cherry-previewer ol[type="1"] {
+  list-style-type: decimal;
+}
+
+.cherry.theme__dark .cherry-previewer div>ol:not([type]) {
+  list-style-type: decimal;
+}
+
+.cherry.theme__dark .cherry-previewer ul ul,
+.cherry.theme__dark .cherry-previewer ul ol,
+.cherry.theme__dark .cherry-previewer ol ol,
+.cherry.theme__dark .cherry-previewer ol ul {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.cherry.theme__dark .cherry-previewer li>p {
+  margin-top: 1rem;
+}
+
+.cherry.theme__dark .cherry-previewer li+li {
+  margin-top: .25em;
+}
+
+.cherry.theme__dark .cherry-previewer dl {
+  padding: 0;
+}
+
+.cherry.theme__dark .cherry-previewer dl dt {
+  padding: 0;
+  margin-top: 1rem;
+  font-size: 1em;
+  font-style: italic;
+  font-weight: 600;
+  color: #e6edf3;
+}
+
+.cherry.theme__dark .cherry-previewer dl dd {
+  padding: 0 1rem;
+  margin-bottom: 1rem;
+}
+
+.cherry.theme__dark .cherry-previewer table th {
+  font-weight: 600;
+}
+
+.cherry.theme__dark .cherry-previewer table th,
+.cherry.theme__dark .cherry-previewer table td {
+  padding: 6px 13px;
+  border: 1px solid #30363d;
+  color: #e6edf3;
+}
+
+.cherry.theme__dark .cherry-previewer table td>:last-child {
+  margin-bottom: 0;
+}
+
+.cherry.theme__dark .cherry-previewer table tr {
+  background-color: #0f172a;
+  border-top: 1px solid #30363db3;
+}
+
+.cherry.theme__dark .cherry-previewer table tr:nth-child(2n) {
+  background-color: #161b22;
+}
+
+.cherry.theme__dark .cherry-previewer table img {
+  background-color: rgba(0,0,0,0);
+}
+
+.cherry.theme__dark .cherry-previewer img[align=right] {
+  padding-left: 20px;
+}
+
+.cherry.theme__dark .cherry-previewer img[align=left] {
+  padding-right: 20px;
+}
+
+.cherry.theme__dark .cherry-previewer .emoji {
+  max-width: none;
+  vertical-align: text-top;
+  background-color: rgba(0,0,0,0);
+}
+
+.cherry.theme__dark .cherry-previewer span.frame {
+  display: block;
+  overflow: hidden;
+}
+
+.cherry.theme__dark .cherry-previewer span.frame>span {
+  display: block;
+  float: left;
+  width: auto;
+  padding: 7px;
+  margin: 13px 0 0;
+  overflow: hidden;
+  border: 1px solid #30363d;
+}
+
+.cherry.theme__dark .cherry-previewer span.frame span img {
+  display: block;
+  float: left;
+}
+
+.cherry.theme__dark .cherry-previewer span.frame span span {
+  display: block;
+  padding: 5px 0 0;
+  clear: both;
+  color: #e6edf3;
+}
+
+.cherry.theme__dark .cherry-previewer span.align-center {
+  display: block;
+  overflow: hidden;
+  clear: both;
+}
+
+.cherry.theme__dark .cherry-previewer span.align-center>span {
+  display: block;
+  margin: 13px auto 0;
+  overflow: hidden;
+  text-align: center;
+}
+
+.cherry.theme__dark .cherry-previewer span.align-center span img {
+  margin: 0 auto;
+  text-align: center;
+}
+
+.cherry.theme__dark .cherry-previewer span.align-right {
+  display: block;
+  overflow: hidden;
+  clear: both;
+}
+
+.cherry.theme__dark .cherry-previewer span.align-right>span {
+  display: block;
+  margin: 13px 0 0;
+  overflow: hidden;
+  text-align: right;
+}
+
+.cherry.theme__dark .cherry-previewer span.align-right span img {
+  margin: 0;
+  text-align: right;
+}
+
+.cherry.theme__dark .cherry-previewer span.float-left {
+  display: block;
+  float: left;
+  margin-right: 13px;
+  overflow: hidden;
+}
+
+.cherry.theme__dark .cherry-previewer span.float-left span {
+  margin: 13px 0 0;
+}
+
+.cherry.theme__dark .cherry-previewer span.float-right {
+  display: block;
+  float: right;
+  margin-left: 13px;
+  overflow: hidden;
+}
+
+.cherry.theme__dark .cherry-previewer span.float-right>span {
+  display: block;
+  margin: 13px auto 0;
+  overflow: hidden;
+  text-align: right;
+}
+
+.cherry.theme__dark .cherry-previewer code,
+.cherry.theme__dark .cherry-previewer tt {
+  padding: .2em .4em;
+  margin: 0;
+  font-size: 85%;
+  white-space: break-spaces;
+  background-color: rgba(110,118,129,0.2);
+  border-radius: 6px;
+  color: #e6edf3;
+}
+
+.cherry.theme__dark .cherry-previewer code br,
+.cherry.theme__dark .cherry-previewer tt br {
+  display: none;
+}
+
+.cherry.theme__dark .cherry-previewer del code {
+  text-decoration: inherit;
+}
+
+.cherry.theme__dark .cherry-previewer samp {
+  font-size: 85%;
+}
+
+.cherry.theme__dark .cherry-previewer pre code {
+  font-size: 100%;
+}
+
+.cherry.theme__dark .cherry-previewer pre>code {
+  padding: 0;
+  margin: 0;
+  word-break: normal;
+  white-space: pre;
+  background: rgba(0,0,0,0);
+  border: 0;
+}
+
+.cherry.theme__dark .cherry-previewer .highlight {
+  margin-bottom: 1rem;
+}
+
+.cherry.theme__dark .cherry-previewer .highlight pre {
+  margin-bottom: 0;
+  word-break: normal;
+}
+
+.cherry.theme__dark .cherry-previewer .highlight pre,
+.cherry.theme__dark .cherry-previewer pre {
+  padding: 1rem;
+  overflow: auto;
+  font-size: 85%;
+  line-height: 1.45;
+  color: #e6edf3;
+  background-color: #161b22;
+  border-radius: 6px;
+}
+
+.cherry.theme__dark .cherry-previewer pre code,
+.cherry.theme__dark .cherry-previewer pre tt {
+  display: inline;
+  padding: 0;
+  margin: 0;
+  overflow: visible;
+  line-height: inherit;
+  word-wrap: normal;
+  background-color: rgba(0,0,0,0);
+  border: 0;
+}
+
+.cherry.theme__dark .cherry-previewer .csv-data td,
+.cherry.theme__dark .cherry-previewer .csv-data th {
+  padding: 5px;
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 1;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.cherry.theme__dark .cherry-previewer .csv-data .blob-num {
+  padding: 10px 0.5rem 9px;
+  text-align: right;
+  background: #0f172a;
+  border: 0;
+  color: #8b949e;
+}
+
+.cherry.theme__dark .cherry-previewer .csv-data tr {
+  border-top: 0;
+}
+
+.cherry.theme__dark .cherry-previewer .csv-data th {
+  font-weight: 600;
+  background: #161b22;
+  border-top: 0;
+  color: #e6edf3;
+}
+
+.cherry.theme__dark .cherry-previewer [data-footnote-ref]::before {
+  content: "[";
+}
+
+.cherry.theme__dark .cherry-previewer [data-footnote-ref]::after {
+  content: "]";
+}
+
+.cherry.theme__dark .cherry-previewer .footnotes {
+  font-size: 12px;
+  color: #8b949e;
+  border-top: 1px solid #30363d;
+}
+
+.cherry.theme__dark .cherry-previewer .footnotes ol {
+  padding-left: 1rem;
+}
+
+.cherry.theme__dark .cherry-previewer .footnotes ol ul {
+  display: inline-block;
+  padding-left: 1rem;
+  margin-top: 1rem;
+}
+
+.cherry.theme__dark .cherry-previewer .footnotes li {
+  position: relative;
+}
+
+.cherry.theme__dark .cherry-previewer .footnotes li:target::before {
+  position: absolute;
+  top: calc(0.5rem*-1);
+  right: calc(0.5rem*-1);
+  bottom: calc(0.5rem*-1);
+  left: calc(1.5rem*-1);
+  pointer-events: none;
+  content: "";
+  border: 2px solid #58a6ff;
+  border-radius: 6px;
+}
+
+.cherry.theme__dark .cherry-previewer .footnotes li:target {
+  color: #e6edf3;
+}
+
+.cherry.theme__dark .cherry-previewer .footnotes .data-footnote-backref g-emoji {
+  font-family: monospace;
+}
+
+/* === Syntax highlighting classes (GitHub dark) === */
+.cherry.theme__dark .cherry-previewer .pl-c {
+  color: #8b949e;
+}
+
+.cherry.theme__dark .cherry-previewer .pl-c1,
+.cherry.theme__dark .cherry-previewer .pl-s .pl-v {
+  color: #79c0ff;
+}
+
+.cherry.theme__dark .cherry-previewer .pl-e,
+.cherry.theme__dark .cherry-previewer .pl-en {
+  color: #d2a8ff;
+}
+
+.cherry.theme__dark .cherry-previewer .pl-smi,
+.cherry.theme__dark .cherry-previewer .pl-s .pl-s1 {
+  color: #e6edf3;
+}
+
+.cherry.theme__dark .cherry-previewer .pl-ent {
+  color: #7ee787;
+}
+
+.cherry.theme__dark .cherry-previewer .pl-k {
+  color: #ff7b72;
+}
+
+.cherry.theme__dark .cherry-previewer .pl-s,
+.cherry.theme__dark .cherry-previewer .pl-pds,
+.cherry.theme__dark .cherry-previewer .pl-s .pl-pse .pl-s1,
+.cherry.theme__dark .cherry-previewer .pl-sr,
+.cherry.theme__dark .cherry-previewer .pl-sr .pl-cce,
+.cherry.theme__dark .cherry-previewer .pl-sr .pl-sre,
+.cherry.theme__dark .cherry-previewer .pl-sr .pl-sra {
+  color: #a5d6ff;
+}
+
+.cherry.theme__dark .cherry-previewer .pl-v,
+.cherry.theme__dark .cherry-previewer .pl-smw {
+  color: #ffa657;
+}
+
+.cherry.theme__dark .cherry-previewer .pl-bu {
+  color: #f85149;
+}
+
+.cherry.theme__dark .cherry-previewer .pl-ii {
+  color: #f0f6fc;
+  background-color: #82071e;
+}
+
+.cherry.theme__dark .cherry-previewer .pl-c2 {
+  color: #f0f6fc;
+  background-color: #ff7b72;
+}
+
+.cherry.theme__dark .cherry-previewer .pl-sr .pl-cce {
+  font-weight: bold;
+  color: #7ee787;
+}
+
+.cherry.theme__dark .cherry-previewer .pl-ml {
+  color: #ffa657;
+}
+
+.cherry.theme__dark .cherry-previewer .pl-mh,
+.cherry.theme__dark .cherry-previewer .pl-mh .pl-en,
+.cherry.theme__dark .cherry-previewer .pl-ms {
+  font-weight: bold;
+  color: #79c0ff;
+}
+
+.cherry.theme__dark .cherry-previewer .pl-mi {
+  font-style: italic;
+  color: #e6edf3;
+}
+
+.cherry.theme__dark .cherry-previewer .pl-mb {
+  font-weight: bold;
+  color: #e6edf3;
+}
+
+.cherry.theme__dark .cherry-previewer .pl-md {
+  color: #ffa198;
+  background-color: #490202;
+}
+
+.cherry.theme__dark .cherry-previewer .pl-mi1 {
+  color: #7ee787;
+  background-color: #0f5323;
+}
+
+.cherry.theme__dark .cherry-previewer .pl-mc {
+  color: #ffa657;
+  background-color: #4b2908;
+}
+
+.cherry.theme__dark .cherry-previewer .pl-mi2 {
+  color: #30363d;
+  background-color: #79c0ff;
+}
+
+.cherry.theme__dark .cherry-previewer .pl-mdr {
+  font-weight: bold;
+  color: #d2a8ff;
+}
+
+.cherry.theme__dark .cherry-previewer .pl-ba {
+  color: #8b949e;
+}
+
+.cherry.theme__dark .cherry-previewer .pl-sg {
+  color: #6e7681;
+}
+
+.cherry.theme__dark .cherry-previewer .pl-corl {
+  text-decoration: underline;
+  color: #a5d6ff;
+}
+
+.cherry.theme__dark .cherry-previewer [role=button]:focus:not(:focus-visible),
+.cherry.theme__dark .cherry-previewer [role=tabpanel][tabindex="0"]:focus:not(:focus-visible),
+.cherry.theme__dark .cherry-previewer button:focus:not(:focus-visible),
+.cherry.theme__dark .cherry-previewer summary:focus:not(:focus-visible),
+.cherry.theme__dark .cherry-previewer a:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+
+.cherry.theme__dark .cherry-previewer [tabindex="0"]:focus:not(:focus-visible),
+.cherry.theme__dark .cherry-previewer details-dialog:focus:not(:focus-visible) {
+  outline: none;
+}
+
+.cherry.theme__dark .cherry-previewer g-emoji {
+  display: inline-block;
+  min-width: 1ch;
+  font-family: "Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";
+  font-size: 1em;
+  font-style: normal !important;
+  font-weight: 400;
+  line-height: 1;
+  vertical-align: -0.075em;
+}
+
+.cherry.theme__dark .cherry-previewer g-emoji img {
+  width: 1em;
+  height: 1em;
+}
+
+.cherry.theme__dark .cherry-previewer a:has(>p,>div,>pre,>blockquote) {
+  display: block;
+}
+
+.cherry.theme__dark .cherry-previewer a:has(>p,>div,>pre,>blockquote):not(:has(.snippet-clipboard-content,>pre)) {
+  width: fit-content;
+}
+
+.cherry.theme__dark .cherry-previewer a:has(>p,>div,>pre,>blockquote):has(.snippet-clipboard-content,>pre):focus-visible {
+  outline: 2px solid #58a6ff;
+  outline-offset: 2px;
+}
+
+.cherry.theme__dark .cherry-previewer .task-list-item {
+  list-style-type: none;
+}
+
+.cherry.theme__dark .cherry-previewer .task-list-item label {
+  font-weight: 400;
+}
+
+.cherry.theme__dark .cherry-previewer .task-list-item.enabled label {
+  cursor: pointer;
+}
+
+.cherry.theme__dark .cherry-previewer .task-list-item+.task-list-item {
+  margin-top: 0.25rem;
+}
+
+.cherry.theme__dark .cherry-previewer .task-list-item .handle {
+  display: none;
+}
+
+.cherry.theme__dark .cherry-previewer .task-list-item-checkbox {
+  margin: 0 .2em .25em -1.4em;
+  vertical-align: middle;
+}
+
+.cherry.theme__dark .cherry-previewer ul:dir(rtl) .task-list-item-checkbox {
+  margin: 0 -1.6em .25em .2em;
+}
+
+.cherry.theme__dark .cherry-previewer ol:dir(rtl) .task-list-item-checkbox {
+  margin: 0 -1.6em .25em .2em;
+}
+
+.cherry.theme__dark .cherry-previewer .contains-task-list:hover .task-list-item-convert-container,
+.cherry.theme__dark .cherry-previewer .contains-task-list:focus-within .task-list-item-convert-container {
+  display: block;
+  width: auto;
+  height: 24px;
+  overflow: visible;
+  clip-path: none;
+}
+
+.cherry.theme__dark .cherry-previewer ::-webkit-calendar-picker-indicator {
+  filter: invert(50%);
+}
+
+.cherry.theme__dark .cherry-previewer .markdown-alert {
+  padding: 0.5rem 1rem;
+  margin-bottom: 1rem;
+  color: inherit;
+  border-left: .25em solid #30363d;
+}
+
+.cherry.theme__dark .cherry-previewer .markdown-alert>:first-child {
+  margin-top: 0;
+}
+
+.cherry.theme__dark .cherry-previewer .markdown-alert>:last-child {
+  margin-bottom: 0;
+}
+
+.cherry.theme__dark .cherry-previewer .markdown-alert .markdown-alert-title {
+  display: flex;
+  font-weight: 500;
+  align-items: center;
+  line-height: 1;
+}
+
+.cherry.theme__dark .cherry-previewer .markdown-alert.markdown-alert-note {
+  border-left-color: #58a6ff;
+}
+
+.cherry.theme__dark .cherry-previewer .markdown-alert.markdown-alert-note .markdown-alert-title {
+  color: #58a6ff;
+}
+
+.cherry.theme__dark .cherry-previewer .markdown-alert.markdown-alert-important {
+  border-left-color: #d2a8ff;
+}
+
+.cherry.theme__dark .cherry-previewer .markdown-alert.markdown-alert-important .markdown-alert-title {
+  color: #d2a8ff;
+}
+
+.cherry.theme__dark .cherry-previewer .markdown-alert.markdown-alert-warning {
+  border-left-color: #d29922;
+}
+
+.cherry.theme__dark .cherry-previewer .markdown-alert.markdown-alert-warning .markdown-alert-title {
+  color: #d29922;
+}
+
+.cherry.theme__dark .cherry-previewer .markdown-alert.markdown-alert-tip {
+  border-left-color: #3fb950;
+}
+
+.cherry.theme__dark .cherry-previewer .markdown-alert.markdown-alert-tip .markdown-alert-title {
+  color: #3fb950;
+}
+
+.cherry.theme__dark .cherry-previewer .markdown-alert.markdown-alert-caution {
+  border-left-color: #f85149;
+}
+
+.cherry.theme__dark .cherry-previewer .markdown-alert.markdown-alert-caution .markdown-alert-title {
+  color: #f85149;
+}
+
+.cherry.theme__dark .cherry-previewer>*:first-child>.heading-element:first-child {
+  margin-top: 0 !important;
+}
+
+.cherry.theme__dark .cherry-previewer .highlight pre:has(+.zeroclipboard-container) {
+  min-height: 52px;
+}
+
+/* === Dark-mode specific overrides === */
+
+/* Scrollbar styling for dark mode */
+.cherry.theme__dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.cherry.theme__dark ::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+
+.cherry.theme__dark ::-webkit-scrollbar-thumb {
+  background: rgba(110,118,129,0.4);
+  border-radius: 4px;
+}
+
+.cherry.theme__dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(110,118,129,0.6);
+}
+
+/* Selection styling */
+.cherry.theme__dark .cherry-previewer ::selection {
+  background-color: rgba(56,139,253,0.25);
+  color: #e6edf3;
+}
+
+/* Code block syntax highlighting within previewer */
+.cherry.theme__dark .cherry-previewer pre {
+  background-color: #161b22 !important;
+  color: #e6edf3 !important;
+}
+
+.cherry.theme__dark .cherry-previewer .highlight pre {
+  background-color: #161b22 !important;
+  color: #e6edf3 !important;
+}
+
+/* URL in editor */
+.cherry.theme__dark .cm-url {
+  background-color: rgba(56,139,253,0.15);
+}
+
+/* List markers and checkbox colors for dark mode */
+.cherry.theme__dark .cherry-previewer li {
+  color: #e6edf3;
+}
+
+.cherry.theme__dark .cherry-previewer ::marker {
+  color: #8b949e;
+}
+
+/* Definition list terms */
+.cherry.theme__dark .cherry-previewer dt {
+  color: #e6edf3;
+}
+
+/* Abbreviation styling */
+.cherry.theme__dark .cherry-previewer abbr[title] {
+  border-bottom: 1px dotted #8b949e;
+}
+
+/* Mark / highlight text dark mode */
+.cherry.theme__dark .cherry-previewer mark {
+  background-color: #bb800926;
+  color: #e6edf3;
+  padding: 0.1em 0.3em;
+  border-radius: 2px;
+}
+
+/* Checkbox in task list dark mode */
+.cherry.theme__dark .cherry-previewer .task-list-item-checkbox {
+  accent-color: #58a6ff;
+}
+
+/* === Accordion (cherry-detail) reduced motion === */
+@media (prefers-reduced-motion: reduce) {
+  .cherry.theme__dark .cherry-detail details,
+  .cherry.theme__dark .cherry-detail details summary,
+  .cherry.theme__dark .cherry-detail details summary::before {
+    transition: none !important;
+  }
+}

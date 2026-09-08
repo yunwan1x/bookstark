@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v={{assetVer "/static/favicon.svg"}}">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{{call .T "meta.description.nav"}}">
+    <title>{{if .IsLoggedIn}}{{call .T "page.nav.title.logged_in"}}{{else}}{{call .T "page.nav.title.public"}}{{end}} - BookStark</title>
+    <link href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/nav.css?v={{assetVer "/static/css/nav.css"}}">
+    {{template "head-assets" .}}
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col">
+    {{template "header" .}}
+
+    <main class="flex-1" role="main">
+        <div class="nav-container">
+            <div class="page-sticky-header">
+                <div class="flex flex-wrap items-center gap-2">
+                    {{if .IsLoggedIn}}
+                    <a href="/bookmarks" class="nav-manage-link">{{call .T "nav_page.manage"}}</a>
+                    {{end}}
+                </div>
+                <div class="nav-search-row">
+                    <input id="nav-search" type="text" class="search-input" placeholder="{{call .T "nav_page.search.placeholder"}}" aria-label="{{call .T "nav_page.search.aria"}}" oninput="NavApp.onSearch(this.value)">
+                    <div class="nav-view-switcher">
+                        <button id="nav-view-btn" class="nav-view-btn" onclick="NavApp.toggleViewMenu()" aria-label="{{call .T "nav_page.view.switch"}}" aria-haspopup="true" aria-expanded="false">
+                            <i class="fa-solid fa-grip" id="nav-view-icon"></i>
+                        </button>
+                        <div id="nav-view-menu" class="nav-view-menu" role="menu">
+                            <div class="nav-view-option active" data-view="default" onclick="NavApp.switchView('default')" role="menuitem" tabindex="0">
+                                <i class="fa-solid fa-table-cells-large"></i><span>{{call .T "nav_page.view.default"}}</span>
+                            </div>
+                            <div class="nav-view-option" data-view="list" onclick="NavApp.switchView('list')" role="menuitem" tabindex="0">
+                                <i class="fa-solid fa-list"></i><span>{{call .T "nav_page.view.list"}}</span>
+                            </div>
+                            <div class="nav-view-option" data-view="compact" onclick="NavApp.switchView('compact')" role="menuitem" tabindex="0">
+                                <i class="fa-solid fa-table-cells"></i><span>{{call .T "nav_page.view.compact"}}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="nav-group-tags" class="nav-group-tags"></div>
+            </div>
+
+            <div id="nav-content">
+                <!-- Skeleton: section 1 -->
+                <div class="nav-skeleton-section">
+                    <div class="nav-skeleton-header">
+                        <div class="skeleton" style="width:80px;height:16px;border-radius:4px"></div>
+                        <div class="skeleton" style="width:24px;height:16px;border-radius:4px"></div>
+                    </div>
+                    <div class="nav-card-grid">
+                        <div class="nav-skeleton-card"><div class="nav-skeleton-head"><div class="skeleton nav-skeleton-favicon"></div><div class="skeleton nav-skeleton-title"></div></div><div class="skeleton nav-skeleton-desc"></div></div>
+                        <div class="nav-skeleton-card"><div class="nav-skeleton-head"><div class="skeleton nav-skeleton-favicon"></div><div class="skeleton nav-skeleton-title" style="width:55%"></div></div><div class="skeleton nav-skeleton-desc" style="width:70%"></div></div>
+                        <div class="nav-skeleton-card"><div class="nav-skeleton-head"><div class="skeleton nav-skeleton-favicon"></div><div class="skeleton nav-skeleton-title" style="width:65%"></div></div><div class="skeleton nav-skeleton-desc" style="width:50%"></div></div>
+                        <div class="nav-skeleton-card"><div class="nav-skeleton-head"><div class="skeleton nav-skeleton-favicon"></div><div class="skeleton nav-skeleton-title" style="width:40%"></div></div><div class="skeleton nav-skeleton-desc" style="width:80%"></div></div>
+                        <div class="nav-skeleton-card"><div class="nav-skeleton-head"><div class="skeleton nav-skeleton-favicon"></div><div class="skeleton nav-skeleton-title" style="width:50%"></div></div><div class="skeleton nav-skeleton-desc" style="width:60%"></div></div>
+                        <div class="nav-skeleton-card"><div class="nav-skeleton-head"><div class="skeleton nav-skeleton-favicon"></div><div class="skeleton nav-skeleton-title" style="width:70%"></div></div></div>
+                    </div>
+                </div>
+                <!-- Skeleton: section 2 -->
+                <div class="nav-skeleton-section">
+                    <div class="nav-skeleton-header">
+                        <div class="skeleton" style="width:60px;height:16px;border-radius:4px"></div>
+                        <div class="skeleton" style="width:20px;height:16px;border-radius:4px"></div>
+                    </div>
+                    <div class="nav-card-grid">
+                        <div class="nav-skeleton-card"><div class="nav-skeleton-head"><div class="skeleton nav-skeleton-favicon"></div><div class="skeleton nav-skeleton-title" style="width:60%"></div></div><div class="skeleton nav-skeleton-desc" style="width:75%"></div></div>
+                        <div class="nav-skeleton-card"><div class="nav-skeleton-head"><div class="skeleton nav-skeleton-favicon"></div><div class="skeleton nav-skeleton-title" style="width:45%"></div></div><div class="skeleton nav-skeleton-desc" style="width:55%"></div></div>
+                        <div class="nav-skeleton-card"><div class="nav-skeleton-head"><div class="skeleton nav-skeleton-favicon"></div><div class="skeleton nav-skeleton-title" style="width:50%"></div></div><div class="skeleton nav-skeleton-desc" style="width:65%"></div></div>
+                        <div class="nav-skeleton-card"><div class="nav-skeleton-head"><div class="skeleton nav-skeleton-favicon"></div><div class="skeleton nav-skeleton-title" style="width:55%"></div></div></div>
+                        <div class="nav-skeleton-card"><div class="nav-skeleton-head"><div class="skeleton nav-skeleton-favicon"></div><div class="skeleton nav-skeleton-title" style="width:40%"></div></div><div class="skeleton nav-skeleton-desc" style="width:80%"></div></div>
+                        <div class="nav-skeleton-card"><div class="nav-skeleton-head"><div class="skeleton nav-skeleton-favicon"></div><div class="skeleton nav-skeleton-title" style="width:65%"></div></div><div class="skeleton nav-skeleton-desc" style="width:45%"></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    {{template "footer" .}}
+
+    <script>
+    window.NAV_IS_LOGGED_IN = {{if .IsLoggedIn}}true{{else}}false{{end}};
+    window.NAV_IS_ADMIN = {{if .IsAdmin}}true{{else}}false{{end}};
+    </script>
+    <script src="/static/js/tag-input.js?v={{assetVer "/static/js/tag-input.js"}}"></script>
+    <script src="/static/js/nav.js?v={{assetVer "/static/js/nav.js"}}"></script>
+</body>
+</html>

@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v={{assetVer "/static/favicon.svg"}}">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{{call .T "meta.description.dashboard"}}">
+    <title>{{call .T "page.dashboard.title"}} - BookStark</title>
+    <link href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}" rel="stylesheet">
+    <script src="/static/js/chart.umd.min.js?v={{assetVer "/static/js/chart.umd.min.js"}}"></script>
+    <style>
+    .stat-card {
+        background: var(--color-bg-card);
+        border: 1px solid var(--color-gray-100);
+        border-radius: 10px;
+        padding: 16px;
+        transition: box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+    .stat-card:hover {
+        border-color: var(--color-border);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .stats-grid {
+        display: flex;
+        gap: 24px;
+    }
+    @media (min-width: 640px) {
+        .stats-grid { gap: 32px; }
+    }
+    .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 0;
+        flex: 1;
+    }
+    @media (max-width: 640px) {
+        .hide-mobile { display: none; }
+        .stat-value { font-size: 18px; }
+        .stat-label { font-size: 11px; }
+    }
+    .stat-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--color-gray-800);
+        line-height: 1.2;
+        letter-spacing: -0.3px;
+    }
+    .stat-label {
+        font-size: 12px;
+        color: var(--color-gray-500);
+        margin-top: 4px;
+    }
+    .stat-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+        flex-shrink: 0;
+    }
+    .range-btn {
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        border: 1px solid var(--color-gray-200);
+        background: var(--color-bg-card);
+        color: var(--color-gray-500);
+        transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+    .range-btn.active {
+        background: var(--color-primary);
+        color: var(--color-white);
+        border-color: var(--color-primary);
+    }
+    .range-btn:focus-visible {
+        outline: 2px solid var(--color-focus);
+        outline-offset: 2px;
+    }
+    .log-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .log-table th { text-align: left; padding: 8px 10px; color: var(--color-gray-500); font-weight: 500; border-bottom: 1px solid var(--color-gray-200); font-size: 12px; white-space: nowrap; }
+    .log-table td { padding: 8px 10px; border-bottom: 1px solid var(--color-gray-100); color: var(--color-gray-700); }
+    .log-table tbody tr:hover td { background: var(--color-gray-50); }
+    .log-table tbody tr:last-child td { border-bottom: none; }
+    .ip-link { color: var(--color-primary); text-decoration: none; transition: color 0.15s ease; }
+    .ip-link:hover { color: var(--color-primary-hover); text-decoration: underline; }
+    .user-badge { display: inline-flex; align-items: center; gap: 3px; background: var(--color-primary-light); color: var(--color-primary); padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+    .anon-badge { display: inline-flex; align-items: center; background: var(--color-gray-100); color: var(--color-gray-500); padding: 2px 8px; border-radius: 20px; font-size: 11px; }
+    .path-badge { display: inline-block; background: var(--color-gray-100); color: var(--color-gray-600); padding: 1px 6px; border-radius: 4px; font-size: 11px; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    @media (prefers-reduced-motion: reduce) {
+        .stat-card, .range-btn, .ip-link { transition: none; }
+    }
+    </style>
+{{template "head-assets" .}}
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col">
+    {{template "header" .}}
+    <main class="flex-1" role="main">
+        <div class="px-4 sm:px-6 md:px-8 py-6">
+            <div class="mx-auto" style="width:100%;max-width:720px;">
+
+                <div class="flex items-center justify-between mb-4">
+                    <h1 class="page-title">{{call .T "dashboard.page.title"}}</h1>
+                    <div class="flex gap-1" role="group" aria-label="{{call .T "dashboard.time_range"}}">
+                        <button class="range-btn" data-range="24h" onclick="switchRange('24h')">{{call .T "dashboard.range.24h"}}</button>
+                        <button class="range-btn active" data-range="7d" onclick="switchRange('7d')">{{call .T "dashboard.range.7d"}}</button>
+                        <button class="range-btn" data-range="30d" onclick="switchRange('30d')">{{call .T "dashboard.range.30d"}}</button>
+                        <button class="range-btn" data-range="90d" onclick="switchRange('90d')">{{call .T "dashboard.range.90d"}}</button>
+                    </div>
+                </div>
+
+                <div class="stat-card mb-4">
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <i class="fa-solid fa-eye" style="color:var(--color-primary);font-size:14px;flex-shrink:0;"></i>
+                            <div><div class="stat-value" id="stat-total">-</div><div class="stat-label">{{call .T "dashboard.stat.total"}}</div></div>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fa-solid fa-globe" style="color:var(--color-indigo);font-size:14px;flex-shrink:0;"></i>
+                            <div><div class="stat-value" id="stat-ips">-</div><div class="stat-label">{{call .T "dashboard.stat.unique_ips"}}</div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stat-card mb-4" style="padding:20px">
+                    <div class="text-sm font-semibold text-slate-700 mb-3">{{call .T "dashboard.chart.trend"}}</div>
+                    <div style="position:relative;height:220px;">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="text-sm font-semibold text-slate-700 mb-3">{{call .T "dashboard.table.recent"}}</div>
+                    <div style="overflow-x:auto">
+                        <table class="log-table">
+                            <thead>
+                                <tr>
+                                    <th>{{call .T "dashboard.table.time"}}</th>
+                                    <th class="hide-mobile">{{call .T "dashboard.table.path"}}</th>
+                                    <th>{{call .T "dashboard.table.ip"}}</th>
+                                    <th>{{call .T "dashboard.table.user"}}</th>
+                                </tr>
+                            </thead>
+                            <tbody id="log-list">
+                                <tr><td colspan="4" class="text-center py-6 text-slate-400"><i class="fa-solid fa-spinner fa-spin"></i></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="log-pagination" class="mt-3 flex justify-center gap-1"></div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+    {{template "footer" .}}
+    <script>
+    var currentRange = '7d';
+    var logPage = 1;
+    var logTotalPages = 1;
+    var logTotal = 0;
+    var trendChart = null;
+    var trendChartData = [];
+
+    function switchRange(range) {
+        currentRange = range;
+        document.querySelectorAll('.range-btn').forEach(function(btn) {
+            btn.classList.toggle('active', btn.dataset.range === range);
+        });
+        loadStats();
+        loadTrend();
+    }
+
+    function loadStats() {
+        csrfFetch('/api/admin/dashboard/stats?range=' + currentRange).then(function(r) { return r.json(); }).then(function(d) {
+            if (d.code !== undefined && d.code !== 0) return;
+            var s = d.data || {};
+            document.getElementById('stat-total').textContent = s.total_visits || 0;
+            document.getElementById('stat-ips').textContent = s.unique_ips || 0;
+        }).catch(function() {});
+    }
+
+    function loadTrend() {
+        csrfFetch('/api/admin/dashboard/trend?range=' + currentRange).then(function(r) { return r.json(); }).then(function(d) {
+            if (d.code !== undefined && d.code !== 0) return;
+            trendChartData = d.data || [];
+            renderChart(trendChartData);
+        }).catch(function() {});
+    }
+
+    function renderChart(points) {
+        var labels = points.map(function(p) { return p.time; });
+        var pvData = points.map(function(p) { return p.page_views; });
+        var uvData = points.map(function(p) { return p.unique_ips; });
+        var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        var gridColor = isDark ? '#334155' : '#f1f5f9';
+        var legendColor = isDark ? '#cbd5e1' : '#64748b';
+        var tooltipBg = isDark ? '#0f172a' : '#1e293b';
+
+        if (trendChart) {
+            trendChart.data.labels = labels;
+            trendChart.data.datasets[0].data = pvData;
+            trendChart.data.datasets[1].data = uvData;
+            trendChart.options.scales.x.ticks.color = legendColor;
+            trendChart.options.scales.y.ticks.color = legendColor;
+            trendChart.options.scales.y.grid.color = gridColor;
+            trendChart.options.plugins.legend.labels.color = legendColor;
+            trendChart.options.plugins.tooltip.backgroundColor = tooltipBg;
+            trendChart.update();
+            return;
+        }
+
+        var ctx = document.getElementById('trendChart').getContext('2d');
+        var gradient = ctx.createLinearGradient(0, 0, 0, 220);
+        gradient.addColorStop(0, isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(37, 99, 235, 0.12)');
+        gradient.addColorStop(1, isDark ? 'rgba(59, 130, 246, 0.01)' : 'rgba(37, 99, 235, 0.01)');
+
+        trendChart = new Chart(ctx, {
+            type: 'line',
+             data: {
+                labels: labels,
+                datasets: [{
+                    label: 'PV',
+                    data: pvData,
+                    borderColor: '#2563eb',
+                    backgroundColor: gradient,
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    pointBackgroundColor: '#2563eb',
+                    pointHoverBackgroundColor: '#2563eb',
+                    borderWidth: 2
+                }, {
+                    label: 'UV',
+                     data: uvData,
+                    borderColor: '#8b5cf6',
+                    backgroundColor: 'transparent',
+                    fill: false,
+                    tension: 0.3,
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    pointBackgroundColor: '#8b5cf6',
+                    pointHoverBackgroundColor: '#8b5cf6',
+                    borderWidth: 2,
+                    borderDash: [4, 2]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: true, position: 'top', align: 'end', labels: { boxWidth: 12, boxHeight: 2, font: { size: 11 }, color: legendColor } },
+                    tooltip: {
+                        backgroundColor: tooltipBg,
+                        titleFont: { size: 12 },
+                        bodyFont: { size: 12 },
+                        padding: 10,
+                        cornerRadius: 6,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(ctx) { return ctx.parsed.y + ' ' + window.__('dashboard.chart.visits'); }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: legendColor, font: { size: 11 }, maxTicksLimit: 8 },
+                        border: { display: false }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: gridColor },
+                        ticks: { color: legendColor, font: { size: 11 }, precision: 0, padding: 8 },
+                        border: { display: false }
+                    }
+                },
+                interaction: { intersect: false, mode: 'index' }
+            }
+        });
+    }
+
+    function loadLogs() {
+        var tbody = document.getElementById('log-list');
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center py-6 text-slate-400"><i class="fa-solid fa-spinner fa-spin"></i></td></tr>';
+        csrfFetch('/api/admin/dashboard/logs?page=' + logPage + '&pageSize=20').then(function(r) { return r.json(); }).then(function(d) {
+            if (d.code !== undefined && d.code !== 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-slate-500">' + window.__('dashboard.log.load_fail') + '</td></tr>';
+                return;
+            }
+            var logs = d.data || [];
+            logTotalPages = d.total_pages || 1;
+                logTotal = d.total || 0;
+            if (logs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-slate-500">' + window.__('dashboard.log.empty') + '</td></tr>';
+                document.getElementById('log-pagination').innerHTML = '';
+                return;
+            }
+            tbody.innerHTML = logs.map(function(l) {
+                var time = l.visit_time ? l.visit_time.substring(5, 16).replace('T', ' ') : '';
+                var user = l.member_id > 0 ? '<span class="user-badge"><i class="fa-solid fa-user" style="font-size:9px;"></i>' + escHtml(l.account || window.__('dashboard.log.user')) + '</span>' : '<span class="anon-badge">' + window.__('dashboard.log.anon') + '</span>';
+                var ipCell = '<a href="https://ipinfo.io/' + escAttr(l.ip) + '" target="_blank" rel="noopener noreferrer" class="ip-link" title="在 ipinfo.io 查看">' + escHtml(l.ip) + '</a>';
+                return '<tr>' +
+                    '<td class="whitespace-nowrap" style="color:var(--color-gray-500);">' + escHtml(time) + '</td>' +
+                    '<td class="hide-mobile"><span class="path-badge">' + escHtml(l.path) + '</span></td>' +
+                    '<td>' + ipCell + '</td>' +
+                    '<td>' + user + '</td>' +
+                    '</tr>';
+            }).join('');
+            renderLogPagination();
+        }).catch(function() {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-slate-500">' + window.__('dashboard.log.load_fail') + '</td></tr>';
+        });
+    }
+
+    function renderLogPagination() {
+        var el = document.getElementById('log-pagination');
+        if (logTotalPages <= 1) { el.innerHTML = ''; return; }
+        renderPagination('log-pagination', logPage, logTotalPages, function(p) { logPage = p; loadLogs(); }, {
+            showCount: true,
+            totalItems: logTotal,
+            hideText: true,
+            maxVisible: 5
+        });
+    }
+
+    loadStats();
+    loadTrend();
+    loadLogs();
+    </script>
+</body>
+</html>

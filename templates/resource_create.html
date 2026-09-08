@@ -1,0 +1,22 @@
+{{define "resource-create-modal"}}
+<div class="asset-modal-backdrop resource-create-backdrop" id="resourceCreateModal" aria-hidden="true" data-mobile-sheet data-mobile-sheet-panel=".asset-modal">
+  <form class="asset-modal asset-modal-size-lg resource-create-modal" id="resourceCreateForm" role="dialog" aria-modal="true" aria-labelledby="resourceCreateTitle">
+    <div class="asset-modal-head">
+      <h2 class="asset-modal-title" id="resourceCreateTitle">{{call .T "topic.resource.create.title"}}</h2>
+      <button class="editor-modal-close" type="button" id="resourceCreateCloseBtn" aria-label="{{call .T "common.close"}}"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="asset-modal-body resource-create-body">
+      <div class="resource-create-kind" id="resourceCreateKind" aria-live="polite"></div>
+      <div class="resource-create-content" id="resourceCreateContent"></div>
+      <div class="resource-create-message" id="resourceCreateMessage" role="status" aria-live="polite"></div>
+    </div>
+    <div class="asset-modal-foot resource-create-footer">
+      <button type="button" class="bs-btn bs-btn-cancel" id="resourceCreateCancelBtn">{{call .T "common.cancel"}}</button>
+      <button type="submit" class="bs-btn bs-btn-primary" id="resourceCreateSubmitBtn">
+        <i class="fa-solid fa-plus" aria-hidden="true"></i>
+        <span>{{call .T "topic.resource.create.submit"}}</span>
+      </button>
+    </div>
+  </form>
+</div>
+{{end}}

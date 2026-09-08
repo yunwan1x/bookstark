@@ -1,0 +1,315 @@
+/**
+ * Cherry Markdown — Tailwind Preflight Conflict Fixes
+ *
+ * Tailwind CSS preflight resets many HTML element styles (margins, list-style, heading sizes, etc.)
+ * that conflict with Cherry Markdown's previewer rendering. This file restores browser defaults
+ * inside .cherry-previewer so themes only need to define their visual style, not undo Tailwind.
+ *
+ * Include AFTER tailwind CSS and BEFORE theme CSS files.
+ */
+
+/* === List reset (Tailwind: list-style: none; margin: 0; padding: 0) === */
+.cherry-previewer ul,
+.cherry-previewer .cherry-list__square {
+  list-style-type: disc;
+}
+.cherry-previewer ol {
+  list-style-type: decimal;
+}
+.cherry-previewer ul,
+.cherry-previewer ol {
+  padding-left: 2em;
+}
+
+/* === Heading reset (Tailwind: font-size: inherit; font-weight: inherit) === */
+.cherry-previewer h1 { font-size: 2em; font-weight: 600; }
+.cherry-previewer h2 { font-size: 1.5em; font-weight: 600; }
+.cherry-previewer h3 { font-size: 1.25em; font-weight: 600; }
+.cherry-previewer h4 { font-size: 1em; font-weight: 600; }
+.cherry-previewer h5 { font-size: 0.875em; font-weight: 600; }
+.cherry-previewer h6 { font-size: 0.85em; font-weight: 600; }
+
+/* === Margin reset (Tailwind: margin: 0 on blockquote, dd, dl, figure, h1-h6, hr, p, pre) === */
+.cherry-previewer h1,
+.cherry-previewer h2,
+.cherry-previewer h3,
+.cherry-previewer h4,
+.cherry-previewer h5,
+.cherry-previewer h6 {
+  margin-top: 24px;
+  margin-bottom: 16px;
+}
+.cherry-previewer p,
+.cherry-previewer blockquote,
+.cherry-previewer dl,
+.cherry-previewer figure,
+.cherry-previewer pre {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+.cherry-previewer dd {
+  margin-left: 0;
+  margin-bottom: 16px;
+}
+
+/* === Link reset (Tailwind: color: inherit; text-decoration: inherit) === */
+.cherry-previewer a {
+  color: #0969da;
+  text-decoration: underline;
+}
+
+/* === Image reset (Tailwind: display: block; max-width: 100%; height: auto) === */
+.cherry-previewer img {
+  display: inline;
+  max-width: 100%;
+  height: auto;
+}
+
+/* === HR reset (Tailwind: height: 0; border-top-width: 1px) === */
+.cherry-previewer hr {
+  height: auto;
+  border-top-width: 0;
+  border: 0;
+}
+
+/* === Table reset (Tailwind: border-collapse: collapse; text-indent: 0) === */
+.cherry-previewer table {
+  text-indent: 0;
+}
+
+/* === Code font reset (Tailwind: font-size: 1em on code, kbd, pre, samp) === */
+.cherry-previewer pre,
+.cherry-previewer code,
+.cherry-previewer kbd,
+.cherry-previewer samp {
+  font-size: 85%;
+}
+.cherry-previewer pre code {
+  font-size: 100%;
+}
+
+/* === Code block line numbers === */
+[data-code-block-theme="one-dark"] .cherry-previewer .code-line::before {
+  color: #5c6370 !important;
+  opacity: 0.7 !important;
+  user-select: none !important;
+}
+[data-code-block-theme="one-dark"] .cherry-previewer .code-line {
+  padding-left: 3em !important;
+}
+[data-code-block-theme="one-light"] .cherry-previewer .code-line::before {
+  color: #a0a1a7 !important;
+  opacity: 0.7 !important;
+  user-select: none !important;
+}
+[data-code-block-theme="one-light"] .cherry-previewer .code-line {
+  padding-left: 3em !important;
+}
+
+/* === iTerm2-style code block: border + macOS traffic-light dots header === */
+.cherry-markdown div[data-type="codeBlock"],
+.cherry-previewer div[data-type="codeBlock"] {
+  position: relative !important;
+  margin: 8px 0 !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  border: 1px solid #d1d9e0 !important;
+  padding-top: 32px !important;
+}
+.cherry-markdown div[data-type="codeBlock"]::before,
+.cherry-previewer div[data-type="codeBlock"]::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 32px !important;
+  background: #f6f8fa !important;
+  border-bottom: 1px solid #d1d9e0 !important;
+  z-index: 0 !important;
+}
+.cherry-markdown div[data-type="codeBlock"]::after,
+.cherry-previewer div[data-type="codeBlock"]::after {
+  content: '' !important;
+  position: absolute !important;
+  top: 11px !important;
+  left: 12px !important;
+  width: 10px !important;
+  height: 10px !important;
+  border-radius: 50% !important;
+  background: #ff5f56 !important;
+  box-shadow: 16px 0 0 #ffbd2e, 32px 0 0 #27c93f !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+}
+[data-theme="dark"] .cherry-markdown div[data-type="codeBlock"],
+[data-theme="dark"] .cherry-previewer div[data-type="codeBlock"] {
+  border-color: #30363d !important;
+}
+[data-theme="dark"] .cherry-markdown div[data-type="codeBlock"]::before,
+[data-theme="dark"] .cherry-previewer div[data-type="codeBlock"]::before {
+  background: #1c2128 !important;
+  border-bottom-color: #30363d !important;
+}
+
+/* === Code block pre: only horizontal scroll, no vertical scrollbar === */
+.cherry-markdown div[data-type="codeBlock"] pre,
+.cherry-previewer div[data-type="codeBlock"] pre {
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+}
+
+/* === Code block hover handler: z-index above ::before title bar === */
+.cherry-previewer-codeBlock-hover-handler {
+  z-index: 2 !important;
+  margin-top: 0 !important;
+  height: 32px !important;
+  overflow: visible !important;
+}
+
+/* === Code block hover buttons — one-dark === */
+[data-code-block-theme="one-dark"] .cherry-previewer-codeBlock-hover-handler .cherry-copy-code-block,
+[data-code-block-theme="one-dark"] .cherry-previewer-codeBlock-hover-handler .cherry-code-block-custom-btn,
+[data-code-block-theme="one-dark"] .cherry-previewer-codeBlock-hover-handler .cherry-edit-code-block,
+[data-code-block-theme="one-dark"] .cherry-previewer-codeBlock-hover-handler .cherry-expand-code-block,
+[data-code-block-theme="one-dark"] .cherry-previewer-codeBlock-hover-handler .cherry-unExpand-code-block {
+  background: rgba(58, 63, 75, 0.85) !important;
+  color: #abb2bf !important;
+  border: none !important;
+  border-radius: 4px !important;
+  padding: 4px 8px !important;
+  font-size: 12px !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+  top: 6px !important;
+  transition: background-color 0.15s ease, color 0.15s ease !important;
+}
+[data-code-block-theme="one-dark"] .cherry-previewer-codeBlock-hover-handler .cherry-copy-code-block:hover,
+[data-code-block-theme="one-dark"] .cherry-previewer-codeBlock-hover-handler .cherry-code-block-custom-btn:hover,
+[data-code-block-theme="one-dark"] .cherry-previewer-codeBlock-hover-handler .cherry-edit-code-block:hover,
+[data-code-block-theme="one-dark"] .cherry-previewer-codeBlock-hover-handler .cherry-expand-code-block:hover,
+[data-code-block-theme="one-dark"] .cherry-previewer-codeBlock-hover-handler .cherry-unExpand-code-block:hover {
+  background: rgba(78, 85, 100, 0.95) !important;
+  color: #fff !important;
+  border: none !important;
+  transform: translateY(0) !important;
+}
+[data-code-block-theme="one-dark"] .cherry-previewer-codeBlock-hover-handler .cherry-copy-code-block:active,
+[data-code-block-theme="one-dark"] .cherry-previewer-codeBlock-hover-handler .cherry-code-block-custom-btn:active,
+[data-code-block-theme="one-dark"] .cherry-previewer-codeBlock-hover-handler .cherry-edit-code-block:active,
+[data-code-block-theme="one-dark"] .cherry-previewer-codeBlock-hover-handler .cherry-expand-code-block:active,
+[data-code-block-theme="one-dark"] .cherry-previewer-codeBlock-hover-handler .cherry-unExpand-code-block:active {
+  background: rgba(92, 99, 112, 0.95) !important;
+  color: #fff !important;
+  transform: translateY(0) !important;
+  box-shadow: none !important;
+}
+
+/* === Language selector — one-dark === */
+[data-code-block-theme="one-dark"] .cherry-previewer-codeBlock-hover-handler .cherry-code-preview-lang-select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  font-size: 12px !important;
+  color: #abb2bf !important;
+  background-color: rgba(58, 63, 75, 0.85) !important;
+  border: none !important;
+  border-radius: 4px !important;
+  padding: 4px 28px 4px 10px !important;
+  cursor: pointer !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background-image: url("image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23abb2bf' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 8px center !important;
+  background-size: 10px 10px !important;
+  transition: background-color 0.15s ease, color 0.15s ease !important;
+}
+[data-code-block-theme="one-dark"] .cherry-previewer-codeBlock-hover-handler .cherry-code-preview-lang-select:hover {
+  background-color: rgba(78, 85, 100, 0.95) !important;
+  color: #fff !important;
+}
+[data-code-block-theme="one-dark"] .cherry-previewer-codeBlock-hover-handler .cherry-code-preview-lang-select:focus {
+  border: none !important;
+  box-shadow: 0 0 0 2px rgba(171, 178, 191, 0.3) !important;
+  background-image: url("image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23abb2bf' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 11 6-6 6 6'/%3e%3c/svg%3e") !important;
+}
+[data-code-block-theme="one-dark"] .cherry-previewer-codeBlock-hover-handler .cherry-code-preview-lang-select option {
+  background-color: #21252b !important;
+  color: #abb2bf !important;
+  font-size: 12px !important;
+}
+
+/* === Code block hover buttons — one-light === */
+[data-code-block-theme="one-light"] .cherry-previewer-codeBlock-hover-handler .cherry-copy-code-block,
+[data-code-block-theme="one-light"] .cherry-previewer-codeBlock-hover-handler .cherry-code-block-custom-btn,
+[data-code-block-theme="one-light"] .cherry-previewer-codeBlock-hover-handler .cherry-edit-code-block,
+[data-code-block-theme="one-light"] .cherry-previewer-codeBlock-hover-handler .cherry-expand-code-block,
+[data-code-block-theme="one-light"] .cherry-previewer-codeBlock-hover-handler .cherry-unExpand-code-block {
+  background: rgba(230, 233, 237, 0.9) !important;
+  color: #383a42 !important;
+  border: none !important;
+  border-radius: 4px !important;
+  padding: 4px 8px !important;
+  font-size: 12px !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+  top: 6px !important;
+  transition: background-color 0.15s ease, color 0.15s ease !important;
+}
+[data-code-block-theme="one-light"] .cherry-previewer-codeBlock-hover-handler .cherry-copy-code-block:hover,
+[data-code-block-theme="one-light"] .cherry-previewer-codeBlock-hover-handler .cherry-code-block-custom-btn:hover,
+[data-code-block-theme="one-light"] .cherry-previewer-codeBlock-hover-handler .cherry-edit-code-block:hover,
+[data-code-block-theme="one-light"] .cherry-previewer-codeBlock-hover-handler .cherry-expand-code-block:hover,
+[data-code-block-theme="one-light"] .cherry-previewer-codeBlock-hover-handler .cherry-unExpand-code-block:hover {
+  background: rgba(200, 204, 210, 0.95) !important;
+  color: #1b1d23 !important;
+  border: none !important;
+  transform: translateY(0) !important;
+}
+[data-code-block-theme="one-light"] .cherry-previewer-codeBlock-hover-handler .cherry-copy-code-block:active,
+[data-code-block-theme="one-light"] .cherry-previewer-codeBlock-hover-handler .cherry-code-block-custom-btn:active,
+[data-code-block-theme="one-light"] .cherry-previewer-codeBlock-hover-handler .cherry-edit-code-block:active,
+[data-code-block-theme="one-light"] .cherry-previewer-codeBlock-hover-handler .cherry-expand-code-block:active,
+[data-code-block-theme="one-light"] .cherry-previewer-codeBlock-hover-handler .cherry-unExpand-code-block:active {
+  background: rgba(175, 180, 188, 0.95) !important;
+  color: #1b1d23 !important;
+  transform: translateY(0) !important;
+  box-shadow: none !important;
+}
+
+/* === Language selector — one-light === */
+[data-code-block-theme="one-light"] .cherry-previewer-codeBlock-hover-handler .cherry-code-preview-lang-select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  font-size: 12px !important;
+  color: #383a42 !important;
+  background-color: rgba(230, 233, 237, 0.9) !important;
+  border: none !important;
+  border-radius: 4px !important;
+  padding: 4px 28px 4px 10px !important;
+  cursor: pointer !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background-image: url("image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23383a42' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 8px center !important;
+  background-size: 10px 10px !important;
+  transition: background-color 0.15s ease, color 0.15s ease !important;
+}
+[data-code-block-theme="one-light"] .cherry-previewer-codeBlock-hover-handler .cherry-code-preview-lang-select:hover {
+  background-color: rgba(200, 204, 210, 0.95) !important;
+  color: #1b1d23 !important;
+}
+[data-code-block-theme="one-light"] .cherry-previewer-codeBlock-hover-handler .cherry-code-preview-lang-select:focus {
+  border: none !important;
+  box-shadow: 0 0 0 2px rgba(56, 58, 66, 0.2) !important;
+  background-image: url("image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23383a42' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 11 6-6 6 6'/%3e%3c/svg%3e") !important;
+}
+[data-code-block-theme="one-light"] .cherry-previewer-codeBlock-hover-handler .cherry-code-preview-lang-select option {
+  background-color: #fafafa !important;
+  color: #383a42 !important;
+  font-size: 12px !important;
+}

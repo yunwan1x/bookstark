@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v={{assetVer "/static/favicon.svg"}}">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#2563eb">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="{{call .T "meta.description"}}">
+<title>{{call .T "page.notes.title"}}</title>
+<link href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/tasks.css?v={{assetVer "/static/css/tasks.css"}}">
+<link rel="stylesheet" href="/static/css/notes.css?v={{assetVer "/static/css/notes.css"}}">
+{{template "head-assets" .}}
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col">
+{{template "header" .}}
+<main role="main" class="flex-1">
+<div class="notes-layout">
+<!-- Sidebar (desktop) -->
+<aside class="notes-sidebar" id="notesSidebar">
+    <div class="notes-sidebar-panel" id="notesSidebarPanel">
+    <div class="calendar-card">
+        <div class="calendar-header">
+            <span class="calendar-title" id="calTitle">{{.CalYear}}/{{.CalMonth}}</span>
+            <div class="calendar-nav">
+                <button class="calendar-nav-btn" aria-label="{{call .T "calendar.nav.prev"}}" onclick="notesApp.prevMonth()"><i class="fa-solid fa-chevron-left" style="font-size:10px;"></i></button>
+                <button class="calendar-nav-btn" aria-label="{{call .T "calendar.nav.next"}}" onclick="notesApp.nextMonth()"><i class="fa-solid fa-chevron-right" style="font-size:10px;"></i></button>
+            </div>
+        </div>
+        <div class="calendar-weekdays">
+            <span class="calendar-weekday">{{call .T "calendar.mon"}}</span><span class="calendar-weekday">{{call .T "calendar.tue"}}</span><span class="calendar-weekday">{{call .T "calendar.wed"}}</span>
+            <span class="calendar-weekday">{{call .T "calendar.thu"}}</span><span class="calendar-weekday">{{call .T "calendar.fri"}}</span><span class="calendar-weekday">{{call .T "calendar.sat"}}</span><span class="calendar-weekday">{{call .T "calendar.sun"}}</span>
+        </div>
+        <div class="calendar-days" id="calDays"></div>
+        <div class="calendar-legend">
+            <div class="calendar-type-legend">
+                <span class="legend-item"><span class="legend-dot note"></span>{{call .T "calendar.legend.note"}}</span>
+                <span class="legend-item"><span class="legend-dot article"></span>{{call .T "calendar.legend.article"}}</span>
+                <span class="legend-item"><span class="legend-dot task"></span>{{call .T "nav.todos"}}</span>
+            </div>
+            <div class="legend-heat">
+                <span class="legend-item">{{call .T "calendar.legend.less"}}</span>
+                <div class="legend-heat-box" style="background:var(--color-heat-0);border:1px solid var(--color-gray-200);"></div>
+                <div class="legend-heat-box" style="background:var(--color-heat-1);"></div>
+                <div class="legend-heat-box" style="background:var(--color-heat-2);"></div>
+                <div class="legend-heat-box" style="background:var(--color-heat-3);"></div>
+                <div class="legend-heat-box" style="background:var(--color-heat-4);"></div>
+                <span class="legend-item">{{call .T "calendar.legend.more"}}</span>
+            </div>
+        </div>
+    </div>
+    <div class="sidebar-tags" id="sidebarTags">
+        <div class="sidebar-tags-header">
+            <div class="sidebar-tags-header-left"><span class="sidebar-tags-title">{{call .T "note.sidebar.tags"}}</span><span class="sidebar-tags-count" id="tagsCount"></span></div>
+            <div class="sidebar-tags-actions">
+                <button type="button" class="sidebar-tags-action" onclick="notesApp.setAllTagGroupsExpanded(true)" aria-label="{{call .T "note.tags.expand_all"}}" title="{{call .T "note.tags.expand_all"}}"><i class="fa-solid fa-angles-down"></i></button>
+                <button type="button" class="sidebar-tags-action" onclick="notesApp.setAllTagGroupsExpanded(false)" aria-label="{{call .T "note.tags.collapse_all"}}" title="{{call .T "note.tags.collapse_all"}}"><i class="fa-solid fa-angles-up"></i></button>
+            </div>
+        </div>
+        <div class="sidebar-tags-search">
+            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+            <input type="search" data-note-tag-search placeholder="{{call .T "note.tags.search"}}" aria-label="{{call .T "note.tags.search"}}" oninput="notesApp.setTagSearch(this.value)">
+        </div>
+        <div class="sidebar-tags-selected" id="tagsSelected"></div>
+        <div class="sidebar-tags-body" id="tagsBody"></div>
+    </div>
+    <div class="sidebar-stats">
+        <div class="stats-title">{{call .T "note.sidebar.stats"}}</div>
+        <div id="sidebarStatsContent"></div>
+    </div>
+    </div>
+</aside>
+
+<!-- Main content -->
+<div class="notes-main">
+    <div class="page-sticky-header notes-page-header">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+            <div class="main-tabs" id="mainTabs" data-swipe-nav data-swipe-item=".main-tab" data-swipe-mode="click">
+                <button class="main-tab active" data-tab="notes" data-swipe-idx="0" onclick="notesApp.switchTab('notes')"><i class="fa-solid fa-note-sticky"></i> {{call .T "note.tab.notes"}}</button>
+                <button class="main-tab" data-tab="articles" data-swipe-idx="1" onclick="notesApp.switchTab('articles')"><i class="fa-solid fa-pen-nib"></i> {{call .T "note.tab.articles"}}</button>
+                <button class="main-tab" data-tab="tasks" data-swipe-idx="2" onclick="notesApp.switchTab('tasks')"><i class="fa-solid fa-list-check"></i> {{call .T "nav.todos"}}</button>
+            </div>
+
+            <span style="font-size:12px;color:var(--color-gray-400);" id="totalCount">共 {{.Total}} 条</span>
+            <button class="mobile-filter-btn" id="mobileFilterBtn" onclick="notesApp.toggleMobileDrawer()" aria-label="{{call .T "note.mobile.filter"}}"><i class="fa-solid fa-sliders"></i></button>
+        </div>
+
+        <!-- Notes tab search -->
+        <div class="tab-search" data-tab="notes">
+            <div style="display:flex;gap:8px;"><input type="text" class="search-input" id="noteSearchInput" placeholder="{{call .T "note.search.placeholder"}}" aria-label="{{call .T "note.search.aria"}}" autocomplete="off" data-form-type="other" data-lpignore="true" data-1p-ignore="true" data-bwignore="true" data-dashlane-disabled="true" data-protonpass-ignore="true" data-keeper-ignore="true" data-autofill-shield="true" readonly style="flex:1;"><button type="button" onclick="notesApp.doNoteSearch()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 whitespace-nowrap" title="{{call .T "note.search.aria"}}" aria-label="{{call .T "note.search.aria"}}"><i class="fa-solid fa-magnifying-glass text-xs"></i></button></div>
+            <div class="filter-chips" id="filterChips">
+                <span class="filter-chip active" id="chipAll" onclick="notesApp.clearFilters()">{{call .T "note.filter.all"}}</span>
+                <span class="filter-chip" id="chipPinned" onclick="notesApp.togglePinnedFilter()"><i class="fa-solid fa-thumbtack" style="font-size:10px;"></i> {{call .T "note.filter.pinned"}}</span>
+                <span class="filter-chip" id="chipVis" onclick="notesApp.toggleVisFilter()"><i class="fa-solid fa-eye" style="font-size:10px;"></i> {{call .T "note.filter.public"}}</span>
+                <span class="filter-chip" id="chipCode" onclick="notesApp.toggleCodeFilter()"><i class="fa-solid fa-code" style="font-size:10px;"></i> {{call .T "note.filter.code"}}</span>
+                <span class="filter-chip" id="chipDate" style="display:none" onclick="notesApp.clearDateFilter()"><i class="fa-regular fa-calendar" style="font-size:10px;"></i> <span id="chipDateText"></span></span>
+            </div>
+        </div>
+
+        <!-- Articles tab search -->
+        <div class="tab-search" data-tab="articles" style="display:none;">
+            <div style="display:flex;gap:8px;">
+                <input type="text" class="search-input" id="articleSearchInput" placeholder="{{call .T "note.article.search.placeholder"}}" aria-label="{{call .T "note.article.search.aria"}}" style="flex:1;"><button onclick="notesApp.doArticleSearch()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 whitespace-nowrap" title="{{call .T "note.article.search.aria"}}" aria-label="{{call .T "note.article.search.aria"}}"><i class="fa-solid fa-magnifying-glass text-xs"></i></button>
+                <button class="article-create-btn" onclick="notesApp.createArticle()"><i class="fa-solid fa-plus"></i> {{call .T "note.article.create"}}</button>
+            </div>
+            <div class="filter-chips" id="articleFilterChips">
+                <span class="filter-chip active" id="articleChipAll" onclick="notesApp.clearArticleFilters()">{{call .T "note.filter.all"}}</span>
+                <span class="filter-chip" id="articleChipPinned" onclick="notesApp.toggleArticlePinnedFilter()"><i class="fa-solid fa-thumbtack" style="font-size:10px;"></i> {{call .T "note.filter.pinned"}}</span>
+                <span class="filter-chip" id="articleChipEncrypted" onclick="notesApp.toggleEncryptedFilter()"><i class="fa-solid fa-lock" style="font-size:10px;"></i> {{call .T "note.filter.encrypted"}}</span>
+                <span class="filter-chip" id="articleChipVis" onclick="notesApp.toggleArticleVisFilter()"><i class="fa-solid fa-eye" style="font-size:10px;"></i> {{call .T "note.filter.public"}}</span>
+                <span class="filter-chip" id="articleChipType" onclick="notesApp.toggleArticleTypeFilter()"><i class="fa-solid fa-file" style="font-size:10px;"></i> {{call .T "note.filter.type"}}</span>
+            </div>
+        </div>
+
+        <!-- Tasks tab search -->
+        <div class="tab-search tasks-toolbar" data-tab="tasks" style="display:none;">
+            <div class="tasks-search-row">
+                <input type="search" class="search-input" id="taskKeyword" placeholder="{{call .T "task.search.placeholder"}}" aria-label="{{call .T "task.search.aria"}}" autocomplete="off" data-form-type="other" data-lpignore="true">
+                <button type="button" class="tasks-search-btn" id="taskSearchBtn" title="{{call .T "task.search.aria"}}" aria-label="{{call .T "task.search.aria"}}"><i class="fa-solid fa-magnifying-glass text-xs"></i></button>
+            </div>
+            <div class="tasks-filter-row" id="taskFilterRow">
+                <div class="tasks-filter-group">
+                    <div class="filter-chips" aria-label="{{call .T "task.filter.aria"}}">
+                        <button type="button" class="filter-chip active" id="taskAllChip" aria-pressed="true">{{call .T "task.filter.all"}}</button>
+                        <button type="button" class="filter-chip" id="taskDoneChip" aria-pressed="false"><i class="fa-solid fa-check" style="font-size:10px;"></i> {{call .T "task.filter.done"}}</button>
+                        <button type="button" class="filter-chip" id="taskDueChip" aria-pressed="false"><i class="fa-regular fa-calendar-check" style="font-size:10px;"></i> {{call .T "task.filter.overdue"}}</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notes tab content -->
+    <div class="tab-content active" data-tab="notes">
+        <div class="compose-card notes-drop-zone" id="composeCard">
+            <input type="file" id="composeFileInput" accept="image/*" class="hidden" aria-hidden="true">
+            <div class="compose-toolbar">
+                <button class="compose-btn" title="{{call .T "note.compose.image"}}" id="composeImageBtn"><i class="fa-solid fa-image"></i></button>
+                <button class="compose-btn" type="button" title="{{call .T "note.compose.emoji"}}" aria-label="{{call .T "note.compose.emoji"}}" aria-haspopup="menu" aria-expanded="false" id="composeEmojiBtn"><i class="fa-regular fa-face-smile"></i></button>
+                <button class="compose-btn" title="{{call .T "note.compose.tag"}}" id="composeTagToggle"><i class="fa-solid fa-tag"></i></button>
+                <button class="compose-btn" title="{{call .T "note.compose.location"}}" id="composeLocationBtn"><i class="fa-solid fa-location-dot"></i></button>
+                <button class="compose-btn" title="{{call .T "note.compose.visibility"}}" id="composeVisBtn"><i class="fa-solid fa-eye-slash"></i></button>
+                <button class="compose-btn" title="{{call .T "note.compose.preview"}}" id="composePreviewBtn" onclick="notesApp.toggleComposePreview()"><i class="fa-solid fa-file-lines"></i></button>
+                {{if .AIEnabled}}<button class="compose-btn compose-btn-ai" title="{{call .T "note.compose.ai"}}" onclick="notesApp.openComposeAI()"><i class="fa-solid fa-wand-magic-sparkles"></i></button>{{end}}
+                <button class="compose-btn" title="{{call .T "note.compose.clear"}}" id="composeClearBtn" onclick="notesApp.clearComposeDraft()"><i class="fa-solid fa-eraser"></i></button>
+                <button class="compose-btn" title="{{call .T "note.compose.expand"}}" onclick="notesApp.openFullEditor()"><i class="fa-solid fa-expand"></i></button>
+                <button class="compose-submit" onclick="notesApp.submitCompose()">{{call .T "note.compose.submit"}}</button>
+            </div>
+            <div class="ai-inline-generation-status" id="composeAIStreamStatus" aria-live="polite" aria-hidden="true"></div>
+            <div id="composeTagContainer" class="compose-tag-row hidden"></div>
+            <div class="compose-input-row">
+                <div id="composeText" class="md-composer-host" data-placeholder="{{call .T "note.compose.placeholder"}}"></div>
+                <div class="compose-preview note-content" id="composePreview" style="display:none"></div>
+            </div>
+        </div>
+        <div id="notesTimeline">
+            <div class="skeleton-note"><div class="skeleton-note-header"><div class="skeleton skeleton-note-badge"></div></div><div class="skeleton skeleton-note-line" style="width:90%"></div><div class="skeleton skeleton-note-line" style="width:70%"></div><div class="skeleton-note-footer"><div class="skeleton skeleton-note-time"></div><div class="skeleton skeleton-note-tag"></div></div></div>
+            <div class="skeleton-note"><div class="skeleton-note-header"><div class="skeleton skeleton-note-badge"></div></div><div class="skeleton skeleton-note-line" style="width:80%"></div><div class="skeleton skeleton-note-line" style="width:55%"></div><div class="skeleton-note-footer"><div class="skeleton skeleton-note-time"></div><div class="skeleton skeleton-note-tag"></div><div class="skeleton skeleton-note-tag"></div></div></div>
+            <div class="skeleton-note"><div class="skeleton-note-header"><div class="skeleton skeleton-note-badge"></div></div><div class="skeleton skeleton-note-line" style="width:95%"></div><div class="skeleton skeleton-note-line" style="width:60%"></div><div class="skeleton-note-footer"><div class="skeleton skeleton-note-time"></div></div></div>
+        </div>
+        <div class="pagination" id="notesPagination"></div>
+    </div>
+
+    <!-- Articles tab content -->
+    <div class="tab-content" data-tab="articles">
+        <div id="articlesList"></div>
+        <div id="articlesLoading" style="display:none">
+            <div class="skeleton-article"><div class="skeleton-article-header"><div class="skeleton skeleton-article-title"></div><div class="skeleton skeleton-article-badge"></div></div><div class="skeleton skeleton-article-excerpt" style="width:95%"></div><div class="skeleton skeleton-article-excerpt" style="width:70%"></div><div class="skeleton-article-footer"><div class="skeleton skeleton-article-meta"></div></div></div>
+            <div class="skeleton-article"><div class="skeleton-article-header"><div class="skeleton skeleton-article-title" style="width:70%"></div><div class="skeleton skeleton-article-badge"></div></div><div class="skeleton skeleton-article-excerpt" style="width:85%"></div><div class="skeleton skeleton-article-excerpt" style="width:50%"></div><div class="skeleton-article-footer"><div class="skeleton skeleton-article-meta"></div></div></div>
+            <div class="skeleton-article"><div class="skeleton-article-header"><div class="skeleton skeleton-article-title" style="width:60%"></div></div><div class="skeleton skeleton-article-excerpt" style="width:90%"></div><div class="skeleton skeleton-article-excerpt" style="width:65%"></div><div class="skeleton-article-footer"><div class="skeleton skeleton-article-meta"></div></div></div>
+        </div>
+        <div class="pagination" id="articlesPagination"></div>
+    </div>
+
+    <!-- Tasks tab content -->
+    <div class="tab-content" data-tab="tasks">
+        <section class="tasks-board" id="bookstarkTasksRoot">
+            <form class="compose-card task-compose-card" id="taskQuickCreate">
+                <input type="file" id="taskQuickFileInput" accept="image/*" class="hidden" aria-hidden="true">
+                <div class="compose-toolbar">
+                    <label class="task-compose-date" for="taskQuickDueDate" data-date-picker="taskQuickDueDate">
+                        <i class="fa-regular fa-calendar"></i>
+                        <input type="date" id="taskQuickDueDate" aria-label="{{call .T "task.due_date.aria"}}">
+                    </label>
+                    {{if .AIEnabled}}<button type="button" class="compose-btn compose-btn-ai task-ai-btn" id="taskQuickAIButton" title="{{call .T "note.compose.ai"}}" aria-label="{{call .T "note.compose.ai"}}"><i class="fa-solid fa-wand-magic-sparkles"></i></button>{{end}}
+                    <button type="button" class="compose-btn" id="taskQuickImageBtn" title="{{call .T "note.compose.image"}}" aria-label="{{call .T "note.compose.image"}}"><i class="fa-solid fa-image"></i></button>
+                    <button type="button" class="compose-btn" id="taskQuickEmojiBtn" title="{{call .T "note.compose.emoji"}}" aria-label="{{call .T "note.compose.emoji"}}" aria-haspopup="menu" aria-expanded="false"><i class="fa-regular fa-face-smile"></i></button>
+                    <button type="button" class="compose-btn" id="taskQuickPreviewBtn" title="{{call .T "note.compose.preview"}}" aria-label="{{call .T "note.compose.preview"}}"><i class="fa-solid fa-file-lines"></i></button>
+                    <button type="button" class="compose-btn" id="taskQuickClear" title="{{call .T "task.clear"}}" aria-label="{{call .T "task.clear"}}"><i class="fa-solid fa-eraser"></i></button>
+                    <button type="button" class="compose-btn" id="taskQuickExpandBtn" title="{{call .T "note.compose.expand"}}" aria-label="{{call .T "note.compose.expand"}}"><i class="fa-solid fa-expand"></i></button>
+                    <button type="submit" class="compose-submit" id="taskQuickSubmit">{{call .T "task.submit.add"}}</button>
+                </div>
+                <div class="compose-input-row">
+                    <div id="taskQuickContent" class="md-composer-host" data-placeholder="{{call .T "task.placeholder"}}"></div>
+                    <div class="compose-preview note-content" id="taskQuickPreview" style="display:none"></div>
+                </div>
+            </form>
+            <div id="taskList" class="tasks-list"></div>
+        </section>
+    </div>
+</div>
+</div>
+</main>
+
+<!-- Mobile filter drawer -->
+<div class="mobile-drawer-overlay" id="mobileDrawerOverlay" onclick="notesApp.closeMobileDrawer()"></div>
+<div class="mobile-drawer" id="mobileDrawer">
+    <div class="mobile-drawer-header">
+        <span class="mobile-drawer-title">{{call .T "note.mobile.drawer.title"}}</span>
+        <button class="mobile-drawer-close" onclick="notesApp.closeMobileDrawer()" aria-label="{{call .T "note.mobile.drawer.close"}}"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="mobile-drawer-body">
+        <div class="mobile-drawer-section">
+            <div class="mobile-drawer-section-title">{{call .T "note.mobile.drawer.date"}}</div>
+            <div class="mobile-calendar-strip" id="mobileCalStrip"></div>
+        </div>
+        <div class="mobile-drawer-section">
+            <div class="mobile-tags-header">
+                <div class="mobile-drawer-section-title">{{call .T "note.mobile.drawer.tags"}} <span class="sidebar-tags-count" id="mobileTagsCount"></span></div>
+                <div class="sidebar-tags-actions">
+                    <button type="button" class="sidebar-tags-action" onclick="notesApp.setAllTagGroupsExpanded(true)" aria-label="{{call .T "note.tags.expand_all"}}" title="{{call .T "note.tags.expand_all"}}"><i class="fa-solid fa-angles-down"></i></button>
+                    <button type="button" class="sidebar-tags-action" onclick="notesApp.setAllTagGroupsExpanded(false)" aria-label="{{call .T "note.tags.collapse_all"}}" title="{{call .T "note.tags.collapse_all"}}"><i class="fa-solid fa-angles-up"></i></button>
+                </div>
+            </div>
+            <div class="sidebar-tags-search">
+                <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                <input type="search" data-note-tag-search placeholder="{{call .T "note.tags.search"}}" aria-label="{{call .T "note.tags.search"}}" oninput="notesApp.setTagSearch(this.value)">
+            </div>
+            <div class="sidebar-tags-selected" id="mobileTagsSelected"></div>
+            <div class="mobile-tags-bar" id="mobileTagsBar"></div>
+        </div>
+    </div>
+</div>
+
+<div class="task-mobile-drawer-overlay" id="taskMobileDrawerOverlay"></div>
+<div class="task-mobile-drawer" id="taskMobileDrawer">
+    <div class="task-mobile-drawer-header">
+        <span class="task-mobile-drawer-title">{{call .T "task.mobile.drawer.title"}}</span>
+        <button class="task-mobile-drawer-close" id="taskMobileDrawerClose" type="button" aria-label="{{call .T "task.mobile.drawer.close"}}"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="task-mobile-drawer-body">
+        <div class="task-mobile-drawer-section">
+            <div class="task-mobile-drawer-section-title">{{call .T "task.mobile.drawer.date"}}</div>
+            <div class="mobile-calendar-strip" id="taskMobileCalStrip"></div>
+        </div>
+    </div>
+</div>
+
+<div class="tasks-fab-actions" id="tasksFabActions" aria-label="{{call .T "task.fab.actions"}}" style="display:none;">
+    <button type="button" class="tasks-fab tasks-fab-primary" id="newTaskFab" data-action-scope="tasks" aria-label="{{call .T "task.new.title"}}" title="{{call .T "task.new.title"}}"><i class="fa-solid fa-plus"></i></button>
+</div>
+
+<div class="editor-overlay asset-modal-backdrop" id="taskComposeOverlay" role="dialog" aria-modal="true" aria-labelledby="taskComposeModalTitle" data-mobile-sheet data-mobile-sheet-panel=".asset-modal" data-mobile-sheet-close="BookStarkTasks.closeComposeModal" onclick="if(event.target===this)BookStarkTasks.closeComposeModal()">
+    <div class="editor-modal asset-modal asset-modal-wide">
+        <div class="editor-modal-header editor-modal-header-compact asset-modal-head">
+            <span class="editor-modal-title asset-modal-title" id="taskComposeModalTitle">{{call .T "task.new.title"}}</span>
+            <div class="editor-modal-actions">
+                <button class="editor-modal-tool editor-modal-maximize" id="taskComposeMaximizeBtn" type="button" aria-label="{{call .T "note.editor.maximize"}}" title="{{call .T "note.editor.maximize"}}" aria-pressed="false"><i class="fa-solid fa-expand"></i></button>
+                <button class="editor-modal-close" type="button" onclick="BookStarkTasks.closeComposeModal()" aria-label="{{call .T "note.editor.close"}}">&times;</button>
+            </div>
+        </div>
+        <div class="editor-modal-body asset-modal-body notes-drop-zone">
+            <input type="file" id="taskModalFileInput" accept="image/*" class="hidden" aria-hidden="true">
+            <div class="editor-modal-tool-row">
+                <label class="task-compose-date task-modal-date" for="taskModalDueDate" data-date-picker="taskModalDueDate">
+                    <i class="fa-regular fa-calendar"></i>
+                    <input type="date" id="taskModalDueDate" aria-label="{{call .T "task.due_date.aria"}}">
+                </label>
+                {{if .AIEnabled}}<button type="button" class="compose-btn compose-btn-ai task-ai-btn" id="taskModalAIButton" title="{{call .T "note.compose.ai"}}" aria-label="{{call .T "note.compose.ai"}}"><i class="fa-solid fa-wand-magic-sparkles"></i></button>{{end}}
+                <button type="button" class="compose-btn" id="taskModalImageBtn" title="{{call .T "note.editor.image"}}" aria-label="{{call .T "note.editor.image"}}"><i class="fa-solid fa-image"></i></button>
+                <button type="button" class="compose-btn" id="taskModalEmojiBtn" title="{{call .T "note.compose.emoji"}}" aria-label="{{call .T "note.compose.emoji"}}" aria-haspopup="menu" aria-expanded="false"><i class="fa-regular fa-face-smile"></i></button>
+                <button type="button" class="compose-btn" id="taskModalPreviewBtn" title="{{call .T "note.editor.preview"}}" aria-label="{{call .T "note.editor.preview"}}"><i class="fa-solid fa-file-lines"></i></button>
+                <button type="button" class="compose-btn" id="taskModalClearBtn" title="{{call .T "note.compose.clear"}}" aria-label="{{call .T "note.compose.clear"}}"><i class="fa-solid fa-eraser"></i></button>
+                <button type="button" class="compose-submit editor-toolbar-submit" id="taskModalSubmitBtn">{{call .T "task.submit.add"}}</button>
+            </div>
+            <div class="editor-preview note-content" id="taskModalPreview" style="display:none"></div>
+            <div id="taskModalContent" class="md-composer-host md-composer-host-full" data-placeholder="{{call .T "task.placeholder"}}"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Fullscreen editor modal -->
+<div class="editor-overlay asset-modal-backdrop" id="editorOverlay" role="dialog" aria-modal="true" aria-labelledby="editorModalTitle" data-mobile-sheet data-mobile-sheet-panel=".asset-modal" data-mobile-sheet-close="notesApp.closeFullEditor" onclick="if(event.target===this)notesApp.closeFullEditor()">
+    <div class="editor-modal asset-modal asset-modal-wide">
+        <div class="editor-modal-header editor-modal-header-compact asset-modal-head">
+            <span class="editor-modal-title asset-modal-title" id="editorModalTitle">{{call .T "note.full_editor.title.new"}}</span>
+            <div class="editor-modal-actions">
+                <button class="editor-modal-tool editor-modal-maximize" id="editorMaximizeBtn" type="button" onclick="notesApp.toggleFullEditorMaximized()" aria-label="{{call .T "note.editor.maximize"}}" title="{{call .T "note.editor.maximize"}}" aria-pressed="false"><i class="fa-solid fa-expand"></i></button>
+                <button class="editor-modal-close" onclick="notesApp.closeFullEditor()" aria-label="{{call .T "note.editor.close"}}">&times;</button>
+            </div>
+        </div>
+        <div class="editor-modal-body asset-modal-body notes-drop-zone">
+            <input type="file" id="editorFileInput" accept="image/*" class="hidden" aria-hidden="true">
+            <div class="editor-modal-tool-row">
+                <button class="compose-btn" id="editorImageBtn" title="{{call .T "note.editor.image"}}"><i class="fa-solid fa-image"></i></button>
+                <button class="compose-btn" type="button" id="editorEmojiBtn" title="{{call .T "note.compose.emoji"}}" aria-label="{{call .T "note.compose.emoji"}}" aria-haspopup="menu" aria-expanded="false"><i class="fa-regular fa-face-smile"></i></button>
+                <button class="compose-btn" id="editorTagToggle" title="{{call .T "note.compose.tag"}}"><i class="fa-solid fa-tag"></i></button>
+                <button class="compose-btn" id="editorLocationBtn" title="{{call .T "note.compose.location"}}"><i class="fa-solid fa-location-dot"></i></button>
+                <button class="compose-btn" id="editorPreviewBtn" title="{{call .T "note.editor.preview"}}" onclick="notesApp.toggleEditorPreview()"><i class="fa-solid fa-file-lines"></i></button>
+                <button class="compose-btn" id="editorVisBtn" title="{{call .T "note.editor.visibility"}}"><i class="fa-solid fa-eye-slash"></i></button>
+                {{if .AIEnabled}}<button class="compose-btn compose-btn-ai" title="{{call .T "note.compose.ai"}}" onclick="notesApp.openEditorModalAI()"><i class="fa-solid fa-wand-magic-sparkles"></i></button>{{end}}
+                <button class="compose-btn" id="editorClearBtn" title="{{call .T "note.compose.clear"}}" onclick="notesApp.clearComposeDraft()"><i class="fa-solid fa-eraser"></i></button>
+                <button class="compose-submit editor-toolbar-submit" onclick="notesApp.submitFullEditor()">{{call .T "note.full_editor.submit.publish"}}</button>
+            </div>
+            <div class="ai-inline-generation-status" id="editorAIStreamStatus" aria-live="polite" aria-hidden="true"></div>
+            <div id="editorTagContainer" class="editor-tag-row hidden"></div>
+            <div class="editor-preview note-content" id="editorPreview" style="display:none"></div>
+            <div id="editorModalText" class="md-composer-host md-composer-host-full" data-placeholder="{{call .T "note.editor.placeholder"}}"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Note fullscreen viewer -->
+<div class="editor-overlay note-viewer-overlay" id="noteViewerOverlay" role="dialog" aria-modal="true" aria-labelledby="noteViewerTitle" onclick="if(event.target===this)notesApp.closeNoteViewer()">
+    <div class="note-viewer-shell">
+        <button class="note-viewer-nav note-viewer-prev" id="noteViewerPrevBtn" type="button" onclick="notesApp.showAdjacentNoteViewer(-1)" aria-label="{{call .T "note.viewer.previous"}}" title="{{call .T "note.viewer.previous"}}"><i class="fa-solid fa-chevron-left"></i></button>
+        <button class="note-viewer-nav note-viewer-next" id="noteViewerNextBtn" type="button" onclick="notesApp.showAdjacentNoteViewer(1)" aria-label="{{call .T "note.viewer.next"}}" title="{{call .T "note.viewer.next"}}"><i class="fa-solid fa-chevron-right"></i></button>
+        <div class="note-viewer-stage">
+            <article class="note-viewer-panel">
+                <header class="note-viewer-topbar">
+                    <div class="note-viewer-heading">
+                        <span class="note-viewer-kicker">{{call .T "note.viewer.title"}}</span>
+                        <h2 class="note-viewer-title" id="noteViewerTitle">{{call .T "note.viewer.title"}}</h2>
+                        <div class="note-viewer-meta" id="noteViewerMeta"></div>
+                    </div>
+                    <div class="note-viewer-actions">
+                        <button class="note-viewer-icon-btn" id="noteViewerCopyBtn" type="button" onclick="notesApp.copyNoteViewerContent()" aria-label="{{call .T "note.action.copy"}}" title="{{call .T "note.action.copy"}}"><i class="fa-regular fa-copy"></i></button>
+                        <button class="note-viewer-icon-btn" id="noteViewerEditBtn" type="button" onclick="notesApp.editNoteFromViewer()" aria-label="{{call .T "note.action.edit"}}" title="{{call .T "note.action.edit"}}"><i class="fa-solid fa-pen"></i></button>
+                        <button class="note-viewer-icon-btn note-viewer-close" type="button" onclick="notesApp.closeNoteViewer()" aria-label="{{call .T "note.viewer.close"}}" title="{{call .T "note.viewer.close"}}"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                </header>
+                <div class="note-content note-viewer-content" id="noteViewerContent"></div>
+            </article>
+        </div>
+    </div>
+</div>
+
+<!-- Note image lightbox -->
+<div class="editor-overlay note-image-lightbox-overlay" id="noteImageLightboxOverlay" role="dialog" aria-modal="true" aria-label="{{call .T "note.compose.image"}}" onclick="if(event.target===this)notesApp.closeImageLightbox()">
+    <div class="note-image-lightbox-shell">
+        <button class="note-image-lightbox-close" id="noteImageLightboxCloseBtn" type="button" onclick="notesApp.closeImageLightbox()" aria-label="{{call .T "note.viewer.close"}}" title="{{call .T "note.viewer.close"}}"><i class="fa-solid fa-xmark"></i></button>
+        <button class="note-image-lightbox-nav note-image-lightbox-prev" id="noteImageLightboxPrevBtn" type="button" onclick="notesApp.showAdjacentImageLightbox(-1)" aria-label="{{call .T "note.viewer.previous"}}" title="{{call .T "note.viewer.previous"}}"><i class="fa-solid fa-chevron-left"></i></button>
+        <figure class="note-image-lightbox-figure">
+            <img class="note-image-lightbox-img" id="noteImageLightboxImg" alt="">
+            <figcaption class="note-image-lightbox-caption" id="noteImageLightboxCaption"></figcaption>
+        </figure>
+        <button class="note-image-lightbox-nav note-image-lightbox-next" id="noteImageLightboxNextBtn" type="button" onclick="notesApp.showAdjacentImageLightbox(1)" aria-label="{{call .T "note.viewer.next"}}" title="{{call .T "note.viewer.next"}}"><i class="fa-solid fa-chevron-right"></i></button>
+        <div class="note-image-lightbox-counter" id="noteImageLightboxCounter">0 / 0</div>
+    </div>
+</div>
+
+<!-- Article setting modal -->
+<div class="editor-overlay asset-modal-backdrop" id="articleSettingOverlay" role="dialog" aria-modal="true" aria-labelledby="articleSettingTitle" data-mobile-sheet data-mobile-sheet-panel=".asset-modal" data-mobile-sheet-close="notesApp.closeArticleSettingModal" onclick="if(event.target===this)notesApp.closeArticleSettingModal()">
+    <div class="editor-modal asset-modal article-setting-modal">
+        <div class="editor-modal-header asset-modal-head">
+            <span class="editor-modal-title asset-modal-title" id="articleSettingTitle">{{call .T "note.article.modal.title.new"}}</span>
+            <button class="editor-modal-close" onclick="notesApp.closeArticleSettingModal()" aria-label="{{call .T "note.article.modal.close"}}">&times;</button>
+        </div>
+        <div class="editor-modal-body asset-modal-body">
+            <input type="hidden" id="_articleId" value="">
+            <div id="articleSettingError" style="display:none;margin-bottom:12px;padding:8px 12px;background:var(--color-danger-light,#fef2f2);color:var(--color-danger,#dc2626);font-size:13px;border-radius:6px;"></div>
+            <!-- Type selector (only shown when creating new) -->
+            <div id="articleTypeSection" style="margin-bottom:12px;">
+                <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;">{{call .T "note.article.type.label"}}</label>
+                <div class="create-doc-type-grid article-type-grid">
+                    <button class="create-doc-type-btn active" data-editor-type="markdown" type="button" onclick="notesApp.selectArticleType(this)">
+                        <span class="create-doc-type-icon type-icon-md"><i class="fa-solid fa-file-lines"></i></span>
+                        <span class="create-doc-type-label">{{call .T "note.article.type.markdown.label"}}</span>
+                        <span class="create-doc-type-desc">{{call .T "note.article.type.markdown.desc"}}</span>
+                        <span class="create-doc-check-badge"><i class="fa-solid fa-check"></i></span>
+                    </button>
+                    <button class="create-doc-type-btn" data-editor-type="html" type="button" onclick="notesApp.selectArticleType(this)">
+                        <span class="create-doc-type-icon type-icon-html"><i class="fa-solid fa-code"></i></span>
+                        <span class="create-doc-type-label">{{call .T "note.article.type.html.label"}}</span>
+                        <span class="create-doc-type-desc">{{call .T "note.article.type.html.desc"}}</span>
+                        <span class="create-doc-check-badge"><i class="fa-solid fa-check"></i></span>
+                    </button>
+                    <button class="create-doc-type-btn" data-editor-type="richdoc" type="button" onclick="notesApp.selectArticleType(this)">
+                        <span class="create-doc-type-icon type-icon-rich"><i class="fa-solid fa-file-word"></i></span>
+                        <span class="create-doc-type-label">{{call .T "note.article.type.richdoc.label"}}</span>
+                        <span class="create-doc-type-desc">{{call .T "note.article.type.richdoc.desc"}}</span>
+                        <span class="create-doc-check-badge"><i class="fa-solid fa-check"></i></span>
+                    </button>
+                    <button class="create-doc-type-btn" data-editor-type="spreadsheet" type="button" onclick="notesApp.selectArticleType(this)">
+                        <span class="create-doc-type-icon type-icon-tbl"><i class="fa-solid fa-table"></i></span>
+                        <span class="create-doc-type-label">{{call .T "note.article.type.spreadsheet.label"}}</span>
+                        <span class="create-doc-type-desc">{{call .T "note.article.type.spreadsheet.desc"}}</span>
+                        <span class="create-doc-check-badge"><i class="fa-solid fa-check"></i></span>
+                    </button>
+                    <button class="create-doc-type-btn" data-editor-type="presentation" type="button" onclick="notesApp.selectArticleType(this)">
+                        <span class="create-doc-type-icon type-icon-presentation"><i class="fa-solid fa-display"></i></span>
+                        <span class="create-doc-type-label">{{call .T "note.article.type.presentation.label"}}</span>
+                        <span class="create-doc-type-desc">{{call .T "note.article.type.presentation.desc"}}</span>
+                        <span class="create-doc-check-badge"><i class="fa-solid fa-check"></i></span>
+                    </button>
+                    <button class="create-doc-type-btn" data-editor-type="drawing" type="button" onclick="notesApp.selectArticleType(this)">
+                        <span class="create-doc-type-icon type-icon-draw"><i class="fa-solid fa-pen-fancy"></i></span>
+                        <span class="create-doc-type-label">{{call .T "note.article.type.drawing.label"}}</span>
+                        <span class="create-doc-type-desc">{{call .T "note.article.type.drawing.desc"}}</span>
+                        <span class="create-doc-check-badge"><i class="fa-solid fa-check"></i></span>
+                    </button>
+                    <button class="create-doc-type-btn" data-editor-type="mindmap" type="button" onclick="notesApp.selectArticleType(this)">
+                        <span class="create-doc-type-icon type-icon-mind"><i class="fa-solid fa-diagram-project"></i></span>
+                        <span class="create-doc-type-label">{{call .T "note.article.type.mindmap.label"}}</span>
+                        <span class="create-doc-type-desc">{{call .T "note.article.type.mindmap.desc"}}</span>
+                        <span class="create-doc-check-badge"><i class="fa-solid fa-check"></i></span>
+                    </button>
+                </div>
+            </div>
+            <div style="margin-bottom:12px;">
+                <label for="articleTitleInput" style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;">{{call .T "note.article.title.label"}}</label>
+                <input type="text" id="articleTitleInput" class="dialog-input" placeholder="{{call .T "note.article.title.placeholder"}}">
+            </div>
+            <div style="margin-bottom:12px;">
+                <label for="articleDescInput" style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;">{{call .T "note.article.desc.label"}}</label>
+                <textarea id="articleDescInput" class="dialog-input" rows="3" maxlength="500" placeholder="{{call .T "note.article.desc.placeholder"}}" style="min-height:72px;resize:vertical;"></textarea>
+            </div>
+            <div style="margin-bottom:12px;">
+                <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;">{{call .T "note.article.tags.label"}}</label>
+                <div id="articleTagContainer"></div>
+            </div>
+            <div id="articlePwdSection" style="border-top:1px solid var(--color-gray-100,#f1f5f9);padding-top:10px;">
+                <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;"><i class="fa-solid fa-lock" style="font-size:11px;margin-right:4px;"></i>{{call .T "note.article.pwd.label"}}</label>
+                <p id="articlePwdHint" style="font-size:12px;color:var(--color-gray-500,#64748b);margin-bottom:8px;">{{call .T "note.article.pwd.hint"}}</p>
+                <div id="articleCurrentPwdRow" style="display:none;margin-bottom:8px;">
+                    <div class="article-pwd-input-wrap">
+                        <input type="password" id="articleCurrentPwd" class="dialog-input" autocomplete="current-password" placeholder="{{call .T "note.article.pwd.current"}}">
+                        <button class="article-pwd-toggle" type="button" aria-label="{{call .T "asset.password.show"}}" onclick="notesApp.toggleArticlePasswordVisible('articleCurrentPwd', this)"><i class="fa-solid fa-eye"></i></button>
+                    </div>
+                </div>
+                <div class="article-pwd-input-wrap">
+                    <input type="password" id="articleNewPwd" class="dialog-input" autocomplete="new-password" placeholder="{{call .T "note.article.pwd.new"}}">
+                    <button class="article-pwd-toggle" type="button" aria-label="{{call .T "asset.password.show"}}" onclick="notesApp.toggleArticlePasswordVisible('articleNewPwd', this)"><i class="fa-solid fa-eye"></i></button>
+                </div>
+            </div>
+        </div>
+        <div class="editor-modal-footer asset-modal-foot">
+            <button style="padding:6px 14px;border:1px solid var(--color-gray-200,#e2e8f0);border-radius:6px;background:var(--color-bg-card,#fff);color:var(--color-gray-600,#475569);font-size:13px;cursor:pointer;" onclick="notesApp.closeArticleSettingModal()">{{call .T "note.article.cancel"}}</button>
+            <button class="compose-submit" id="articleSettingSaveBtn" onclick="notesApp.saveArticleSetting()">{{call .T "note.article.save"}}</button>
+        </div>
+    </div>
+</div>
+
+<!-- 分享设置对话框 -->
+<div class="editor-overlay" id="shareSettingOverlay" role="dialog" aria-modal="true" aria-label="{{call .T "share.dialog.title"}}" data-mobile-sheet data-mobile-sheet-panel=".editor-modal" data-mobile-sheet-close="closeShareDialog" onclick="if(event.target===this)closeShareDialog()">
+  <div class="editor-modal" style="max-width:440px;">
+    <div class="editor-modal-header">
+      <span class="editor-modal-title">{{call .T "share.dialog.title"}}</span>
+      <button class="editor-modal-close" onclick="closeShareDialog()" aria-label="{{call .T "share.dialog.close"}}">&times;</button>
+    </div>
+    <div class="editor-modal-body" id="shareDialogBody">
+      <!-- 查看链接 -->
+      <div style="margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <i class="fa-solid fa-eye" style="color:var(--color-primary);font-size:13px;"></i>
+          <span style="font-size:13px;font-weight:600;color:var(--color-text);">{{call .T "share.dialog.view_link"}}</span>
+          <span class="tag-badge" style="background:var(--color-bg-hover);color:var(--color-text-secondary);">{{call .T "share.dialog.readonly"}}</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <input type="text" id="shareViewUrl" readonly class="dialog-input" style="flex:1;font-size:12px;background:var(--color-bg-hover);">
+          <button class="compose-submit" style="padding:6px 12px;font-size:12px;white-space:nowrap;" onclick="copyShareUrl('shareViewUrl')">{{call .T "share.dialog.copy"}}</button>
+        </div>
+      </div>
+
+      <div style="border-top:1px dashed var(--color-border);margin:12px 0;"></div>
+
+      <!-- 编辑链接 -->
+      <div id="shareEditSection">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <i class="fa-solid fa-pen" id="shareEditIcon" style="color:var(--color-warning);font-size:13px;"></i>
+          <span id="shareEditLabel" style="font-size:13px;font-weight:600;color:var(--color-text);">{{call .T "share.dialog.edit_link"}}</span>
+          <span id="shareEditBadge" class="tag-badge" style="background:#fef3c7;color:#b45309;">{{call .T "share.dialog.editable"}}</span>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <span style="font-size:12px;color:var(--color-text-secondary);">{{call .T "share.dialog.edit_toggle_desc"}}</span>
+          <label class="toggle-switch" style="position:relative;display:inline-block;width:36px;height:20px;">
+            <input type="checkbox" id="shareEditToggle" onchange="toggleShareEdit()" style="opacity:0;width:0;height:0;">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <!-- 编辑链接 URL（开启时显示） -->
+        <div id="shareEditUrlSection" style="display:none;">
+          <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <input type="text" id="shareEditUrl" readonly class="dialog-input" style="flex:1;font-size:12px;background:#fffbeb;border-color:#fde68a;color:#92400e;">
+            <button style="padding:6px 12px;font-size:12px;white-space:nowrap;background:var(--color-warning);color:white;border:none;border-radius:var(--radius-md);cursor:pointer;" onclick="copyShareUrl('shareEditUrl')">{{call .T "share.dialog.copy"}}</button>
+          </div>
+          <div style="padding:6px 8px;background:#fef3c7;border-radius:var(--radius-md);display:flex;gap:6px;align-items:flex-start;margin-bottom:10px;">
+            <i class="fa-solid fa-triangle-exclamation" style="color:#d97706;font-size:11px;margin-top:2px;"></i>
+            <span style="font-size:11px;color:#92400e;line-height:1.4;">{{call .T "share.dialog.edit_warning"}}</span>
+          </div>
+
+          <div style="border-top:1px dashed var(--color-border);margin:10px 0;"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:12px;color:var(--color-text-secondary);">{{call .T "share.dialog.reset_edit_link"}}</span>
+            <button style="background:none;border:1px solid #fca5a5;color:var(--color-danger);border-radius:var(--radius-md);padding:3px 10px;font-size:11px;cursor:pointer;" onclick="resetEditToken()">{{call .T "share.dialog.reset_token"}}</button>
+          </div>
+        </div>
+
+        <!-- 编辑链接说明（关闭时显示） -->
+        <div id="shareEditOffHint">
+          <p style="font-size:11px;color:var(--color-text-muted);line-height:1.4;">
+            {{call .T "share.dialog.edit_off_hint"}}
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="editor-modal-footer">
+      <button class="editor-modal-cancel" onclick="unpublishFromDialog()">{{call .T "share.dialog.unpublish"}}</button>
+      <button class="compose-submit" onclick="closeShareDialog()">{{call .T "share.dialog.done"}}</button>
+    </div>
+  </div>
+</div>
+
+<!-- Mobile FAB -->
+<button class="mobile-fab" onclick="notesApp.handleFab()" aria-label="{{call .T "note.fab"}}"><i class="fa-solid fa-plus"></i></button>
+
+{{template "footer" .}}
+<script src="/static/js/marked.min.js?v={{assetVer "/static/js/marked.min.js"}}"></script>
+<script src="/static/js/bs-dialog.js?v={{assetVer "/static/js/bs-dialog.js"}}"></script>
+<script src="/static/js/tag-input.js?v={{assetVer "/static/js/tag-input.js"}}"></script>
+<script src="/static/js/codemirror-html.min.js?v={{assetVer "/static/js/codemirror-html.min.js"}}"></script>
+<script src="/static/js/markdown-composer.js?v={{assetVer "/static/js/markdown-composer.js"}}"></script>
+<script>window.AI_ENABLED = {{if .AIEnabled}}true{{else}}false{{end}};{{if .AISystemPromptMD}}window.AI_SYSTEM_PROMPT_MD = {{jsonJS .AISystemPromptMD}};{{end}}window.NOTE_AI_ACTIONS_RAW = {{jsonJS .AIActionsNote}};window.TASK_AI_ACTIONS_RAW = {{jsonJS .AIActionsTask}};</script>
+<script src="/static/js/ai-helper.js?v={{assetVer "/static/js/ai-helper.js"}}"></script>
+<script src="/static/js/notes.js?v={{assetVer "/static/js/notes.js"}}"></script>
+<script src="/static/js/tasks.js?v={{assetVer "/static/js/tasks.js"}}"></script>
+<script>
+	window.notesApp = new NotesApp({
+	    csrfToken: '{{.CSRFToken}}',
+	    memberID: {{.MemberID}},
+	    calYear: {{.CalYear}},
+	    calMonth: {{.CalMonth}},
+    dailyCounts: {{json .DailyCounts}},
+    taskDailyCounts: {{json .TaskDailyCounts}},
+    page: {{.Page}},
+    pageSize: {{.PageSize}},
+    total: {{.Total}},
+    blogType: '{{.BlogType}}',
+	    noteLabels: {{json .NoteLabels}},
+	    articleLabels: {{json .ArticleLabels}}
+	});
+	var notesApp = window.notesApp;
+	try {
+	    var params = new URLSearchParams(window.location.search);
+	    if (params.get('command') === 'new-note' || sessionStorage.getItem('bookstark:open-new-note') === '1') {
+	        sessionStorage.removeItem('bookstark:open-new-note');
+	        if (params.get('command') === 'new-note') history.replaceState(null, '', '/notes');
+	        setTimeout(function() {
+	            if (window.notesApp && typeof window.notesApp.handleFab === 'function') {
+	                window.notesApp.activeTab = 'notes';
+	                window.notesApp.handleFab();
+	            }
+	        }, 120);
+	    } else if (params.get('command') === 'new-article') {
+	        history.replaceState(null, '', '/notes?tab=articles');
+	        setTimeout(function() {
+	            if (window.notesApp && typeof window.notesApp.openArticleSettingModal === 'function') {
+	                window.notesApp.switchTab('articles');
+	                window.notesApp.openArticleSettingModal(null);
+	            }
+	        }, 120);
+	    }
+	} catch(e) {}
+	</script>
+</body>
+</html>

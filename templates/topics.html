@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="{{.Lang}}">
+<head>
+<meta charset="UTF-8">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#2563eb">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="{{call .T "topic.meta.description"}}">
+<title>{{call .T "page.topics.title"}}</title>
+<link href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}" rel="stylesheet">
+{{template "head-assets" .}}
+<link rel="stylesheet" href="/static/css/notes.css?v={{assetVer "/static/css/notes.css"}}">
+<link rel="stylesheet" href="/static/css/tasks.css?v={{assetVer "/static/css/tasks.css"}}">
+<link rel="stylesheet" href="/static/css/ai-reading-assistant.css?v={{assetVer "/static/css/ai-reading-assistant.css"}}">
+<link rel="stylesheet" href="/static/css/topics.css?v={{assetVer "/static/css/topics.css"}}">
+<link rel="stylesheet" href="/static/css/selection-controls.css?v={{assetVer "/static/css/selection-controls.css"}}">
+<link rel="stylesheet" href="/static/css/resource-create.css?v={{assetVer "/static/css/resource-create.css"}}">
+</head>
+<body class="min-h-screen flex flex-col topics-body">
+{{template "header" .}}
+<main role="main" class="topics-page">
+  <div class="topic-workbench" id="topicWorkbench">
+    <button type="button" class="topic-mobile-topic-backdrop hidden" id="topicMobileTopicBackdrop" aria-label="{{call .T "topic.close_topic_list"}}"></button>
+    <aside class="topic-rail" id="topicRail" aria-label="{{call .T "topic.list.aria"}}" aria-hidden="false">
+      <div class="topic-toolbar">
+        <div class="topic-search-row">
+          <input type="search" class="topic-search-input" id="topicKeyword" placeholder="{{call .T "topic.search.placeholder"}}" aria-label="{{call .T "topic.search.aria"}}" autocomplete="off">
+          <button type="button" class="topic-primary-btn" id="topicCreateBtn" title="{{call .T "topic.new"}}" aria-label="{{call .T "topic.new"}}">
+            <i class="fa-solid fa-plus"></i><span>{{call .T "topic.new"}}</span>
+          </button>
+          <button type="button" class="topic-mobile-rail-close" id="topicMobileRailCloseBtn" title="{{call .T "topic.close_topic_list"}}" aria-label="{{call .T "topic.close_topic_list"}}">
+            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>
+      <div class="topic-list" id="topicList" aria-live="polite">
+        <div class="topic-list-entry topic-list-skeleton" aria-hidden="true">
+          <div class="topic-card topic-skeleton-card">
+            <span class="topic-skeleton-block topic-skeleton-title" style="width:68%"></span>
+            <span class="topic-skeleton-block topic-skeleton-line" style="width:88%"></span>
+            <div class="topic-skeleton-meta">
+              <span class="topic-skeleton-block topic-skeleton-chip"></span>
+              <span class="topic-skeleton-block topic-skeleton-chip"></span>
+              <span class="topic-skeleton-block topic-skeleton-date"></span>
+            </div>
+          </div>
+        </div>
+        <div class="topic-list-entry topic-list-skeleton" aria-hidden="true">
+          <div class="topic-card topic-skeleton-card">
+            <span class="topic-skeleton-block topic-skeleton-title" style="width:76%"></span>
+            <span class="topic-skeleton-block topic-skeleton-line" style="width:78%"></span>
+            <div class="topic-skeleton-meta">
+              <span class="topic-skeleton-block topic-skeleton-chip"></span>
+              <span class="topic-skeleton-block topic-skeleton-chip"></span>
+              <span class="topic-skeleton-block topic-skeleton-date"></span>
+            </div>
+          </div>
+        </div>
+        <div class="topic-list-entry topic-list-skeleton" aria-hidden="true">
+          <div class="topic-card topic-skeleton-card">
+            <span class="topic-skeleton-block topic-skeleton-title" style="width:84%"></span>
+            <span class="topic-skeleton-block topic-skeleton-line" style="width:68%"></span>
+            <div class="topic-skeleton-meta">
+              <span class="topic-skeleton-block topic-skeleton-chip"></span>
+              <span class="topic-skeleton-block topic-skeleton-chip"></span>
+              <span class="topic-skeleton-block topic-skeleton-date"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="topic-pagination pagination" id="topicPagination"></div>
+    </aside>
+
+    <section class="topic-detail" id="topicDetail" aria-live="polite">
+      <div class="topic-empty-state hidden" id="topicEmptyState">
+        <i class="fa-solid fa-diagram-project topic-empty-icon"></i>
+        <h2>{{call .T "topic.empty.title"}}</h2>
+        <p>{{call .T "topic.empty.desc"}}</p>
+        <button type="button" class="topic-primary-btn" id="topicEmptyCreateBtn"><i class="fa-solid fa-plus"></i><span>{{call .T "topic.new"}}</span></button>
+      </div>
+
+      <div class="topic-detail-content" id="topicDetailContent">
+        <header class="topic-detail-head">
+          <div class="topic-read-head" id="topicReadPanel">
+            <div class="topic-read-main">
+              <div class="topic-read-title-line">
+                <h1 id="topicReadTitle"><span class="topic-skeleton-block topic-detail-title-skeleton"></span></h1>
+              </div>
+              <p class="topic-read-question" id="topicReadQuestion"><span class="topic-skeleton-block topic-detail-line-skeleton"></span><span class="topic-skeleton-block topic-detail-line-skeleton short"></span></p>
+            </div>
+          </div>
+        </header>
+
+        <div class="topic-detail-sticky-controls">
+          <div class="topic-detail-tabs-row">
+            <div class="topic-detail-tabs main-tabs" role="tablist" aria-label="{{call .T "topic.detail.tabs"}}">
+              <button type="button" class="topic-detail-tab main-tab topic-detail-tab-overview active" id="topicDetailTabDetails" data-topic-detail-tab="details" data-topic-tab-index="0" role="tab" aria-selected="true" aria-controls="topicDetailPanelDetails"><i class="fa-solid fa-circle-info"></i><span>{{call .T "topic.detail.tab.details"}}</span></button>
+              <button type="button" class="topic-detail-tab main-tab" id="topicDetailTabResources" data-topic-detail-tab="resources" data-topic-tab-index="1" role="tab" aria-selected="false" aria-controls="topicDetailPanelResources"><i class="fa-solid fa-layer-group"></i><span>{{call .T "topic.detail.tab.resources"}}</span></button>
+              <button type="button" class="topic-detail-tab main-tab" id="topicDetailTabSummaries" data-topic-detail-tab="summaries" data-topic-tab-index="2" role="tab" aria-selected="false" aria-controls="topicDetailPanelSummaries"><i class="fa-solid fa-file-lines"></i><span>{{call .T "topic.detail.tab.summaries"}}</span></button>
+              <button type="button" class="topic-detail-tab main-tab" id="topicDetailTabTasks" data-topic-detail-tab="tasks" data-topic-tab-index="3" role="tab" aria-selected="false" aria-controls="topicDetailPanelTasks"><i class="fa-solid fa-list-check"></i><span>{{call .T "topic.detail.tab.tasks"}}</span></button>
+            </div>
+            <div class="topic-detail-tabs-actions">
+              <button type="button" class="topic-desktop-rail-restore" id="topicDesktopRailRestoreBtn" title="{{call .T "topic.comment.restore_list"}}" aria-label="{{call .T "topic.comment.restore_list"}}">
+                <i class="fa-solid fa-list" aria-hidden="true"></i>
+              </button>
+              <button type="button" class="topic-mobile-sidebar-trigger" id="topicMobileSidebarBtn" title="{{call .T "topic.detail.topic_list"}}" aria-label="{{call .T "topic.detail.topic_list"}}" aria-controls="topicRail" aria-expanded="false">
+                <i class="fa-solid fa-list" aria-hidden="true"></i>
+              </button>
+              <button type="button" class="topic-mobile-comments-trigger" id="topicMobileCommentsBtn" title="{{call .T "topic.comment.title"}}" aria-label="{{call .T "topic.comment.title"}}" aria-controls="topicMobileCommentsModal" aria-expanded="false">
+                <i class="fa-regular fa-comments" aria-hidden="true"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="topic-detail-search tab-search">
+            <div class="topic-detail-search-row">
+              <input type="search" class="search-input" id="topicDetailSearchInput" placeholder="{{call .T "topic.detail.search.resources.placeholder"}}" aria-label="{{call .T "topic.detail.search.resources.aria"}}" autocomplete="off">
+              <button type="button" class="topic-detail-search-btn px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 whitespace-nowrap" id="topicDetailSearchBtn" title="{{call .T "common.search"}}" aria-label="{{call .T "common.search"}}">
+                <i class="fa-solid fa-magnifying-glass"></i>
+              </button>
+              <button type="button" class="topic-detail-create-btn topic-primary-btn" id="topicDetailCreateBtn" title="{{call .T "topic.item.add"}}" aria-label="{{call .T "topic.item.add"}}">+</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="topic-detail-body">
+          <section class="topic-tab-panel active" id="topicDetailPanelDetails" data-topic-detail-panel="details" role="tabpanel" aria-labelledby="topicDetailTabDetails">
+            <article class="topic-overview-panel" id="topicOverviewPanel">
+              <div class="topic-overview-head">
+                <div class="topic-overview-title-row">
+                  <h2 id="topicOverviewTitle" class="topic-overview-title"><span class="topic-skeleton-block topic-overview-title-skeleton"></span></h2>
+                </div>
+                <div class="topic-overview-question note-content" id="topicOverviewQuestion"></div>
+              </div>
+              <div class="topic-overview-stats" aria-label="{{call .T "topic.overview.stats.aria"}}">
+                <button type="button" class="topic-overview-stat topic-overview-stat-resources topic-overview-stat-skeleton" disabled aria-hidden="true">
+                  <span class="topic-skeleton-block topic-overview-stat-icon-skeleton"></span>
+                  <span class="topic-overview-stat-copy">
+                    <span class="topic-skeleton-block topic-overview-stat-title-skeleton" style="width:72%"></span>
+                    <span class="topic-skeleton-block topic-overview-stat-caption-skeleton" style="width:84%"></span>
+                  </span>
+                  <span class="topic-skeleton-block topic-overview-stat-chevron-skeleton"></span>
+                </button>
+                <button type="button" class="topic-overview-stat topic-overview-stat-summaries topic-overview-stat-skeleton" disabled aria-hidden="true">
+                  <span class="topic-skeleton-block topic-overview-stat-icon-skeleton"></span>
+                  <span class="topic-overview-stat-copy">
+                    <span class="topic-skeleton-block topic-overview-stat-title-skeleton" style="width:64%"></span>
+                    <span class="topic-skeleton-block topic-overview-stat-caption-skeleton" style="width:74%"></span>
+                  </span>
+                  <span class="topic-skeleton-block topic-overview-stat-chevron-skeleton"></span>
+                </button>
+                <button type="button" class="topic-overview-stat topic-overview-stat-tasks topic-overview-stat-skeleton" disabled aria-hidden="true">
+                  <span class="topic-skeleton-block topic-overview-stat-icon-skeleton"></span>
+                  <span class="topic-overview-stat-copy">
+                    <span class="topic-skeleton-block topic-overview-stat-title-skeleton" style="width:56%"></span>
+                    <span class="topic-skeleton-block topic-overview-stat-caption-skeleton" style="width:64%"></span>
+                  </span>
+                  <span class="topic-skeleton-block topic-overview-stat-chevron-skeleton"></span>
+                </button>
+              </div>
+              <div class="topic-overview-actions">
+                <button type="button" class="topic-card-tool-btn" id="topicOverviewEditBtn" title="{{call .T "topic.edit"}}" aria-label="{{call .T "topic.overview.edit_aria"}}"><i class="fa-solid fa-pen"></i></button>
+                <button type="button" class="topic-card-tool-btn" id="topicOverviewPinBtn" title="{{call .T "topic.pin"}}" aria-label="{{call .T "topic.overview.pin_aria"}}"><i class="fa-solid fa-thumbtack"></i></button>
+                {{if .AIEnabled}}<button type="button" class="topic-card-tool-btn topic-overview-ai-btn" id="topicOverviewAIAssistantBtn" title="{{call .T "topic.ai.assistant.title"}}" aria-label="{{call .T "topic.ai.assistant.title"}}"><i class="fa-solid fa-wand-magic-sparkles"></i></button>{{end}}
+                <span class="topic-overview-updated-time" title="{{call .T "topic.overview.updated_at"}}" aria-label="{{call .T "topic.overview.updated_at"}}"><i class="fa-regular fa-clock" aria-hidden="true"></i><span id="topicOverviewUpdatedAt"><span class="topic-skeleton-block topic-overview-updated-skeleton"></span></span></span>
+              </div>
+            </article>
+          </section>
+
+          <section class="topic-tab-panel" id="topicDetailPanelResources" data-topic-detail-panel="resources" role="tabpanel" aria-labelledby="topicDetailTabResources" hidden>
+            <div class="topic-items-list topic-compact-list topic-resource-content-list" id="topicItemsList">
+              <div class="topic-compact-row topic-detail-skeleton topic-resource-skeleton" aria-hidden="true">
+                <span class="topic-skeleton-block topic-skeleton-title" style="width:58%"></span>
+                <span class="topic-skeleton-block topic-skeleton-line" style="width:80%"></span>
+              </div>
+              <div class="topic-compact-row topic-detail-skeleton topic-resource-skeleton" aria-hidden="true">
+                <span class="topic-skeleton-block topic-skeleton-title" style="width:48%"></span>
+                <span class="topic-skeleton-block topic-skeleton-line" style="width:68%"></span>
+              </div>
+            </div>
+          </section>
+
+          <section class="topic-tab-panel" id="topicDetailPanelSummaries" data-topic-detail-panel="summaries" role="tabpanel" aria-labelledby="topicDetailTabSummaries" hidden>
+            <div id="topicSummariesList" class="topic-items-list topic-summary-list">
+              <div class="topic-compact-row topic-detail-skeleton topic-summary-skeleton" aria-hidden="true">
+                <span class="topic-skeleton-block topic-skeleton-line" style="width:82%"></span>
+                <span class="topic-skeleton-block topic-skeleton-line" style="width:54%"></span>
+              </div>
+            </div>
+          </section>
+
+          <section class="topic-tab-panel" id="topicDetailPanelTasks" data-topic-detail-panel="tasks" role="tabpanel" aria-labelledby="topicDetailTabTasks" hidden>
+            <div id="topicActionsList" class="tasks-list topic-actions-list">
+              <div class="topic-compact-row topic-detail-skeleton topic-task-skeleton" aria-hidden="true">
+                <span class="topic-skeleton-block topic-skeleton-line" style="width:74%"></span>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <aside class="topic-context-panel" id="topicContextPanel" aria-label="{{call .T "topic.detail.sidebar.aria"}}">
+      <button type="button" class="topic-comment-collapsed-trigger" id="topicCommentCollapsedBtn" title="{{call .T "topic.comment.restore"}}" aria-label="{{call .T "topic.comment.restore"}}" aria-controls="topicCommentPanel" aria-expanded="false">
+        <i class="fa-regular fa-comments" aria-hidden="true"></i>
+        <span id="topicCommentCollapsedCount">0</span>
+      </button>
+      <div class="topic-comment-host" id="topicCommentDesktopHost">
+        <section class="topic-side-card topic-comment-card" id="topicCommentPanel" aria-label="{{call .T "topic.comment.title"}}">
+    <div class="topic-comment-head">
+      <div>
+        <div class="topic-comment-title-row">
+          <h2>{{call .T "topic.comment.title"}}</h2>
+          <button type="button" class="topic-comment-locate hidden" id="topicCommentLocateBtn" title="{{call .T "topic.comment.locate"}}" aria-label="{{call .T "topic.comment.locate"}}">
+            <i class="fa-solid fa-location-crosshairs" aria-hidden="true"></i>
+          </button>
+        </div>
+        <p id="topicCommentTargetLabel">{{call .T "topic.comment.select_target"}}</p>
+      </div>
+      <div class="topic-comment-head-actions">
+        <div class="topic-comment-scope" role="group" aria-label="{{call .T "topic.comment.scope"}}">
+          <button type="button" class="active" data-topic-comment-scope="current" aria-pressed="true" title="{{call .T "topic.comment.scope.current"}}" aria-label="{{call .T "topic.comment.scope.current"}}"><i class="fa-solid fa-crosshairs" aria-hidden="true"></i></button>
+          <button type="button" data-topic-comment-scope="all" aria-pressed="false" title="{{call .T "topic.comment.scope.all"}}" aria-label="{{call .T "topic.comment.scope.all"}}"><i class="fa-solid fa-comments" aria-hidden="true"></i></button>
+        </div>
+        <button type="button" class="topic-comment-layout-btn topic-comment-collapse-btn" id="topicCommentCollapseBtn" title="{{call .T "topic.comment.collapse"}}" aria-label="{{call .T "topic.comment.collapse"}}" aria-controls="topicCommentPanel">
+          <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+        </button>
+        <button type="button" class="topic-comment-layout-btn topic-comment-expand-btn" id="topicCommentExpandBtn" title="{{call .T "topic.comment.expand"}}" aria-label="{{call .T "topic.comment.expand"}}" aria-controls="topicCommentPanel" aria-pressed="false">
+          <i class="fa-solid fa-expand" aria-hidden="true"></i>
+        </button>
+      </div>
+    </div>
+    <div class="topic-comment-list" id="topicCommentList" aria-live="polite">
+      <div class="topic-comment-empty">{{call .T "topic.comment.select_target"}}</div>
+    </div>
+    <div class="topic-comment-compose">
+      <div class="topic-comment-edit-state hidden" id="topicCommentEditState">
+        <span id="topicCommentEditLabel"></span>
+        <button type="button" id="topicCommentEditCancel" aria-label="{{call .T "common.close"}}"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="topic-summary-compose-toolbar topic-comment-toolbar">
+        <button type="button" class="topic-compose-btn topic-summary-save-btn" id="topicCommentSaveButton" title="{{call .T "topic.comment.publish"}}" aria-label="{{call .T "topic.comment.publish"}}"><i class="fa-solid fa-paper-plane"></i></button>
+        <input type="file" id="topicCommentFileInput" accept="image/*" class="hidden" aria-hidden="true">
+        <button type="button" class="topic-compose-btn" id="topicCommentImageButton" title="{{call .T "note.compose.image"}}" aria-label="{{call .T "note.compose.image"}}"><i class="fa-solid fa-image"></i></button>
+        <button type="button" class="topic-compose-btn" id="topicCommentEmojiButton" title="{{call .T "topic.summary.emoji"}}" aria-label="{{call .T "topic.summary.emoji"}}" aria-haspopup="menu" aria-expanded="false"><i class="fa-regular fa-face-smile"></i></button>
+        <button type="button" class="topic-compose-btn" id="topicCommentPreviewButton" title="{{call .T "topic.summary.preview"}}" aria-label="{{call .T "topic.summary.preview"}}"><i class="fa-solid fa-file-lines"></i></button>
+        {{if .AIEnabled}}<button type="button" class="topic-compose-btn topic-compose-btn-ai" id="topicCommentAIButton" title="{{call .T "topic.summary.ai"}}" aria-label="{{call .T "topic.summary.ai"}}"><i class="fa-solid fa-wand-magic-sparkles"></i></button>{{end}}
+        <button type="button" class="topic-compose-btn" id="topicCommentClearButton" title="{{call .T "topic.summary.clear"}}" aria-label="{{call .T "topic.summary.clear"}}"><i class="fa-solid fa-eraser"></i></button>
+      </div>
+      <div class="ai-inline-generation-status" id="topicCommentAIStreamStatus" aria-live="polite" aria-hidden="true"></div>
+      <div id="topicCommentComposer" class="md-composer-host topic-comment-composer-host" data-placeholder="{{call .T "topic.comment.placeholder"}}"></div>
+      <div id="topicCommentPreview" class="topic-summary-preview note-content hidden" aria-live="polite"></div>
+    </div>
+        </section>
+      </div>
+    </aside>
+  </div>
+
+  <div class="topic-summary-dock-host" id="topicSummaryDockHost" aria-hidden="true">
+    <div class="topic-summary-compose-dock" id="topicSummaryComposeDock">
+      <div class="topic-summary-compose-toolbar">
+        <button type="button" class="topic-compose-btn topic-summary-save-btn" id="topicSummarySaveButton" title="{{call .T "topic.save"}}" aria-label="{{call .T "topic.save"}}"><i class="fa-solid fa-floppy-disk"></i></button>
+        <input type="file" id="topicSummaryFileInput" accept="image/*" class="hidden" aria-hidden="true">
+        <button type="button" class="topic-compose-btn" id="topicSummaryImageButton" title="{{call .T "note.compose.image"}}" aria-label="{{call .T "note.compose.image"}}"><i class="fa-solid fa-image"></i></button>
+        <button type="button" class="topic-compose-btn" id="topicSummaryEmojiButton" title="{{call .T "topic.summary.emoji"}}" aria-label="{{call .T "topic.summary.emoji"}}" aria-haspopup="menu" aria-expanded="false"><i class="fa-regular fa-face-smile"></i></button>
+        <button type="button" class="topic-compose-btn" id="topicSummaryPreviewButton" title="{{call .T "topic.summary.preview"}}" aria-label="{{call .T "topic.summary.preview"}}"><i class="fa-solid fa-file-lines"></i></button>
+        {{if .AIEnabled}}<button type="button" class="topic-compose-btn topic-compose-btn-ai" id="topicSummaryAIButton" title="{{call .T "topic.summary.ai"}}" aria-label="{{call .T "topic.summary.ai"}}"><i class="fa-solid fa-wand-magic-sparkles"></i></button>{{end}}
+        <button type="button" class="topic-compose-btn" id="topicSummaryClearButton" title="{{call .T "topic.summary.clear"}}" aria-label="{{call .T "topic.summary.clear"}}"><i class="fa-solid fa-eraser"></i></button>
+      </div>
+      <div class="ai-inline-generation-status" id="topicSummaryAIStreamStatus" aria-live="polite" aria-hidden="true"></div>
+      <div class="topic-summary-compose-input">
+        <div id="topicSummaryComposer" class="md-composer-host topic-summary-composer-host" data-placeholder="{{call .T "topic.summary.editor.placeholder"}}"></div>
+        <div id="topicSummaryPreview" class="topic-summary-preview note-content hidden" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+
+  <button type="button" class="mobile-fab topic-fab" id="topicFabBtn" title="{{call .T "topic.new"}}" aria-label="{{call .T "topic.new"}}">
+    <i class="fa-solid fa-plus" aria-hidden="true"></i>
+  </button>
+
+  <div class="asset-modal-backdrop" id="topicCreateModal" aria-hidden="true" data-close-modal="topicCreateModal" data-mobile-sheet data-mobile-sheet-panel=".asset-modal">
+    <form class="asset-modal asset-modal-size-md" id="topicCreateForm" role="dialog" aria-modal="true" aria-labelledby="topicCreateTitle">
+      <div class="asset-modal-head">
+        <h2 class="asset-modal-title" id="topicCreateTitle">{{call .T "topic.new"}}</h2>
+        <button class="editor-modal-close" type="button" data-close-modal="topicCreateModal" aria-label="{{call .T "common.close"}}"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="asset-modal-body">
+        <label class="topic-form-field"><span>{{call .T "topic.field.title"}}</span><input class="dialog-input" type="text" id="newTopicTitle" maxlength="200" required></label>
+        <label class="topic-form-field"><span>{{call .T "topic.field.question"}}</span><textarea class="dialog-input" id="newTopicQuestion" rows="3" maxlength="2000"></textarea></label>
+      </div>
+      <div class="asset-modal-foot">
+        <button type="submit" class="bs-btn bs-btn-primary">{{call .T "topic.create"}}</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="asset-modal-backdrop" id="topicEditModal" aria-hidden="true" data-close-modal="topicEditModal" data-mobile-sheet data-mobile-sheet-panel=".asset-modal">
+    <form class="asset-modal topic-topic-edit-modal asset-modal-size-lg" id="topicEditForm" role="dialog" aria-modal="true" aria-labelledby="topicEditTitle">
+      <div class="asset-modal-head">
+        <h2 class="asset-modal-title" id="topicEditTitle">{{call .T "topic.edit"}}</h2>
+        <button class="editor-modal-close" type="button" data-close-modal="topicEditModal" aria-label="{{call .T "common.close"}}"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="asset-modal-body">
+        <label class="topic-form-field"><span>{{call .T "topic.field.title"}}</span><input class="dialog-input" type="text" id="editTopicTitle" maxlength="200" required></label>
+        <div class="topic-form-field">
+          <span>{{call .T "topic.field.question"}}</span>
+          <div class="topic-question-editor">
+            <input type="file" id="topicEditQuestionFileInput" accept="image/*" class="hidden" aria-hidden="true">
+            <div class="editor-modal-tool-row topic-question-toolbar">
+              <button type="button" class="compose-btn" id="topicEditQuestionImageBtn" title="{{call .T "note.editor.image"}}" aria-label="{{call .T "note.editor.image"}}"><i class="fa-solid fa-image"></i></button>
+              <button type="button" class="compose-btn" id="topicEditQuestionEmojiBtn" title="{{call .T "note.compose.emoji"}}" aria-label="{{call .T "note.compose.emoji"}}" aria-haspopup="menu" aria-expanded="false"><i class="fa-regular fa-face-smile"></i></button>
+              <button type="button" class="compose-btn" id="topicEditQuestionPreviewBtn" title="{{call .T "note.editor.preview"}}" aria-label="{{call .T "note.editor.preview"}}"><i class="fa-solid fa-file-lines"></i></button>
+              <button type="button" class="compose-btn" id="topicEditQuestionClearBtn" title="{{call .T "note.compose.clear"}}" aria-label="{{call .T "note.compose.clear"}}"><i class="fa-solid fa-eraser"></i></button>
+            </div>
+            <div class="editor-preview note-content topic-question-preview hidden" id="topicEditQuestionPreview"></div>
+            <div id="editTopicQuestion" class="md-composer-host md-composer-host-full topic-question-composer" data-placeholder="{{call .T "topic.question.placeholder"}}"></div>
+          </div>
+        </div>
+      </div>
+      <div class="asset-modal-foot">
+        <button type="button" class="bs-btn bs-btn-cancel" id="topicEditCancelBtn" data-close-modal="topicEditModal">{{call .T "common.cancel"}}</button>
+        <button type="button" class="bs-btn bs-btn-danger" id="topicEditDeleteBtn">{{call .T "topic.delete"}}</button>
+        <button type="submit" class="bs-btn bs-btn-primary">{{call .T "topic.save"}}</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="asset-modal-backdrop" id="topicSummaryEditorModal" aria-hidden="true" data-summary-restore="true" data-mobile-sheet data-mobile-sheet-panel=".asset-modal">
+    <section class="asset-modal asset-modal-size-xl" role="dialog" aria-modal="true" aria-labelledby="topicSummaryEditorTitle">
+      <div class="asset-modal-head">
+        <h2 class="asset-modal-title" id="topicSummaryEditorTitle">{{call .T "topic.detail.tab.summaries"}}</h2>
+        <button class="editor-modal-close" type="button" id="topicSummaryRestoreButton" aria-label="{{call .T "common.close"}}"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="asset-modal-body">
+        <div class="topic-summary-modal-dock" id="topicSummaryModalDock"></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="asset-modal-backdrop" id="topicMobileCommentsModal" aria-hidden="true" data-close-modal="topicMobileCommentsModal" data-mobile-sheet data-mobile-sheet-panel=".asset-modal">
+    <section class="asset-modal topic-mobile-comments-modal" role="dialog" aria-modal="true" aria-labelledby="topicMobileCommentsTitle">
+      <div class="asset-modal-head">
+        <h2 class="asset-modal-title" id="topicMobileCommentsTitle">{{call .T "topic.comment.title"}}</h2>
+        <button class="editor-modal-close" type="button" data-close-modal="topicMobileCommentsModal" aria-label="{{call .T "common.close"}}"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="asset-modal-body">
+        <div class="topic-comment-host topic-comment-mobile-host" id="topicCommentMobileHost"></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="asset-modal-backdrop" id="topicItemModal" aria-hidden="true" data-close-modal="topicItemModal" data-mobile-sheet data-mobile-sheet-panel=".asset-modal">
+    <div class="asset-modal topic-resource-picker-modal asset-modal-size-xl" role="dialog" aria-modal="true" aria-labelledby="topicItemTitle">
+      <div class="asset-modal-head">
+        <h2 class="asset-modal-title" id="topicItemTitle">{{call .T "topic.item.add"}}</h2>
+        <button class="editor-modal-close" type="button" data-close-modal="topicItemModal" aria-label="{{call .T "common.close"}}"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="asset-modal-body">
+        <div class="topic-item-tab active" data-topic-item-panel="search">
+          <div class="topic-search-row">
+            <div class="topic-resource-search-field">
+              <input type="search" class="dialog-input topic-search-input" id="topicResourceKeyword" placeholder="{{call .T "topic.item.search.placeholder"}}" aria-label="{{call .T "topic.item.search.aria"}}">
+              <button type="button" class="topic-icon-btn" id="topicResourceSearchBtn" title="{{call .T "common.search"}}" aria-label="{{call .T "common.search"}}"><i class="fa-solid fa-magnifying-glass"></i></button>
+            </div>
+            <button type="button" class="topic-primary-btn topic-resource-create-trigger" id="topicResourceCreateBtn" title="{{call .T "topic.resource.create.new"}}" aria-label="{{call .T "topic.resource.create.new"}}">
+              <i class="fa-solid fa-plus" aria-hidden="true"></i><span>{{call .T "topic.resource.create.new"}}</span>
+            </button>
+          </div>
+          <div class="topic-resource-filter-bar" id="topicResourceFilterBar" role="group" aria-label="{{call .T "topic.resource.filter.aria"}}">
+            <button type="button" class="topic-resource-filter-btn active" data-topic-resource-filter="all" aria-pressed="true">{{call .T "topic.resource.filter.all"}}</button>
+            <button type="button" class="topic-resource-filter-btn" data-topic-resource-filter="note" aria-pressed="false">{{call .T "topic.type.note"}}</button>
+            <button type="button" class="topic-resource-filter-btn" data-topic-resource-filter="document" aria-pressed="false">{{call .T "topic.type.document"}}</button>
+            <button type="button" class="topic-resource-filter-btn" data-topic-resource-filter="article" aria-pressed="false">{{call .T "topic.type.article"}}</button>
+            <button type="button" class="topic-resource-filter-btn" data-topic-resource-filter="bookmark" aria-pressed="false">{{call .T "topic.type.bookmark"}}</button>
+          </div>
+          <div class="topic-resource-search-meta" id="topicResourceSearchMeta">{{call .T "topic.resource.picker.meta.default"}}</div>
+          <div id="topicSearchResults" class="topic-search-results" role="list" aria-live="polite"></div>
+        </div>
+
+      </div>
+      <div class="asset-modal-foot topic-resource-picker-foot">
+        <div class="topic-resource-search-foot" id="topicResourceSearchFoot">
+          <div class="topic-resource-picker-status" id="topicResourceAddedCount">{{call .T "topic.resource.picker.added_initial"}}</div>
+          <button type="button" class="bs-btn" id="topicResourceDoneBtn" data-close-modal="topicItemModal">{{call .T "topic.resource.picker.done"}}</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="asset-modal-backdrop" id="topicTaskModal" aria-hidden="true" data-close-modal="topicTaskModal" data-mobile-sheet data-mobile-sheet-panel=".asset-modal">
+    <form class="asset-modal asset-modal-size-md" id="topicTaskForm" role="dialog" aria-modal="true" aria-labelledby="topicTaskModalTitle">
+      <div class="asset-modal-head">
+        <h2 class="asset-modal-title" id="topicTaskModalTitle">{{call .T "topic.task.modal.new"}}</h2>
+        <button class="editor-modal-close" type="button" data-close-modal="topicTaskModal" aria-label="{{call .T "common.close"}}"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="asset-modal-body">
+        <label class="topic-form-field"><span>{{call .T "topic.task.field.content"}}</span><textarea class="dialog-input" id="topicTaskContent" rows="4" maxlength="1000" required></textarea></label>
+        <label class="topic-form-field"><span>{{call .T "topic.task.field.due_date"}}</span><input class="dialog-input" type="date" id="topicTaskDueDate"></label>
+      </div>
+      <div class="asset-modal-foot">
+        <button type="button" class="bs-btn topic-task-delete-btn hidden" id="topicTaskDeleteBtn">{{call .T "topic.task.delete"}}</button>
+        <button type="submit" class="bs-btn bs-btn-primary" id="topicTaskSubmitBtn">{{call .T "topic.task.add"}}</button>
+      </div>
+    </form>
+  </div>
+  {{template "resource-create-modal" .}}
+</main>
+{{template "footer" .}}
+<script src="/static/js/marked.min.js?v={{assetVer "/static/js/marked.min.js"}}"></script>
+<script src="/static/js/tag-input.js?v={{assetVer "/static/js/tag-input.js"}}"></script>
+<script src="/static/js/codemirror-html.min.js?v={{assetVer "/static/js/codemirror-html.min.js"}}"></script>
+<script src="/static/js/markdown-composer.js?v={{assetVer "/static/js/markdown-composer.js"}}"></script>
+<script src="/static/js/selection-controls.js?v={{assetVer "/static/js/selection-controls.js"}}"></script>
+<script src="/static/js/resource-create.js?v={{assetVer "/static/js/resource-create.js"}}"></script>
+<script>window.AI_ENABLED = {{if .AIEnabled}}true{{else}}false{{end}};{{if .AISystemPromptMD}}window.AI_SYSTEM_PROMPT_MD = {{jsonJS .AISystemPromptMD}};{{end}}</script>
+<script src="/static/js/ai-helper.js?v={{assetVer "/static/js/ai-helper.js"}}"></script>
+<script src="/static/js/ai-reading-assistant.js?v={{assetVer "/static/js/ai-reading-assistant.js"}}"></script>
+<script src="/static/js/topics.js?v={{assetVer "/static/js/topics.js"}}"></script>
+</body>
+</html>

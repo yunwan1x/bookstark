@@ -1,0 +1,2176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v={{assetVer "/static/favicon.svg"}}">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{{call .T "meta.description"}}">
+    <title>{{call .T "page.admin.title"}} - BookStark</title>
+    <link href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}" rel="stylesheet">
+    <style>
+    .tab-btn { position: relative; padding: 8px 16px; font-size: 13px; font-weight: 500; border-radius: 8px 8px 0 0; cursor: pointer; transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease; }
+    .tab-btn.active { background: var(--color-bg-card); color: var(--color-primary); box-shadow: 0 -1px 3px rgba(0,0,0,0.06); }
+    .tab-btn:not(.active) { background: transparent; color: var(--color-gray-400); }
+    .tab-btn:not(.active):hover { color: var(--color-gray-500); background: var(--color-gray-100); }
+    .admin-tabs { overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; scroll-snap-type: x proximity; }
+    .admin-tabs .tab-btn { flex: 1 0 max-content; min-width: max-content; white-space: nowrap; scroll-snap-align: start; }
+    .admin-system-page { position: relative; }
+    .admin-system-content { position: relative; z-index: 1; }
+    /* AI 配置子 tab */
+    .ai-subtabs { display: inline-flex; gap: 4px; padding: 3px; background: var(--color-gray-100, #f1f5f9); border: 1px solid var(--color-border, #e2e8f0); border-radius: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .ai-subtab { appearance: none; -webkit-appearance: none; background-color: transparent; border: none; color: var(--color-text-secondary, #64748b); font-size: 12px; padding: 6px 12px; border-radius: 6px; cursor: pointer; transition: background-color 0.15s ease, color 0.15s ease; display: inline-flex; align-items: center; }
+    .ai-subtab:hover:not(.active) { color: var(--color-text, #0f172a); background-color: var(--color-bg-hover, rgba(15,23,42,0.04)); }
+    .ai-subtab.active { background-color: var(--color-bg-card, #fff); color: var(--color-primary, #2563eb); box-shadow: 0 1px 2px rgba(15,23,42,0.06); font-weight: 600; }
+    .ai-subtab:focus-visible { outline: 2px solid var(--color-focus, #2563eb); outline-offset: 1px; }
+    /* 字段头：label 左、重置按钮右 */
+    .ai-field-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; gap: 8px; }
+    .ai-reset-btn { background: transparent; border: 1px solid var(--color-border, #e2e8f0); color: var(--color-text-secondary, #64748b); font-size: 11px; padding: 3px 8px; border-radius: 5px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto; white-space: nowrap; transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease; }
+    .ai-reset-btn:hover { background: var(--color-bg-hover, #f1f5f9); color: var(--color-text, #0f172a); border-color: var(--color-border-hover, #cbd5e1); }
+    .ai-reset-btn:focus-visible { outline: 2px solid var(--color-focus, #2563eb); outline-offset: 1px; }
+    .ai-reset-btn i { font-size: 10px; }
+    /* 测试连接按钮 + 结果展示 */
+    .ai-test-btn {
+        display: inline-flex; align-items: center;
+        flex: 0 0 auto;
+        justify-content: center;
+        background: var(--color-primary, #2563eb); color: #fff;
+        border: none; border-radius: 6px;
+        padding: 6px 14px; font-size: 12px; font-weight: 500;
+        min-height: 32px;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: background-color 0.15s ease, opacity 0.15s ease;
+    }
+    .ai-test-btn:hover:not(:disabled) { background: var(--color-primary-hover, #1d4ed8); }
+    .ai-test-btn:disabled { opacity: 0.6; cursor: wait; }
+    .ai-test-btn:focus-visible { outline: 2px solid var(--color-focus, #2563eb); outline-offset: 2px; }
+    .ai-test-result {
+        margin: 8px 0 4px; padding: 10px 12px;
+        border-radius: 6px; font-size: 12px; line-height: 1.6;
+        border: 1px solid;
+        word-break: break-word; white-space: pre-wrap;
+    }
+    .ai-test-result.ok      { background: rgba(22, 163, 74, 0.06); border-color: rgba(22, 163, 74, 0.3); color: #166534; }
+    .ai-test-result.fail    { background: rgba(220, 38, 38, 0.06); border-color: rgba(220, 38, 38, 0.3); color: #991b1b; }
+    .ai-test-result.loading { background: rgba(37, 99, 235, 0.06); border-color: rgba(37, 99, 235, 0.3); color: #1e40af; }
+    .ai-test-result-title { font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+    .ai-test-result-meta  { color: var(--color-text-secondary, #64748b); font-size: 11px; margin-top: 4px; }
+    .ai-test-result-detail { margin-top: 6px; font-family: 'SF Mono','Fira Code',Consolas,monospace; font-size: 11px; max-height: 160px; overflow: auto; padding: 6px 8px; background: rgba(15,23,42,0.04); border-radius: 4px; }
+    .ai-note-actions-list { display: flex; flex-direction: column; gap: 8px; }
+    .ai-note-action-row { display: grid; grid-template-columns: minmax(110px, 160px) 1fr auto; gap: 8px; align-items: start; padding: 10px; border: 1px solid var(--color-border, #e2e8f0); border-radius: 8px; background: var(--color-bg-card, #fff); }
+    .ai-note-action-row input,
+    .ai-note-action-row textarea { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--color-border, #e2e8f0); border-radius: 6px; background: var(--color-bg-card, #fff); color: var(--color-text, #0f172a); font-size: 13px; line-height: 1.45; outline: none; }
+    .ai-note-action-row input:focus,
+    .ai-note-action-row textarea:focus { border-color: var(--color-focus, #2563eb); box-shadow: 0 0 0 2px rgba(37,99,235,0.15); }
+    .ai-note-action-row textarea { min-height: 64px; resize: vertical; font-family: inherit; }
+    .ai-note-action-del { width: 32px; height: 32px; border: 1px solid var(--color-border, #e2e8f0); border-radius: 6px; background: transparent; color: var(--color-text-secondary, #64748b); cursor: pointer; }
+    .ai-note-action-del:hover { color: var(--color-danger, #dc2626); border-color: rgba(220,38,38,0.4); background: var(--color-bg-hover, #f1f5f9); }
+    .ai-note-actions-empty { padding: 18px 12px; text-align: center; color: var(--color-text-secondary, #64748b); font-size: 12px; border: 1px dashed var(--color-border, #e2e8f0); border-radius: 8px; }
+    .ai-action-sections { display: flex; flex-direction: column; gap: 8px; }
+    .ai-action-section { border: 1px solid var(--color-border, #e2e8f0); border-radius: 8px; background: var(--color-bg-card, #fff); overflow: hidden; }
+    .ai-action-section summary { list-style: none; }
+    .ai-action-section summary::-webkit-details-marker { display: none; }
+    .ai-action-summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; cursor: pointer; user-select: none; background: var(--color-gray-100, #f8fafc); color: var(--color-text, #0f172a); }
+    .ai-action-summary:hover { background: var(--color-bg-hover, #f1f5f9); }
+    .ai-action-summary-title { display: inline-flex; align-items: center; gap: 8px; min-width: 0; font-size: 13px; font-weight: 600; }
+    .ai-action-summary-title i { color: var(--color-text-secondary, #64748b); font-size: 11px; transition: transform 0.15s ease; }
+    .ai-action-section[open] .ai-action-summary-title i { transform: rotate(90deg); }
+    .ai-action-body { padding: 12px; border-top: 1px solid var(--color-border, #e2e8f0); }
+    .ai-action-tools { display: flex; justify-content: flex-end; margin-bottom: 6px; }
+    @media (max-width: 640px) {
+        .ai-note-action-row { grid-template-columns: 1fr auto; }
+        .ai-note-action-row textarea { grid-column: 1 / -1; }
+        .ai-action-body { padding: 10px; }
+    }
+    @media (max-width: 640px) {
+        .ai-subtabs { width: 100%; }
+        .ai-subtab { flex: 1; justify-content: center; padding: 6px 8px; }
+    }
+    .member-card { background: var(--color-bg-card); border: 1px solid var(--surface-border); border-radius: var(--surface-radius); padding: 14px 16px; transition: box-shadow 0.15s, border-color 0.15s; position: relative; }
+    .member-card:hover { border-color: var(--color-primary-border); box-shadow: var(--surface-shadow-hover); }
+    .admin-member-skeleton { display: flex; flex-direction: column; gap: 10px; }
+    .admin-member-skeleton-row {
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        border: 1px solid var(--color-gray-100);
+        border-radius: var(--surface-radius);
+        background: var(--color-bg-card);
+    }
+    .admin-member-skeleton-row::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        transform: translateX(-100%);
+        background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.16), transparent);
+        animation: admin-member-skeleton-shimmer 1.25s ease-in-out infinite;
+    }
+    .admin-skeleton-block { background: var(--color-gray-100); border-radius: 6px; }
+    .admin-member-skeleton-avatar { width: 36px; height: 36px; border-radius: 50%; flex: 0 0 auto; }
+    .admin-member-skeleton-body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+    .admin-member-skeleton-line { height: 12px; }
+    .admin-member-skeleton-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .admin-member-skeleton-badge { width: 56px; height: 18px; border-radius: 20px; }
+    @keyframes admin-member-skeleton-shimmer {
+        100% { transform: translateX(100%); }
+    }
+    [data-theme="dark"] .admin-member-skeleton-row::after {
+        background: linear-gradient(90deg, transparent, rgba(226, 232, 240, 0.08), transparent);
+    }
+    .avatar-circle { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: var(--color-white); flex-shrink: 0; }
+    .badge { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+    .badge-green { background: var(--color-success-light); color: var(--color-success-hover); }
+    .badge-amber { background: var(--color-warning-light); color: var(--color-warning); }
+    .badge-gray { background: var(--color-bg); color: var(--color-gray-400); }
+    .badge-red { background: var(--color-danger-light); color: var(--color-danger-hover); }
+    .action-btn { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 500; cursor: pointer; border: none; transition: background-color 0.15s ease, color 0.15s ease; white-space: nowrap; }
+    .setting-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--color-bg); }
+    .setting-row:last-child { border-bottom: none; }
+    #panel-ai .setting-row, #panel-settings .setting-row { gap: 12px; }
+    #panel-ai .setting-row > div:first-child, #panel-settings .setting-row > div:first-child { min-width: 0; flex: 1 1 180px; }
+    #panel-ai .ai-field-head > label { min-width: 0; overflow-wrap: anywhere; }
+    #panel-ai .setting-row > .setting-input,
+    #panel-ai .setting-row > .ai-test-btn,
+    #panel-ai .setting-row > .toggle-switch {
+        flex: 0 0 auto;
+    }
+    @media (max-width: 520px) {
+        #panel-ai .setting-row, #panel-settings .setting-row { align-items: flex-start; flex-wrap: wrap; }
+        #panel-ai .ai-field-head,
+        #panel-ai .setting-row > input.setting-input,
+        #panel-ai .setting-row > select.setting-input {
+            max-width: 100% !important;
+        }
+        #panel-ai .setting-row > input[type="text"].setting-input,
+        #panel-ai .setting-row > input[type="password"].setting-input {
+            width: 100% !important;
+            flex-basis: 100%;
+        }
+        #panel-settings .setting-row > .setting-input,
+        #panel-settings .setting-row > textarea.setting-input,
+        #panel-settings .setting-row > div:last-child {
+            max-width: 100% !important;
+        }
+    }
+    .setting-input { width: 72px; text-align: center; border: 1px solid var(--color-border); border-radius: 8px; padding: 6px 8px; font-size: 13px; transition: border-color 0.15s; }
+    .setting-input:focus { border-color: var(--color-primary); box-shadow: 0 0 0 2px rgba(37,99,235,0.1); }
+    textarea.setting-input { width: 320px; max-width: 60vw; min-height: 72px; line-height: 1.5; resize: vertical; text-align: left; background: var(--color-bg-card); color: var(--color-text); }
+    .save-btn { background: var(--color-primary); color: var(--color-white); padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; border: none; cursor: pointer; transition: background 0.15s; }
+    .save-btn:hover { background: var(--color-primary-hover); }
+    .comment-admin-toolbar { display: grid; grid-template-columns: minmax(180px, 1fr) 130px 130px auto; gap: 8px; margin-bottom: 12px; }
+    .comment-admin-input, .comment-admin-select { width: 100%; border: 1px solid var(--color-border); border-radius: 8px; padding: 8px 10px; font-size: 13px; color: var(--color-text); background: var(--color-bg-card); outline: none; }
+    .comment-admin-input:focus, .comment-admin-select:focus { border-color: var(--color-primary); box-shadow: 0 0 0 2px rgba(37,99,235,0.12); }
+    .comment-admin-tools { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 0 12px; border-bottom: 1px solid var(--color-border); margin-bottom: 10px; }
+    .comment-admin-list { display: flex; flex-direction: column; gap: 8px; }
+    .comment-admin-card { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: start; border: 1px solid var(--color-border); border-radius: 8px; padding: 10px 12px; background: var(--color-bg-card); }
+    .comment-admin-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 12px; color: var(--color-text-secondary); margin-bottom: 5px; }
+    .comment-admin-author { color: var(--color-text); font-weight: 600; }
+    .comment-admin-content { font-size: 13px; color: var(--color-text); line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
+    .comment-admin-status { display: inline-flex; align-items: center; border-radius: 999px; padding: 2px 7px; font-size: 11px; font-weight: 600; background: var(--color-success-light); color: var(--color-success-hover); }
+    .comment-admin-status.deleted { background: var(--color-danger-light); color: var(--color-danger-hover); }
+    .comment-admin-delete { width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--color-border); border-radius: 6px; color: var(--color-danger); background: transparent; cursor: pointer; }
+    .comment-admin-delete:hover { background: var(--color-danger-light); border-color: rgba(220,38,38,0.35); }
+    .toggle-switch { position: relative; display: inline-block; cursor: pointer; }
+    .toggle-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+    .toggle-track { display: block; width: 36px; height: 20px; background: var(--color-gray-300); border-radius: 10px; position: relative; transition: background 0.15s; }
+    .toggle-track::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: var(--color-white); border-radius: 50%; transition: transform 0.15s; }
+    .toggle-switch input:checked + .toggle-track { background: var(--color-primary); }
+    .toggle-switch input:checked + .toggle-track::after { transform: translateX(16px); }
+    .toggle-switch input:focus-visible + .toggle-track { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+    .ai-stat-card { background: linear-gradient(135deg, #faf5ff, #eef2ff); border: 1px solid #e9d5ff; border-radius: 10px; padding: 14px 16px; }
+    .ai-stat-label { font-size: 11px; color: var(--color-gray-500); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; }
+    .ai-stat-value { font-size: 22px; font-weight: 600; color: #6d28d9; font-variant-numeric: tabular-nums; }
+    .ai-prompt-textarea { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 8px; font-size: 13px; line-height: 1.55; font-family: 'SF Mono','Fira Code',Consolas,monospace; resize: vertical; min-height: 96px; color: var(--color-text); background: var(--color-bg-card); outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
+    .ai-prompt-textarea:focus { border-color: var(--color-primary); box-shadow: 0 0 0 2px rgba(37,99,235,0.15); }
+    [data-theme="dark"] #panel-ai { background: var(--color-bg-card, #1e293b) !important; border: 1px solid var(--color-border, #334155); }
+    [data-theme="dark"] #panel-ai .ai-subtabs { background: var(--color-gray-100, #1e293b); border-color: var(--color-border, #334155); }
+    [data-theme="dark"] #panel-ai .ai-subtab.active { background-color: var(--color-bg-hover, #334155) !important; color: var(--color-primary, #3b82f6); box-shadow: none; }
+    [data-theme="dark"] #panel-ai .ai-subtab:hover:not(.active) { background-color: var(--color-gray-200, #334155) !important; color: var(--color-text, #f1f5f9); }
+    [data-theme="dark"] #panel-ai .ai-stat-card { background: var(--color-gray-100, #1e293b); border-color: var(--color-border, #334155); }
+    [data-theme="dark"] #panel-ai .ai-stat-label { color: var(--color-text-secondary, #94a3b8); }
+    [data-theme="dark"] #panel-ai .ai-stat-value { color: var(--color-primary, #3b82f6); }
+    [data-theme="dark"] #panel-ai .bg-purple-50,
+    [data-theme="dark"] #panel-ai .bg-blue-50,
+    [data-theme="dark"] #panel-ai .bg-emerald-50,
+    [data-theme="dark"] #panel-ai .bg-amber-50 { background-color: var(--color-gray-100, #1e293b) !important; border: 1px solid var(--color-border, #334155); }
+    [data-theme="dark"] #panel-ai .ai-test-result.ok { color: var(--color-success, #4ade80); }
+    [data-theme="dark"] #panel-ai .ai-test-result.fail { color: var(--color-danger, #f87171); }
+    [data-theme="dark"] #panel-ai .ai-test-result.loading { color: var(--color-primary, #3b82f6); }
+    [data-theme="dark"] #panel-ai .ai-test-result-detail { background: var(--color-gray-100, #1e293b); }
+    [data-theme="dark"] #panel-ai .ai-note-action-row { background: var(--color-bg-card, #1e293b); border-color: var(--color-border, #334155); }
+    [data-theme="dark"] #panel-ai .ai-note-action-row input,
+    [data-theme="dark"] #panel-ai .ai-note-action-row textarea { background: var(--color-bg-card, #1e293b); color: var(--color-text, #f1f5f9); border-color: var(--color-border, #334155); }
+    @media (min-width: 640px) {
+        .member-actions { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); }
+    }
+    @media (max-width: 640px) {
+        .member-card { padding: 12px; }
+        .avatar-circle { width: 32px; height: 32px; font-size: 12px; }
+        .admin-member-skeleton-row { padding: 12px; }
+        .admin-member-skeleton-avatar { width: 32px; height: 32px; }
+        .action-btn { padding: 6px 12px; font-size: 12px; }
+        .comment-admin-toolbar { grid-template-columns: 1fr; }
+        .comment-admin-card { grid-template-columns: auto 1fr; }
+        .comment-admin-delete { grid-column: 2; justify-self: start; }
+    }
+    /* Focus ring for admin inputs that use focus:outline-none */
+    select:focus-visible, input[type="date"]:focus-visible, input[type="number"]:focus-visible {
+        outline: none;
+        border-color: var(--color-focus) !important;
+        box-shadow: 0 0 0 2px var(--color-focus-ring);
+    }
+    </style>
+{{template "head-assets" .}}
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col">
+    {{template "header" .}}
+    <main class="admin-system-page flex-1" role="main">
+        <div class="admin-system-content px-4 sm:px-6 md:px-8 py-6">
+            <div class="mx-auto" style="width:100%;max-width:960px;">
+
+                <!-- Tabs -->
+                <div role="tablist" class="admin-tabs flex bg-slate-100 rounded-t-lg p-1 gap-1">
+                    <button role="tab" aria-selected="true" aria-controls="panel-members" id="tab-members" onclick="switchTab('members')" class="tab-btn active flex-1">
+                        <i class="fa-solid fa-users-gear" style="margin-right:4px"></i>{{call .T "admin.tab.members"}}
+                    </button>
+                    <button role="tab" aria-selected="false" aria-controls="panel-comments" id="tab-comments" onclick="switchTab('comments')" class="tab-btn flex-1">
+                        <i class="fa-solid fa-comments" style="margin-right:4px"></i>{{call .T "admin.tab.comments"}}
+                    </button>
+                    <button role="tab" aria-selected="false" aria-controls="panel-settings" id="tab-settings" onclick="switchTab('settings')" class="tab-btn flex-1">
+                        <i class="fa-solid fa-sliders" style="margin-right:4px"></i>{{call .T "admin.tab.settings"}}
+                    </button>
+                    <button role="tab" aria-selected="false" aria-controls="panel-ai" id="tab-ai" onclick="switchTab('ai')" class="tab-btn flex-1">
+                        <i class="fa-solid fa-wand-magic-sparkles" style="margin-right:4px"></i>{{call .T "admin.tab.ai"}}
+                    </button>
+                    <button role="tab" aria-selected="false" aria-controls="panel-data" id="tab-data" onclick="switchTab('data')" class="tab-btn flex-1">
+                        <i class="fa-solid fa-database" style="margin-right:4px"></i>{{call .T "admin.tab.data"}}
+                    </button>
+                </div>
+
+                <!-- 用户管理 -->
+                <div id="panel-members" role="tabpanel" aria-labelledby="tab-members" class="bg-white rounded-b-lg shadow-sm p-4 sm:p-5">
+                    <div id="member-list" class="space-y-3"></div>
+                    <div id="member-pagination" class="mt-4 flex justify-center"></div>
+                </div>
+
+                <!-- 评论管理 -->
+                <div id="panel-comments" role="tabpanel" aria-labelledby="tab-comments" class="bg-white rounded-b-lg shadow-sm p-4 sm:p-5 hidden">
+                    <div class="comment-admin-toolbar">
+                        <input id="comment-admin-keyword" class="comment-admin-input" type="search" placeholder="{{call .T "admin.comments.search_placeholder"}}" onkeydown="if(event.key==='Enter'){loadAdminComments(1)}">
+                        <select id="comment-admin-status" class="comment-admin-select" onchange="loadAdminComments(1)">
+                            <option value="">{{call .T "admin.comments.status.all"}}</option>
+                            <option value="visible">{{call .T "admin.comments.status.visible"}}</option>
+                            <option value="deleted">{{call .T "admin.comments.status.deleted"}}</option>
+                        </select>
+                        <select id="comment-admin-target-type" class="comment-admin-select" onchange="loadAdminComments(1)">
+                            <option value="">{{call .T "admin.comments.type.all"}}</option>
+                            <option value="blog">{{call .T "admin.comments.type.blog"}}</option>
+                            <option value="book">{{call .T "admin.comments.type.book"}}</option>
+                            <option value="document">{{call .T "admin.comments.type.document"}}</option>
+                        </select>
+                        <button type="button" class="save-btn" onclick="loadAdminComments(1)"><i class="fa-solid fa-magnifying-glass" style="margin-right:4px"></i>{{call .T "admin.comments.search"}}</button>
+                    </div>
+                    <div class="comment-admin-tools">
+                        <label class="text-xs text-slate-500 flex items-center gap-2">
+                            <input id="comment-admin-select-all" type="checkbox" onchange="toggleAllAdminComments(this.checked)">
+                            <span>{{call .T "admin.comments.select_all"}}</span>
+                        </label>
+                        <button type="button" class="action-btn text-white" style="background:var(--color-danger)" onclick="deleteSelectedAdminComments()"><i class="fa-solid fa-trash" style="margin-right:4px"></i>{{call .T "admin.comments.delete_selected"}}</button>
+                    </div>
+                    <div id="comment-admin-list" class="comment-admin-list"></div>
+                    <div id="comment-admin-pagination" class="mt-4 flex justify-center"></div>
+                </div>
+
+                <!-- 系统参数 -->
+                <div id="panel-settings" role="tabpanel" aria-labelledby="tab-settings" class="bg-white rounded-b-lg shadow-sm p-4 sm:p-5 hidden">
+                    <form id="settingsForm" onsubmit="saveSettings(event)">
+                        <div class="ai-action-sections">
+                            <!-- 登录设置 -->
+                            <details class="ai-action-section">
+                                <summary class="ai-action-summary">
+                                    <span class="ai-action-summary-title"><i class="fa-solid fa-chevron-right"></i>{{call .T "admin.settings.login"}}</span>
+                                </summary>
+                                <div class="ai-action-body">
+                                {{$lsd := "30"}}{{range .Settings}}{{if eq .Key "login_session_days"}}{{$lsd = .Value}}{{end}}{{end}}
+                                <div class="setting-row">
+                                    <div>
+                                        <div class="text-sm text-slate-700">{{call .T "admin.settings.login_session_days"}}</div>
+                                        <div class="text-xs text-slate-400 mt-0.5">{{call .T "admin.settings.login_session_days.hint"}}</div>
+                                    </div>
+                                    <div class="flex items-center gap-1.5">
+                                        <input type="number" name="login_session_days" value="{{$lsd}}" min="1" max="365" class="setting-input">
+                                        <span class="text-xs text-slate-500">{{call .T "admin.settings.unit.days"}}</span>
+                                    </div>
+                                </div>
+                                </div>
+                            </details>
+                            <details class="ai-action-section" open>
+                                <summary class="ai-action-summary">
+                                    <span class="ai-action-summary-title"><i class="fa-solid fa-chevron-right"></i>{{call .T "admin.settings.pagination"}}</span>
+                                </summary>
+                                <div class="ai-action-body">
+                                {{range .Settings}}
+                                {{/* 白名单：仅渲染分页相关 key（page_size_* 与 label_list_limit），page_size_uploads 由「上传」section 管理 */}}
+                                {{if and (or (hasPrefix .Key "page_size_") (eq .Key "label_list_limit")) (ne .Key "page_size_uploads")}}
+                                <div class="setting-row">
+                                    <div>
+                                        <div class="text-sm text-slate-700">{{call $.T (printf "admin.settings.desc.%s" .Key)}}</div>
+                                    </div>
+                                    <div class="flex items-center gap-1.5">
+                                        <input type="number" name="{{.Key}}" value="{{.Value}}" min="1" max="10000" class="setting-input">
+                                        <span class="text-xs text-slate-500">{{call $.T "admin.settings.unit.items_per_page"}}</span>
+                                    </div>
+                                </div>
+                                {{end}}
+                                {{end}}
+                                </div>
+                            </details>
+                            <!-- 导航页设置 -->
+                            <details class="ai-action-section">
+                                <summary class="ai-action-summary">
+                                    <span class="ai-action-summary-title"><i class="fa-solid fa-chevron-right"></i>{{call .T "admin.settings.nav"}}</span>
+                                </summary>
+                                <div class="ai-action-body">
+                                {{$nmi := "1000"}}{{range .Settings}}{{if eq .Key "nav_max_items"}}{{$nmi = .Value}}{{end}}{{end}}
+                                <div class="setting-row">
+                                    <div>
+                                        <div class="text-sm text-slate-700">{{call .T "admin.settings.nav_max_items"}}</div>
+                                        <div class="text-xs text-slate-400 mt-0.5">{{call .T "admin.settings.nav_max_items.hint"}}</div>
+                                    </div>
+                                    <div class="flex items-center gap-1.5">
+                                        <input type="number" name="nav_max_items" value="{{$nmi}}" min="1" max="100000" class="setting-input">
+                                        <span class="text-xs text-slate-500">{{call .T "admin.settings.unit.items"}}</span>
+                                    </div>
+                                </div>
+                                </div>
+                            </details>
+                            <!-- 编辑器设置 -->
+                            <details class="ai-action-section">
+                                <summary class="ai-action-summary">
+                                    <span class="ai-action-summary-title"><i class="fa-solid fa-chevron-right"></i>{{call .T "admin.settings.editor"}}</span>
+                                </summary>
+                                <div class="ai-action-body">
+                                {{$si := "30"}}{{range .Settings}}{{if eq .Key "save_interval"}}{{$si = .Value}}{{end}}{{end}}
+                                <div class="setting-row">
+                                    <div>
+                                        <div class="text-sm text-slate-700">{{call .T "admin.settings.save_interval"}}</div>
+                                        <div class="text-xs text-slate-400 mt-0.5">{{call .T "admin.settings.save_interval.hint"}}</div>
+                                    </div>
+                                    <div class="flex items-center gap-1.5">
+                                        <input type="number" name="save_interval" value="{{$si}}" min="5" max="300" class="setting-input">
+                                        <span class="text-xs text-slate-500">{{call .T "admin.settings.unit.seconds"}}</span>
+                                    </div>
+                                </div>
+                                </div>
+                            </details>
+                            <!-- 缓存设置 -->
+                            <details class="ai-action-section">
+                                <summary class="ai-action-summary">
+                                    <span class="ai-action-summary-title"><i class="fa-solid fa-chevron-right"></i>{{call .T "admin.settings.cache"}}</span>
+                                </summary>
+                                <div class="ai-action-body">
+                                {{$fcd := "7"}}{{range .Settings}}{{if eq .Key "favicon_cache_days"}}{{$fcd = .Value}}{{end}}{{end}}
+                                <div class="setting-row">
+                                    <div>
+                                        <div class="text-sm text-slate-700">{{call .T "admin.settings.favicon_cache"}}</div>
+                                        <div class="text-xs text-slate-400 mt-0.5">{{call .T "admin.settings.favicon_cache.hint"}}</div>
+                                    </div>
+                                    <div class="flex items-center gap-1.5">
+                                        <input type="number" name="favicon_cache_days" value="{{$fcd}}" min="1" max="365" class="setting-input">
+                                        <span class="text-xs text-slate-500">{{call .T "admin.settings.unit.days"}}</span>
+                                    </div>
+                                </div>
+                                </div>
+                            </details>
+                            <!-- 图片/媒体管理 -->
+                            <details class="ai-action-section">
+                                <summary class="ai-action-summary">
+                                    <span class="ai-action-summary-title"><i class="fa-solid fa-chevron-right"></i>{{call .T "admin.settings.media"}}</span>
+                                </summary>
+                                <div class="ai-action-body">
+                                {{$ums := "10485760"}}{{$uat := ""}}{{$umw := "2048"}}{{$utw := "300"}}{{$psu := "20"}}{{range .Settings}}{{if eq .Key "upload_max_size"}}{{$ums = .Value}}{{else if eq .Key "upload_allowed_types"}}{{$uat = .Value}}{{else if eq .Key "upload_max_width"}}{{$umw = .Value}}{{else if eq .Key "upload_thumb_width"}}{{$utw = .Value}}{{else if eq .Key "page_size_uploads"}}{{$psu = .Value}}{{end}}{{end}}
+                                <div class="setting-row">
+                                    <div>
+                                        <div class="text-sm text-slate-700">{{call .T "admin.settings.upload_max_size"}}</div>
+                                        <div class="text-xs text-slate-400 mt-0.5">{{call .T "admin.settings.upload_max_size.hint"}}</div>
+                                    </div>
+                                    <div class="flex items-center gap-1.5">
+                                        <input type="number" name="upload_max_size" value="{{$ums}}" min="1024" max="1073741824" class="setting-input" style="width:100px">
+                                        <span class="text-xs text-slate-500">bytes</span>
+                                    </div>
+                                </div>
+                                <div class="setting-row">
+                                    <div>
+                                        <div class="text-sm text-slate-700">{{call .T "admin.settings.upload_mime"}}</div>
+                                        <div class="text-xs text-slate-400 mt-0.5">{{call .T "admin.settings.upload_mime.hint"}}</div>
+                                    </div>
+                                    <input type="text" name="upload_allowed_types" value="{{$uat}}" class="setting-input" style="width:220px;max-width:55vw;text-align:left" placeholder="image/jpeg,image/png,image/gif,image/webp">
+                                </div>
+                                <div class="setting-row">
+                                    <div>
+                                        <div class="text-sm text-slate-700">{{call .T "admin.settings.upload_max_width"}}</div>
+                                        <div class="text-xs text-slate-400 mt-0.5">{{call .T "admin.settings.upload_max_width.hint"}}</div>
+                                    </div>
+                                    <div class="flex items-center gap-1.5">
+                                        <input type="number" name="upload_max_width" value="{{$umw}}" min="100" max="16384" class="setting-input" style="width:90px">
+                                        <span class="text-xs text-slate-500">px</span>
+                                    </div>
+                                </div>
+                                <div class="setting-row">
+                                    <div>
+                                        <div class="text-sm text-slate-700">{{call .T "admin.settings.thumb_width"}}</div>
+                                        <div class="text-xs text-slate-400 mt-0.5">{{call .T "admin.settings.thumb_width.hint"}}</div>
+                                    </div>
+                                    <div class="flex items-center gap-1.5">
+                                        <input type="number" name="upload_thumb_width" value="{{$utw}}" min="50" max="2000" class="setting-input" style="width:90px">
+                                        <span class="text-xs text-slate-500">px</span>
+                                    </div>
+                                </div>
+                                <div class="setting-row">
+                                    <div>
+                                        <div class="text-sm text-slate-700">{{call .T "admin.settings.page_size_uploads"}}</div>
+                                    </div>
+                                    <div class="flex items-center gap-1.5">
+                                        <input type="number" name="page_size_uploads" value="{{$psu}}" min="5" max="200" class="setting-input">
+                                        <span class="text-xs text-slate-500">{{call .T "admin.settings.unit.items_per_page"}}</span>
+                                    </div>
+                                </div>
+                                </div>
+                            </details>
+                            <!-- 分享评论设置 -->
+                            <details class="ai-action-section">
+                                <summary class="ai-action-summary">
+                                    <span class="ai-action-summary-title"><i class="fa-solid fa-chevron-right"></i>{{call .T "admin.settings.comments"}}</span>
+                                </summary>
+                                <div class="ai-action-body">
+                                {{$sce := "1"}}{{$scml := "2000"}}{{range .Settings}}{{if eq .Key "share_comments_enabled"}}{{$sce = .Value}}{{else if eq .Key "share_comment_max_length"}}{{$scml = .Value}}{{end}}{{end}}
+                                <div class="setting-row">
+                                    <div>
+                                        <div class="text-sm text-slate-700">{{call .T "admin.settings.comments_enabled"}}</div>
+                                        <div class="text-xs text-slate-400 mt-0.5">{{call .T "admin.settings.comments_enabled.hint"}}</div>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="share_comments_enabled" name="share_comments_enabled" value="1" {{if eq $sce "1"}}checked{{end}}>
+                                        <span class="toggle-track"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-row">
+                                    <div>
+                                        <div class="text-sm text-slate-700">{{call .T "admin.settings.comment_max_length"}}</div>
+                                        <div class="text-xs text-slate-400 mt-0.5">{{call .T "admin.settings.comment_max_length.hint"}}</div>
+                                    </div>
+                                    <div class="flex items-center gap-1.5">
+                                        <input type="number" name="share_comment_max_length" value="{{$scml}}" min="100" max="5000" class="setting-input" style="width:90px">
+                                        <span class="text-xs text-slate-500">{{call .T "admin.settings.unit.chars"}}</span>
+                                    </div>
+                                </div>
+                                </div>
+                            </details>
+                            <!-- WebRTC 信令设置 -->
+                            <details class="ai-action-section">
+                                <summary class="ai-action-summary">
+                                    <span class="ai-action-summary-title"><i class="fa-solid fa-chevron-right"></i>{{call .T "admin.settings.webrtc"}}</span>
+                                </summary>
+                                <div class="ai-action-body">
+                                {{$wse := "1"}}{{$wsu := ""}}{{$wsp := "16"}}{{$wsm := "64"}}{{$wsl := "1"}}{{$wso := ""}}{{$wss := ""}}{{$wtu := ""}}{{$wtn := ""}}{{$wtc := ""}}{{range .Settings}}{{if eq .Key "webrtc_signaling_enabled"}}{{$wse = .Value}}{{else if eq .Key "webrtc_signaling_default_url"}}{{$wsu = .Value}}{{else if eq .Key "webrtc_signaling_max_peers"}}{{$wsp = .Value}}{{else if eq .Key "webrtc_signaling_max_message_kb"}}{{$wsm = .Value}}{{else if eq .Key "webrtc_signaling_allow_local_file"}}{{$wsl = .Value}}{{else if eq .Key "webrtc_signaling_allowed_origins"}}{{$wso = .Value}}{{else if eq .Key "webrtc_signaling_stun_urls"}}{{$wss = .Value}}{{else if eq .Key "webrtc_signaling_turn_url"}}{{$wtu = .Value}}{{else if eq .Key "webrtc_signaling_turn_username"}}{{$wtn = .Value}}{{else if eq .Key "webrtc_signaling_turn_credential"}}{{$wtc = .Value}}{{end}}{{end}}
+                                <div class="setting-row">
+                                    <div>
+                                        <div class="text-sm text-slate-700">{{call .T "admin.settings.webrtc.enabled"}}</div>
+                                        <div class="text-xs text-slate-400 mt-0.5">{{call .T "admin.settings.webrtc.enabled.hint"}}</div>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="webrtc_signaling_enabled" name="webrtc_signaling_enabled" value="1" {{if eq $wse "1"}}checked{{end}}>
+                                        <span class="toggle-track"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-row">
+                                    <div>
+                                        <div class="text-sm text-slate-700">{{call .T "admin.settings.webrtc.default_url"}}</div>
+                                        <div class="text-xs text-slate-400 mt-0.5">{{call .T "admin.settings.webrtc.default_url.hint"}}</div>
+                                    </div>
+                                    <input type="text" name="webrtc_signaling_default_url" value="{{$wsu}}" class="setting-input" style="width:340px;max-width:60vw;text-align:left" placeholder="wss://books.example.com/api/webrtc-signaling/ws">
+                                </div>
+                                <div class="setting-row">
+                                    <div>
+                                        <div class="text-sm text-slate-700">{{call .T "admin.settings.webrtc.max_peers"}}</div>
+                                        <div class="text-xs text-slate-400 mt-0.5">{{call .T "admin.settings.webrtc.max_peers.hint"}}</div>
+                                    </div>
+                                    <div class="flex items-center gap-1.5">
+                                        <input type="number" name="webrtc_signaling_max_peers" value="{{$wsp}}" min="2" max="64" class="setting-input">
+                                        <span class="text-xs text-slate-500">{{call .T "admin.settings.unit.items"}}</span>
+                                    </div>
+                                </div>
+                                <div class="setting-row">
+                                    <div>
+                                        <div class="text-sm text-slate-700">{{call .T "admin.settings.webrtc.max_message"}}</div>
+                                        <div class="text-xs text-slate-400 mt-0.5">{{call .T "admin.settings.webrtc.max_message.hint"}}</div>
+                                    </div>
+                                    <div class="flex items-center gap-1.5">
+                                        <input type="number" name="webrtc_signaling_max_message_kb" value="{{$wsm}}" min="8" max="512" class="setting-input">
+                                        <span class="text-xs text-slate-500">KB</span>
+                                    </div>
+                                </div>
+                                <div class="setting-row">
+                                    <div>
+                                        <div class="text-sm text-slate-700">{{call .T "admin.settings.webrtc.allow_local_file"}}</div>
+                                        <div class="text-xs text-slate-400 mt-0.5">{{call .T "admin.settings.webrtc.allow_local_file.hint"}}</div>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="webrtc_signaling_allow_local_file" name="webrtc_signaling_allow_local_file" value="1" {{if eq $wsl "1"}}checked{{end}}>
+                                        <span class="toggle-track"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-row">
+                                    <div>
+                                        <div class="text-sm text-slate-700">{{call .T "admin.settings.webrtc.allowed_origins"}}</div>
+                                        <div class="text-xs text-slate-400 mt-0.5">{{call .T "admin.settings.webrtc.allowed_origins.hint"}}</div>
+                                    </div>
+                                    <textarea name="webrtc_signaling_allowed_origins" rows="3" class="setting-input" placeholder="https://example.com&#10;https://tools.example.com">{{$wso}}</textarea>
+                                </div>
+                                <div class="setting-row">
+                                    <div>
+                                        <div class="text-sm text-slate-700">{{call .T "admin.settings.webrtc.stun_urls"}}</div>
+                                        <div class="text-xs text-slate-400 mt-0.5">{{call .T "admin.settings.webrtc.stun_urls.hint"}}</div>
+                                    </div>
+                                    <textarea name="webrtc_signaling_stun_urls" rows="3" class="setting-input" placeholder="stun:stun.l.google.com:19302">{{$wss}}</textarea>
+                                </div>
+                                <div class="setting-row">
+                                    <div>
+                                        <div class="text-sm text-slate-700">{{call .T "admin.settings.webrtc.turn_url"}}</div>
+                                        <div class="text-xs text-slate-400 mt-0.5">{{call .T "admin.settings.webrtc.turn_url.hint"}}</div>
+                                    </div>
+                                    <input type="text" name="webrtc_signaling_turn_url" value="{{$wtu}}" class="setting-input" style="width:280px;max-width:60vw;text-align:left" placeholder="turn:turn.example.com:3478">
+                                </div>
+                                <div class="setting-row">
+                                    <div>
+                                        <div class="text-sm text-slate-700">{{call .T "admin.settings.webrtc.turn_username"}}</div>
+                                    </div>
+                                    <input type="text" name="webrtc_signaling_turn_username" value="{{$wtn}}" class="setting-input" style="width:220px;max-width:60vw;text-align:left">
+                                </div>
+                                <div class="setting-row">
+                                    <div>
+                                        <div class="text-sm text-slate-700">{{call .T "admin.settings.webrtc.turn_credential"}}</div>
+                                    </div>
+                                    <input type="password" name="webrtc_signaling_turn_credential" value="{{$wtc}}" class="setting-input" style="width:220px;max-width:60vw;text-align:left">
+                                </div>
+                                </div>
+                            </details>
+                            <!-- 内置 WebDAV 设置 -->
+                            <details class="ai-action-section">
+                                <summary class="ai-action-summary">
+                                    <span class="ai-action-summary-title"><i class="fa-solid fa-chevron-right"></i>内置 WebDAV</span>
+                                </summary>
+                                <div class="ai-action-body">
+                                {{$dfm := "52428800"}}{{$duq := "1073741824"}}{{$dpm := "20971520"}}{{$dct := "8"}}{{$dse := "0"}}{{$dbu := ""}}{{range .Settings}}{{if eq .Key "webdav_file_max_bytes"}}{{$dfm = .Value}}{{else if eq .Key "webdav_user_quota_bytes"}}{{$duq = .Value}}{{else if eq .Key "webdav_public_file_max_bytes"}}{{$dpm = .Value}}{{else if eq .Key "webdav_max_concurrent_transfers"}}{{$dct = .Value}}{{else if eq .Key "webdav_public_asset_separate_url_enabled"}}{{$dse = .Value}}{{else if eq .Key "webdav_public_asset_base_url"}}{{$dbu = .Value}}{{end}}{{end}}
+                                <div class="setting-row">
+                                    <div><div class="text-sm text-slate-700">单文件大小上限</div><div class="text-xs text-slate-400 mt-0.5">WebDAV 协议与网页上传共同使用</div></div>
+                                    <div class="flex items-center gap-2">
+                                        <input type="number" name="webdav_file_max_bytes" value="{{$dfm}}" min="1" max="2048" step="any" required data-webdav-size-mib aria-label="单文件大小上限（MiB）" class="setting-input" style="width:150px">
+                                        <span class="text-sm text-slate-500">MiB</span>
+                                    </div>
+                                </div>
+                                <div class="setting-row">
+                                    <div><div class="text-sm text-slate-700">单用户逻辑容量</div><div class="text-xs text-slate-400 mt-0.5">重复文件仍按用户可见文件大小计入容量</div></div>
+                                    <div class="flex items-center gap-2">
+                                        <input type="number" name="webdav_user_quota_bytes" value="{{$duq}}" min="10" max="1048576" step="any" required data-webdav-size-mib aria-label="单用户逻辑容量（MiB）" class="setting-input" style="width:150px">
+                                        <span class="text-sm text-slate-500">MiB</span>
+                                    </div>
+                                </div>
+                                <div class="setting-row">
+                                    <div><div class="text-sm text-slate-700">公开静态资源上限</div><div class="text-xs text-slate-400 mt-0.5">限制单个可公开文件的原始大小</div></div>
+                                    <div class="flex items-center gap-2">
+                                        <input type="number" name="webdav_public_file_max_bytes" value="{{$dpm}}" min="1" max="1024" step="any" required data-webdav-size-mib aria-label="公开静态资源上限（MiB）" class="setting-input" style="width:150px">
+                                        <span class="text-sm text-slate-500">MiB</span>
+                                    </div>
+                                </div>
+                                <div class="setting-row">
+                                    <div><div class="text-sm text-slate-700">最大并发传输数</div><div class="text-xs text-slate-400 mt-0.5">范围 1-32；默认 8 路，按 1 MiB 分块预计额外占用约 32-48 MiB</div></div>
+                                    <input type="number" name="webdav_max_concurrent_transfers" value="{{$dct}}" min="1" max="32" class="setting-input" style="width:150px">
+                                </div>
+                                <div class="setting-row">
+                                    <div><div class="text-sm text-slate-700">独立静态资源地址</div><div class="text-xs text-slate-400 mt-0.5">默认关闭，公开文件使用当前站点同源地址</div></div>
+                                    <label class="toggle-switch"><input type="checkbox" id="webdav_public_asset_separate_url_enabled" name="webdav_public_asset_separate_url_enabled" value="1" {{if eq $dse "1"}}checked{{end}}><span class="toggle-track"></span></label>
+                                </div>
+                                <div class="setting-row">
+                                    <div><div class="text-sm text-slate-700">独立基础地址</div><div class="text-xs text-slate-400 mt-0.5">开启独立地址时使用，如 https://assets.example.com</div></div>
+                                    <input type="url" id="webdav_public_asset_base_url" name="webdav_public_asset_base_url" value="{{$dbu}}" class="setting-input" style="width:340px;max-width:60vw;text-align:left" placeholder="https://assets.example.com">
+                                </div>
+                                <p class="text-xs text-slate-400 mt-2">切换基础地址不会迁移已写入 HTML 的旧链接。独立域名需要反向代理到本站的 <code>/dav-public/</code> 路径。</p>
+                                </div>
+                            </details>
+                            <!-- 邮件通知设置 -->
+                            <details class="ai-action-section">
+                                <summary class="ai-action-summary">
+                                    <span class="ai-action-summary-title"><i class="fa-solid fa-chevron-right"></i>{{call .T "admin.settings.mail"}}</span>
+                                </summary>
+                                <div class="ai-action-body">
+                                {{$me := "0"}}{{$tre := "0"}}{{$pre := "1"}}{{$prem := "30"}}{{$sh := ""}}{{$sp := "587"}}{{$se := "starttls"}}{{$su := ""}}{{$mfn := "BookStark"}}{{$mfa := ""}}{{$mpu := ""}}{{$mts := "10"}}{{range .Settings}}{{if eq .Key "mail_enabled"}}{{$me = .Value}}{{else if eq .Key "task_email_reminder_enabled"}}{{$tre = .Value}}{{else if eq .Key "password_reset_enabled"}}{{$pre = .Value}}{{else if eq .Key "password_reset_expiry_minutes"}}{{$prem = .Value}}{{else if eq .Key "smtp_host"}}{{$sh = .Value}}{{else if eq .Key "smtp_port"}}{{$sp = .Value}}{{else if eq .Key "smtp_encryption"}}{{$se = .Value}}{{else if eq .Key "smtp_username"}}{{$su = .Value}}{{else if eq .Key "mail_from_name"}}{{$mfn = .Value}}{{else if eq .Key "mail_from_address"}}{{$mfa = .Value}}{{else if eq .Key "mail_public_url"}}{{$mpu = .Value}}{{else if eq .Key "mail_timeout_seconds"}}{{$mts = .Value}}{{end}}{{end}}
+                                <div class="setting-row">
+                                    <div><div class="text-sm text-slate-700">{{call .T "admin.settings.mail_enabled"}}</div><div class="text-xs text-slate-400 mt-0.5">{{call .T "admin.settings.mail_enabled.hint"}}</div></div>
+                                    <label class="toggle-switch"><input type="checkbox" id="mail_enabled" name="mail_enabled" value="1" {{if eq $me "1"}}checked{{end}}><span class="toggle-track"></span></label>
+                                </div>
+                                <div class="setting-row">
+                                    <div><div class="text-sm text-slate-700">{{call .T "admin.settings.task_email_reminder_enabled"}}</div><div class="text-xs text-slate-400 mt-0.5">{{call .T "admin.settings.task_email_reminder_enabled.hint"}}</div></div>
+                                    <label class="toggle-switch"><input type="checkbox" id="task_email_reminder_enabled" name="task_email_reminder_enabled" value="1" {{if eq $tre "1"}}checked{{end}}><span class="toggle-track"></span></label>
+                                </div>
+                                <div class="setting-row">
+                                    <div><div class="text-sm text-slate-700">{{call .T "admin.settings.password_reset_enabled"}}</div><div class="text-xs text-slate-400 mt-0.5">{{call .T "admin.settings.password_reset_enabled.hint"}}</div></div>
+                                    <label class="toggle-switch"><input type="checkbox" id="password_reset_enabled" name="password_reset_enabled" value="1" {{if eq $pre "1"}}checked{{end}}><span class="toggle-track"></span></label>
+                                </div>
+                                <div class="setting-row">
+                                    <div class="text-sm text-slate-700">{{call .T "admin.settings.password_reset_expiry"}}</div>
+                                    <div class="flex items-center gap-2"><input type="number" name="password_reset_expiry_minutes" value="{{$prem}}" min="5" max="120" class="setting-input" style="width:88px"><span class="text-xs text-slate-500">{{call .T "admin.settings.unit.minutes"}}</span></div>
+                                </div>
+                                <div class="setting-row"><div class="text-sm text-slate-700">{{call .T "admin.settings.smtp_host"}}</div><input type="text" name="smtp_host" value="{{$sh}}" class="setting-input" style="width:280px;max-width:60vw;text-align:left" placeholder="smtp.example.com"></div>
+                                <div class="setting-row">
+                                    <div class="text-sm text-slate-700">{{call .T "admin.settings.smtp_connection"}}</div>
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <input type="number" name="smtp_port" value="{{$sp}}" min="1" max="65535" class="setting-input" style="width:88px">
+                                        <select name="smtp_encryption" class="setting-input" style="width:130px;text-align:left">
+                                            <option value="starttls" {{if eq $se "starttls"}}selected{{end}}>STARTTLS</option>
+                                            <option value="tls" {{if eq $se "tls"}}selected{{end}}>TLS</option>
+                                            <option value="none" {{if eq $se "none"}}selected{{end}}>{{call .T "admin.settings.smtp_none"}}</option>
+                                        </select>
+                                        <input type="number" name="mail_timeout_seconds" value="{{$mts}}" min="3" max="60" class="setting-input" style="width:76px" title="{{call .T "admin.settings.mail_timeout"}}">
+                                        <span class="text-xs text-slate-500">{{call .T "admin.settings.unit.seconds"}}</span>
+                                    </div>
+                                </div>
+                                <div class="setting-row"><div class="text-sm text-slate-700">{{call .T "admin.settings.smtp_username"}}</div><input type="text" name="smtp_username" value="{{$su}}" autocomplete="username" class="setting-input" style="width:280px;max-width:60vw;text-align:left"></div>
+                                <div class="setting-row"><div><div class="text-sm text-slate-700">{{call .T "admin.settings.smtp_password"}}</div><div class="text-xs text-slate-400 mt-0.5">{{if .SMTPPasswordConfigured}}{{call .T "admin.settings.smtp_password.saved"}}{{else}}{{call .T "admin.settings.smtp_password.empty"}}{{end}}</div></div><input type="password" name="smtp_password" value="" autocomplete="new-password" class="setting-input" style="width:280px;max-width:60vw;text-align:left" placeholder="{{call .T "admin.settings.smtp_password.placeholder"}}"></div>
+                                <div class="setting-row"><div class="text-sm text-slate-700">{{call .T "admin.settings.mail_from_name"}}</div><input type="text" name="mail_from_name" value="{{$mfn}}" class="setting-input" style="width:220px;max-width:60vw;text-align:left"></div>
+                                <div class="setting-row"><div class="text-sm text-slate-700">{{call .T "admin.settings.mail_from_address"}}</div><input type="email" name="mail_from_address" value="{{$mfa}}" class="setting-input" style="width:280px;max-width:60vw;text-align:left" placeholder="notify@example.com"></div>
+                                <div class="setting-row"><div><div class="text-sm text-slate-700">{{call .T "admin.settings.mail_public_url"}}</div><div class="text-xs text-slate-400 mt-0.5">{{call .T "admin.settings.mail_public_url.hint"}}</div></div><input type="url" name="mail_public_url" value="{{$mpu}}" class="setting-input" style="width:340px;max-width:60vw;text-align:left" placeholder="https://books.example.com"></div>
+                                <div class="setting-row">
+                                    <div><div class="text-sm text-slate-700">{{call .T "admin.settings.mail_test"}}</div><div id="mail-status-text" class="text-xs text-slate-400 mt-0.5">{{call .T "admin.settings.mail_status.loading"}}</div></div>
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <input type="email" id="mail-test-email" class="setting-input" style="width:230px;max-width:55vw;text-align:left" placeholder="name@example.com">
+                                        <button type="button" class="save-btn" onclick="testAdminMail(this)"><i class="fa-solid fa-paper-plane" style="margin-right:4px"></i>{{call .T "admin.settings.mail_test.send"}}</button>
+                                    </div>
+                                </div>
+                                </div>
+                            </details>
+                            <!-- 邀请码设置 -->
+                            <details class="ai-action-section">
+                                <summary class="ai-action-summary">
+                                    <span class="ai-action-summary-title"><i class="fa-solid fa-chevron-right"></i>{{call .T "admin.settings.invite"}}</span>
+                                </summary>
+                                <div class="ai-action-body">
+                                {{$ic := ""}}{{$ice := "0"}}{{range .Settings}}{{if eq .Key "invite_code"}}{{$ic = .Value}}{{end}}{{if eq .Key "invite_code_enabled"}}{{$ice = .Value}}{{end}}{{end}}
+                                <div class="setting-row">
+                                    <div class="text-sm text-slate-700">{{call .T "admin.settings.invite_enabled"}}</div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="invite_code_enabled" name="invite_code_enabled" value="1" {{if eq $ice "1"}}checked{{end}}>
+                                        <span class="toggle-track"></span>
+                                    </label>
+                                </div>
+                                <div id="invite-code-row" class="setting-row" {{if ne $ice "1"}}style="display:none"{{end}}>
+                                    <div class="text-sm text-slate-700">{{call .T "admin.settings.invite_code"}}</div>
+                                    <div class="flex items-center gap-1.5">
+                                        <input type="text" id="invite_code" name="invite_code" value="{{$ic}}" class="setting-input" style="width:160px;text-align:left" placeholder="{{call .T "admin.settings.invite_code.placeholder"}}">
+                                    </div>
+                                </div>
+                                </div>
+                            </details>
+                        </div>
+                        <div class="flex justify-end pt-2">
+                            <button type="submit" class="save-btn"><i class="fa-solid fa-floppy-disk" style="margin-right:4px"></i>{{call .T "admin.settings.save"}}</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- AI 助手 -->
+                <div id="panel-ai" role="tabpanel" aria-labelledby="tab-ai" class="bg-white rounded-b-lg shadow-sm p-4 sm:p-5 hidden">
+                    {{$aie := "0"}}{{$aipv := "openai"}}{{$aibu := "https://api.deepseek.com/v1"}}{{$aiak := ""}}{{$aim := "deepseek-chat"}}{{$ait := "0.7"}}{{$aimt := "2048"}}{{$aispm := ""}}{{$aisph := ""}}{{$aispd := ""}}{{$aiasel := ""}}{{$aiahtml := ""}}{{$aiabook := ""}}{{$aiaart := ""}}{{$aianote := ""}}{{$aiatask := ""}}{{$aiaempty := ""}}{{$tpt := "0"}}{{$tct := "0"}}{{$treq := "0"}}{{range .Settings}}{{if eq .Key "ai_enabled"}}{{$aie = .Value}}{{else if eq .Key "ai_provider"}}{{$aipv = .Value}}{{else if eq .Key "ai_base_url"}}{{$aibu = .Value}}{{else if eq .Key "ai_api_key"}}{{$aiak = .Value}}{{else if eq .Key "ai_model"}}{{$aim = .Value}}{{else if eq .Key "ai_temperature"}}{{$ait = .Value}}{{else if eq .Key "ai_max_tokens"}}{{$aimt = .Value}}{{else if eq .Key "ai_system_prompt_md"}}{{$aispm = .Value}}{{else if eq .Key "ai_system_prompt_html"}}{{$aisph = .Value}}{{else if eq .Key "ai_system_prompt_drawing"}}{{$aispd = .Value}}{{else if eq .Key "ai_actions_selection"}}{{$aiasel = .Value}}{{else if eq .Key "ai_actions_html"}}{{$aiahtml = .Value}}{{else if eq .Key "ai_actions_book"}}{{$aiabook = .Value}}{{else if eq .Key "ai_actions_article"}}{{$aiaart = .Value}}{{else if eq .Key "ai_actions_note"}}{{$aianote = .Value}}{{else if eq .Key "ai_actions_task"}}{{$aiatask = .Value}}{{else if eq .Key "ai_actions_empty"}}{{$aiaempty = .Value}}{{else if eq .Key "ai_total_prompt_tokens"}}{{$tpt = .Value}}{{else if eq .Key "ai_total_completion_tokens"}}{{$tct = .Value}}{{else if eq .Key "ai_total_requests"}}{{$treq = .Value}}{{end}}{{end}}
+                    <form id="aiSettingsForm" onsubmit="saveAISettings(event)">
+                        <!-- AI 配置子 Tab -->
+                        <div role="tablist" class="ai-subtabs" aria-label="{{call .T "admin.settings.ai.tabs.aria"}}">
+                            <button type="button" role="tab" aria-selected="true" id="aitab-base" data-aitab="base" onclick="switchAITab('base')" class="ai-subtab active"><i class="fa-solid fa-plug" style="font-size:11px;margin-right:5px"></i>{{call .T "admin.settings.ai.tab.base"}}</button>
+                            <button type="button" role="tab" aria-selected="false" id="aitab-prompts" data-aitab="prompts" onclick="switchAITab('prompts')" class="ai-subtab"><i class="fa-solid fa-message" style="font-size:11px;margin-right:5px"></i>{{call .T "admin.settings.ai.tab.prompts"}}</button>
+                            <button type="button" role="tab" aria-selected="false" id="aitab-actions" data-aitab="actions" onclick="switchAITab('actions')" class="ai-subtab"><i class="fa-solid fa-bolt" style="font-size:11px;margin-right:5px"></i>{{call .T "admin.settings.ai.tab.actions"}}</button>
+                        </div>
+                        <!-- 子 Panel: 基础（用量 + 模型连接） -->
+                        <div id="ai-subpanel-base" role="tabpanel" aria-labelledby="aitab-base">
+                        <!-- Token 统计 -->
+                        <div class="mb-6">
+                            <div class="flex items-center gap-2 mb-3">
+                                <div class="w-7 h-7 rounded-lg bg-purple-50 flex items-center justify-center"><i class="fa-solid fa-chart-column text-purple-500" style="font-size:12px"></i></div>
+                                <span class="text-sm font-semibold text-slate-700">{{call .T "admin.settings.ai.usage"}}</span>
+                            </div>
+                            <div class="pl-9 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                <div class="ai-stat-card">
+                                    <div class="ai-stat-label">{{call .T "admin.settings.ai.usage.requests"}}</div>
+                                    <div class="ai-stat-value">{{$treq}}</div>
+                                </div>
+                                <div class="ai-stat-card">
+                                    <div class="ai-stat-label">{{call .T "admin.settings.ai.usage.prompt_tokens"}}</div>
+                                    <div class="ai-stat-value">{{$tpt}}</div>
+                                </div>
+                                <div class="ai-stat-card">
+                                    <div class="ai-stat-label">{{call .T "admin.settings.ai.usage.completion_tokens"}}</div>
+                                    <div class="ai-stat-value">{{$tct}}</div>
+                                </div>
+                            </div>
+                            <div class="pl-9 mt-2">
+                                <button type="button" class="text-xs text-slate-400 hover:text-slate-600" onclick="resetAIUsage()"><i class="fa-solid fa-rotate-left" style="font-size:10px;margin-right:4px"></i>{{call .T "admin.settings.ai.usage.reset"}}</button>
+                            </div>
+                        </div>
+                        <!-- 模型连接 -->
+                        <div class="mb-4">
+                            <div class="flex items-center gap-2 mb-3">
+                                <div class="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center"><i class="fa-solid fa-plug text-blue-500" style="font-size:12px"></i></div>
+                                <span class="text-sm font-semibold text-slate-700">{{call .T "admin.settings.ai.connection"}}</span>
+                            </div>
+                            <div class="pl-9">
+                                <div class="setting-row">
+                                    <div class="text-sm text-slate-700">{{call .T "admin.settings.ai.enabled"}}</div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="ai_enabled" name="ai_enabled" value="1" {{if eq $aie "1"}}checked{{end}}>
+                                        <span class="toggle-track"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-row">
+                                    <div>
+                                        <div class="text-sm text-slate-700">{{call .T "admin.settings.ai.provider"}}</div>
+                                        <div class="text-xs text-slate-400 mt-0.5">{{call .T "admin.settings.ai.provider.hint"}}</div>
+                                    </div>
+                                    <select name="ai_provider" class="setting-input" style="width:160px">
+                                        <option value="openai" {{if ne $aipv "anthropic"}}selected{{end}}>OpenAI / DeepSeek / Qwen</option>
+                                        <option value="anthropic" {{if eq $aipv "anthropic"}}selected{{end}}>Anthropic Claude</option>
+                                    </select>
+                                </div>
+                                <div class="setting-row">
+                                    <div>
+                                        <div class="text-sm text-slate-700">{{call .T "admin.settings.ai.base_url"}}</div>
+                                        <div class="text-xs text-slate-400 mt-0.5">{{call .T "admin.settings.ai.base_url.hint"}}</div>
+                                    </div>
+                                    <input type="text" name="ai_base_url" value="{{$aibu}}" class="setting-input" style="width:280px;max-width:60vw;text-align:left" placeholder="https://api.deepseek.com/v1 / https://api.anthropic.com">
+                                </div>
+                                <div class="setting-row">
+                                    <div>
+                                        <div class="text-sm text-slate-700">{{call .T "admin.settings.ai.api_key"}}</div>
+                                        <div class="text-xs text-slate-400 mt-0.5">{{call .T "admin.settings.ai.api_key.hint"}}</div>
+                                    </div>
+                                    <input type="password" name="ai_api_key" value="{{$aiak}}" class="setting-input" style="width:280px;max-width:60vw;text-align:left" placeholder="sk-...">
+                                </div>
+                                <div class="setting-row">
+                                    <div>
+                                        <div class="text-sm text-slate-700">{{call .T "admin.settings.ai.model"}}</div>
+                                        <div class="text-xs text-slate-400 mt-0.5">{{call .T "admin.settings.ai.model.hint"}}</div>
+                                    </div>
+                                    <input type="text" name="ai_model" value="{{$aim}}" class="setting-input" style="width:220px;max-width:60vw;text-align:left" placeholder="deepseek-chat / gpt-4o-mini">
+                                </div>
+                                <div class="setting-row">
+                                    <div>
+                                        <div class="text-sm text-slate-700">{{call .T "admin.settings.ai.temperature"}}</div>
+                                    </div>
+                                    <input type="number" name="ai_temperature" value="{{$ait}}" min="0" max="2" step="0.1" class="setting-input" style="width:90px">
+                                </div>
+                                <div class="setting-row">
+                                    <div>
+                                        <div class="text-sm text-slate-700">{{call .T "admin.settings.ai.max_tokens"}}</div>
+                                    </div>
+                                    <input type="number" name="ai_max_tokens" value="{{$aimt}}" min="64" max="32768" class="setting-input" style="width:100px">
+                                </div>
+                                <!-- 测试连接 -->
+                                <div class="setting-row ai-test-row">
+                                    <div>
+                                        <div class="text-sm text-slate-700">{{call .T "admin.settings.ai.test"}}</div>
+                                        <div class="text-xs text-slate-400 mt-0.5">{{call .T "admin.settings.ai.test.hint"}}</div>
+                                    </div>
+                                    <button type="button" id="aiTestBtn" class="ai-test-btn" onclick="testAIConnection()">
+                                        <i class="fa-solid fa-plug-circle-check" style="margin-right:5px;font-size:11px"></i>{{call .T "admin.settings.ai.test.btn"}}
+                                    </button>
+                                </div>
+                                <div id="aiTestResult" class="ai-test-result" style="display:none"></div>
+                            </div>
+                        </div>
+                        </div><!-- /ai-subpanel-base -->
+                        <!-- 子 Panel: 系统提示词 -->
+                        <div id="ai-subpanel-prompts" role="tabpanel" aria-labelledby="aitab-prompts" class="hidden">
+                        <!-- 系统提示词 -->
+                        <div class="mb-4">
+                            <div class="flex items-center gap-2 mb-3">
+                                <div class="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center"><i class="fa-solid fa-message text-emerald-500" style="font-size:12px"></i></div>
+                                <span class="text-sm font-semibold text-slate-700">{{call .T "admin.settings.ai.prompts"}}</span>
+                            </div>
+                            <div class="pl-9">
+                                <div class="ai-action-sections">
+                                    <details class="ai-action-section" open>
+                                        <summary class="ai-action-summary">
+                                            <span class="ai-action-summary-title"><i class="fa-solid fa-chevron-right"></i>{{call .T "admin.settings.ai.prompt_md"}}</span>
+                                        </summary>
+                                        <div class="ai-action-body">
+                                            <label class="sr-only" for="ai_system_prompt_md">{{call .T "admin.settings.ai.prompt_md"}}</label>
+                                            <div class="ai-action-tools">
+                                        <button type="button" class="ai-reset-btn" onclick="resetAIDefault('ai_system_prompt_md')"><i class="fa-solid fa-rotate-left"></i>{{call .T "admin.settings.ai.reset_default"}}</button>
+                                            </div>
+                                    <div class="text-xs text-slate-400 mb-1">{{call .T "admin.settings.ai.prompt_md.hint"}}</div>
+                                    <textarea id="ai_system_prompt_md" name="ai_system_prompt_md" rows="4" class="ai-prompt-textarea">{{$aispm}}</textarea>
+                                        </div>
+                                    </details>
+                                    <details class="ai-action-section">
+                                        <summary class="ai-action-summary">
+                                            <span class="ai-action-summary-title"><i class="fa-solid fa-chevron-right"></i>{{call .T "admin.settings.ai.prompt_html"}}</span>
+                                        </summary>
+                                        <div class="ai-action-body">
+                                            <label class="sr-only" for="ai_system_prompt_html">{{call .T "admin.settings.ai.prompt_html"}}</label>
+                                            <div class="ai-action-tools">
+                                        <button type="button" class="ai-reset-btn" onclick="resetAIDefault('ai_system_prompt_html')"><i class="fa-solid fa-rotate-left"></i>{{call .T "admin.settings.ai.reset_default"}}</button>
+                                            </div>
+                                    <div class="text-xs text-slate-400 mb-1">{{call .T "admin.settings.ai.prompt_html.hint"}}</div>
+                                    <textarea id="ai_system_prompt_html" name="ai_system_prompt_html" rows="4" class="ai-prompt-textarea">{{$aisph}}</textarea>
+                                        </div>
+                                    </details>
+                                    <details class="ai-action-section">
+                                        <summary class="ai-action-summary">
+                                            <span class="ai-action-summary-title"><i class="fa-solid fa-chevron-right"></i>{{call .T "admin.settings.ai.prompt_drawing"}}</span>
+                                        </summary>
+                                        <div class="ai-action-body">
+                                            <label class="sr-only" for="ai_system_prompt_drawing">{{call .T "admin.settings.ai.prompt_drawing"}}</label>
+                                            <div class="ai-action-tools">
+                                        <button type="button" class="ai-reset-btn" onclick="resetAIDefault('ai_system_prompt_drawing')"><i class="fa-solid fa-rotate-left"></i>{{call .T "admin.settings.ai.reset_default"}}</button>
+                                            </div>
+                                    <div class="text-xs text-slate-400 mb-1">{{call .T "admin.settings.ai.prompt_drawing.hint"}}</div>
+                                    <textarea id="ai_system_prompt_drawing" name="ai_system_prompt_drawing" rows="4" class="ai-prompt-textarea">{{$aispd}}</textarea>
+                                        </div>
+                                    </details>
+                                </div>
+                            </div>
+                        </div>
+                        </div><!-- /ai-subpanel-prompts -->
+                        <!-- 子 Panel: 快捷动作 -->
+                        <div id="ai-subpanel-actions" role="tabpanel" aria-labelledby="aitab-actions" class="hidden">
+                        <!-- 快捷动作（编辑器 ✨ / bubble 菜单） -->
+                        <div class="mb-4">
+                            <div class="flex items-center gap-2 mb-3">
+                                <div class="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center"><i class="fa-solid fa-bolt text-amber-500" style="font-size:12px"></i></div>
+                                <span class="text-sm font-semibold text-slate-700">{{call .T "admin.settings.ai.actions"}}</span>
+                            </div>
+                            <div class="pl-9">
+                                <div class="text-xs text-slate-500 mb-3">{{call .T "admin.settings.ai.actions.hint"}}</div>
+                                <div class="ai-action-sections">
+                                    <details class="ai-action-section" open>
+                                        <summary class="ai-action-summary">
+                                            <span class="ai-action-summary-title"><i class="fa-solid fa-chevron-right"></i>{{call .T "admin.settings.ai.actions.selection"}}</span>
+                                        </summary>
+                                        <div class="ai-action-body">
+                                        <label class="sr-only" for="ai_actions_selection">{{call .T "admin.settings.ai.actions.selection"}}</label>
+                                        <div class="ai-action-tools">
+                                            <button type="button" class="ai-reset-btn" onclick="resetAIDefault('ai_actions_selection')"><i class="fa-solid fa-rotate-left"></i>{{call .T "admin.settings.ai.reset_default"}}</button>
+                                        </div>
+                                        <div class="text-xs text-slate-400 mb-1">{{call .T "admin.settings.ai.actions.selection.hint"}}</div>
+                                        <textarea id="ai_actions_selection" name="ai_actions_selection" rows="6" class="ai-prompt-textarea" placeholder="{{call .T "admin.settings.ai.actions.placeholder"}}">{{$aiasel}}</textarea>
+                                        </div>
+                                    </details>
+                                    <details class="ai-action-section">
+                                        <summary class="ai-action-summary">
+                                            <span class="ai-action-summary-title"><i class="fa-solid fa-chevron-right"></i>{{call .T "admin.settings.ai.actions.html"}}</span>
+                                        </summary>
+                                        <div class="ai-action-body">
+                                        <label class="sr-only" for="ai_actions_html">{{call .T "admin.settings.ai.actions.html"}}</label>
+                                        <div class="ai-action-tools">
+                                            <button type="button" class="ai-reset-btn" onclick="resetAIDefault('ai_actions_html')"><i class="fa-solid fa-rotate-left"></i>{{call .T "admin.settings.ai.reset_default"}}</button>
+                                        </div>
+                                        <div class="text-xs text-slate-400 mb-1">{{call .T "admin.settings.ai.actions.html.hint"}}</div>
+                                        <textarea id="ai_actions_html" name="ai_actions_html" rows="6" class="ai-prompt-textarea" placeholder="{{call .T "admin.settings.ai.actions.placeholder"}}">{{$aiahtml}}</textarea>
+                                        </div>
+                                    </details>
+                                    <details class="ai-action-section">
+                                        <summary class="ai-action-summary">
+                                            <span class="ai-action-summary-title"><i class="fa-solid fa-chevron-right"></i>{{call .T "admin.settings.ai.actions.book"}}</span>
+                                        </summary>
+                                        <div class="ai-action-body">
+                                        <label class="sr-only" for="ai_actions_book">{{call .T "admin.settings.ai.actions.book"}}</label>
+                                        <div class="ai-action-tools">
+                                            <button type="button" class="ai-reset-btn" onclick="resetAIDefault('ai_actions_book')"><i class="fa-solid fa-rotate-left"></i>{{call .T "admin.settings.ai.reset_default"}}</button>
+                                        </div>
+                                        <div class="text-xs text-slate-400 mb-1">{{call .T "admin.settings.ai.actions.book.hint"}}</div>
+                                        <textarea id="ai_actions_book" name="ai_actions_book" rows="6" class="ai-prompt-textarea" placeholder="{{call .T "admin.settings.ai.actions.placeholder"}}">{{$aiabook}}</textarea>
+                                        </div>
+                                    </details>
+                                    <details class="ai-action-section">
+                                        <summary class="ai-action-summary">
+                                            <span class="ai-action-summary-title"><i class="fa-solid fa-chevron-right"></i>{{call .T "admin.settings.ai.actions.article"}}</span>
+                                        </summary>
+                                        <div class="ai-action-body">
+                                        <label class="sr-only" for="ai_actions_article">{{call .T "admin.settings.ai.actions.article"}}</label>
+                                        <div class="ai-action-tools">
+                                            <button type="button" class="ai-reset-btn" onclick="resetAIDefault('ai_actions_article')"><i class="fa-solid fa-rotate-left"></i>{{call .T "admin.settings.ai.reset_default"}}</button>
+                                        </div>
+                                        <div class="text-xs text-slate-400 mb-1">{{call .T "admin.settings.ai.actions.article.hint"}}</div>
+                                        <textarea id="ai_actions_article" name="ai_actions_article" rows="6" class="ai-prompt-textarea" placeholder="{{call .T "admin.settings.ai.actions.placeholder"}}">{{$aiaart}}</textarea>
+                                        </div>
+                                    </details>
+                                    <details class="ai-action-section">
+                                        <summary class="ai-action-summary">
+                                            <span class="ai-action-summary-title"><i class="fa-solid fa-chevron-right"></i>{{call .T "admin.settings.ai.actions.note"}}</span>
+                                        </summary>
+                                        <div class="ai-action-body">
+                                        <label class="sr-only" for="ai_actions_note">{{call .T "admin.settings.ai.actions.note"}}</label>
+                                        <div class="ai-action-tools">
+                                            <button type="button" class="ai-reset-btn" onclick="resetAIDefault('ai_actions_note')"><i class="fa-solid fa-rotate-left"></i>{{call .T "admin.settings.ai.reset_default"}}</button>
+                                        </div>
+                                        <div class="text-xs text-slate-400 mb-2">{{call .T "admin.settings.ai.actions.note.hint"}}</div>
+                                        <textarea id="ai_actions_note" name="ai_actions_note" hidden>{{$aianote}}</textarea>
+                                        <div id="aiNoteActionsList" class="ai-note-actions-list"></div>
+                                        <button type="button" class="ai-test-btn mt-2" onclick="addAINoteAction()"><i class="fa-solid fa-plus" style="font-size:11px;margin-right:5px"></i>{{call .T "admin.settings.ai.actions.note.add"}}</button>
+                                        </div>
+                                    </details>
+                                    <details class="ai-action-section">
+                                        <summary class="ai-action-summary">
+                                            <span class="ai-action-summary-title"><i class="fa-solid fa-chevron-right"></i>{{call .T "admin.settings.ai.actions.task"}}</span>
+                                        </summary>
+                                        <div class="ai-action-body">
+                                        <label class="sr-only" for="ai_actions_task">{{call .T "admin.settings.ai.actions.task"}}</label>
+                                        <div class="ai-action-tools">
+                                            <button type="button" class="ai-reset-btn" onclick="resetAIDefault('ai_actions_task')"><i class="fa-solid fa-rotate-left"></i>{{call .T "admin.settings.ai.reset_default"}}</button>
+                                        </div>
+                                        <div class="text-xs text-slate-400 mb-1">{{call .T "admin.settings.ai.actions.task.hint"}}</div>
+                                        <textarea id="ai_actions_task" name="ai_actions_task" rows="6" class="ai-prompt-textarea" placeholder="{{call .T "admin.settings.ai.actions.placeholder"}}">{{$aiatask}}</textarea>
+                                        </div>
+                                    </details>
+                                    <details class="ai-action-section">
+                                        <summary class="ai-action-summary">
+                                            <span class="ai-action-summary-title"><i class="fa-solid fa-chevron-right"></i>{{call .T "admin.settings.ai.actions.empty"}}</span>
+                                        </summary>
+                                        <div class="ai-action-body">
+                                        <label class="sr-only" for="ai_actions_empty">{{call .T "admin.settings.ai.actions.empty"}}</label>
+                                        <div class="ai-action-tools">
+                                            <button type="button" class="ai-reset-btn" onclick="resetAIDefault('ai_actions_empty')"><i class="fa-solid fa-rotate-left"></i>{{call .T "admin.settings.ai.reset_default"}}</button>
+                                        </div>
+                                        <div class="text-xs text-slate-400 mb-1">{{call .T "admin.settings.ai.actions.empty.hint"}}</div>
+                                        <textarea id="ai_actions_empty" name="ai_actions_empty" rows="4" class="ai-prompt-textarea" placeholder="{{call .T "admin.settings.ai.actions.placeholder"}}">{{$aiaempty}}</textarea>
+                                        </div>
+                                    </details>
+                                </div>
+                            </div>
+                        </div>
+                        </div><!-- /ai-subpanel-actions -->
+                        <div class="mt-4 flex justify-end">
+                            <button type="submit" class="save-btn"><i class="fa-solid fa-floppy-disk" style="margin-right:4px"></i>{{call .T "admin.settings.save"}}</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- 数据管理 -->
+                <div id="panel-data" role="tabpanel" aria-labelledby="tab-data" class="bg-white rounded-b-lg shadow-sm p-4 sm:p-5 hidden">
+                    <div class="ai-action-sections">
+                        <details class="ai-action-section" open>
+                            <summary class="ai-action-summary">
+                                <span class="ai-action-summary-title"><i class="fa-solid fa-chevron-right"></i>{{call .T "admin.data.export.title"}}</span>
+                            </summary>
+                            <div class="ai-action-body">
+                                <div class="mb-3">
+                                    <label for="export-member" class="block text-xs text-slate-600 mb-1">{{call .T "admin.data.export.range"}}</label>
+                                    <select id="export-member" class="border border-slate-300 rounded-md text-sm px-3 py-1.5 focus:outline-none" style="border-color:var(--color-border)">
+                                        <option value="0">{{call .T "admin.data.export.all"}}</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3 flex items-start gap-2">
+                                    <input type="checkbox" id="export-include-uploads" checked class="mt-0.5 cursor-pointer">
+                                    <label for="export-include-uploads" class="text-xs text-slate-600 cursor-pointer leading-relaxed">
+                                        <span class="text-slate-700 font-medium">{{call .T "admin.data.export.include_uploads"}}</span>
+                                        <span class="block text-slate-500">{{call .T "admin.data.export.include_uploads.hint"}}</span>
+                                    </label>
+                                </div>
+                                <button id="btn-export" onclick="exportData()" class="save-btn"><i class="fa-solid fa-download" style="margin-right:4px"></i>{{call .T "admin.data.export.btn"}}</button>
+                                <a href="/api/admin/webdav/backup" class="save-btn" style="display:inline-flex;align-items:center;margin-left:8px"><i class="fa-solid fa-cloud-arrow-down" style="margin-right:4px"></i>备份 WebDAV 文件数据库</a>
+                            </div>
+                        </details>
+
+                        <details class="ai-action-section">
+                            <summary class="ai-action-summary">
+                                <span class="ai-action-summary-title"><i class="fa-solid fa-chevron-right"></i>{{call .T "admin.data.import.title"}}</span>
+                            </summary>
+                            <div class="ai-action-body">
+                                <p class="text-xs text-slate-500 mb-3">{{call .T "admin.data.import.hint"}}</p>
+                                <div class="mb-3">
+                                    <label for="import-target-user" class="block text-xs text-slate-600 mb-1">{{call .T "admin.data.import.target"}}</label>
+                                    <select id="import-target-user" class="border border-slate-300 rounded-md text-sm px-3 py-1.5 focus:outline-none" style="border-color:var(--color-border);focus:border-color:var(--color-focus)">
+                                        <option value="">{{call .T "admin.data.import.loading"}}</option>
+                                    </select>
+                                </div>
+                                <div id="import-drop-zone" class="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center cursor-pointer hover:border-blue-400 transition-colors" style="transition:border-color 0.15s ease" onclick="document.getElementById('import-file-input').click()" ondragover="event.preventDefault();this.classList.add('border-blue-400')" ondragleave="this.classList.remove('border-blue-400')" ondrop="event.preventDefault();this.classList.remove('border-blue-400');handleImportFile(event.dataTransfer.files[0])">
+                                    <i class="fa-solid fa-cloud-arrow-up text-slate-400" style="font-size:24px"></i>
+                                    <p class="text-sm text-slate-500 mt-2">{{call .T "admin.data.import.drop_hint"}}</p>
+                                    <p id="import-file-name" class="text-xs text-blue-600 mt-1 hidden"></p>
+                                </div>
+                                <input type="file" id="import-file-input" accept=".zip" class="hidden" onchange="handleImportFile(this.files[0])">
+                            </div>
+                        </details>
+
+                        <details class="ai-action-section">
+                            <summary class="ai-action-summary">
+                                <span class="ai-action-summary-title"><i class="fa-solid fa-chevron-right"></i>{{call .T "admin.data.bm_import.title"}}</span>
+                            </summary>
+                            <div class="ai-action-body">
+                                <p class="text-xs text-slate-500 mb-3">{{call .T "admin.data.bm_import.hint"}}</p>
+                                <div class="mb-3">
+                                    <label for="bm-import-target-user" class="block text-xs text-slate-600 mb-1">{{call .T "admin.data.bm_import.target"}}</label>
+                                    <select id="bm-import-target-user" class="border border-slate-300 rounded-md text-sm px-3 py-1.5 focus:outline-none" style="border-color:var(--color-border);focus:border-color:var(--color-focus)">
+                                        <option value="">{{call .T "admin.data.import.loading"}}</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="bm-import-custom-date" class="block text-xs text-slate-600 mb-1">{{call .T "admin.data.bm_import.date"}} <span class="text-slate-400">{{call .T "admin.data.bm_import.date_hint"}}</span></label>
+                                    <input type="date" id="bm-import-custom-date" class="border border-slate-300 rounded-md text-sm px-3 py-1.5 focus:outline-none" style="border-color:var(--color-border)" placeholder="{{call .T "admin.data.bm_import.date_placeholder"}}">
+                                </div>
+                                <div id="bm-import-drop-zone" class="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center cursor-pointer hover:border-orange-400 transition-colors" style="transition:border-color 0.15s ease" onclick="document.getElementById('bm-import-file-input').click()" ondragover="event.preventDefault();this.classList.add('border-orange-400')" ondragleave="this.classList.remove('border-orange-400')" ondrop="event.preventDefault();this.classList.remove('border-orange-400');handleBookmarkImportFile(event.dataTransfer.files[0])">
+                                    <i class="fa-solid fa-file-code text-slate-400" style="font-size:24px"></i>
+                                    <p class="text-sm text-slate-500 mt-2">{{call .T "admin.data.bm_import.drop_hint"}}</p>
+                                    <p id="bm-import-file-name" class="text-xs text-orange-600 mt-1 hidden"></p>
+                                </div>
+                                <input type="file" id="bm-import-file-input" accept=".html,.htm" class="hidden" onchange="handleBookmarkImportFile(this.files[0])">
+                            </div>
+                        </details>
+
+                        <details class="ai-action-section">
+                            <summary class="ai-action-summary">
+                                <span class="ai-action-summary-title"><i class="fa-solid fa-chevron-right"></i>{{call .T "admin.data.cleanup.title"}}</span>
+                            </summary>
+                            <div class="ai-action-body">
+                                <p class="text-xs text-slate-500 mb-3">{{call .T "admin.data.cleanup.hint"}}</p>
+                                <div class="mb-3">
+                                    <label for="cleanup-member" class="block text-xs text-slate-600 mb-1">{{call .T "admin.data.cleanup.range"}}</label>
+                                    <select id="cleanup-member" class="border border-slate-300 rounded-md text-sm px-3 py-1.5 focus:outline-none" style="border-color:var(--color-border)"><option value="0">{{call .T "admin.data.cleanup.all_users"}}</option></select>
+                                </div>
+                                <div class="flex gap-4 mb-3">
+                                    <div>
+                                        <label for="cleanup-timeout" class="block text-xs text-slate-600 mb-1">{{call .T "admin.data.cleanup.timeout"}}</label>
+                                        <input type="number" id="cleanup-timeout" value="10" min="1" max="30" class="border border-slate-300 rounded-md text-sm px-3 py-1.5 focus:outline-none w-24" style="border-color:var(--color-border)">
+                                    </div>
+                                    <div>
+                                        <label for="cleanup-concurrency" class="block text-xs text-slate-600 mb-1">{{call .T "admin.data.cleanup.concurrency"}}</label>
+                                        <input type="number" id="cleanup-concurrency" value="3" min="1" max="30" class="border border-slate-300 rounded-md text-sm px-3 py-1.5 focus:outline-none w-24" style="border-color:var(--color-border)">
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2 mb-3">
+                                    <button id="btn-cleanup-start" onclick="startCleanup()" style="background:var(--color-danger-hover);color:white" class="px-3 py-1.5 rounded-md text-sm font-medium transition-colors"><i class="fa-solid fa-broom" style="margin-right:4px"></i>{{call .T "admin.data.cleanup.start"}}</button>
+                                    <button id="btn-cleanup-cancel" onclick="cancelCleanup()" class="px-3 py-1.5 rounded-md text-sm hidden" style="background:var(--color-gray-100);color:var(--color-gray-500)"><i class="fa-solid fa-xmark" style="margin-right:4px"></i>{{call .T "admin.data.cleanup.cancel"}}</button>
+                                </div>
+                                <div id="cleanup-progress-area" class="hidden">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <span id="cleanup-found-text" class="text-xs text-red-500 font-medium"></span>
+                                    </div>
+                                    <div class="w-full bg-slate-200 rounded-full h-2.5 mb-1">
+                                        <div id="cleanup-progress-bar" class="bg-red-500 h-2.5 rounded-full transition-all duration-300" style="width:0%"></div>
+                                    </div>
+                                    <p id="cleanup-status-text" class="text-xs text-slate-500"></p>
+                                </div>
+                                <p id="cleanup-last-result" class="text-xs text-slate-600 mt-2" style="display:none"></p>
+                            </div>
+                        </details>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+    {{template "footer" .}}
+    <script>
+    var memberPage = 1;
+    var memberPageSize = 20;
+    var memberTotalPages = 1;
+    var commentAdminPage = 1;
+    var commentAdminPageSize = 20;
+    var commentAdminTotalPages = 1;
+
+    function switchTab(tab, opts) {
+        opts = opts || {};
+        if (opts.updateUrl !== false && window.BookStarkTabURL) window.BookStarkTabURL.set('tab', tab);
+        var tabs = ['members', 'comments', 'settings', 'ai', 'data'];
+        tabs.forEach(function(t) {
+            var panel = document.getElementById('panel-' + t);
+            var btn = document.getElementById('tab-' + t);
+            if (panel) panel.classList.toggle('hidden', t !== tab);
+            if (btn) {
+                btn.className = 'tab-btn flex-1 ' + (t === tab ? 'active' : '');
+                btn.setAttribute('aria-selected', t === tab);
+                if (t === tab && btn.scrollIntoView) {
+                    btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+                }
+            }
+        });
+        if (tab === 'data') {
+            loadApprovedMembers();
+            checkCleanupStatusOnLoad();
+        }
+        if (tab === 'comments') {
+            loadAdminComments(commentAdminPage);
+        }
+    }
+
+    // 把指定 AI 设置项重置为内置默认（调后端，避免前端再维护一份默认文案）。
+    // 后端只允许 AIDefaults() 白名单中的 key，越权请求会返回 400。
+    async function resetAIDefault(key) {
+        var ok = await BSDialog.confirm2(window.__('admin.settings.ai.reset_default.confirm') || '确定要把此项恢复为内置默认值？当前自定义内容会被覆盖。');
+        if (!ok) return;
+        try {
+            var r = await csrfFetch('/api/admin/settings/ai/reset', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key: key })
+            });
+            var j = await r.json();
+            if (!r.ok) {
+                BSDialog.alert2(j.message || j.error || (window.__('admin.settings.save_fail') || '操作失败'));
+                return;
+            }
+            // 回填到对应表单元素（支持 textarea / input）
+            var el = document.getElementById(key);
+            if (el && j.data && typeof j.data.value === 'string') {
+                el.value = j.data.value;
+            }
+            BSDialog.toast(window.__('admin.settings.ai.reset_default.done') || '已恢复默认', 'success', 1500);
+        } catch (e) {
+            BSDialog.alert2(window.__('admin.settings.save_fail') || '操作失败');
+        }
+    }
+
+    // 测试 AI 连接：把当前 form 里的 provider/base_url/api_key/model 发给后端，
+    // 后端按 provider 协议向上游打一个最简短的非流式请求，返回是否能连通 + 一段简短回复。
+    async function testAIConnection() {
+        var btn = document.getElementById('aiTestBtn');
+        var resultEl = document.getElementById('aiTestResult');
+        if (!btn || !resultEl) return;
+        var providerEl = document.querySelector('select[name="ai_provider"]');
+        var baseUrlEl = document.querySelector('input[name="ai_base_url"]');
+        var apiKeyEl = document.querySelector('input[name="ai_api_key"]');
+        var modelEl = document.querySelector('input[name="ai_model"]');
+        var payload = {
+            provider: providerEl ? providerEl.value : '',
+            base_url: baseUrlEl ? baseUrlEl.value.trim() : '',
+            api_key:  apiKeyEl  ? apiKeyEl.value : '',
+            model:    modelEl   ? modelEl.value.trim() : ''
+        };
+
+        btn.disabled = true;
+        resultEl.style.display = '';
+        resultEl.className = 'ai-test-result loading';
+        resultEl.innerHTML = '<div class="ai-test-result-title"><i class="fa-solid fa-spinner fa-spin"></i> '
+            + (window.__('admin.settings.ai.test.loading') || '正在测试连接…') + '</div>';
+
+        try {
+            var r = await csrfFetch('/api/admin/settings/ai/test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            var j = await r.json();
+            renderAITestResult(j);
+        } catch (e) {
+            resultEl.className = 'ai-test-result fail';
+            resultEl.innerHTML = '<div class="ai-test-result-title"><i class="fa-solid fa-circle-xmark"></i> '
+                + (window.__('admin.settings.ai.test.fail') || '测试失败') + '</div>'
+                + '<div>' + escAttr(String(e && e.message || e)) + '</div>';
+        } finally {
+            btn.disabled = false;
+        }
+    }
+    function renderAITestResult(j) {
+        var resultEl = document.getElementById('aiTestResult');
+        if (!resultEl) return;
+        var ok = j && j.ok;
+        var titleKey = ok ? 'admin.settings.ai.test.ok' : 'admin.settings.ai.test.fail';
+        var titleFb = ok ? '连接成功' : '连接失败';
+        var icon = ok ? 'fa-circle-check' : 'fa-circle-xmark';
+        resultEl.className = 'ai-test-result ' + (ok ? 'ok' : 'fail');
+        var html = '<div class="ai-test-result-title"><i class="fa-solid ' + icon + '"></i> '
+                 + escHtml(window.__(titleKey) || titleFb) + '</div>';
+        if (j && j.message) {
+            html += '<div>' + escHtml(j.message) + '</div>';
+        }
+        if (j && j.sample) {
+            html += '<div class="ai-test-result-meta">'
+                  + escHtml(window.__('admin.settings.ai.test.sample') || '上游回复样本')
+                  + '：</div><div class="ai-test-result-detail">' + escHtml(j.sample) + '</div>';
+        }
+        if (!ok && j && j.detail) {
+            html += '<div class="ai-test-result-meta">'
+                  + escHtml(window.__('admin.settings.ai.test.detail') || '上游错误详情')
+                  + '：</div><div class="ai-test-result-detail">' + escHtml(j.detail) + '</div>';
+        }
+        var meta = [];
+        if (j && j.provider) meta.push('provider=' + j.provider);
+        if (j && typeof j.latency_ms === 'number') meta.push(j.latency_ms + ' ms');
+        if (meta.length) {
+            html += '<div class="ai-test-result-meta">' + escHtml(meta.join(' · ')) + '</div>';
+        }
+        resultEl.innerHTML = html;
+    }
+
+    // ===== 笔记 AI 快捷动作：结构化编辑，保存时仍写回 label | prompt 文本 =====
+    var aiNoteActions = [];
+    function parseAIActionLines(raw) {
+        return String(raw || '').split(/\r?\n/).map(function(line) {
+            line = line.trim();
+            if (!line || line.charAt(0) === '#') return null;
+            var idx = line.indexOf('|');
+            if (idx < 0) return null;
+            var label = line.slice(0, idx).trim();
+            var prompt = line.slice(idx + 1).trim();
+            if (!label || !prompt) return null;
+            return { label: label, prompt: prompt };
+        }).filter(Boolean);
+    }
+    function initAINoteActionsUI() {
+        var ta = document.getElementById('ai_actions_note');
+        if (!ta) return;
+        aiNoteActions = parseAIActionLines(ta.value || '');
+        renderAINoteActions();
+    }
+    function syncAINoteActionsToTextarea() {
+        var ta = document.getElementById('ai_actions_note');
+        if (!ta) return;
+        ta.value = aiNoteActions.map(function(action) {
+            return (action.label || '').trim() + ' | ' + (action.prompt || '').trim();
+        }).filter(function(line) { return line !== ' | '; }).join('\n');
+    }
+    function renderAINoteActions() {
+        var list = document.getElementById('aiNoteActionsList');
+        if (!list) return;
+        if (!aiNoteActions.length) {
+            list.innerHTML = '<div class="ai-note-actions-empty">' + escHtml(window.__('admin.settings.ai.actions.note.empty') || '暂无快捷动作') + '</div>';
+            syncAINoteActionsToTextarea();
+            return;
+        }
+        list.innerHTML = aiNoteActions.map(function(action, idx) {
+            return ''
+                + '<div class="ai-note-action-row" data-idx="' + idx + '">'
+                +   '<input type="text" data-field="label" data-idx="' + idx + '" value="' + escAttr(action.label || '') + '" placeholder="' + escAttr(window.__('admin.settings.ai.actions.note.label_placeholder') || '按钮名称') + '" oninput="onAINoteActionChange(this)">'
+                +   '<textarea data-field="prompt" data-idx="' + idx + '" placeholder="' + escAttr(window.__('admin.settings.ai.actions.note.prompt_placeholder') || '提示词') + '" oninput="onAINoteActionChange(this)">' + escHtml(action.prompt || '') + '</textarea>'
+                +   '<button type="button" class="ai-note-action-del" onclick="deleteAINoteAction(' + idx + ')" title="' + escAttr(window.__('admin.settings.ai.actions.note.delete') || '删除') + '"><i class="fa-solid fa-trash"></i></button>'
+                + '</div>';
+        }).join('');
+        syncAINoteActionsToTextarea();
+    }
+    function onAINoteActionChange(el) {
+        var idx = parseInt(el.getAttribute('data-idx'), 10);
+        var field = el.getAttribute('data-field');
+        if (isNaN(idx) || !aiNoteActions[idx] || !field) return;
+        aiNoteActions[idx][field] = el.value;
+        syncAINoteActionsToTextarea();
+    }
+    function addAINoteAction() {
+        aiNoteActions.push({
+            label: window.__('admin.settings.ai.actions.note.new_label') || '新动作',
+            prompt: ''
+        });
+        renderAINoteActions();
+        var row = document.querySelector('.ai-note-action-row[data-idx="' + (aiNoteActions.length - 1) + '"]');
+        var input = row ? row.querySelector('input[data-field="label"]') : null;
+        if (window.BookStarkFormGuards && typeof window.BookStarkFormGuards.markNonCredentialInput === 'function') window.BookStarkFormGuards.markNonCredentialInput(input);
+        if (input) { input.focus(); input.select(); }
+    }
+    function deleteAINoteAction(idx) {
+        if (isNaN(idx) || !aiNoteActions[idx]) return;
+        aiNoteActions.splice(idx, 1);
+        renderAINoteActions();
+    }
+
+    // resetAIDefault 调用 API 拿到新值，但动态渲染的快捷动作列表需要重读 textarea 并 re-render。
+    var _origResetAIDefault = null;
+    function _hookResetForDynamicAIPanels() {
+        if (typeof resetAIDefault !== 'function' || _origResetAIDefault) return;
+        _origResetAIDefault = resetAIDefault;
+        window.resetAIDefault = async function(key) {
+            await _origResetAIDefault(key);
+            if (key === 'ai_actions_note') {
+                initAINoteActionsUI();
+            }
+        };
+    }
+
+    // AI 配置子 tab 切换。所有字段同属 aiSettingsForm，提交时一次性 PUT，无需感知当前激活的子 tab。
+    function switchAITab(name, opts) {
+        opts = opts || {};
+        if (opts.updateUrl !== false && window.BookStarkTabURL) window.BookStarkTabURL.set('aiTab', name);
+        var subs = ['base', 'prompts', 'actions'];
+        subs.forEach(function(n) {
+            var panel = document.getElementById('ai-subpanel-' + n);
+            var btn = document.getElementById('aitab-' + n);
+            if (panel) panel.classList.toggle('hidden', n !== name);
+            if (btn) {
+                btn.classList.toggle('active', n === name);
+                btn.setAttribute('aria-selected', n === name);
+            }
+        });
+    }
+
+    function renderMemberSkeleton() {
+        var rows = [
+            ['36%', '58%', '54px'],
+            ['28%', '48%', '68px'],
+            ['42%', '62%', '48px']
+        ];
+        return '<div class="admin-member-skeleton" aria-hidden="true">' + rows.map(function(row) {
+            return '<div class="admin-member-skeleton-row">' +
+                '<div class="admin-skeleton-block admin-member-skeleton-avatar"></div>' +
+                '<div class="admin-member-skeleton-body">' +
+                '<div class="admin-skeleton-block admin-member-skeleton-line" style="width:' + row[0] + '"></div>' +
+                '<div class="admin-member-skeleton-meta">' +
+                '<div class="admin-skeleton-block admin-member-skeleton-badge" style="width:' + row[2] + '"></div>' +
+                '<div class="admin-skeleton-block admin-member-skeleton-line" style="width:' + row[1] + '"></div>' +
+                '</div>' +
+                '</div>' +
+                '</div>';
+        }).join('') + '</div>';
+    }
+
+    async function loadMembers() {
+        var listEl = document.getElementById('member-list');
+        listEl.innerHTML = renderMemberSkeleton();
+        try {
+            var r = await csrfFetch('/api/admin/members?page=' + memberPage + '&pageSize=' + memberPageSize);
+            var d = await r.json();
+            if (d.code && d.code !== 0) { listEl.innerHTML = '<div class="text-center py-8 text-slate-500">' + escHtml(d.message || window.__('admin.member.load_fail')) + '</div>'; return; }
+            var members = d.data || [];
+            var total = d.total || 0;
+            memberTotalPages = d.total_pages || Math.ceil(total / memberPageSize) || 1;
+            if (members.length === 0) {
+                listEl.innerHTML = '<div class="text-center py-8 text-slate-500">' + window.__('admin.member.empty') + '</div>';
+                document.getElementById('member-pagination').innerHTML = '';
+                return;
+            }
+            listEl.innerHTML = members.map(function(m) {
+                var avatarClass = m.role === 0 ? 'role-admin' : 'role-user';
+                var initial = (m.account || '?').charAt(0).toUpperCase();
+                var badges = '';
+                if (m.role === 0) badges += '<span class="badge badge-red"><i class="fa-solid fa-shield-halved" style="font-size:9px"></i>' + window.__('admin.member.badge.admin') + '</span>';
+                if (m.status === 1) badges += '<span class="badge badge-green"><i class="fa-solid fa-circle" style="font-size:5px"></i>' + window.__('admin.member.badge.active') + '</span>';
+                else if (m.status === 0) badges += '<span class="badge badge-amber"><i class="fa-solid fa-clock" style="font-size:9px"></i>' + window.__('admin.member.badge.pending') + '</span>';
+                else badges += '<span class="badge badge-gray"><i class="fa-solid fa-ban" style="font-size:9px"></i>' + window.__('admin.member.badge.rejected') + '</span>';
+                var actions = '';
+                if (m.status === 0) {
+                    actions += '<button onclick="approveMember(' + m.member_id + ')" class="action-btn text-white" style="background:var(--color-success-hover)"><i class="fa-solid fa-check" style="margin-right:2px"></i>' + window.__('admin.member.approve') + '</button>';
+                    actions += '<button onclick="rejectMember(' + m.member_id + ')" class="action-btn text-white" style="background:var(--color-danger-hover)"><i class="fa-solid fa-xmark" style="margin-right:2px"></i>' + window.__('admin.member.reject') + '</button>';
+                } else if (m.status === 1) {
+                    if (m.role === 1) actions += '<button onclick="setRole(' + m.member_id + ',0)" class="action-btn text-white" style="background:var(--color-primary)"><i class="fa-solid fa-shield-halved" style="margin-right:2px"></i>' + window.__('admin.member.set_admin') + '</button>';
+                    else actions += '<button onclick="setRole(' + m.member_id + ',1)" class="action-btn" style="background:var(--color-gray-100);color:var(--color-gray-500)"><i class="fa-solid fa-user" style="margin-right:2px"></i>' + window.__('admin.member.unset_admin') + '</button>';
+                    actions += '<button onclick="resetPassword(' + m.member_id + ',\'' + escAttr(escJs(m.account)) + '\')" class="action-btn" style="background:var(--color-gray-100);color:var(--color-gray-500)" title="' + window.__('admin.member.reset_pwd') + '" aria-label="' + window.__('admin.member.reset_pwd') + '"><i class="fa-solid fa-key" style="margin-right:2px"></i>' + window.__('admin.member.reset_pwd') + '</button>';
+                } else {
+                    actions = '<span class="text-slate-300 text-xs">—</span>';
+                }
+                var joinTime = m.create_time ? m.create_time.substring(0, 10) : '';
+                return '<div class="member-card"><div class="flex items-start gap-3">' +
+                    '<div class="avatar-circle ' + avatarClass + '">' + escHtml(initial) + '</div>' +
+                    '<div class="flex-1 min-w-0">' +
+                    '<div class="flex items-center gap-2 flex-wrap"><span class="font-medium text-sm text-slate-800">' + escHtml(m.account) + '</span>' + badges + '</div>' +
+                    '<div class="text-xs text-slate-500 mt-0.5">' + escHtml(joinTime) + '</div>' +
+                    '<div class="member-actions flex items-center gap-1.5 mt-2 sm:mt-0">' + actions + '</div>' +
+                    '</div></div></div>';
+            }).join('');
+            renderMemberPagination();
+        } catch(e) {
+            listEl.innerHTML = '<div class="text-center py-8 text-slate-500">' + window.__('admin.member.load_fail') + '</div>';
+        }
+    }
+
+    function renderMemberPagination() {
+        var el = document.getElementById('member-pagination');
+        if (memberTotalPages <= 1) { el.innerHTML = ''; return; }
+        renderPagination('member-pagination', memberPage, memberTotalPages, function(page) { memberPage = page; loadMembers(); });
+    }
+
+    async function approveMember(id) {
+        if (!await BSDialog.confirm2(window.__('admin.member.confirm_approve'))) return;
+        var r = await csrfFetch('/api/admin/members/' + id + '/approve', { method: 'PUT' });
+        if (r.ok) loadMembers();
+        else { var d = await r.json(); BSDialog.alert2(d.message || window.__('admin.member.op_fail')); }
+    }
+
+    async function rejectMember(id) {
+        if (!await BSDialog.confirm2(window.__('admin.member.confirm_reject'))) return;
+        var r = await csrfFetch('/api/admin/members/' + id + '/reject', { method: 'PUT' });
+        if (r.ok) loadMembers();
+        else { var d = await r.json(); BSDialog.alert2(d.message || window.__('admin.member.op_fail')); }
+    }
+
+    async function setRole(id, role) {
+        var msg = role === 0 ? window.__('admin.member.confirm_set_admin') : window.__('admin.member.confirm_unset_admin');
+        if (!await BSDialog.confirm2(msg)) return;
+        var r = await csrfFetch('/api/admin/members/' + id + '/role', { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({role: role}) });
+        if (r.ok) loadMembers();
+        else { var d = await r.json(); BSDialog.alert2(d.message || window.__('admin.member.op_fail')); }
+    }
+
+    async function resetPassword(id, account) {
+        var newPwd = await BSDialog.prompt2(window.__('admin.member.reset_pwd_title') + ' - ' + account, '');
+        if (newPwd === null || !newPwd.trim()) return;
+        if (newPwd.length < 6) { BSDialog.alert2(window.__('admin.member.reset_pwd.too_short')); return; }
+        if (newPwd.length > 72) { BSDialog.alert2(window.__('admin.member.reset_pwd.too_long')); return; }
+        var r = await csrfFetch('/api/admin/members/' + id + '/reset-password', {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({new_password: newPwd})
+        });
+        if (r.ok) { BSDialog.alert2(window.__('admin.member.reset_pwd.success')); }
+        else { var d = await r.json(); BSDialog.alert2(d.message || window.__('admin.member.reset_pwd.failed')); }
+    }
+
+    function adminCommentTypeLabel(type) {
+        return window.__('admin.comments.type.' + type) || type || '';
+    }
+
+    function adminCommentStatusLabel(status) {
+        return status === 'deleted' ? window.__('admin.comments.status.deleted') : window.__('admin.comments.status.visible');
+    }
+
+    async function loadAdminComments(page) {
+        commentAdminPage = page || 1;
+        var listEl = document.getElementById('comment-admin-list');
+        var paginationEl = document.getElementById('comment-admin-pagination');
+        var selectAll = document.getElementById('comment-admin-select-all');
+        if (!listEl) return;
+        if (selectAll) selectAll.checked = false;
+        listEl.innerHTML = '<div class="text-center py-8 text-slate-500">' + escHtml(window.__('admin.comments.loading')) + '</div>';
+        if (paginationEl) paginationEl.innerHTML = '';
+        var params = new URLSearchParams();
+        params.set('page', String(commentAdminPage));
+        params.set('page_size', String(commentAdminPageSize));
+        var keywordEl = document.getElementById('comment-admin-keyword');
+        var statusEl = document.getElementById('comment-admin-status');
+        var typeEl = document.getElementById('comment-admin-target-type');
+        if (keywordEl && keywordEl.value.trim()) params.set('keyword', keywordEl.value.trim());
+        if (statusEl && statusEl.value) params.set('status', statusEl.value);
+        if (typeEl && typeEl.value) params.set('target_type', typeEl.value);
+        try {
+            var r = await csrfFetch('/api/admin/share-comments?' + params.toString());
+            var d = await r.json();
+            if (!r.ok || (d.code && d.code !== 0)) {
+                listEl.innerHTML = '<div class="text-center py-8 text-slate-500">' + escHtml(d.message || window.__('admin.comments.load_fail')) + '</div>';
+                return;
+            }
+            commentAdminTotalPages = d.total_pages || Math.ceil((d.total || 0) / commentAdminPageSize) || 1;
+            renderAdminComments(d.data || []);
+            renderAdminCommentPagination();
+        } catch(e) {
+            listEl.innerHTML = '<div class="text-center py-8 text-slate-500">' + escHtml(window.__('admin.comments.load_fail')) + '</div>';
+        }
+    }
+
+    function renderAdminComments(items) {
+        var listEl = document.getElementById('comment-admin-list');
+        if (!listEl) return;
+        if (!items.length) {
+            listEl.innerHTML = '<div class="text-center py-8 text-slate-500">' + escHtml(window.__('admin.comments.empty')) + '</div>';
+            return;
+        }
+        listEl.innerHTML = items.map(function(item) {
+            var statusClass = item.status === 'deleted' ? ' deleted' : '';
+            var replyText = item.reply_to_author_name ? ' · ' + (window.__('admin.comments.reply_to') || '回复') + ' @' + item.reply_to_author_name : '';
+            var timeText = item.create_time ? new Date(item.create_time).toLocaleString() : '';
+            return '<div class="comment-admin-card" data-comment-id="' + item.comment_id + '">' +
+                '<input type="checkbox" class="comment-admin-check" value="' + item.comment_id + '">' +
+                '<div>' +
+                    '<div class="comment-admin-meta">' +
+                        '<span class="comment-admin-author">' + escHtml(item.author_name || window.__('share_comments.anonymous')) + '</span>' +
+                        '<span class="comment-admin-status' + statusClass + '">' + escHtml(adminCommentStatusLabel(item.status)) + '</span>' +
+                        '<span>' + escHtml(adminCommentTypeLabel(item.target_type)) + ' #' + escHtml(item.target_id) + '</span>' +
+                        '<span>' + escHtml(item.share_identify || '') + '</span>' +
+                        '<span>' + escHtml(timeText) + escHtml(replyText) + '</span>' +
+                    '</div>' +
+                    '<div class="comment-admin-content">' + escHtml(item.content || '') + '</div>' +
+                '</div>' +
+                '<button type="button" class="comment-admin-delete" onclick="deleteAdminComment(' + item.comment_id + ')" title="' + escAttr(window.__('admin.comments.delete_one')) + '" aria-label="' + escAttr(window.__('admin.comments.delete_one')) + '"><i class="fa-regular fa-trash-can"></i></button>' +
+            '</div>';
+        }).join('');
+    }
+
+    function renderAdminCommentPagination() {
+        var el = document.getElementById('comment-admin-pagination');
+        if (!el) return;
+        if (commentAdminTotalPages <= 1) { el.innerHTML = ''; return; }
+        renderPagination('comment-admin-pagination', commentAdminPage, commentAdminTotalPages, function(page) { loadAdminComments(page); });
+    }
+
+    function toggleAllAdminComments(checked) {
+        document.querySelectorAll('.comment-admin-check').forEach(function(el) {
+            el.checked = !!checked;
+        });
+    }
+
+    function selectedAdminCommentIDs() {
+        return Array.prototype.slice.call(document.querySelectorAll('.comment-admin-check:checked')).map(function(el) {
+            return parseInt(el.value, 10);
+        }).filter(function(id) { return id > 0; });
+    }
+
+    async function deleteAdminComment(id) {
+        await deleteAdminComments([id]);
+    }
+
+    async function deleteSelectedAdminComments() {
+        await deleteAdminComments(selectedAdminCommentIDs());
+    }
+
+    async function deleteAdminComments(ids) {
+        if (!ids.length) {
+            BSDialog.alert2(window.__('admin.comments.select_required'));
+            return;
+        }
+        var msg = (window.__('admin.comments.delete_confirm') || '确认物理删除选中的 {count} 条评论？').replace('{count}', String(ids.length));
+        if (!await BSDialog.confirm2(msg)) return;
+        try {
+            var r = await csrfFetch('/api/admin/share-comments/delete', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ comment_ids: ids })
+            });
+            var d = await r.json();
+            if (!r.ok || (d.code && d.code !== 0)) {
+                BSDialog.alert2(d.message || window.__('admin.comments.delete_fail'));
+                return;
+            }
+            BSDialog.toast(window.__('admin.comments.delete_success'), 'success');
+            loadAdminComments(commentAdminPage);
+        } catch(e) {
+            BSDialog.alert2(window.__('admin.comments.delete_fail'));
+        }
+    }
+
+    // Invite code toggle
+    document.getElementById('invite_code_enabled').addEventListener('change', function() {
+        document.getElementById('invite-code-row').style.display = this.checked ? '' : 'none';
+    });
+
+    async function saveSettings(e) {
+        e.preventDefault();
+        const form = document.getElementById('settingsForm');
+        const data = {};
+        new FormData(form).forEach((v, k) => { data[k] = v; });
+        document.querySelectorAll('[data-webdav-size-mib]').forEach(function(input) {
+            var mib = Number(input.value);
+            if (Number.isFinite(mib)) data[input.name] = String(Math.round(mib * 1048576));
+        });
+        // Handle unchecked checkbox (FormData doesn't include unchecked)
+        data['invite_code_enabled'] = document.getElementById('invite_code_enabled').checked ? '1' : '0';
+        data['share_comments_enabled'] = document.getElementById('share_comments_enabled').checked ? '1' : '0';
+        data['webrtc_signaling_enabled'] = document.getElementById('webrtc_signaling_enabled').checked ? '1' : '0';
+        data['webrtc_signaling_allow_local_file'] = document.getElementById('webrtc_signaling_allow_local_file').checked ? '1' : '0';
+        data['webdav_public_asset_separate_url_enabled'] = document.getElementById('webdav_public_asset_separate_url_enabled').checked ? '1' : '0';
+        data['mail_enabled'] = document.getElementById('mail_enabled').checked ? '1' : '0';
+        data['task_email_reminder_enabled'] = document.getElementById('task_email_reminder_enabled').checked ? '1' : '0';
+        data['password_reset_enabled'] = document.getElementById('password_reset_enabled').checked ? '1' : '0';
+        const r = await csrfFetch('/api/admin/settings', {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        if (r.ok) {
+            BSDialog.alert2(window.__('admin.settings.saved'));
+        } else {
+            const res = await r.json();
+            BSDialog.alert2(res.message || window.__('admin.settings.save_fail'));
+        }
+    }
+
+    async function testAdminMail(btn) {
+        const email = document.getElementById('mail-test-email').value.trim();
+        if (!email) { BSDialog.alert2(window.__('admin.settings.mail_test.required')); return; }
+        btn.disabled = true;
+        try {
+            const r = await csrfFetch('/api/admin/settings/mail/test', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
+            const d = await r.json();
+            if (!r.ok) { BSDialog.alert2(d.message || window.__('admin.settings.mail_test.fail')); return; }
+            BSDialog.toast(window.__('admin.settings.mail_test.success'), 'success');
+            loadAdminMailStatus();
+        } catch (_) { BSDialog.alert2(window.__('admin.settings.mail_test.fail')); }
+        finally { btn.disabled = false; }
+    }
+
+    async function loadAdminMailStatus() {
+        const node = document.getElementById('mail-status-text');
+        if (!node) return;
+        try {
+            const r = await fetch('/api/admin/mail/status');
+            const d = await r.json();
+            if (!r.ok || !d.data) throw new Error();
+            const s = d.data.summary || {};
+            node.textContent = window.__('admin.settings.mail_status.summary')
+                .replace('{pending}', s.pending || 0).replace('{sent}', s.sent || 0).replace('{failed}', s.failed || 0);
+        } catch (_) { node.textContent = window.__('admin.settings.mail_status.unavailable'); }
+    }
+    loadAdminMailStatus();
+
+    async function saveAISettings(e) {
+        e.preventDefault();
+        syncAINoteActionsToTextarea();
+        const form = document.getElementById('aiSettingsForm');
+        const data = {};
+        new FormData(form).forEach((v, k) => { data[k] = v; });
+        data['ai_enabled'] = document.getElementById('ai_enabled').checked ? '1' : '0';
+        const r = await csrfFetch('/api/admin/settings', {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        if (r.ok) {
+            BSDialog.alert2(window.__('admin.settings.saved'));
+        } else {
+            const res = await r.json();
+            BSDialog.alert2(res.message || window.__('admin.settings.save_fail'));
+        }
+    }
+
+    async function resetAIUsage() {
+        var ok = await BSDialog.confirm2(window.__('admin.settings.ai.usage.reset.confirm') || '确定要清零 AI 使用统计吗？');
+        if (!ok) return;
+        const r = await csrfFetch('/api/admin/settings', {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                ai_total_prompt_tokens: '0',
+                ai_total_completion_tokens: '0',
+                ai_total_requests: '0'
+            })
+        });
+        if (r.ok) location.reload();
+        else BSDialog.alert2(window.__('admin.settings.save_fail'));
+    }
+
+    // Initial load
+    (function() {
+        if (!window.BookStarkTabURL) return;
+        var tab = window.BookStarkTabURL.get('tab', ['members', 'comments', 'settings', 'ai', 'data'], '');
+        var aiTab = window.BookStarkTabURL.get('aiTab', ['base', 'prompts', 'actions'], '');
+        if (aiTab && tab !== 'ai') tab = 'ai';
+        if (tab) switchTab(tab, { updateUrl: false });
+        if (aiTab) switchAITab(aiTab, { updateUrl: false });
+    })();
+    loadMembers();
+    initAINoteActionsUI();
+    _hookResetForDynamicAIPanels();
+
+    // Set default import date to 1 year ago
+    (function() {
+        var d = new Date();
+        d.setFullYear(d.getFullYear() - 1);
+        document.getElementById('bm-import-custom-date').value = d.toISOString().slice(0, 10);
+    })();
+
+    // ========== 数据管理 ==========
+    var importData = null;
+    var importId = null;
+
+    async function loadApprovedMembers() {
+        try {
+            var r = await csrfFetch('/api/admin/members?page=1&pageSize=200');
+            var d = await r.json();
+            var members = d.data || [];
+            var approved = members.filter(function(m) { return m.status === 1; });
+
+            // 导入目标用户下拉框
+            var importSel = document.getElementById('import-target-user');
+            importSel.innerHTML = '';
+            approved.forEach(function(m) {
+                var opt = document.createElement('option');
+                opt.value = m.member_id;
+                opt.textContent = m.account + (m.role === 0 ? window.__('admin.member.role_suffix.admin') : '');
+                importSel.appendChild(opt);
+            });
+            if (importSel.options.length === 0) {
+                importSel.innerHTML = '<option value="">' + window.__('admin.data.import.no_users') + '</option>';
+            }
+
+            // 导出范围下拉框
+            var exportSel = document.getElementById('export-member');
+            exportSel.innerHTML = '<option value="0">' + window.__('admin.data.export.all') + '</option>';
+            approved.forEach(function(m) {
+                var opt = document.createElement('option');
+                opt.value = m.member_id;
+                opt.textContent = m.account + (m.role === 0 ? window.__('admin.member.role_suffix.admin') : '');
+                exportSel.appendChild(opt);
+            });
+
+            // 书签导入目标用户下拉框
+            var bmImportSel = document.getElementById('bm-import-target-user');
+            if (bmImportSel) {
+                bmImportSel.innerHTML = '';
+                approved.forEach(function(m) {
+                    var opt = document.createElement('option');
+                    opt.value = m.member_id;
+                    opt.textContent = m.account + (m.role === 0 ? window.__('admin.member.role_suffix.admin') : '');
+                    bmImportSel.appendChild(opt);
+                });
+                if (bmImportSel.options.length === 0) {
+                    bmImportSel.innerHTML = '<option value="">' + window.__('admin.data.import.no_users') + '</option>';
+                }
+            }
+
+            // 书签清理范围下拉框
+            var cleanupSel = document.getElementById('cleanup-member');
+            if (cleanupSel) {
+                cleanupSel.innerHTML = '<option value="0">' + window.__('admin.data.cleanup.all_users') + '</option>';
+                approved.forEach(function(m) {
+                    var opt = document.createElement('option');
+                    opt.value = m.member_id;
+                    opt.textContent = m.account + (m.role === 0 ? window.__('admin.member.role_suffix.admin') : '');
+                    cleanupSel.appendChild(opt);
+                });
+            }
+        } catch(e) {
+            var importSel = document.getElementById('import-target-user');
+            if (importSel) importSel.innerHTML = '<option value="">' + window.__('admin.data.import.load_fail') + '</option>';
+            var bmImportSel = document.getElementById('bm-import-target-user');
+            if (bmImportSel) bmImportSel.innerHTML = '<option value="">' + window.__('admin.data.import.load_fail') + '</option>';
+        }
+    }
+
+    async function exportData() {
+        var btn = document.getElementById('btn-export');
+        var memberSel = document.getElementById('export-member');
+        var memberID = memberSel ? memberSel.value : '0';
+        var incChk = document.getElementById('export-include-uploads');
+        var includeUploads = incChk ? incChk.checked : true;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right:4px"></i>' + window.__('admin.data.export.exporting');
+        try {
+            var params = [];
+            if (memberID && memberID !== '0') params.push('member_id=' + memberID);
+            params.push('include_uploads=' + (includeUploads ? '1' : '0'));
+            var url = '/api/admin/export?' + params.join('&');
+            var r = await csrfFetch(url);
+            if (!r.ok) {
+                var d = await r.json();
+                BSDialog.alert2(d.message || window.__('admin.data.export.failed'));
+                return;
+            }
+            var blob = await r.blob();
+            var cd = r.headers.get('Content-Disposition');
+            var filename = 'bookstark-export.zip';
+            if (cd) {
+                var match = cd.match(/filename=(.+)/);
+                if (match) filename = match[1];
+            }
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+            BSDialog.toast(window.__('admin.data.export.success'), 'success');
+        } catch(e) {
+            BSDialog.alert2(window.__('admin.data.export.fail_detail') + e.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-download" style="margin-right:4px"></i>' + window.__('admin.data.export.btn');
+        }
+    }
+
+    async function handleImportFile(file) {
+        if (!file || !file.name.endsWith('.zip')) {
+            BSDialog.alert2(window.__('admin.data.import.select_zip'));
+            return;
+        }
+        var fileNameEl = document.getElementById('import-file-name');
+        fileNameEl.textContent = file.name;
+        fileNameEl.classList.remove('hidden');
+
+        var dropZone = document.getElementById('import-drop-zone');
+        dropZone.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-blue-500" style="font-size:24px"></i><p class="text-sm text-slate-500 mt-2">' + window.__('admin.data.import.parsing') + '</p>';
+
+        try {
+            var fd = new FormData();
+            fd.append('file', file);
+            var r = await csrfFetch('/api/admin/import/check', { method: 'POST', body: fd });
+            var d = await r.json();
+            if (d.code && d.code !== 0) {
+                BSDialog.alert2(d.message || window.__('admin.data.import.parse_fail'));
+                resetImportZone();
+                return;
+            }
+            importId = d.data.import_id;
+            importData = d.data;
+            showConflictDialog(d.data);
+        } catch(e) {
+            BSDialog.alert2(window.__('admin.data.import.parse_fail_detail') + e.message);
+        } finally {
+            resetImportZone();
+        }
+    }
+
+    function resetImportZone() {
+        var dropZone = document.getElementById('import-drop-zone');
+        dropZone.innerHTML = '<i class="fa-solid fa-cloud-arrow-up text-slate-400" style="font-size:24px"></i><p class="text-sm text-slate-500 mt-2">' + window.__('admin.data.import.drop_hint') + '</p><p id="import-file-name" class="text-xs text-blue-600 mt-1 hidden"></p>';
+    }
+
+    // ========== 书签导入 ==========
+    async function handleBookmarkImportFile(file) {
+        if (!file) return;
+        if (!file.name.endsWith('.html') && !file.name.endsWith('.htm')) {
+            BSDialog.alert2(window.__('admin.data.bm_import.select_html'));
+            return;
+        }
+        var targetSel = document.getElementById('bm-import-target-user');
+        var memberID = targetSel ? targetSel.value : '';
+        if (!memberID) {
+            BSDialog.alert2(window.__('admin.data.bm_import.select_user'));
+            return;
+        }
+        var dropZone = document.getElementById('bm-import-drop-zone');
+        dropZone.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-slate-400" style="font-size:24px"></i><p class="text-sm text-slate-500 mt-2">' + window.__('admin.data.bm_import.importing') + '</p>';
+        try {
+            var fd = new FormData();
+            fd.append('file', file);
+            fd.append('member_id', memberID);
+            var customDate = document.getElementById('bm-import-custom-date');
+            if (customDate && customDate.value) fd.append('custom_date', customDate.value);
+            var r = await csrfFetch('/api/admin/bookmarks/import', { method: 'POST', body: fd });
+            var d = await r.json();
+            if (d.code && d.code !== 0) {
+                BSDialog.alert2(d.message || window.__('admin.data.import.fail'));
+                return;
+            }
+            var result = d.data || {};
+            var msg = window.__('admin.data.bm_import.complete_prefix') + result.total + window.__('admin.data.bm_import.complete_mid') + result.imported + window.__('admin.data.bm_import.complete_suffix');
+            if (result.skipped > 0) msg += window.__('admin.data.bm_import.skipped_prefix') + result.skipped + window.__('admin.data.bm_import.skipped_suffix');
+            BSDialog.alert2(msg);
+        } catch(e) {
+            BSDialog.alert2(window.__('admin.data.import.fail_detail') + e.message);
+        } finally {
+            resetBookmarkImportZone();
+        }
+    }
+
+    function resetBookmarkImportZone() {
+        var dropZone = document.getElementById('bm-import-drop-zone');
+        dropZone.innerHTML = '<i class="fa-solid fa-file-code text-slate-400" style="font-size:24px"></i><p class="text-sm text-slate-500 mt-2">' + window.__('admin.data.bm_import.drop_hint') + '</p><p id="bm-import-file-name" class="text-xs text-orange-600 mt-1 hidden"></p>';
+        var customDate = document.getElementById('bm-import-custom-date');
+        if (customDate) customDate.value = '';
+    }
+
+    function showConflictDialog(data) {
+        var stats = data.import_summary || {};
+        var conflicts = data.conflicts || [];
+
+        // 按类型分组冲突
+        var typeGroups = {};
+        var typeOrder = ['book', 'blog', 'bookmark', 'label'];
+        var typeLabels = { book: window.__('admin.import.type.book'), blog: window.__('admin.import.type.blog'), bookmark: window.__('admin.import.type.bookmark'), label: window.__('admin.import.type.label') };
+        var typeIcons = { book: 'fa-book', blog: 'fa-pen-nib', bookmark: 'fa-bookmark', label: 'fa-tag' };
+        conflicts.forEach(function(c) {
+            if (!typeGroups[c.type]) typeGroups[c.type] = [];
+            typeGroups[c.type].push(c);
+        });
+
+        // 导入摘要
+        var summaryHtml = '<div class="p-3 bg-slate-50 rounded-lg">';
+        summaryHtml += '<div class="grid grid-cols-3 gap-2 text-xs text-slate-600">';
+        if (stats.books > 0) summaryHtml += '<div>' + window.__('admin.import.summary.books') + ' ' + stats.books + '</div>';
+        if (stats.documents > 0) summaryHtml += '<div>' + window.__('admin.import.summary.docs') + ' ' + stats.documents + '</div>';
+        if (stats.blogs > 0) summaryHtml += '<div>' + window.__('admin.import.summary.blogs') + ' ' + stats.blogs + '</div>';
+        if (stats.bookmarks > 0) summaryHtml += '<div>' + window.__('admin.import.summary.bookmarks') + ' ' + stats.bookmarks + '</div>';
+        if (stats.tasks > 0) summaryHtml += '<div>' + window.__('admin.import.summary.tasks') + ' ' + stats.tasks + '</div>';
+        if (stats.labels > 0) summaryHtml += '<div>' + window.__('admin.import.summary.labels') + ' ' + stats.labels + '</div>';
+        if (stats.friend_links > 0) summaryHtml += '<div>' + window.__('admin.import.summary.friend_links') + ' ' + stats.friend_links + '</div>';
+        summaryHtml += '</div></div>';
+
+        var bodyHtml = '';
+        if (conflicts.length > 0) {
+            // 全局策略按钮
+            bodyHtml += '<div class="mb-3 flex items-center gap-2 flex-wrap">';
+            bodyHtml += '<span class="text-xs text-slate-500">' + window.__('admin.import.batch') + '</span>';
+            bodyHtml += '<button onclick="setAllStrategy(\'skip\')" class="text-xs px-2.5 py-1 rounded border border-slate-300 hover:bg-slate-100">' + window.__('admin.import.batch.skip') + '</button>';
+            bodyHtml += '<button onclick="setAllStrategy(\'overwrite\')" class="text-xs px-2.5 py-1 rounded border border-slate-300 hover:bg-slate-100">' + window.__('admin.import.batch.overwrite') + '</button>';
+            bodyHtml += '<button onclick="setAllStrategy(\'rename\')" class="text-xs px-2.5 py-1 rounded border border-slate-300 hover:bg-slate-100">' + window.__('admin.import.batch.rename') + '</button>';
+            bodyHtml += '</div>';
+
+            // 按类型分组 — 2列网格
+            bodyHtml += '<div class="grid grid-cols-2 gap-2">';
+            typeOrder.forEach(function(type) {
+                var items = typeGroups[type];
+                if (!items || items.length === 0) return;
+                var label = typeLabels[type] || type;
+                var icon = typeIcons[type] || 'fa-file';
+                var count = items.length;
+
+                bodyHtml += '<div class="p-3 border border-slate-200 rounded-lg">';
+                // 类型标题行 + 策略选择 合为一行
+                bodyHtml += '<div class="flex items-center gap-2 mb-1.5">';
+                bodyHtml += '<i class="fa-solid ' + icon + ' text-blue-500" style="width:14px;font-size:12px"></i>';
+                bodyHtml += '<span class="text-xs font-medium text-slate-700 flex-1">' + escHtml(label) + '</span>';
+                bodyHtml += '<span class="text-xs text-slate-400">' + count + window.__('admin.import.count_suffix') + '</span>';
+                bodyHtml += '</div>';
+
+                // 策略选择行
+                bodyHtml += '<select data-type-strategy="' + type + '" onchange="setTypeStrategy(\'' + type + '\', this.value)" class="w-full border border-slate-300 rounded text-xs px-2 py-1 focus:outline-none" style="border-color:var(--color-border)">';
+                bodyHtml += '<option value="skip">' + window.__('admin.import.strategy.skip') + '</option>';
+                bodyHtml += '<option value="overwrite">' + window.__('admin.import.strategy.overwrite') + '</option>';
+                if (type !== 'bookmark') bodyHtml += '<option value="rename">' + window.__('admin.import.strategy.rename') + '</option>';
+                bodyHtml += '</select>';
+
+                // 前2条预览
+                var showCount = Math.min(count, 2);
+                bodyHtml += '<div class="mt-1.5 space-y-0.5">';
+                for (var i = 0; i < showCount; i++) {
+                    bodyHtml += '<div class="text-xs text-slate-400 truncate" title="' + escAttr(items[i].name) + '">• ' + escHtml(items[i].name) + '</div>';
+                }
+                if (count > 2) {
+                    bodyHtml += '<div class="text-xs text-slate-300">' + window.__('admin.import.more_prefix') + (count - 2) + window.__('admin.import.more_suffix') + '</div>';
+                }
+                bodyHtml += '</div>';
+
+                bodyHtml += '</div>';
+            });
+            bodyHtml += '</div>';
+        } else {
+            bodyHtml += '<p class="text-sm text-slate-500">' + window.__('admin.import.no_conflict') + '</p>';
+        }
+
+        var footer = '<button id="btn-confirm-import" onclick="confirmImport()" class="save-btn">' + window.__('admin.import.confirm') + '</button><button onclick="closeImportDialog()" class="bs-btn bs-btn-cancel" style="margin-left:8px">' + window.__('admin.import.cancel') + '</button>';
+
+        var overlay = document.getElementById('bs-dialog-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'bs-dialog-overlay';
+            overlay.className = 'bs-dialog-overlay';
+            document.body.appendChild(overlay);
+        }
+        overlay.innerHTML = '<div id="bs-dialog-box" class="bs-dialog-box" style="max-width:560px;width:560px;max-height:80vh;display:flex;flex-direction:column">'
+            + '<div class="bs-dialog-title" style="flex-shrink:0">' + window.__('admin.import.dialog') + '</div>'
+            + '<div style="flex-shrink:0;margin-bottom:12px">' + summaryHtml + '</div>'
+            + '<div style="flex:1;overflow-y:auto;min-height:0;padding-right:4px">' + bodyHtml + '</div>'
+            + '<div class="bs-dialog-actions" style="flex-shrink:0;margin-top:16px">' + footer + '</div>'
+            + '</div>';
+        overlay.classList.add('active');
+        if (window.BookStarkScrollLock) BookStarkScrollLock.lock('admin-import-dialog');
+    }
+
+    function setAllStrategy(strategy) {
+        document.querySelectorAll('[data-type-strategy]').forEach(function(sel) {
+            if (sel.querySelector('option[value="' + strategy + '"]')) {
+                sel.value = strategy;
+            }
+        });
+    }
+
+    function setTypeStrategy(type, strategy) {
+        // 类型策略已通过 select 值更新，无需额外操作
+    }
+
+    function closeImportDialog() {
+        var overlay = document.getElementById('bs-dialog-overlay');
+        if (overlay) overlay.classList.remove('active');
+        if (window.BookStarkScrollLock) BookStarkScrollLock.unlock('admin-import-dialog');
+    }
+
+    async function confirmImport() {
+        var targetSel = document.getElementById('import-target-user');
+        var targetMemberID = targetSel.value;
+        if (!targetMemberID) {
+            BSDialog.alert2(window.__('admin.import.select_user'));
+            return;
+        }
+
+        var resolutions = [];
+        document.querySelectorAll('[data-type-strategy]').forEach(function(sel) {
+            var type = sel.dataset.typeStrategy;
+            var strategy = sel.value;
+            if (importData && importData.conflicts) {
+                importData.conflicts.forEach(function(c) {
+                    if (c.type === type) {
+                        resolutions.push({
+                            type: c.type,
+                            identify: c.identify,
+                            strategy: strategy
+                        });
+                    }
+                });
+            }
+        });
+
+        var btn = document.getElementById('btn-confirm-import');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right:4px"></i>' + window.__('admin.import.confirming');
+        }
+
+        try {
+            var r = await csrfFetch('/api/admin/import/execute', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    import_id: importId,
+                    target_member_id: parseInt(targetMemberID),
+                    resolutions: resolutions
+                })
+            });
+            var d = await r.json();
+            if (d.code && d.code !== 0) {
+                BSDialog.alert2(d.message || window.__('admin.import.failed'));
+                return;
+            }
+            var result = d.data || {};
+            var parts = [];
+            if (result.books_imported > 0) parts.push(window.__('admin.import.result.books_prefix') + result.books_imported);
+            if (result.documents_imported > 0) parts.push(window.__('admin.import.result.docs_prefix') + result.documents_imported);
+            if (result.blogs_imported > 0) parts.push(window.__('admin.import.result.blogs_prefix') + result.blogs_imported);
+            if (result.bookmarks_imported > 0) parts.push(window.__('admin.import.result.bookmarks_prefix') + result.bookmarks_imported);
+            if (result.tasks_imported > 0) parts.push(window.__('admin.import.result.tasks_prefix') + result.tasks_imported);
+            if (result.labels_imported > 0) parts.push(window.__('admin.import.result.labels_prefix') + result.labels_imported);
+            if (result.friend_links_imported > 0) parts.push(window.__('admin.import.result.friend_links_prefix') + result.friend_links_imported);
+            var skipped = result.books_skipped + result.blogs_skipped + result.labels_skipped;
+            if (skipped > 0) parts.push(window.__('admin.import.skipped_prefix') + skipped);
+            BSDialog.toast(window.__('admin.import.success_prefix') + (parts.length > 0 ? parts.join(window.__('admin.import.success_separator')) : window.__('admin.import.no_new_data')), 'success');
+            closeImportDialog();
+            importId = null;
+            importData = null;
+        } catch(e) {
+            BSDialog.alert2(window.__('admin.data.import.fail_detail') + e.message);
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = window.__('admin.import.confirm');
+            }
+        }
+    }
+    
+    // ========== 书签清理 ==========
+    var cleanupPollTimer = null;
+
+    async function startCleanup() {
+        var memberID = parseInt(document.getElementById('cleanup-member').value) || 0;
+        var timeout = parseInt(document.getElementById("cleanup-timeout").value) || 10;
+        if (timeout < 1) timeout = 1;
+        if (timeout > 30) timeout = 30;
+        var concurrency = parseInt(document.getElementById("cleanup-concurrency").value) || 3;
+        if (concurrency < 1) concurrency = 1;
+        if (concurrency > 30) concurrency = 30;
+
+        var startBtn = document.getElementById('btn-cleanup-start');
+        var cancelBtn = document.getElementById('btn-cleanup-cancel');
+        var progressArea = document.getElementById('cleanup-progress-area');
+        startBtn.disabled = true;
+        startBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right:4px"></i>' + window.__('admin.data.cleanup.starting');
+
+        try {
+            var r = await csrfFetch('/api/admin/bookmarks/cleanup/start', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({member_id: memberID, timeout: timeout, concurrency: concurrency})
+            });
+            var d = await r.json();
+            if (d.code !== 0) { BSDialog.alert2(d.message || window.__('admin.data.cleanup.start_fail')); resetCleanupBtn(); return; }
+            progressArea.classList.remove('hidden');
+            cancelBtn.classList.remove('hidden');
+            startBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right:4px"></i>' + window.__('admin.data.cleanup.running');
+            if (cleanupPollTimer) clearInterval(cleanupPollTimer);
+            cleanupPollTimer = setInterval(pollCleanupStatus, 3000);
+        } catch(e) { BSDialog.alert2(window.__('admin.data.cleanup.start_fail_detail') + e.message); resetCleanupBtn(); }
+    }
+
+    async function pollCleanupStatus() {
+        try {
+            var r = await csrfFetch('/api/admin/bookmarks/cleanup/status');
+            var d = await r.json();
+            if (d.code !== 0) return;
+            var data = d.data || {};
+            var pb = document.getElementById('cleanup-progress-bar');
+            var st = document.getElementById('cleanup-status-text');
+            var ft = document.getElementById('cleanup-found-text');
+            var lr = document.getElementById('cleanup-last-result');
+            st.textContent = data.status_text || '';
+            if (data.found > 0) {
+                ft.textContent = window.__('admin.data.cleanup.found_prefix') + data.found + window.__('admin.data.cleanup.found_suffix');
+            } else {
+                ft.textContent = '';
+            }
+            if (data.total > 0) pb.style.width = Math.min(Math.round(data.progress / data.total * 100), 100) + '%';
+            if (!data.running) {
+                clearInterval(cleanupPollTimer); cleanupPollTimer = null;
+                resetCleanupBtn();
+                document.getElementById('btn-cleanup-cancel').classList.add('hidden');
+                pb.style.width = '100%';
+                if (data.last_result) {
+                    var timeStr = '';
+                    if (data.start_time && data.end_time) {
+                        timeStr = window.__('admin.data.cleanup.time_prefix') + data.start_time + window.__('admin.data.cleanup.time_sep') + data.end_time + ')';
+                    } else if (data.start_time) {
+                        timeStr = window.__('admin.data.cleanup.time_prefix') + data.start_time + window.__('admin.data.cleanup.time_start_suffix');
+                    }
+                    lr.textContent = window.__('admin.data.cleanup.last_result') + data.last_result + timeStr;
+                    lr.style.display = '';
+                }
+            }
+        } catch(e) {}
+    }
+
+    async function checkCleanupStatusOnLoad() {
+        try {
+            var r = await csrfFetch('/api/admin/bookmarks/cleanup/status');
+            var d = await r.json();
+            if (d.code !== 0) return;
+            var data = d.data || {};
+            var lr = document.getElementById('cleanup-last-result');
+            if (data.last_result) {
+                var timeStr = '';
+                if (data.start_time && data.end_time) {
+                    timeStr = window.__('admin.data.cleanup.time_prefix') + data.start_time + window.__('admin.data.cleanup.time_sep') + data.end_time + ')';
+                } else if (data.start_time) {
+                    timeStr = window.__('admin.data.cleanup.time_prefix') + data.start_time + window.__('admin.data.cleanup.time_start_suffix');
+                }
+                lr.textContent = window.__('admin.data.cleanup.last_result') + data.last_result + timeStr;
+                lr.style.display = '';
+            }
+            if (data.running) {
+                var progressArea = document.getElementById('cleanup-progress-area');
+                var cancelBtn = document.getElementById('btn-cleanup-cancel');
+                var startBtn = document.getElementById('btn-cleanup-start');
+                progressArea.classList.remove('hidden');
+                cancelBtn.classList.remove('hidden');
+                startBtn.disabled = true;
+                startBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right:4px"></i>' + window.__('admin.data.cleanup.running');
+                if (cleanupPollTimer) clearInterval(cleanupPollTimer);
+                cleanupPollTimer = setInterval(pollCleanupStatus, 3000);
+                pollCleanupStatus();
+            }
+        } catch(e) {}
+    }
+
+    async function cancelCleanup() {
+        if (!await BSDialog.confirm2(window.__('admin.data.cleanup.confirm_cancel'))) return;
+        try {
+            var r = await csrfFetch('/api/admin/bookmarks/cleanup/cancel', { method: 'POST' });
+            var d = await r.json();
+            if (d.code !== 0) { BSDialog.alert2(d.message || window.__('admin.data.cleanup.cancel_fail')); return; }
+            clearInterval(cleanupPollTimer); cleanupPollTimer = null;
+            resetCleanupBtn();
+            document.getElementById('btn-cleanup-cancel').classList.add('hidden');
+            document.getElementById('cleanup-status-text').textContent = window.__('admin.data.cleanup.cancelled');
+        } catch(e) { BSDialog.alert2(window.__('admin.data.cleanup.cancel_fail_detail') + e.message); }
+    }
+
+    function resetCleanupBtn() {
+        var btn = document.getElementById('btn-cleanup-start');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-broom" style="margin-right:4px"></i>' + window.__('admin.data.cleanup.start');
+    }
+
+    (function bindWebDAVPublicURLSetting() {
+        var toggle = document.getElementById('webdav_public_asset_separate_url_enabled');
+        var input = document.getElementById('webdav_public_asset_base_url');
+        if (!toggle || !input) return;
+        function syncDisabledState() {
+            input.disabled = !toggle.checked;
+            input.setAttribute('aria-disabled', input.disabled ? 'true' : 'false');
+        }
+        toggle.addEventListener('change', syncDisabledState);
+        syncDisabledState();
+    })();
+
+    (function initializeWebDAVSizeFields() {
+        document.querySelectorAll('[data-webdav-size-mib]').forEach(function(input) {
+            var bytes = Number(input.value);
+            if (Number.isFinite(bytes)) input.value = String(bytes / 1048576);
+        });
+    })();
+
+</script>
+</body>
+</html>

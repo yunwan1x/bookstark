@@ -1,0 +1,152 @@
+# 发布流水线：推 v* tag 时多平台交叉编译并把产物挂到 GitHub Release。
+# 也支持手动触发，用 workflow_dispatch 输入 tag 名。
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag, e.g. v0.1.0'
+        required: true
+        type: string
+
+permissions:
+  contents: write   # 创建/更新 Release 必需
+
+jobs:
+  build:
+    name: Build ${{ matrix.goos }}/${{ matrix.goarch }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            archive: tar.gz
+          - goos: linux
+            goarch: arm64
+            archive: tar.gz
+          - goos: darwin
+            goarch: amd64
+            archive: tar.gz
+          - goos: darwin
+            goarch: arm64
+            archive: tar.gz
+          - goos: windows
+            goarch: amd64
+            archive: zip
+          - goos: windows
+            goarch: arm64
+            archive: zip
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Resolve tag & version
+        id: meta
+        run: |
+          TAG="${{ inputs.tag || github.ref_name }}"
+          # 去掉前导 v 作为版本号（用于产物文件名内的版本字符串）
+          VERSION="${TAG#v}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          # 二进制名（windows 自动 .exe）
+          BIN="bookstark-${{ matrix.goos }}-${{ matrix.goarch }}"
+          if [ "${{ matrix.goos }}" = "windows" ]; then BIN="$BIN.exe"; fi
+          echo "bin=$BIN" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        env:
+          COMMIT: ${{ github.sha }}
+        run: |
+          python3 build.py --build \
+            --goos ${{ matrix.goos }} \
+            --goarch ${{ matrix.goarch }} \
+            --output dist/${{ steps.meta.outputs.bin }}
+
+      - name: Stage release files
+        id: stage
+        run: |
+          STAGE="dist/stage"
+          PKG="bookstark-${{ steps.meta.outputs.version }}-${{ matrix.goos }}-${{ matrix.goarch }}"
+          mkdir -p "$STAGE/$PKG"
+          cp dist/${{ steps.meta.outputs.bin }} "$STAGE/$PKG/"
+          # 附带 README / LICENSE（如存在）+ 默认配置参考
+          for f in README.md LICENSE LICENSE.txt conf/app.conf; do
+            [ -e "$f" ] && cp "$f" "$STAGE/$PKG/" || true
+          done
+          echo "pkg=$PKG" >> "$GITHUB_OUTPUT"
+          echo "stage=$STAGE" >> "$GITHUB_OUTPUT"
+
+      - name: Archive (tar.gz)
+        if: matrix.archive == 'tar.gz'
+        run: |
+          cd "${{ steps.stage.outputs.stage }}"
+          tar -czf "${{ steps.stage.outputs.pkg }}.tar.gz" "${{ steps.stage.outputs.pkg }}"
+          sha256sum "${{ steps.stage.outputs.pkg }}.tar.gz" > "${{ steps.stage.outputs.pkg }}.tar.gz.sha256"
+
+      - name: Archive (zip)
+        if: matrix.archive == 'zip'
+        run: |
+          cd "${{ steps.stage.outputs.stage }}"
+          zip -qr "${{ steps.stage.outputs.pkg }}.zip" "${{ steps.stage.outputs.pkg }}"
+          sha256sum "${{ steps.stage.outputs.pkg }}.zip" > "${{ steps.stage.outputs.pkg }}.zip.sha256"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.stage.outputs.pkg }}
+          path: |
+            ${{ steps.stage.outputs.stage }}/${{ steps.stage.outputs.pkg }}.${{ matrix.archive }}
+            ${{ steps.stage.outputs.stage }}/${{ steps.stage.outputs.pkg }}.${{ matrix.archive }}.sha256
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    name: Publish Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve tag
+        id: meta
+        run: |
+          TAG="${{ inputs.tag || github.ref_name }}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: List artifacts
+        run: ls -la dist/
+
+      - name: Create / update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          name: ${{ steps.meta.outputs.tag }}
+          generate_release_notes: true
+          files: |
+            dist/*.tar.gz
+            dist/*.zip
+            dist/*.sha256

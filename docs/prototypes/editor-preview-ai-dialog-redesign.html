@@ -1,0 +1,652 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Preview AI Dialog Redesign</title>
+  <style>
+    :root {
+      --page: #f5f7fb;
+      --paper: #ffffff;
+      --ink: #162033;
+      --muted: #64748b;
+      --line: #dfe7f1;
+      --line-strong: #cbd5e1;
+      --blue: #2563eb;
+      --blue-hover: #1d4ed8;
+      --blue-soft: #eff6ff;
+      --green: #0f8f66;
+      --amber: #b7791f;
+      --shadow: 0 18px 48px rgba(15, 23, 42, 0.16);
+      --radius: 8px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background: var(--page);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: 52px minmax(0, 1fr) 34px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 16px;
+      background: var(--paper);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .back {
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #f8fafc;
+      color: var(--muted);
+      font-size: 18px;
+    }
+
+    .title {
+      min-width: 0;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .title strong { font-size: 14px; }
+    .title span { color: var(--muted); font-size: 13px; }
+
+    .header-actions {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .header-btn {
+      height: 32px;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--paper);
+      color: #475569;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .header-btn:hover {
+      background: #f8fafc;
+      color: var(--ink);
+    }
+
+    .header-btn.ai {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-color: rgba(37, 99, 235, 0.28);
+      background: var(--blue-soft);
+      color: var(--blue);
+      font-weight: 700;
+    }
+
+    .main {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      position: relative;
+    }
+
+    .reader {
+      overflow: auto;
+      background: var(--paper);
+      padding: 34px 46px 70px;
+    }
+
+    .doc {
+      max-width: 860px;
+      margin: 0 auto;
+      font-size: 16px;
+      line-height: 1.78;
+    }
+
+    .doc h1 {
+      margin: 0 0 22px;
+      font-size: 32px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    .doc h2 {
+      margin: 34px 0 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--line);
+      font-size: 23px;
+      letter-spacing: 0;
+    }
+
+    .doc p { margin: 12px 0; }
+
+    .doc blockquote {
+      margin: 18px 0;
+      padding: 10px 14px;
+      border-left: 3px solid var(--blue);
+      background: #f8fafc;
+      color: #334155;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 14px;
+      border-top: 1px solid var(--line);
+      background: var(--paper);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .ai-panel {
+      position: fixed;
+      top: 64px;
+      right: 16px;
+      bottom: 46px;
+      width: min(430px, calc(100vw - 32px));
+      display: none;
+      grid-template-rows: auto auto minmax(0, 1fr) auto;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--paper);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      z-index: 30;
+    }
+
+    .ai-panel.open { display: grid; }
+
+    .ai-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 52px;
+      padding: 0 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .ai-mark {
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: var(--blue-soft);
+      color: var(--blue);
+      font-weight: 800;
+    }
+
+    .ai-name {
+      min-width: 0;
+      display: grid;
+      gap: 2px;
+    }
+
+    .ai-name strong { font-size: 14px; }
+    .ai-name span { color: var(--muted); font-size: 12px; }
+
+    .ai-head-actions {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .icon-btn {
+      width: 30px;
+      height: 30px;
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    .icon-btn:hover {
+      background: #f1f5f9;
+      color: var(--ink);
+    }
+
+    .context-strip {
+      display: grid;
+      gap: 8px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfdff;
+    }
+
+    .context-top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .context-badge {
+      min-width: 0;
+      flex: 1;
+      color: var(--muted);
+      font-size: 13px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .context-locator {
+      appearance: none;
+      border: 0;
+      padding: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      cursor: pointer;
+    }
+
+    .context-locator:hover { color: var(--blue); }
+
+    .context-tools {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex: 0 0 auto;
+    }
+
+    .chip {
+      height: 28px;
+      padding: 0 9px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--paper);
+      color: #475569;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .chip:hover {
+      border-color: rgba(37, 99, 235, 0.35);
+      background: var(--blue-soft);
+      color: var(--blue);
+    }
+
+    .context-preview {
+      display: none;
+      max-height: 78px;
+      overflow: auto;
+      padding: 8px 9px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+      color: #475569;
+      font-size: 12px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+
+    .context-preview.show { display: block; }
+
+    .conversation {
+      min-height: 0;
+      overflow: auto;
+      padding: 14px 12px 18px;
+      display: grid;
+      align-content: start;
+      gap: 12px;
+    }
+
+    .msg {
+      display: grid;
+      gap: 5px;
+      max-width: 92%;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .msg.assistant { justify-self: start; }
+    .msg.user { justify-self: end; }
+
+    .msg-label {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .bubble {
+      padding: 9px 11px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #f8fafc;
+    }
+
+    .msg.user .bubble {
+      border-color: rgba(37, 99, 235, 0.22);
+      background: var(--blue-soft);
+      color: #173a8a;
+    }
+
+    .suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .composer {
+      display: grid;
+      gap: 8px;
+      padding: 10px 12px 12px;
+      border-top: 1px solid var(--line);
+      background: var(--paper);
+    }
+
+    .input-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .question {
+      width: 100%;
+      min-height: 68px;
+      max-height: 170px;
+      resize: vertical;
+      padding: 9px 10px;
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      outline: none;
+      color: var(--ink);
+      font: inherit;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .question:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    .send {
+      height: 36px;
+      padding: 0 14px;
+      border: 0;
+      border-radius: 8px;
+      background: var(--blue);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .send:hover { background: var(--blue-hover); }
+
+    .mode-note {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    ::selection { background: rgba(37, 99, 235, 0.2); }
+
+    @media (max-width: 760px) {
+      .reader { padding: 24px 18px 86px; }
+      .header-btn:not(.ai) { display: none; }
+      .ai-panel {
+        left: 10px;
+        right: 10px;
+        top: 60px;
+        bottom: 12px;
+        width: auto;
+      }
+      .context-top {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+      .context-tools { width: 100%; flex-wrap: wrap; }
+      .input-row { grid-template-columns: 1fr; }
+      .send { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <button class="back" type="button" aria-label="返回">‹</button>
+      <div class="title"><strong>预览</strong><span>/ 推荐系统方案.md</span></div>
+      <div class="header-actions">
+        <button class="header-btn" type="button">编辑</button>
+        <button class="header-btn" type="button">搜索</button>
+        <button class="header-btn ai" id="openAI" type="button"><span>✦</span><span>AI</span></button>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="reader" id="reader">
+        <article class="doc" id="doc" tabindex="-1">
+          <h1>推荐系统方案</h1>
+          <p>推荐系统的目标不是简单地提升点击率，而是在用户目标、业务目标与内容生态之间建立稳定的匹配机制。一个可持续的推荐系统需要同时处理召回、排序、重排、反馈学习和安全治理。</p>
+          <h2>一、问题定义</h2>
+          <p>在产品早期，推荐系统最容易犯的错误是直接进入模型优化，而没有定义清楚推荐场景。不同场景下，用户意图、时效性、内容消费成本和业务约束都不同。</p>
+          <blockquote>预览态 AI 对话不直接改文档，它更像阅读助手：围绕选中内容或全文进行解释、追问、总结和分析。</blockquote>
+          <p>例如首页信息流更关注探索效率，详情页相关推荐更关注主题连续性，搜索后的推荐则更接近意图补全。系统设计必须先把这些场景拆开。</p>
+          <h2>二、整体架构</h2>
+          <p>一个成熟的推荐系统通常包含多路召回、粗排、精排、重排和策略后处理。召回负责覆盖可能相关的候选集，排序负责从候选集中找出最可能满足用户目标的内容。</p>
+          <p>重排层需要考虑多样性、去重、疲劳控制、业务规则和安全过滤。最终展示结果不应该只由模型分数决定，而应该由模型和策略共同决定。</p>
+          <h2>三、数据闭环</h2>
+          <p>推荐系统的长期效果来自反馈闭环。曝光、点击、停留、收藏、跳出、不感兴趣等行为都应该进入统一的事件体系，并在训练、评估和线上诊断中复用。</p>
+        </article>
+      </section>
+    </main>
+
+    <footer class="status">
+      <span>预览模式</span>
+      <span>Markdown</span>
+      <span>已保存</span>
+    </footer>
+  </div>
+
+  <aside class="ai-panel" id="aiPanel" aria-label="预览 AI 对话">
+    <header class="ai-head">
+      <div class="ai-mark">AI</div>
+      <div class="ai-name">
+        <strong>阅读助手</strong>
+        <span>基于预览内容连续问答</span>
+      </div>
+      <div class="ai-head-actions">
+        <button class="icon-btn" id="closeAI" type="button" title="关闭">×</button>
+      </div>
+    </header>
+
+    <section class="context-strip">
+      <div class="context-top">
+        <div class="context-badge" id="contextBadge">未选择上下文</div>
+        <div class="context-tools">
+          <button class="chip" id="useSelection" type="button">选区</button>
+          <button class="chip" id="useAll" type="button">全文</button>
+          <button class="chip" id="clearContext" type="button">清空</button>
+        </div>
+      </div>
+      <div class="context-preview" id="contextPreview"></div>
+    </section>
+
+    <section class="conversation" id="conversation">
+      <div class="msg assistant">
+        <div class="msg-label">AI</div>
+        <div class="bubble">可以直接问我这篇文档的重点、漏洞、结构，或先选中一段文字再打开 AI。</div>
+      </div>
+      <div class="suggestions" id="suggestions"></div>
+    </section>
+
+    <footer class="composer">
+      <div class="mode-note" id="modeNote">当前基于全文或自由问题回答，不修改文档。</div>
+      <div class="input-row">
+        <textarea class="question" id="question" placeholder="问一个关于当前文档的问题..."></textarea>
+        <button class="send" id="send" type="button">发送</button>
+      </div>
+    </footer>
+  </aside>
+
+  <script>
+    const doc = document.getElementById('doc');
+    const reader = document.getElementById('reader');
+    const panel = document.getElementById('aiPanel');
+    const openAI = document.getElementById('openAI');
+    const closeAI = document.getElementById('closeAI');
+    const useSelection = document.getElementById('useSelection');
+    const useAll = document.getElementById('useAll');
+    const clearContext = document.getElementById('clearContext');
+    const contextBadge = document.getElementById('contextBadge');
+    const contextPreview = document.getElementById('contextPreview');
+    const modeNote = document.getElementById('modeNote');
+    const suggestions = document.getElementById('suggestions');
+    const question = document.getElementById('question');
+    const send = document.getElementById('send');
+    const conversation = document.getElementById('conversation');
+
+    const defaultPrompts = [
+      ['总结全文', '总结这篇文档的核心观点'],
+      ['找漏洞', '这篇方案里有哪些明显缺口'],
+      ['提问题', '基于这篇文档提出 5 个追问'],
+      ['给结论', '基于全文写一段结论']
+    ];
+
+    const selectionPrompts = [
+      ['解释这段', '解释选中内容'],
+      ['提炼要点', '提炼选中内容的要点'],
+      ['继续追问', '基于选中内容继续追问'],
+      ['反向质疑', '指出选中内容可能存在的问题']
+    ];
+
+    let context = { type: 'none', text: '', range: null };
+
+    function escapeHTML(value) {
+      return String(value).replace(/[&<>"']/g, ch => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[ch]);
+    }
+
+    function selectedText() {
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) return null;
+      if (!doc.contains(selection.anchorNode) || !doc.contains(selection.focusNode)) return null;
+      const text = selection.toString().trim();
+      if (!text) return null;
+      return { text, range: selection.getRangeAt(0).cloneRange() };
+    }
+
+    function renderPrompts(items) {
+      suggestions.innerHTML = items.map(([label, prompt]) =>
+        '<button class="chip" type="button" data-prompt="' + escapeHTML(prompt) + '">' + escapeHTML(label) + '</button>'
+      ).join('');
+    }
+
+    function setContext(next) {
+      context = next;
+      if (next.type === 'selection') {
+        contextBadge.innerHTML = '<button class="context-locator" type="button" title="定位到选区">选区</button> · ' + next.text.length + ' 字';
+        contextPreview.textContent = next.text;
+        contextPreview.classList.add('show');
+        modeNote.textContent = '当前回答会优先基于固定选区，不修改文档。';
+        renderPrompts(selectionPrompts);
+      } else if (next.type === 'all') {
+        contextBadge.textContent = '全文 · ' + next.text.length + ' 字';
+        contextPreview.textContent = next.text.slice(0, 460);
+        contextPreview.classList.add('show');
+        modeNote.textContent = '当前回答基于全文，不修改文档。';
+        renderPrompts(defaultPrompts);
+      } else {
+        contextBadge.textContent = '未选择上下文';
+        contextPreview.textContent = '';
+        contextPreview.classList.remove('show');
+        modeNote.textContent = '当前基于全文或自由问题回答，不修改文档。';
+        renderPrompts(defaultPrompts);
+      }
+    }
+
+    function locateSelection() {
+      if (!context.range) return;
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(context.range);
+      const rect = context.range.getBoundingClientRect();
+      const readerRect = reader.getBoundingClientRect();
+      reader.scrollTo({
+        top: reader.scrollTop + rect.top - readerRect.top - reader.clientHeight / 2,
+        behavior: 'smooth'
+      });
+      doc.focus({ preventScroll: true });
+    }
+
+    function openPanel() {
+      const current = selectedText();
+      if (current) setContext({ type: 'selection', text: current.text, range: current.range });
+      else if (context.type === 'none') setContext({ type: 'none', text: '', range: null });
+      panel.classList.add('open');
+      question.focus();
+    }
+
+    function appendUserMessage(text) {
+      const item = document.createElement('div');
+      item.className = 'msg user';
+      item.innerHTML = '<div class="msg-label">你</div><div class="bubble">' + escapeHTML(text) + '</div>';
+      conversation.appendChild(item);
+      const reply = document.createElement('div');
+      reply.className = 'msg assistant';
+      reply.innerHTML = '<div class="msg-label">AI</div><div class="bubble">这里会基于' +
+        (context.type === 'selection' ? '选区' : context.type === 'all' ? '全文' : '当前文档') +
+        '给出回答。这个原型只展示交互，不调用真实模型。</div>';
+      conversation.appendChild(reply);
+      conversation.scrollTop = conversation.scrollHeight;
+    }
+
+    openAI.addEventListener('click', openPanel);
+    closeAI.addEventListener('click', () => panel.classList.remove('open'));
+    useSelection.addEventListener('click', () => {
+      const current = selectedText();
+      if (current) setContext({ type: 'selection', text: current.text, range: current.range });
+    });
+    useAll.addEventListener('click', () => setContext({ type: 'all', text: doc.textContent.trim(), range: null }));
+    clearContext.addEventListener('click', () => {
+      window.getSelection().removeAllRanges();
+      setContext({ type: 'none', text: '', range: null });
+    });
+    contextBadge.addEventListener('click', event => {
+      if (event.target.closest('.context-locator')) locateSelection();
+    });
+    suggestions.addEventListener('click', event => {
+      const btn = event.target.closest('button[data-prompt]');
+      if (!btn) return;
+      question.value = btn.dataset.prompt;
+      question.focus();
+    });
+    send.addEventListener('click', () => {
+      const text = question.value.trim();
+      if (!text) return;
+      question.value = '';
+      appendUserMessage(text);
+    });
+
+    renderPrompts(defaultPrompts);
+  </script>
+</body>
+</html>

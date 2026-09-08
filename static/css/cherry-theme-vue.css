@@ -1,0 +1,379 @@
+/**
+ * Cherry Markdown - Vue Theme
+ * Inspired by typora-vue-theme (https://github.com/blinkfox/typora-vue-theme)
+ * Adapted for Cherry Markdown's .cherry-previewer
+ */
+
+/* === Cherry Markdown editor chrome === */
+.cherry.theme__vue {
+  --cherry-color: #34495e;
+  --cherry-bg-color: #ffffff;
+  --base-editor-bg: #ffffff;
+  --base-font-color: #34495e;
+  --base-previewer-bg: #ffffff;
+  --base-border-color: #e7e7e7;
+  --toolbar-bg: #f8f8f8;
+  --toolbar-btn-color: #34495e;
+  --toolbar-btn-hover-color: #34495e;
+  --toolbar-btn-hover-bg: rgba(66, 185, 131, 0.08);
+  --toolbar-btn-active-bg: rgba(66, 185, 131, 0.15);
+  --primary-color: #42b983;
+  --secondary-color: rgba(66, 185, 131, 0.1);
+  --md-heading-color: #34495e;
+  --md-link-color: #42b983;
+  --md-blockquote-color: #777;
+  --md-table-border: #dfe2e5;
+  /* Editor syntax highlighting */
+  --editor-header-color: #34495e;
+  --editor-comment-color: #777;
+  --editor-quote-color: #777;
+  --editor-string-color: #22a2c9;
+  --editor-link-color: #42b983;
+  --editor-url-bg-color: rgba(66, 185, 131, 0.1);
+  --editor-v2-color: #42b983;
+  --editor-v3-color: rgba(66, 185, 131, 0.1);
+  --editor-keyword-color: #42b983;
+  --editor-cursor-color: #42b983;
+  --editor-selection-bg: rgba(66, 185, 131, 0.2);
+  --editor-line-number-color: #a0aec0;
+  --editor-active-line-bg: rgba(66, 185, 131, 0.06);
+  /* Accordion / cherry-detail: flat style, no shadow */
+  --accordion-shadow: none;
+  --accordion-bg: #ffffff;
+  --accordion-border: #e7e7e7;
+  --accordion-summary-bg: #f2f2f2;
+  --accordion-summary-color: #34495e;
+  --accordion-summary-hover-bg: #e6e6e6;
+  --accordion-body-bg: #ffffff;
+  --accordion-body-color: #34495e;
+  --accordion-body-border: #e7e7e7;
+}
+.cherry.theme__vue .cherry-editor {
+  background-color: #ffffff;
+}
+.cherry.theme__vue .cherry-toolbar {
+  background-color: #f8f8f8;
+  border-bottom: 1px solid #e7e7e7;
+}
+
+/* === CodeMirror editor area (Vue style) === */
+.cherry.theme__vue .cm-editor {
+  background-color: #ffffff;
+  color: #34495e;
+}
+.cherry.theme__vue .cm-gutters {
+  background-color: #f8f8f8;
+  color: #777;
+  border-right: 1px solid #e7e7e7;
+}
+.cherry.theme__vue .cm-content {
+  color: #34495e;
+}
+.cherry.theme__vue .cm-line {
+  color: #34495e;
+}
+.cherry.theme__vue .cm-activeLine {
+  background-color: rgba(66, 185, 131, 0.06);
+}
+.cherry.theme__vue .cm-selectionLayer {
+  z-index: 0 !important;
+}
+.cherry.theme__vue .cm-selectionBackground {
+  background-color: rgba(66, 185, 131, 0.2) !important;
+}
+.cherry.theme__vue .cm-focused .cm-cursor {
+  border-left-color: #42b983;
+}
+.cherry.theme__vue .cm-matchingBracket {
+  background-color: rgba(66, 185, 131, 0.25);
+  color: inherit;
+}
+/* CodeMirror markdown syntax — Vue style */
+.cherry.theme__vue .cm-header { color: #34495e; font-weight: 700; }
+.cherry.theme__vue .cm-header-1 { font-size: 1.4em; }
+.cherry.theme__vue .cm-header-2 { font-size: 1.2em; }
+.cherry.theme__vue .cm-header-3 { font-size: 1.1em; }
+.cherry.theme__vue .cm-meta { color: #777; }
+.cherry.theme__vue .cm-comment { color: #777; }
+.cherry.theme__vue .cm-quote { color: #777; }
+.cherry.theme__vue .cm-list { color: #34495e; }
+.cherry.theme__vue .cm-link { color: #42b983; }
+.cherry.theme__vue .cm-url { color: #42b983; }
+.cherry.theme__vue .cm-strong { font-weight: 700; color: #34495e; }
+.cherry.theme__vue .cm-em { font-style: italic; }
+.cherry.theme__vue .cm-hr { color: #e7e7e7; }
+.cherry.theme__vue .cm-tag { color: #42b983; }
+.cherry.theme__vue .cm-attribute { color: #e96900; }
+.cherry.theme__vue .cm-string { color: #22a2c9; }
+.cherry.theme__vue .cm-keyword { color: #42b983; }
+/* Cherry toolbar buttons */
+.cherry.theme__vue .cherry-toolbar .toolbar-button {
+  color: #34495e;
+}
+.cherry.theme__vue .cherry-toolbar .toolbar-button:hover {
+  background-color: rgba(66, 185, 131, 0.08);
+}
+/* Cherry drag separator */
+.cherry.theme__vue .cherry-drag {
+  background: #e7e7e7;
+  border-left: 1px solid #e7e7e7;
+  border-right: 1px solid #e7e7e7;
+}
+.cherry.theme__vue .cherry-drag:hover {
+  background: #42b983;
+  border-color: #42b983;
+}
+
+/* === Code block: iTerm2 terminal style === */
+/* Syntax highlighting is handled by Cherry's built-in code theme (one-light in light mode, one-dark in dark mode).
+   We only add the terminal title bar and wrapper styling here. */
+
+/* Code block wrapper — light iTerm style */
+.cherry.theme__vue .cherry-previewer div[data-type="codeBlock"] {
+  border-radius: 8px !important;
+  margin-bottom: 16px !important;
+  padding-top: 36px !important;
+  position: relative !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+}
+/* Terminal title bar — light style */
+.cherry.theme__vue .cherry-previewer div[data-type="codeBlock"]::before {
+  content: attr(data-lang);
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 36px;
+  line-height: 36px;
+  padding: 0 14px 0 56px;
+  background: #f8f8f8;
+  border-bottom: 1px solid #e2e8f0;
+  border-radius: 8px 8px 0 0;
+  font-size: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  color: #636d83;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  z-index: 1;
+  background-image: radial-gradient(circle at 14px 18px, #ff5f56 5px, transparent 5px),
+                    radial-gradient(circle at 30px 18px, #ffbd2e 5px, transparent 5px),
+                    radial-gradient(circle at 46px 18px, #27c93f 5px, transparent 5px);
+  background-repeat: no-repeat;
+}
+/* Hide Cherry's default language label */
+.cherry.theme__vue .cherry-previewer div[data-type="codeBlock"] .code-Language {
+  display: none !important;
+}
+/* Code block pre: inherit one-light background */
+.cherry.theme__vue .cherry-previewer div[data-type="codeBlock"] pre {
+  border: none !important;
+  margin: 0 !important;
+  border-radius: 0 0 8px 8px !important;
+  background: #fafafa !important;
+}
+/* Inline code — keep Vue style */
+.cherry.theme__vue .cherry-previewer code:not(pre code) {
+  padding: 2px 4px;
+  border-radius: 2px;
+  font-size: 0.92em;
+  color: #e96900;
+  background-color: #f8f8f8;
+  border: none !important;
+}
+
+/* === Previewer base === */
+.cherry.theme__vue .cherry-previewer {
+  color: #34495e;
+  background-color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  word-wrap: break-word;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Headings */
+.cherry.theme__vue .cherry-previewer h1,
+.cherry.theme__vue .cherry-previewer h2,
+.cherry.theme__vue .cherry-previewer h3,
+.cherry.theme__vue .cherry-previewer h4,
+.cherry.theme__vue .cherry-previewer h5,
+.cherry.theme__vue .cherry-previewer h6 {
+  position: relative;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  font-weight: bold;
+  line-height: 1.4;
+  color: #34495e;
+}
+
+.cherry.theme__vue .cherry-previewer h1 {
+  font-size: 2.2em;
+  padding-bottom: 0.4rem;
+}
+.cherry.theme__vue .cherry-previewer h2 {
+  font-size: 1.75em;
+  line-height: 1.225;
+  margin: 35px 0 15px;
+  padding-bottom: 0.5em;
+  border-bottom: 1px solid #ddd;
+}
+.cherry.theme__vue .cherry-previewer h3 {
+  font-size: 1.4em;
+  line-height: 1.43;
+  margin: 20px 0 7px;
+}
+.cherry.theme__vue .cherry-previewer h4 { font-size: 1.2em; }
+.cherry.theme__vue .cherry-previewer h5 { font-size: 1em; }
+.cherry.theme__vue .cherry-previewer h6 { font-size: 1em; color: #777; }
+
+/* Paragraphs */
+.cherry.theme__vue .cherry-previewer p {
+  margin-top: 0;
+  margin-bottom: 0.8em;
+  line-height: 1.6;
+  word-spacing: 0.05rem;
+}
+
+/* Links - Vue green */
+.cherry.theme__vue .cherry-previewer a {
+  color: #42b983;
+  font-weight: 600;
+  text-decoration: none;
+}
+.cherry.theme__vue .cherry-previewer a:hover {
+  text-decoration: underline;
+}
+
+/* Blockquote - Vue green left border */
+.cherry.theme__vue .cherry-previewer blockquote {
+  border-left: 4px solid #42b983 !important;
+  padding: 10px 15px !important;
+  color: #777 !important;
+  background-color: rgba(66, 185, 131, 0.1) !important;
+  margin: 0.8em 0 !important;
+}
+
+/* Lists — Tailwind fix handled by cherry-tailwind-fix.css */
+.cherry.theme__vue .cherry-previewer ul,
+.cherry.theme__vue .cherry-previewer ol {
+  margin-top: 0;
+  margin-bottom: 0.8em;
+}
+
+/* Horizontal rule */
+.cherry.theme__vue .cherry-previewer hr {
+  height: 2px;
+  padding: 0;
+  margin: 16px 0;
+  background-color: #e7e7e7;
+  border: 0 none;
+  overflow: hidden;
+}
+
+/* Table - Vue style */
+.cherry.theme__vue .cherry-previewer table th,
+.cherry.theme__vue .cherry-previewer table td {
+  padding: 6px 13px !important;
+  border: 1px solid #dfe2e5 !important;
+  text-align: left;
+}
+.cherry.theme__vue .cherry-previewer table th {
+  font-weight: bold !important;
+  background-color: #f2f2f2 !important;
+}
+.cherry.theme__vue .cherry-previewer table tr {
+  border-top: 1px solid #dfe2e5 !important;
+  background-color: #ffffff !important;
+}
+.cherry.theme__vue .cherry-previewer table tr:nth-child(2n) {
+  background-color: #fafafa !important;
+}
+
+/* Strong / bold */
+.cherry.theme__vue .cherry-previewer strong {
+  font-weight: bold;
+}
+
+/* Images */
+.cherry.theme__vue .cherry-previewer img {
+  max-width: 100%;
+  box-sizing: content-box;
+}
+
+/* Mark / highlight */
+.cherry.theme__vue .cherry-previewer mark {
+  background-color: #ebffeb;
+  border-radius: 2px;
+  padding: 2px 4px;
+  color: #222;
+}
+
+/* First/last child margin */
+.cherry.theme__vue .cherry-previewer>*:first-child {
+  margin-top: 0 !important;
+}
+.cherry.theme__vue .cherry-previewer>*:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* Monospace font */
+.cherry.theme__vue .cherry-previewer tt,
+.cherry.theme__vue .cherry-previewer code,
+.cherry.theme__vue .cherry-previewer samp,
+.cherry.theme__vue .cherry-previewer pre {
+  font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+}
+
+/* Heading code */
+.cherry.theme__vue .cherry-previewer h1 tt,
+.cherry.theme__vue .cherry-previewer h1 code,
+.cherry.theme__vue .cherry-previewer h2 tt,
+.cherry.theme__vue .cherry-previewer h2 code,
+.cherry.theme__vue .cherry-previewer h3 tt,
+.cherry.theme__vue .cherry-previewer h3 code,
+.cherry.theme__vue .cherry-previewer h4 tt,
+.cherry.theme__vue .cherry-previewer h4 code,
+.cherry.theme__vue .cherry-previewer h5 tt,
+.cherry.theme__vue .cherry-previewer h5 code,
+.cherry.theme__vue .cherry-previewer h6 tt,
+.cherry.theme__vue .cherry-previewer h6 code {
+  font-size: inherit !important;
+}
+
+/* Definition list */
+.cherry.theme__vue .cherry-previewer dl dt {
+  font-weight: bold;
+  font-style: italic;
+}
+.cherry.theme__vue .cherry-previewer dl dd {
+  padding: 0 1rem;
+  margin-bottom: 1rem;
+}
+
+/* Nested lists */
+.cherry.theme__vue .cherry-previewer li > ol,
+.cherry.theme__vue .cherry-previewer li > ul {
+  margin: 0;
+}
+
+/* Task list */
+.cherry.theme__vue .cherry-previewer .task-list-item {
+  list-style-type: none;
+}
+.cherry.theme__vue .cherry-previewer .task-list-item-checkbox {
+  margin: 0 0.2em 0.25em -1.4em;
+  vertical-align: middle;
+}
+
+/* === Accordion (cherry-detail) reduced motion === */
+@media (prefers-reduced-motion: reduce) {
+  .cherry.theme__vue .cherry-detail details,
+  .cherry.theme__vue .cherry-detail details summary,
+  .cherry.theme__vue .cherry-detail details summary::before {
+    transition: none !important;
+  }
+}

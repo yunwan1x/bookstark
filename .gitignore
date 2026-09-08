@@ -1,0 +1,65 @@
+# Binary
+/bookstark
+/bookstark-dev
+dist/bookstark
+# Database
+*.db
+*.sqlite
+*.sqlite3
+bookstark.db-shm
+bookstark.db-wal
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.history
+# OS
+.DS_Store
+Thumbs.db
+
+# Superpowers brainstorm & screenshots
+.superpowers/
+docs/superpowers/
+
+# Screenshots
+*.png
+!static/*.png
+node_modules/
+__pycache__
+tmp
+.tmp
+.superpowers
+.DS_Store
+test-results
+.playwright-mcp/
+.idea
+.vscode
+.gstack/
+.history
+.omx/
+data/
+
+# Local-only files
+key
+.cc-connect/
+AGENTS.md
+bookstark.log
+memory/
+
+# Android local build outputs
+android/app/src/main/assets/
+android/app/src/main/res/mipmap-mdpi/
+android/app/src/main/res/mipmap-hdpi/
+dist/android/build/
+dist/android/*.apk
+dist/android/*.idsig
+dist/android/*.keystore
+
+# Local credentials and database sidecars
+conf/app.conf
+mihomo/config.yaml
+*.db-*
+*.sqlite-*
+*.sqlite3-*
+*.tgz

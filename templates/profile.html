@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v={{assetVer "/static/favicon.svg"}}">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{{call .T "meta.description"}}">
+    <title>{{call .T "page.profile.title"}} - BookStark</title>
+    <link href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}" rel="stylesheet">
+    <style>
+    .tab-btn { position: relative; padding: 8px 16px; font-size: 13px; font-weight: 500; border-radius: 8px 8px 0 0; cursor: pointer; transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease; }
+    .tab-btn.active { background: var(--color-bg-card); color: var(--color-primary); box-shadow: 0 -1px 3px rgba(0,0,0,0.06); }
+    .tab-btn:not(.active) { background: transparent; color: var(--color-gray-400); }
+    .tab-btn:not(.active):hover { color: var(--color-gray-500); background: var(--color-gray-100); }
+    .profile-tabs { overflow-x: auto; scrollbar-width: thin; }
+    .profile-tabs .tab-btn { min-width: max-content; white-space: nowrap; }
+    .profile-section { padding-top: 18px; margin-top: 18px; border-top: 1px solid var(--color-border); }
+    .profile-section-title { font-size: 15px; font-weight: 600; color: var(--color-text); margin-bottom: 14px; }
+    [data-theme="dark"] .profile-panel { background: var(--color-bg-card, #1e293b) !important; border: 1px solid var(--color-border, #334155); }
+    [data-theme="dark"] #panel-pwa .bg-sky-50 { background-color: var(--color-gray-100, #1e293b) !important; border: 1px solid var(--color-border, #334155); }
+    .fl-table { width:100%; border-collapse:collapse; }
+    .fl-table th { text-align:left; font-size:0.75rem; font-weight:500; color:var(--color-gray-500); padding:0 0 8px; border-bottom:1px solid var(--color-border); }
+    .fl-table td { padding:8px 4px; border-bottom:1px solid var(--color-gray-100); vertical-align:middle; }
+    .fl-table tr:last-child td { border-bottom:none; }
+    .fl-table input[type="text"], .fl-table input[type="number"] { width:100%; padding:4px 8px; border:1px solid var(--color-gray-300); border-radius:4px; font-size:0.8125rem; background:var(--color-bg-card); }
+    .fl-table input:focus-visible { outline:none; border-color:var(--color-focus); box-shadow:0 0 0 2px var(--color-focus-ring, rgba(37,99,235,.25)); }
+    .fl-toggle { position:relative; width:36px; height:20px; display:inline-block; }
+    .fl-toggle input { opacity:0; width:0; height:0; }
+    .fl-toggle .slider { position:absolute; inset:0; background:var(--color-gray-300); border-radius:10px; cursor:pointer; transition:.2s; }
+    .fl-toggle .slider::before { content:''; position:absolute; left:2px; top:2px; width:16px; height:16px; background:var(--color-bg-card); border-radius:50%; transition:.2s; }
+    .fl-toggle input:checked + .slider { background:var(--color-primary); }
+    .fl-toggle input:checked + .slider::before { transform:translateX(16px); }
+    .music-volume-row { margin-top:-8px; display:flex; align-items:center; gap:12px; border:1px solid var(--color-border); border-radius:6px; background:var(--color-bg-card); padding:10px 12px; }
+    .music-volume-row input[type="range"] { flex:1 1 auto; min-width:0; accent-color:var(--color-primary); }
+    .music-volume-row output { min-width:42px; text-align:right; font-size:0.8125rem; color:var(--color-gray-500); font-variant-numeric:tabular-nums; }
+    .fl-del { width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center; border-radius:4px; color:var(--color-danger); background:var(--color-danger-light); border:none; cursor:pointer; font-size:1rem; line-height:1; }
+    .fl-del:hover { background:var(--color-danger-light); }
+    @media (max-width: 640px) {
+        .profile-tabs .tab-btn { flex: 0 0 auto !important; }
+        .fl-table input[type="text"] { font-size: 0.75rem; padding: 3px 6px; }
+        .fl-table input[type="number"] { width: 48px; }
+        .fl-table th, .fl-table td { padding: 6px 2px; font-size: 0.7rem; }
+    }
+    .bs-dialog-title { word-break: break-all; white-space: pre-wrap; }
+    </style>
+{{template "head-assets" .}}
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col">
+    {{template "header" .}}
+    <main class="flex-1" role="main">
+        <div class="mx-auto mt-6 md:mt-8 px-4 sm:px-6" style="width:100%;max-width:768px;">
+            <div role="tablist" class="profile-tabs flex bg-slate-100 rounded-t-lg p-1 gap-1">
+                <button role="tab" aria-selected="true" aria-controls="panel-profile" id="tab-profile" onclick="switchProfileTab('profile')" class="tab-btn active flex-1">
+                    <i class="fa-solid fa-user" style="margin-right:4px"></i>{{call .T "profile.tab.profile"}}
+                </button>
+                <button role="tab" aria-selected="false" aria-controls="panel-reminders" id="tab-reminders" onclick="switchProfileTab('reminders')" class="tab-btn flex-1">
+                    <i class="fa-solid fa-envelope-open-text" style="margin-right:4px"></i>{{call .T "profile.tab.reminders"}}
+                </button>
+                <button role="tab" aria-selected="false" aria-controls="panel-pwa" id="tab-pwa" onclick="switchProfileTab('pwa')" class="tab-btn flex-1">
+                    <i class="fa-solid fa-cloud" style="margin-right:4px"></i>{{call .T "profile.tab.pwa"}}
+                </button>
+                <button role="tab" aria-selected="false" aria-controls="panel-api" id="tab-api" onclick="switchProfileTab('api')" class="tab-btn flex-1">
+                    <i class="fa-solid fa-key" style="margin-right:4px"></i>{{call .T "profile.tab.api_token"}}
+                </button>
+                {{if .IsAdmin}}
+                <button role="tab" aria-selected="false" aria-controls="panel-friend-links" id="tab-friend-links" onclick="switchProfileTab('friend-links')" class="tab-btn flex-1">
+                    <i class="fa-solid fa-link" style="margin-right:4px"></i>{{call .T "profile.tab.friend_links"}}
+                </button>
+                {{end}}
+            </div>
+
+            <div id="panel-profile" role="tabpanel" aria-labelledby="tab-profile" class="profile-panel bg-white rounded-b-lg shadow-sm p-4 sm:p-7">
+                <h1 class="page-title mb-5">{{call .T "profile.section.profile"}}</h1>
+                <div id="profile-error" class="hidden mb-4 p-3 bg-red-50 text-red-600 text-sm rounded"></div>
+                <div class="mb-4">
+                    <label for="account-display" class="block text-sm font-medium mb-1.5">{{call .T "profile.field.account"}}</label>
+                    <div id="account-display" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-md text-sm text-slate-500" role="textbox" aria-readonly="true">{{.User.Account}}</div>
+                </div>
+                <div class="mb-4">
+                    <label for="email" class="block text-sm font-medium mb-1.5">{{call .T "profile.field.email"}}</label>
+                    <input id="email" type="email" class="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20" value="{{.User.Email}}">
+                </div>
+                <div class="mb-4">
+                    <label for="profile-language" class="block text-sm font-medium mb-1.5">{{call .T "profile.field.language"}}</label>
+                    <select id="profile-language" class="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20" onchange="switchProfileLanguage(this.value)">
+                        <option value="zh" {{if ne .Lang "en"}}selected{{end}}>{{call .T "profile.language.zh"}}</option>
+                        <option value="en" {{if eq .Lang "en"}}selected{{end}}>{{call .T "profile.language.en"}}</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label for="profile-theme" class="block text-sm font-medium mb-1.5">{{call .T "profile.field.theme"}}</label>
+                    <select id="profile-theme" class="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20" onchange="switchProfileTheme(this.value)">
+                        <option value="light">{{call .T "profile.theme.light"}}</option>
+                        <option value="dark">{{call .T "profile.theme.dark"}}</option>
+                        <option value="notion-pro">{{call .T "profile.theme.notion_pro"}}</option>
+                        <option value="scholar-paper">{{call .T "profile.theme.scholar_paper"}}</option>
+                        <option value="linear-saas">{{call .T "profile.theme.linear_saas"}}</option>
+                        <option value="apple-minimal">{{call .T "profile.theme.apple_minimal"}}</option>
+                    </select>
+                </div>
+                <div class="mb-4 flex items-center justify-between gap-4 rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5">
+                    <label for="science-background-toggle" class="min-w-0">
+                        <span class="block text-sm font-medium">{{call .T "profile.field.background_animation"}}</span>
+                        <span class="block text-xs text-slate-500 mt-0.5">{{call .T "profile.field.background_animation_hint"}}</span>
+                    </label>
+                    <label class="fl-toggle" aria-label="{{call .T "profile.field.background_animation"}}">
+                        <input id="science-background-toggle" type="checkbox" onchange="toggleProfileScienceBackground(this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="mb-4 flex items-center justify-between gap-4 rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5">
+                    <label for="background-music-toggle" class="min-w-0">
+                        <span class="block text-sm font-medium">{{call .T "profile.field.background_music"}}</span>
+                        <span class="block text-xs text-slate-500 mt-0.5">{{call .T "profile.field.background_music_hint"}}</span>
+                    </label>
+                    <label class="fl-toggle" aria-label="{{call .T "profile.field.background_music"}}">
+                        <input id="background-music-toggle" type="checkbox" onchange="toggleProfileBackgroundMusic(this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="mb-4 music-volume-row">
+                    <label for="background-music-volume" class="text-sm font-medium whitespace-nowrap">{{call .T "profile.field.background_music_volume"}}</label>
+                    <input id="background-music-volume" type="range" min="0" max="100" step="1" value="35" oninput="setProfileBackgroundMusicVolume(this.value)">
+                    <output id="background-music-volume-value" for="background-music-volume">35%</output>
+                </div>
+                <div class="mb-4">
+                    <label for="default-home" class="block text-sm font-medium mb-1.5">{{call .T "profile.field.default_home"}}</label>
+                    <select id="default-home" class="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20">
+                        <option value="notes" {{if eq .DefaultHome "notes"}}selected{{end}}>{{call .T "profile.default_home.notes"}}</option>
+                        <option value="tasks" {{if eq .DefaultHome "tasks"}}selected{{end}}>{{call .T "profile.default_home.tasks"}}</option>
+                        <option value="articles" {{if eq .DefaultHome "articles"}}selected{{end}}>{{call .T "profile.default_home.articles"}}</option>
+                        <option value="books" {{if eq .DefaultHome "books"}}selected{{end}}>{{call .T "profile.default_home.books"}}</option>
+                        <option value="bookmarks" {{if eq .DefaultHome "bookmarks"}}selected{{end}}>{{call .T "profile.default_home.bookmarks"}}</option>
+                        <option value="nav" {{if eq .DefaultHome "nav"}}selected{{end}}>{{call .T "profile.default_home.nav"}}</option>
+                        <option value="search" {{if eq .DefaultHome "search"}}selected{{end}}>{{call .T "profile.default_home.search"}}</option>
+                    </select>
+                </div>
+                <div class="flex justify-end">
+                    <button onclick="saveProfile(this)" class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700">{{call .T "profile.save"}}</button>
+                </div>
+
+                <section class="profile-section">
+                    <h2 class="profile-section-title">{{call .T "profile.pwd.title"}}</h2>
+                    <div id="pwd-error" class="hidden mb-4 p-3 bg-red-50 text-red-600 text-sm rounded"></div>
+                    <div class="mb-4">
+                        <label for="old_password" class="block text-sm font-medium mb-1.5">{{call .T "profile.pwd.field.old"}}</label>
+                        <input id="old_password" type="password" class="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20">
+                    </div>
+                    <div class="mb-4">
+                        <label for="new_password" class="block text-sm font-medium mb-1.5">{{call .T "profile.pwd.field.new"}}</label>
+                        <input id="new_password" type="password" class="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20">
+                    </div>
+                    <div class="mb-5">
+                        <label for="confirm_password" class="block text-sm font-medium mb-1.5">{{call .T "profile.pwd.field.confirm"}}</label>
+                        <input id="confirm_password" type="password" class="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20">
+                    </div>
+                    <div class="flex justify-end">
+                        <button onclick="changePassword(this)" class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700">{{call .T "profile.pwd.btn"}}</button>
+                    </div>
+                </section>
+            </div>
+
+            <div id="panel-reminders" role="tabpanel" aria-labelledby="tab-reminders" class="profile-panel bg-white rounded-b-lg shadow-sm p-4 sm:p-7 hidden">
+                <div class="flex items-center gap-3 mb-5">
+                    <div class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center"><i class="fa-solid fa-envelope-open-text"></i></div>
+                    <div><h2 class="text-base font-semibold">{{call .T "profile.reminder.title"}}</h2><p class="text-xs text-slate-500 mt-0.5">{{call .T "profile.reminder.desc"}}</p></div>
+                </div>
+                <div id="reminder-error" class="hidden mb-4 p-3 bg-red-50 text-red-600 text-sm rounded"></div>
+                <div id="reminder-unavailable" class="hidden mb-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-700">{{call .T "profile.reminder.unavailable"}}</div>
+                <div class="mb-4 flex items-center justify-between gap-4 rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5">
+                    <label for="task-reminder-enabled" class="min-w-0"><span class="block text-sm font-medium">{{call .T "profile.reminder.enabled"}}</span><span class="block text-xs text-slate-500 mt-0.5">{{call .T "profile.reminder.enabled_hint"}}</span></label>
+                    <label class="fl-toggle"><input id="task-reminder-enabled" type="checkbox"><span class="slider"></span></label>
+                </div>
+                <div class="mb-4"><label class="block text-sm font-medium mb-1.5">{{call .T "profile.reminder.email"}}</label><div id="task-reminder-email" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-md text-sm text-slate-500"></div></div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div><label for="task-reminder-time" class="block text-sm font-medium mb-1.5">{{call .T "profile.reminder.time"}}</label><input id="task-reminder-time" type="time" value="09:00" class="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none"></div>
+                    <div><label for="task-reminder-before" class="block text-sm font-medium mb-1.5">{{call .T "profile.reminder.before"}}</label><select id="task-reminder-before" class="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none"><option value="0">{{call .T "profile.reminder.before.0"}}</option><option value="1">{{call .T "profile.reminder.before.1"}}</option><option value="3">{{call .T "profile.reminder.before.3"}}</option><option value="7">{{call .T "profile.reminder.before.7"}}</option></select></div>
+                </div>
+                <div class="mb-5 flex items-center justify-between gap-4 rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5">
+                    <label for="task-reminder-overdue" class="min-w-0"><span class="block text-sm font-medium">{{call .T "profile.reminder.overdue"}}</span><span class="block text-xs text-slate-500 mt-0.5">{{call .T "profile.reminder.overdue_hint"}}</span></label>
+                    <label class="fl-toggle"><input id="task-reminder-overdue" type="checkbox"><span class="slider"></span></label>
+                </div>
+                <div id="task-reminder-status" class="text-xs text-slate-500 mb-4"></div>
+                <div class="flex justify-end gap-2"><button type="button" onclick="testReminderMail(this)" class="px-4 py-2 border border-slate-300 rounded-md text-sm hover:bg-slate-50"><i class="fa-regular fa-paper-plane" style="margin-right:4px"></i>{{call .T "profile.reminder.test"}}</button><button type="button" onclick="saveReminderPreference(this)" class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700">{{call .T "profile.reminder.save"}}</button></div>
+            </div>
+
+            <div id="panel-pwa" role="tabpanel" aria-labelledby="tab-pwa" class="profile-panel bg-white rounded-b-lg shadow-sm p-4 sm:p-7 hidden">
+                <div class="mb-4">
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="w-7 h-7 rounded-lg bg-sky-50 flex items-center justify-center"><i class="fa-solid fa-cloud text-sky-500" style="font-size:12px"></i></div>
+                        <span class="text-sm font-semibold text-slate-700">{{call .T "profile.pwa.title"}}</span>
+                    </div>
+                    <div class="pl-0 sm:pl-9">
+                        <div id="profileOfflineStatusMount" class="offline-status-inline"></div>
+                    </div>
+                </div>
+            </div>
+
+            {{if .IsAdmin}}
+            <div id="panel-friend-links" role="tabpanel" aria-labelledby="tab-friend-links" class="profile-panel bg-white rounded-b-lg shadow-sm p-4 sm:p-7 hidden">
+                <div class="flex items-center justify-between gap-4 mb-4">
+                    <div>
+                        <h2 class="text-base font-semibold">{{call .T "profile.friend_links.title"}}</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">{{call .T "profile.friend_links.desc"}}</p>
+                    </div>
+                    <button type="button" onclick="addFriendLink()" class="shrink-0 px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700">{{call .T "profile.friend_links.add"}}</button>
+                </div>
+                <div id="friend-links-error" class="hidden mb-4 p-3 bg-red-50 text-red-600 text-sm rounded"></div>
+                <div id="friend-links-list" class="overflow-x-auto mb-5"></div>
+                <div id="friend-links-empty" class="hidden border border-dashed border-slate-300 rounded-lg px-4 py-6 text-sm text-slate-500 text-center mb-5">{{call .T "profile.friend_links.empty"}}</div>
+                <div class="flex justify-end">
+                    <button type="button" onclick="saveFriendLinks(this)" class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700">{{call .T "profile.friend_links.save"}}</button>
+                </div>
+            </div>
+            {{end}}
+
+            <div id="panel-api" role="tabpanel" aria-labelledby="tab-api" class="profile-panel bg-white rounded-b-lg shadow-sm p-4 sm:p-7 hidden">
+                <div class="flex items-center justify-between gap-4 mb-4">
+                    <div>
+                        <h2 class="text-base font-semibold">API Token</h2>
+                        <p class="text-xs text-slate-500 mt-0.5">{{call .T "profile.api_token.desc"}}</p>
+                        <p class="text-xs text-slate-500 mt-1">{{call .T "profile.api_token.plugin_download"}}<a href="https://chromewebstore.google.com/detail/linkding-extension/beakmhbijpdhipnjhnclmhgjlddhidpe" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">Chrome</a> · <a href="https://addons.mozilla.org/zh-CN/firefox/addon/linkding-extension/" target="_blank" rel="noopener noreferrer" class="text-blue-500 hover:underline">Firefox</a></p>
+                    </div>
+                    <button type="button" onclick="createApiToken(this)" class="shrink-0 px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700">{{call .T "profile.api_token.create"}}</button>
+                </div>
+                <div id="api-token-error" class="hidden mb-4 p-3 bg-red-50 text-red-600 text-sm rounded"></div>
+                <div id="api-token-list" class="flex flex-col gap-2"></div>
+                <div id="api-token-empty" class="hidden border border-dashed border-slate-300 rounded-lg px-4 py-6 text-sm text-slate-500 text-center">{{call .T "profile.api_token.empty"}}</div>
+            </div>
+
+        </div>
+    </main>
+    {{template "footer" .}}
+    <script>
+    async function saveProfile(btn){BookStarkErrors.clearField('profile-error');try{const r=await csrfFetch('/api/profile',{method:'PUT',lockKey:'profile:save',lockControl:btn,headers:{'Content-Type':'application/json'},body:JSON.stringify({email:document.getElementById('email').value.trim(),default_home:document.getElementById('default-home').value})});if(r.ok)BSDialog.alert2(window.__('profile.save.success'));else{const d=await r.json();BookStarkErrors.field('profile-error', d, window.__('profile.save.error'));}}catch(err){BookStarkErrors.field('profile-error', err, window.__('profile.save.error'));}}
+    async function changePassword(btn){BookStarkErrors.clearField('pwd-error');const o=document.getElementById('old_password').value,n=document.getElementById('new_password').value,c=document.getElementById('confirm_password').value;if(n!==c){BookStarkErrors.field('pwd-error', window.__('profile.pwd.mismatch'));return;}try{const r=await csrfFetch('/api/password',{method:'PUT',lockKey:'profile:password',lockControl:btn,headers:{'Content-Type':'application/json'},body:JSON.stringify({old_password:o,new_password:n})});if(r.ok){BSDialog.alert2(window.__('profile.pwd.success'));document.getElementById('old_password').value='';document.getElementById('new_password').value='';document.getElementById('confirm_password').value='';}else{const d=await r.json();BookStarkErrors.field('pwd-error', d, window.__('profile.pwd.error'));}}catch(err){BookStarkErrors.field('pwd-error', err, window.__('profile.pwd.error'));}}
+
+    const isAdmin = {{if .IsAdmin}}true{{else}}false{{end}};
+    function profileTabList() {
+      const tabs = ['profile', 'reminders', 'pwa', 'api'];
+      if (isAdmin) tabs.push('friend-links');
+      return tabs;
+    }
+    function switchProfileLanguage(lang) {
+      if (typeof window.switchLang === 'function') {
+        window.switchLang(lang);
+        return;
+      }
+      window.location.href = '/api/set-lang?lang=' + encodeURIComponent(lang) + '&redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+    }
+    function switchProfileTheme(theme) {
+      if (window.BookStarkTheme && typeof window.BookStarkTheme.set === 'function') {
+        window.BookStarkTheme.set(theme);
+      }
+      syncProfileThemeSelect();
+    }
+    function syncProfileThemeSelect() {
+      const select = document.getElementById('profile-theme');
+      if (!select) return;
+      const theme = window.BookStarkTheme && typeof window.BookStarkTheme.get === 'function'
+        ? window.BookStarkTheme.get()
+        : (document.documentElement.getAttribute('data-theme-style') || 'notion-pro');
+      select.value = theme;
+    }
+    function toggleProfileScienceBackground(enabled) {
+      if (window.BookStarkBackground && typeof window.BookStarkBackground.set === 'function') {
+        window.BookStarkBackground.set(enabled);
+      }
+    }
+    function toggleProfileBackgroundMusic(enabled) {
+      if (window.BookStarkMusic && typeof window.BookStarkMusic.set === 'function') {
+        window.BookStarkMusic.set(enabled);
+      }
+    }
+    function setProfileBackgroundMusicVolume(value) {
+      if (window.BookStarkMusic && typeof window.BookStarkMusic.setVolume === 'function') {
+        window.BookStarkMusic.setVolume(value / 100);
+      }
+    }
+    function mountProfileOfflineStatus(shouldProbe) {
+      if (!window.BookStarkOfflineStatus) return;
+      const panel = window.BookStarkOfflineStatus.mount('profileOfflineStatusMount');
+      if (panel && shouldProbe && window.BookStarkOfflineStatus.probe) {
+        window.BookStarkOfflineStatus.probe();
+      }
+    }
+    function switchProfileTab(tab, opts) {
+      opts = opts || {};
+      const tabs = profileTabList();
+      if (tabs.indexOf(tab) === -1) tab = 'profile';
+      if (opts.updateUrl !== false && window.BookStarkTabURL) window.BookStarkTabURL.set('tab', tab);
+      tabs.forEach(function(t) {
+        const panel = document.getElementById('panel-' + t);
+        const btn = document.getElementById('tab-' + t);
+        if (panel) panel.classList.toggle('hidden', t !== tab);
+        if (btn) {
+          btn.className = 'tab-btn flex-1 ' + (t === tab ? 'active' : '');
+          btn.setAttribute('aria-selected', t === tab ? 'true' : 'false');
+        }
+      });
+      if (tab === 'pwa') mountProfileOfflineStatus(true);
+      if (tab === 'reminders') loadReminderPreference();
+    }
+    (function() {
+      syncProfileThemeSelect();
+      if (window.BookStarkBackground && typeof window.BookStarkBackground.syncControl === 'function') {
+        window.BookStarkBackground.syncControl('science-background-toggle');
+      }
+      if (window.BookStarkMusic && typeof window.BookStarkMusic.syncControl === 'function') {
+        window.BookStarkMusic.syncControl('background-music-toggle');
+      }
+      if (window.BookStarkMusic && typeof window.BookStarkMusic.syncVolumeControl === 'function') {
+        window.BookStarkMusic.syncVolumeControl('background-music-volume');
+      }
+      const tabs = profileTabList();
+      const initial = window.BookStarkTabURL ? window.BookStarkTabURL.get('tab', tabs, '') : '';
+      if (initial) switchProfileTab(initial, { updateUrl: false });
+    })();
+
+    var reminderLoaded = false;
+    async function loadReminderPreference(force) {
+      if (reminderLoaded && !force) return;
+      const error = document.getElementById('reminder-error');
+      error.classList.add('hidden');
+      try {
+        const r = await csrfFetch('/api/profile/task-reminder');
+        const d = await r.json();
+        if (!r.ok || !d.data) throw new Error(d.message || window.__('profile.reminder.load_fail'));
+        const v = d.data;
+        document.getElementById('task-reminder-enabled').checked = !!v.enabled;
+        document.getElementById('task-reminder-time').value = v.send_time || '09:00';
+        document.getElementById('task-reminder-before').value = String(v.remind_before_days || 0);
+        document.getElementById('task-reminder-overdue').checked = !!v.include_overdue;
+        document.getElementById('task-reminder-email').textContent = v.email || window.__('profile.reminder.no_email');
+        document.getElementById('reminder-unavailable').classList.toggle('hidden', !!v.available);
+        ['task-reminder-enabled','task-reminder-time','task-reminder-before','task-reminder-overdue'].forEach(id => document.getElementById(id).disabled = !v.available);
+        const status = document.getElementById('task-reminder-status');
+        status.textContent = v.last_processed_date ? window.__('profile.reminder.last_processed').replace('{date}', v.last_processed_date) : window.__('profile.reminder.not_sent');
+        reminderLoaded = true;
+      } catch (err) { BookStarkErrors.field('reminder-error', err, window.__('profile.reminder.load_fail')); }
+    }
+    async function saveReminderPreference(btn) {
+      BookStarkErrors.clearField('reminder-error');
+      const body = {enabled:document.getElementById('task-reminder-enabled').checked,send_time:document.getElementById('task-reminder-time').value,remind_before_days:parseInt(document.getElementById('task-reminder-before').value,10)||0,include_overdue:document.getElementById('task-reminder-overdue').checked};
+      try {
+        const r = await csrfFetch('/api/profile/task-reminder',{method:'PUT',lockKey:'profile:task-reminder',lockControl:btn,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+        const d = await r.json();
+        if (!r.ok) { BookStarkErrors.field('reminder-error', d, window.__('profile.reminder.save_fail')); return; }
+        BSDialog.toast(window.__('profile.reminder.save_success'),'success'); reminderLoaded=false; loadReminderPreference(true);
+      } catch (err) { BookStarkErrors.field('reminder-error', err, window.__('profile.reminder.save_fail')); }
+    }
+    async function testReminderMail(btn) {
+      BookStarkErrors.clearField('reminder-error');
+      btn.disabled=true;
+      try {
+        const r=await csrfFetch('/api/profile/task-reminder/test',{method:'POST'});const d=await r.json();
+        if(!r.ok){BookStarkErrors.field('reminder-error',d,window.__('profile.reminder.test_fail'));return;}
+        BSDialog.toast(window.__('profile.reminder.test_success'),'success');
+      } catch(err){BookStarkErrors.field('reminder-error',err,window.__('profile.reminder.test_fail'));}
+      finally{btn.disabled=false;}
+    }
+
+    function ensureTable(){
+      const list=document.getElementById('friend-links-list');
+      if(list.querySelector('table')) return list.querySelector('table');
+      list.innerHTML='<table class="fl-table"><thead><tr><th style="width:28%">' + window.__('profile.friend_links.col.name') + '</th><th>' + window.__('profile.friend_links.col.url') + '</th><th style="width:64px">' + window.__('profile.friend_links.col.sort') + '</th><th style="width:48px">' + window.__('profile.friend_links.col.enabled') + '</th><th style="width:36px"></th></tr></thead><tbody></tbody></table>';
+      return list.querySelector('table');
+    }
+    function friendLinkRow(item){
+      const tr=document.createElement('tr');
+      tr.innerHTML=`
+        <td><input data-field="link_name" type="text" value="${escAttr(item.link_name||'')}" placeholder="${window.__('profile.friend_links.col.name')}"></td>
+        <td><input data-field="link_url" type="text" value="${escAttr(item.link_url||'')}" placeholder="https://example.com"></td>
+        <td><input data-field="sort_weight" type="number" value="${Number.isFinite(Number(item.sort_weight))?Number(item.sort_weight):0}" style="width:56px"></td>
+        <td style="text-align:center"><label class="fl-toggle"><input data-field="is_enabled" type="checkbox" ${item.is_enabled?'checked':''}><span class="slider"></span></label></td>
+        <td style="text-align:center"><button type="button" class="fl-del" data-action="delete" title="${window.__('profile.friend_links.delete')}" aria-label="${window.__('profile.friend_links.delete')}">×</button></td>`;
+      tr.querySelector('[data-action="delete"]').addEventListener('click',()=>{tr.remove();updateFriendLinksEmpty();});
+      return tr;
+    }
+        function updateFriendLinksEmpty(){const list=document.getElementById('friend-links-list');const empty=document.getElementById('friend-links-empty');if(!list||!empty)return;const tbody=list.querySelector('tbody');const hasRows=tbody&&tbody.children.length>0;empty.classList.toggle('hidden',hasRows);if(list.querySelector('table'))list.querySelector('table').style.display=hasRows?'':'none';}
+    function addFriendLink(item={link_name:'',link_url:'',sort_weight:0,is_enabled:1}){const table=ensureTable();table.querySelector('tbody').appendChild(friendLinkRow(item));updateFriendLinksEmpty();}
+    function collectFriendLinks(){const list=document.getElementById('friend-links-list');if(!list)return[];const tbody=list.querySelector('tbody');if(!tbody)return[];return Array.from(tbody.children).map(row=>({link_name:row.querySelector('[data-field="link_name"]').value.trim(),link_url:row.querySelector('[data-field="link_url"]').value.trim(),sort_weight:parseInt(row.querySelector('[data-field="sort_weight"]').value||'0',10)||0,is_enabled:row.querySelector('[data-field="is_enabled"]').checked?1:0}));}
+    async function loadFriendLinks(){if(!isAdmin)return;BookStarkErrors.clearField('friend-links-error');const res=await csrfFetch('/api/admin/friend-links');if(!res.ok){const d=await res.json().catch(()=>({}));BookStarkErrors.field('friend-links-error', d, window.__('profile.friend_links.load_error'));updateFriendLinksEmpty();return;}const data=await res.json();const list=document.getElementById('friend-links-list');list.innerHTML='';((data.data&&data.data.items)||[]).forEach(addFriendLink);updateFriendLinksEmpty();}
+    async function saveFriendLinks(btn){BookStarkErrors.clearField('friend-links-error');const items=collectFriendLinks();try{const res=await csrfFetch('/api/admin/friend-links',{method:'PUT',lockKey:'profile:friend-links',lockControl:btn,headers:{'Content-Type':'application/json'},body:JSON.stringify({items})});if(res.ok){BSDialog.alert2(window.__('profile.friend_links.save_success'));await loadFriendLinks();}else{const d=await res.json().catch(()=>({}));BookStarkErrors.field('friend-links-error', d, window.__('profile.friend_links.save_error'));}}catch(err){BookStarkErrors.field('friend-links-error', err, window.__('profile.friend_links.save_error'));}}
+    if(isAdmin){loadFriendLinks();}
+    // API Token management
+    function renderTokenRow(t){
+      const div=document.createElement('div');
+      div.className='flex items-center gap-3 p-3 bg-slate-50 rounded-lg';
+      const masked=t.masked_token||'****';
+      div.innerHTML=`
+        <div class="flex-1 min-w-0">
+          <div class="text-sm font-medium text-slate-700">${escHtml(t.name||'default')}</div>
+          <div class="text-xs text-slate-500 font-mono mt-0.5" data-token-id="${t.token_id}" title="${window.__('profile.api_token.click_copy')}" style="cursor:pointer">${escHtml(masked)}</div>
+        </div>
+        <div class="text-xs text-slate-500">${new Date(t.create_time).toLocaleDateString()}</div>
+        <button type="button" class="px-2 py-1 text-xs text-red-600 bg-red-50 rounded hover:bg-red-100" onclick="deleteApiToken(${t.token_id})">${window.__('profile.api_token.delete')}</button>`;
+      return div;
+    }
+    function copyToken(btn){var token=btn.dataset.token;navigator.clipboard.writeText(token).then(()=>{btn.textContent=window.__('profile.api_token.copied');setTimeout(()=>btn.textContent=window.__('profile.api_token.copy'),1500);});}
+    async function loadApiTokens(){
+      const list=document.getElementById('api-token-list');
+      const empty=document.getElementById('api-token-empty');
+      list.innerHTML='';
+      const res=await csrfFetch('/api/api-tokens');
+      if(!res.ok){empty.classList.remove('hidden');return;}
+      const data=await res.json();
+      const tokens=data.data||[];
+      tokens.forEach(t=>list.appendChild(renderTokenRow(t)));
+      empty.classList.toggle('hidden',tokens.length>0);
+    }
+    async function createApiToken(btn){
+      const name=await BSDialog.prompt2(window.__('profile.api_token.create_dialog'),'');
+      if(name===null)return;
+      BookStarkErrors.clearField('api-token-error');
+      try {
+        const res=await csrfFetch('/api/api-tokens',{method:'POST',lockKey:'profile:api-token:create',lockControl:btn,headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name||''})});
+        if(!res.ok){const d=await res.json().catch(()=>({}));BookStarkErrors.field('api-token-error', d, window.__('profile.api_token.create_error'));return;}
+        const data=await res.json();
+        const fullToken=(data.data&&data.data.token)||'';
+        await BSDialog.alert2(window.__('profile.api_token.create_success') + '\n\n'+fullToken);
+        await loadApiTokens();
+      } catch (err) {
+        BookStarkErrors.field('api-token-error', err, window.__('profile.api_token.create_error'));
+      }
+    }
+    async function deleteApiToken(id){
+      const ok=await BSDialog.confirm2(window.__('profile.api_token.delete_confirm'));
+      if(!ok)return;
+      try {
+        const r=await csrfFetch('/api/api-tokens/'+id,{method:'DELETE',lockKey:'profile:api-token:delete:'+id});
+        if(r.ok){BSDialog.toast(window.__('profile.api_token.delete_success'),'success');await loadApiTokens();}
+        else{const d=await r.json().catch(()=>({}));BookStarkErrors.toast(d, 'error', window.__('profile.api_token.delete_error'));}
+      } catch (err) {
+        BookStarkErrors.toast(err, 'error', window.__('profile.api_token.delete_error'));
+      }
+    }
+    loadApiTokens();
+    </script>
+</body>
+</html>

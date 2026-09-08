@@ -1,0 +1,743 @@
+/* BookStark Design Tokens — single source of truth */
+:root {
+  /* Primary */
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-primary-light: #eff6ff;
+  --color-primary-lighter: #dbeafe;
+  --color-primary-border: #bfdbfe;
+  --color-primary-bg: #eff6ff;
+  --color-primary-text: #93c5fd;
+  --color-primary-ring: rgba(37, 99, 235, 0.25);
+
+  /* Focus */
+  --color-focus: #2563eb;
+  --color-focus-ring: rgba(37, 99, 235, 0.25);
+
+  /* Gray scale - Slate */
+  --color-gray-50: #f8fafc;
+  --color-gray-100: #f1f5f9;
+  --color-gray-200: #e2e8f0;
+  --color-gray-300: #cbd5e1;
+  --color-gray-400: #94a3b8;
+  --color-gray-500: #64748b;
+  --color-gray-600: #475569;
+  --color-gray-700: #334155;
+  --color-gray-800: #1e293b;
+  --color-gray-900: #0f172a;
+
+  /* Semantic */
+  --color-danger: #ef4444;
+  --color-danger-hover: #dc2626;
+  --color-danger-light: #fef2f2;
+  --color-success: #22c55e;
+  --color-success-hover: #16a34a;
+  --color-success-light: #ecfdf5;
+  --color-warning: #d97706;
+  --color-warning-light: #fffbeb;
+  --color-info: #3b82f6;
+  --color-info-light: #eff6ff;
+  --color-indigo: #6366f1;
+
+  /* Heat (calendar) */
+  --color-heat-0: #f8fafc;
+  --color-heat-1: #bfdbfe;
+  --color-heat-2: #60a5fa;
+  --color-heat-3: #2563eb;
+  --color-heat-4: #1e40af;
+
+  /* Border */
+  --color-border: #e2e8f0;
+  --color-border-light: #f1f5f9;
+  --color-border-hover: #2563eb;
+
+  /* Background */
+  --color-bg: #f9fafb;
+  --color-bg-card: #ffffff;
+  --color-bg-hover: #f8fafc;
+  --color-white: #ffffff;
+
+  /* Text */
+  --color-text: #1e293b;
+  --color-text-secondary: #64748b;
+  --color-text-muted: #94a3b8;
+  --color-text-placeholder: #94a3b8;
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 24px;
+
+  /* Border radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+  --radius-full: 9999px;
+
+  /* Shared content surfaces */
+  --surface-radius: var(--radius-lg);
+  --surface-border: var(--color-border);
+  --surface-shadow-hover: 0 4px 14px rgba(15, 23, 42, 0.07);
+}
+
+/* Screen-reader only utility (not in tailwind.min.css) */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Base text and background from variables */
+body { color: var(--color-text); background: var(--color-bg); }
+
+/* Optional global science background */
+.bookstark-science-bg { position: fixed; inset: 0; display: none; overflow: hidden; pointer-events: none; z-index: 0; color: rgba(14, 116, 144, 0.32); opacity: 0.82; --science-curve-primary: rgba(14, 165, 233, 0.24); --science-curve-secondary: rgba(20, 184, 166, 0.18); --science-curve-accent: rgba(245, 158, 11, 0.12); }
+[data-science-background="on"] .bookstark-science-bg { display: block; }
+[data-science-background="on"] body > header,
+[data-science-background="on"] body > main,
+[data-science-background="on"] body > footer,
+[data-science-background="on"] body > .editor-shell,
+[data-science-background="on"] body > .share-view-shell {
+  position: relative;
+  z-index: 1;
+}
+[data-science-background="on"] .topics-page,
+[data-science-background="on"] .label-right {
+  background: transparent !important;
+}
+[data-science-background="on"] .topic-rail,
+[data-science-background="on"] .topic-list,
+[data-science-background="on"] .topic-detail,
+[data-science-background="on"] .topic-detail-content,
+[data-science-background="on"] .topic-detail-body,
+[data-science-background="on"] .topic-detail-sticky-controls,
+[data-science-background="on"] .topic-detail-sticky-controls-flat {
+  background: transparent !important;
+}
+.bookstark-science-bg::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  background:
+    radial-gradient(circle at 16% 16%, rgba(14, 165, 233, 0.12), transparent 30%),
+    radial-gradient(circle at 88% 26%, rgba(16, 185, 129, 0.1), transparent 28%),
+    linear-gradient(rgba(14, 116, 144, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(14, 116, 144, 0.045) 1px, transparent 1px);
+  background-size: auto, auto, 44px 44px, 44px 44px;
+  -webkit-mask-image: linear-gradient(180deg, rgba(0,0,0,0.7), rgba(0,0,0,0.2) 74%, transparent);
+  mask-image: linear-gradient(180deg, rgba(0,0,0,0.7), rgba(0,0,0,0.2) 74%, transparent);
+}
+.bookstark-science-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.34), rgba(248, 250, 252, 0.86) 58%, rgba(248, 250, 252, 0.95));
+}
+.bookstark-function-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  opacity: 0.72;
+}
+.bookstark-science-formula {
+  position: absolute;
+  z-index: 2;
+  font-family: 'SF Mono','Fira Code',Consolas,monospace;
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+  color: rgba(15, 118, 110, 0.34);
+  text-shadow: 0 0 18px rgba(14, 165, 233, 0.16);
+  --science-formula-drift-x: 24px;
+  --science-formula-drift-y: -120px;
+  --science-formula-rise: -120px;
+  --science-formula-wave: 8px;
+  --science-formula-mid-x: 22px;
+  --science-formula-mid-y: -58px;
+  --science-formula-duration: 18000ms;
+  --science-formula-delay: 0ms;
+  animation: bookstark-science-rise var(--science-formula-duration) linear infinite;
+  animation-delay: var(--science-formula-delay);
+}
+.bookstark-science-formula mjx-container {
+  margin: 0 !important;
+  color: inherit;
+  font-size: inherit;
+}
+.bookstark-science-formula svg {
+  overflow: visible;
+}
+.bookstark-science-hud {
+  position: absolute;
+  z-index: 2;
+  width: 360px;
+  height: 360px;
+  border: 1px solid rgba(14, 165, 233, 0.18);
+  border-radius: 50%;
+  box-shadow: inset 0 0 32px rgba(14, 165, 233, 0.08), 0 0 48px rgba(16, 185, 129, 0.08);
+  animation: bookstark-science-spin 34s linear infinite;
+}
+.bookstark-science-hud::before,
+.bookstark-science-hud::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+}
+.bookstark-science-hud::before {
+  inset: 34px;
+  border: 1px dashed rgba(20, 184, 166, 0.2);
+}
+.bookstark-science-hud::after {
+  inset: 82px;
+  border: 1px solid rgba(245, 158, 11, 0.14);
+  box-shadow: 0 -1px 0 rgba(14, 165, 233, 0.18);
+}
+.bookstark-science-hud-primary { right: max(18px, calc(50% - 640px)); top: 72px; }
+.bookstark-science-hud-secondary { left: max(18px, calc(50% - 620px)); bottom: 72px; width: 260px; height: 260px; animation-duration: 46s; animation-direction: reverse; opacity: 0.68; }
+.bookstark-science-scan {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 12px, rgba(14, 165, 233, 0.045) 13px);
+  animation: bookstark-science-scan 8s linear infinite;
+}
+@keyframes bookstark-science-rise {
+  from { transform: translate3d(0, 0, 0); opacity: 0; }
+  6% { transform: translate3d(0, 0, 0); opacity: 0; }
+  10% { opacity: 1; }
+  28% { transform: translate3d(var(--science-formula-mid-x), var(--science-formula-mid-y), 0); opacity: 0.88; }
+  50% { transform: translate3d(var(--science-formula-drift-x), var(--science-formula-drift-y), 0); opacity: 0.9; }
+  56% { transform: translate3d(var(--science-formula-drift-x), var(--science-formula-drift-y), 0); opacity: 0; }
+  to { transform: translate3d(var(--science-formula-drift-x), var(--science-formula-drift-y), 0); opacity: 0; }
+}
+@keyframes bookstark-science-spin { to { transform: rotate(360deg); } }
+@keyframes bookstark-science-scan { to { transform: translateY(26px); } }
+[data-theme="dark"] .bookstark-science-bg { color: rgba(125, 211, 252, 0.32); opacity: 0.95; --science-curve-primary: rgba(56, 189, 248, 0.28); --science-curve-secondary: rgba(45, 212, 191, 0.2); --science-curve-accent: rgba(129, 140, 248, 0.16); }
+[data-theme="dark"] .bookstark-science-bg::before {
+  background:
+    radial-gradient(circle at 16% 16%, rgba(14, 165, 233, 0.18), transparent 30%),
+    radial-gradient(circle at 88% 26%, rgba(16, 185, 129, 0.16), transparent 28%),
+    linear-gradient(rgba(125, 211, 252, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(125, 211, 252, 0.045) 1px, transparent 1px);
+  background-size: auto, auto, 44px 44px, 44px 44px;
+}
+[data-theme="dark"] .bookstark-science-bg::after { background: linear-gradient(180deg, rgba(15, 23, 42, 0.12), rgba(15, 23, 42, 0.56) 58%, rgba(15, 23, 42, 0.78)); }
+[data-theme="dark"] .bookstark-science-formula { color: rgba(103, 232, 249, 0.32); text-shadow: 0 0 18px rgba(34, 211, 238, 0.24); }
+[data-theme="dark"] .bookstark-science-hud { border-color: rgba(125, 211, 252, 0.24); box-shadow: inset 0 0 36px rgba(14, 165, 233, 0.14), 0 0 52px rgba(16, 185, 129, 0.12); }
+[data-theme-style="scholar-paper"] .bookstark-science-bg { color: rgba(91, 111, 84, 0.24); opacity: 0.62; --science-curve-primary: rgba(91, 111, 84, 0.2); --science-curve-secondary: rgba(154, 106, 47, 0.16); --science-curve-accent: rgba(37, 99, 89, 0.12); }
+[data-theme-style="scholar-paper"] .bookstark-science-bg::before {
+  background:
+    radial-gradient(circle at 16% 16%, rgba(154, 106, 47, 0.1), transparent 30%),
+    radial-gradient(circle at 88% 26%, rgba(91, 111, 84, 0.12), transparent 28%),
+    linear-gradient(rgba(91, 111, 84, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(91, 111, 84, 0.04) 1px, transparent 1px);
+  background-size: auto, auto, 44px 44px, 44px 44px;
+}
+[data-theme-style="scholar-paper"] .bookstark-science-formula { color: rgba(91, 111, 84, 0.28); text-shadow: none; }
+[data-theme-style="scholar-paper"] .bookstark-science-hud { border-color: rgba(154, 106, 47, 0.14); box-shadow: inset 0 0 30px rgba(154, 106, 47, 0.06), 0 0 44px rgba(91, 111, 84, 0.08); }
+[data-theme-style="linear-saas"] .bookstark-science-bg::before {
+  background:
+    radial-gradient(circle at 16% 16%, rgba(124, 58, 237, 0.2), transparent 30%),
+    radial-gradient(circle at 88% 26%, rgba(56, 189, 248, 0.14), transparent 28%),
+    linear-gradient(rgba(167, 139, 250, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(167, 139, 250, 0.045) 1px, transparent 1px);
+  background-size: auto, auto, 44px 44px, 44px 44px;
+}
+[data-theme-style="linear-saas"] .bookstark-science-bg { --science-curve-primary: rgba(167, 139, 250, 0.26); --science-curve-secondary: rgba(56, 189, 248, 0.2); --science-curve-accent: rgba(45, 212, 191, 0.14); }
+[data-theme-style="linear-saas"] .bookstark-science-formula { color: rgba(196, 181, 253, 0.32); text-shadow: 0 0 18px rgba(124, 58, 237, 0.28); }
+[data-theme-style="linear-saas"] .bookstark-science-hud { border-color: rgba(167, 139, 250, 0.26); box-shadow: inset 0 0 36px rgba(124, 58, 237, 0.16), 0 0 52px rgba(56, 189, 248, 0.12); }
+[data-theme-style="apple-minimal"] .bookstark-science-bg { opacity: 0.48; --science-curve-primary: rgba(71, 85, 105, 0.16); --science-curve-secondary: rgba(14, 165, 233, 0.13); --science-curve-accent: rgba(168, 85, 247, 0.1); }
+[data-theme-style="apple-minimal"] .bookstark-science-bg::before {
+  background:
+    radial-gradient(circle at 18% 12%, rgba(125, 211, 252, 0.18), transparent 30%),
+    radial-gradient(circle at 86% 18%, rgba(196, 181, 253, 0.16), transparent 30%),
+    linear-gradient(rgba(71, 85, 105, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(71, 85, 105, 0.035) 1px, transparent 1px);
+  background-size: auto, auto, 44px 44px, 44px 44px;
+}
+[data-theme-style="apple-minimal"] .bookstark-science-formula { color: rgba(71, 85, 105, 0.22); text-shadow: none; }
+[data-theme-style="apple-minimal"] .bookstark-science-hud { border-color: rgba(100, 116, 139, 0.12); box-shadow: inset 0 0 30px rgba(148, 163, 184, 0.08), 0 0 42px rgba(125, 211, 252, 0.08); }
+@media (max-width: 640px) {
+  .bookstark-science-bg { opacity: 0.58; }
+  .bookstark-function-canvas { opacity: 0.7; }
+  .bookstark-science-formula { font-size: 11px; animation-name: bookstark-science-rise-mobile; }
+  .bookstark-science-hud { width: 240px; height: 240px; }
+  .bookstark-science-hud-primary { right: -92px; top: 88px; }
+  .bookstark-science-hud-secondary { left: -112px; bottom: 48px; width: 190px; height: 190px; }
+}
+@keyframes bookstark-science-rise-mobile {
+  from { transform: translate3d(0, 0, 0); opacity: 0; }
+  3% { transform: translate3d(0, 0, 0); opacity: 0; }
+  5% { opacity: 1; }
+  15% { transform: translate3d(var(--science-formula-mid-x), var(--science-formula-mid-y), 0); opacity: 0.82; }
+  28% { transform: translate3d(var(--science-formula-drift-x), var(--science-formula-drift-y), 0); opacity: 0.82; }
+  32% { transform: translate3d(var(--science-formula-drift-x), var(--science-formula-drift-y), 0); opacity: 0; }
+  to { transform: translate3d(var(--science-formula-drift-x), var(--science-formula-drift-y), 0); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bookstark-science-formula,
+  .bookstark-science-hud,
+  .bookstark-science-scan {
+    animation: none !important;
+  }
+  .bookstark-science-scan { display: none; }
+}
+
+/* ========== Dark Theme ========== */
+[data-theme="dark"] {
+  /* Primary — 保持蓝但 hover 调亮 */
+  --color-primary: #3b82f6;
+  --color-primary-hover: #60a5fa;
+  --color-primary-light: #172554;
+  --color-primary-lighter: #1e3a5f;
+  --color-primary-border: #1e40af;
+  --color-primary-bg: #172554;
+  --color-primary-text: #93c5fd;
+  --color-primary-ring: rgba(59, 130, 246, 0.35);
+
+  /* Focus */
+  --color-focus: #3b82f6;
+  --color-focus-ring: rgba(59, 130, 246, 0.35);
+
+  /* Gray scale — 反转 */
+  --color-gray-50: #0f172a;
+  --color-gray-100: #1e293b;
+  --color-gray-200: #334155;
+  --color-gray-300: #475569;
+  --color-gray-400: #64748b;
+  --color-gray-500: #94a3b8;
+  --color-gray-600: #cbd5e1;
+  --color-gray-700: #e2e8f0;
+  --color-gray-800: #f1f5f9;
+  --color-gray-900: #f8fafc;
+
+  /* Semantic — 保持色相，light 背景加深 */
+  --color-danger: #f87171;
+  --color-danger-hover: #ef4444;
+  --color-danger-light: #450a0a;
+  --color-success: #4ade80;
+  --color-success-hover: #22c55e;
+  --color-success-light: #052e16;
+  --color-warning: #fbbf24;
+  --color-warning-light: #451a03;
+  --color-info: #60a5fa;
+  --color-info-light: #172554;
+  --color-indigo: #818cf8;
+
+  /* Heat (calendar) — 深色版 */
+  --color-heat-0: #1e293b;
+  --color-heat-1: #1e3a5f;
+  --color-heat-2: #2563eb;
+  --color-heat-3: #3b82f6;
+  --color-heat-4: #60a5fa;
+
+  /* Border */
+  --color-border: #334155;
+  --color-border-light: #1e293b;
+  --color-border-hover: #3b82f6;
+
+  /* Background */
+  --color-bg: #0f172a;
+  --color-bg-card: #1e293b;
+  --color-bg-hover: #334155;
+  --color-white: #1e293b;
+
+  /* Text */
+  --color-text: #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
+  --color-text-placeholder: #64748b;
+}
+
+/* ========== Named Local Themes ========== */
+[data-theme-style="light"] {
+  --theme-style-name: light;
+}
+
+[data-theme-style="dark"] {
+  --theme-style-name: dark;
+}
+
+[data-theme-style="notion-pro"] {
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-primary-light: #eff6ff;
+  --color-primary-lighter: #dbeafe;
+  --color-primary-border: #bfdbfe;
+  --color-primary-bg: #eff6ff;
+  --color-primary-ring: rgba(37, 99, 235, 0.24);
+  --color-border: #e2e8f0;
+  --color-border-light: #f1f5f9;
+  --color-bg: #f8fafc;
+  --color-bg-card: #ffffff;
+  --color-bg-hover: #f1f5f9;
+  --color-text: #172033;
+  --color-text-secondary: #64748b;
+  --color-text-muted: #94a3b8;
+  --color-gray-50: #f8fafc;
+  --color-gray-100: #f1f5f9;
+  --color-gray-200: #e2e8f0;
+  --color-gray-300: #cbd5e1;
+  --color-gray-400: #94a3b8;
+  --color-gray-500: #64748b;
+  --color-gray-600: #475569;
+  --color-gray-700: #334155;
+  --color-gray-800: #1e293b;
+  --color-gray-900: #0f172a;
+  --logo-grad-start: #3b82f6;
+  --logo-grad-end: #1d4ed8;
+  --logo-shadow-color: rgba(37, 99, 235, 0.28);
+}
+
+[data-theme-style="scholar-paper"] {
+  --color-primary: #5b6f54;
+  --color-primary-hover: #43523e;
+  --color-primary-light: #eef3e7;
+  --color-primary-lighter: #dde8d1;
+  --color-primary-border: #c6d7b7;
+  --color-primary-bg: #eef3e7;
+  --color-primary-ring: rgba(91, 111, 84, 0.24);
+  --color-focus: #5b6f54;
+  --color-focus-ring: rgba(91, 111, 84, 0.24);
+  --color-border: #e6d7c2;
+  --color-border-light: #f0e6d7;
+  --color-border-hover: #9a6a2f;
+  --color-bg: #f7f0e6;
+  --color-bg-card: #fffaf2;
+  --color-bg-hover: #f1e6d5;
+  --color-white: #fffaf2;
+  --color-text: #2f2a23;
+  --color-text-secondary: #6f6251;
+  --color-text-muted: #a08e75;
+  --color-text-placeholder: #a08e75;
+  --color-gray-50: #fbf7ef;
+  --color-gray-100: #f1e6d5;
+  --color-gray-200: #e6d7c2;
+  --color-gray-300: #d6c2a6;
+  --color-gray-400: #a08e75;
+  --color-gray-500: #7c6b58;
+  --color-gray-600: #5f5244;
+  --color-gray-700: #473d33;
+  --color-gray-800: #2f2a23;
+  --color-gray-900: #1f1b17;
+  --color-danger-light: #fff1ed;
+  --color-success-light: #edf7ed;
+  --color-warning-light: #fff4d8;
+  --color-info-light: #edf4f7;
+  --color-heat-0: #f8f1e6;
+  --color-heat-1: #dce8d1;
+  --color-heat-2: #a9c798;
+  --color-heat-3: #6f8a62;
+  --color-heat-4: #43523e;
+  --logo-grad-start: #8a6339;
+  --logo-grad-end: #5b6f54;
+  --logo-shadow-color: rgba(91, 111, 84, 0.24);
+}
+
+[data-theme-style="linear-saas"] {
+  --color-primary: #7c3aed;
+  --color-primary-hover: #a78bfa;
+  --color-primary-light: #2e1065;
+  --color-primary-lighter: #3b1a78;
+  --color-primary-border: #5b21b6;
+  --color-primary-bg: #2e1065;
+  --color-primary-text: #c4b5fd;
+  --color-primary-ring: rgba(124, 58, 237, 0.38);
+  --color-focus: #8b5cf6;
+  --color-focus-ring: rgba(139, 92, 246, 0.36);
+  --color-bg: #0b1020;
+  --color-bg-card: #111827;
+  --color-bg-hover: #1e293b;
+  --color-gray-50: #0b1020;
+  --color-gray-100: #111827;
+  --color-gray-200: #1e293b;
+  --color-gray-300: #334155;
+  --color-gray-400: #64748b;
+  --color-gray-500: #94a3b8;
+  --color-gray-600: #cbd5e1;
+  --color-gray-700: #e2e8f0;
+  --color-gray-800: #f1f5f9;
+  --color-gray-900: #f8fafc;
+  --color-border: #283244;
+  --color-border-light: #172033;
+  --color-border-hover: #7c3aed;
+  --color-text: #eef2ff;
+  --color-text-secondary: #a8b3cf;
+  --color-text-muted: #64748b;
+  --color-text-placeholder: #64748b;
+  --color-indigo: #8b5cf6;
+  --color-info: #38bdf8;
+  --color-info-light: #082f49;
+  --color-heat-0: #111827;
+  --color-heat-1: #2e1065;
+  --color-heat-2: #5b21b6;
+  --color-heat-3: #7c3aed;
+  --color-heat-4: #a78bfa;
+  --logo-grad-start: #a78bfa;
+  --logo-grad-end: #38bdf8;
+  --logo-shadow-color: rgba(124, 58, 237, 0.42);
+}
+
+[data-theme-style="apple-minimal"] {
+  --color-primary: #111827;
+  --color-primary-hover: #374151;
+  --color-primary-light: #eef2f7;
+  --color-primary-lighter: #e5eaf2;
+  --color-primary-border: #cbd5e1;
+  --color-primary-bg: #eef2f7;
+  --color-primary-ring: rgba(17, 24, 39, 0.18);
+  --color-focus: #111827;
+  --color-focus-ring: rgba(17, 24, 39, 0.18);
+  --color-border: #d8dee8;
+  --color-border-light: #edf1f7;
+  --color-border-hover: #111827;
+  --color-bg: #f3f6fb;
+  --color-bg-card: rgba(255, 255, 255, 0.86);
+  --color-bg-hover: rgba(226, 232, 240, 0.72);
+  --color-white: rgba(255, 255, 255, 0.9);
+  --color-text: #111827;
+  --color-text-secondary: #536173;
+  --color-text-muted: #8b98aa;
+  --color-text-placeholder: #8b98aa;
+  --color-gray-50: #f8fafc;
+  --color-gray-100: #eef2f7;
+  --color-gray-200: #d8dee8;
+  --color-gray-300: #c4ccd8;
+  --color-gray-400: #8b98aa;
+  --color-gray-500: #64748b;
+  --color-gray-600: #475569;
+  --color-gray-700: #334155;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+  --logo-grad-start: #111827;
+  --logo-grad-end: #475569;
+  --logo-shadow-color: rgba(15, 23, 42, 0.18);
+}
+
+/* Named light themes — Tailwind utility overrides */
+[data-theme-style="notion-pro"] .bg-white,
+[data-theme-style="scholar-paper"] .bg-white,
+[data-theme-style="apple-minimal"] .bg-white { background-color: var(--color-bg-card) !important; }
+
+[data-theme-style="notion-pro"] .bg-slate-50,
+[data-theme-style="scholar-paper"] .bg-slate-50,
+[data-theme-style="apple-minimal"] .bg-slate-50 { background-color: var(--color-bg) !important; }
+
+[data-theme-style="notion-pro"] .bg-slate-100,
+[data-theme-style="scholar-paper"] .bg-slate-100,
+[data-theme-style="apple-minimal"] .bg-slate-100 { background-color: var(--color-gray-100) !important; }
+
+[data-theme-style="notion-pro"] .bg-slate-200,
+[data-theme-style="scholar-paper"] .bg-slate-200,
+[data-theme-style="apple-minimal"] .bg-slate-200 { background-color: var(--color-gray-200) !important; }
+
+[data-theme-style="scholar-paper"] .bg-blue-50,
+[data-theme-style="scholar-paper"] .bg-indigo-50,
+[data-theme-style="scholar-paper"] .bg-purple-50,
+[data-theme-style="scholar-paper"] .bg-sky-50,
+[data-theme-style="scholar-paper"] .bg-emerald-50,
+[data-theme-style="apple-minimal"] .bg-blue-50,
+[data-theme-style="apple-minimal"] .bg-indigo-50,
+[data-theme-style="apple-minimal"] .bg-purple-50,
+[data-theme-style="apple-minimal"] .bg-sky-50,
+[data-theme-style="apple-minimal"] .bg-emerald-50 {
+  background-color: var(--color-primary-light) !important;
+}
+
+[data-theme-style="scholar-paper"] .bg-blue-600,
+[data-theme-style="apple-minimal"] .bg-blue-600 { background-color: var(--color-primary) !important; }
+[data-theme-style="scholar-paper"] .hover\:bg-blue-700:hover,
+[data-theme-style="apple-minimal"] .hover\:bg-blue-700:hover { background-color: var(--color-primary-hover) !important; }
+
+[data-theme-style="notion-pro"] .border-slate-100,
+[data-theme-style="scholar-paper"] .border-slate-100,
+[data-theme-style="apple-minimal"] .border-slate-100 { border-color: var(--color-border-light) !important; }
+[data-theme-style="notion-pro"] .border-slate-200,
+[data-theme-style="scholar-paper"] .border-slate-200,
+[data-theme-style="apple-minimal"] .border-slate-200 { border-color: var(--color-border) !important; }
+[data-theme-style="notion-pro"] .border-slate-300,
+[data-theme-style="scholar-paper"] .border-slate-300,
+[data-theme-style="apple-minimal"] .border-slate-300 { border-color: var(--color-gray-300) !important; }
+
+[data-theme-style="notion-pro"] .text-slate-300,
+[data-theme-style="scholar-paper"] .text-slate-300,
+[data-theme-style="apple-minimal"] .text-slate-300 { color: var(--color-gray-300) !important; }
+[data-theme-style="notion-pro"] .text-slate-400,
+[data-theme-style="scholar-paper"] .text-slate-400,
+[data-theme-style="apple-minimal"] .text-slate-400 { color: var(--color-gray-400) !important; }
+[data-theme-style="notion-pro"] .text-slate-500,
+[data-theme-style="scholar-paper"] .text-slate-500,
+[data-theme-style="apple-minimal"] .text-slate-500 { color: var(--color-gray-500) !important; }
+[data-theme-style="notion-pro"] .text-slate-600,
+[data-theme-style="scholar-paper"] .text-slate-600,
+[data-theme-style="apple-minimal"] .text-slate-600 { color: var(--color-gray-600) !important; }
+[data-theme-style="notion-pro"] .text-slate-700,
+[data-theme-style="scholar-paper"] .text-slate-700,
+[data-theme-style="apple-minimal"] .text-slate-700 { color: var(--color-gray-700) !important; }
+[data-theme-style="notion-pro"] .text-slate-800,
+[data-theme-style="scholar-paper"] .text-slate-800,
+[data-theme-style="apple-minimal"] .text-slate-800 { color: var(--color-gray-800) !important; }
+
+[data-theme-style="scholar-paper"] .text-blue-500,
+[data-theme-style="scholar-paper"] .text-blue-600,
+[data-theme-style="apple-minimal"] .text-blue-500,
+[data-theme-style="apple-minimal"] .text-blue-600 { color: var(--color-primary) !important; }
+
+[data-theme-style="scholar-paper"] .focus\:border-blue-600:focus,
+[data-theme-style="apple-minimal"] .focus\:border-blue-600:focus { border-color: var(--color-focus) !important; }
+[data-theme-style="scholar-paper"] .focus\:ring-blue-600\/20:focus,
+[data-theme-style="apple-minimal"] .focus\:ring-blue-600\/20:focus { box-shadow: 0 0 0 2px var(--color-focus-ring) !important; }
+
+/* ========== Dark Theme — Tailwind Utility Overrides ========== */
+[data-theme="dark"] .bg-white { background-color: var(--color-bg-card) !important; }
+[data-theme="dark"] .bg-slate-50 { background-color: var(--color-bg) !important; }
+[data-theme="dark"] .bg-slate-100 { background-color: var(--color-gray-100) !important; }
+[data-theme="dark"] .bg-slate-200 { background-color: var(--color-gray-200) !important; }
+[data-theme="dark"] .bg-blue-50,
+[data-theme="dark"] .bg-indigo-50,
+[data-theme="dark"] .bg-purple-50,
+[data-theme="dark"] .bg-emerald-50,
+[data-theme="dark"] .bg-amber-50,
+[data-theme="dark"] .bg-pink-50,
+[data-theme="dark"] .bg-red-50,
+[data-theme="dark"] .bg-green-50,
+[data-theme="dark"] .bg-yellow-50 {
+  background-color: var(--color-gray-100) !important;
+}
+
+[data-theme="dark"] .border-slate-100 { border-color: var(--color-border-light) !important; }
+[data-theme="dark"] .border-slate-200 { border-color: var(--color-border) !important; }
+[data-theme="dark"] .border-slate-300 { border-color: var(--color-gray-300) !important; }
+
+[data-theme="dark"] .text-slate-300 { color: var(--color-gray-600) !important; }
+[data-theme="dark"] .text-slate-400 { color: var(--color-gray-500) !important; }
+[data-theme="dark"] .text-slate-500 { color: var(--color-gray-500) !important; }
+[data-theme="dark"] .text-slate-600 { color: var(--color-gray-600) !important; }
+[data-theme="dark"] .text-slate-700 { color: var(--color-gray-700) !important; }
+[data-theme="dark"] .text-slate-800 { color: var(--color-gray-800) !important; }
+
+[data-theme="dark"] .hover\:bg-slate-50:hover { background-color: var(--color-bg-hover) !important; }
+[data-theme="dark"] .hover\:bg-slate-100:hover { background-color: var(--color-bg-hover) !important; }
+[data-theme="dark"] .hover\:bg-white:hover { background-color: var(--color-bg-card) !important; }
+[data-theme="dark"] .hover\:text-slate-700:hover { color: var(--color-gray-700) !important; }
+[data-theme="dark"] .shadow-sm,
+[data-theme="dark"] .shadow,
+[data-theme="dark"] .shadow-md {
+  box-shadow: 0 1px 2px rgba(0,0,0,0.32) !important;
+}
+
+/* Dark theme — form inputs */
+[data-theme="dark"] input[type="text"],
+[data-theme="dark"] input[type="password"],
+[data-theme="dark"] input[type="email"],
+[data-theme="dark"] input[type="search"],
+[data-theme="dark"] input[type="url"],
+[data-theme="dark"] input[type="number"],
+[data-theme="dark"] textarea,
+[data-theme="dark"] select {
+  background-color: var(--color-gray-100);
+  border-color: var(--color-gray-300);
+  color: var(--color-text);
+}
+
+/* Dark theme — checkbox */
+[data-theme="dark"] input[type="checkbox"] {
+  accent-color: var(--color-primary);
+  background-color: var(--color-gray-100);
+  border: 1px solid var(--color-gray-300);
+  border-radius: 3px;
+}
+
+[data-theme="dark"] input[type="date"],
+[data-theme="dark"] input[type="datetime-local"] {
+  background-color: var(--color-gray-100);
+  border-color: var(--color-gray-300);
+  color: var(--color-text);
+  color-scheme: dark;
+}
+
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: var(--color-text-placeholder);
+}
+
+/* Scrollbar — thin style, always visible */
+* { scrollbar-width: thin; scrollbar-color: var(--color-gray-300) transparent; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-gray-300); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-gray-400); }
+
+/* Dark theme — scrollbar */
+[data-theme="dark"] * { scrollbar-color: var(--color-gray-500) transparent; }
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background: var(--color-gray-500); }
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: var(--color-gray-400); }
+
+/* Dark theme — selection */
+[data-theme="dark"] ::selection { background: rgba(59, 130, 246, 0.35); color: #f1f5f9; }
+
+/* Dark theme — semantic color overrides (Tailwind classes) */
+[data-theme="dark"] .bg-red-50 { background-color: #450a0a !important; }
+[data-theme="dark"] .text-red-600 { color: #f87171 !important; }
+[data-theme="dark"] .bg-green-50 { background-color: #052e16 !important; }
+[data-theme="dark"] .text-green-600 { color: #4ade80 !important; }
+[data-theme="dark"] .bg-amber-50 { background-color: #451a03 !important; }
+[data-theme="dark"] .text-amber-600 { color: #fbbf24 !important; }
+[data-theme="dark"] .bg-blue-50 { background-color: var(--color-primary-light) !important; }
+[data-theme="dark"] .bg-blue-600 { background-color: var(--color-primary) !important; }
+[data-theme="dark"] .hover\:bg-blue-50:hover { background-color: var(--color-primary-light) !important; }
+[data-theme="dark"] .hover\:bg-blue-700:hover { background-color: var(--color-primary-hover) !important; }
+[data-theme="dark"] .text-blue-600 { color: var(--color-primary) !important; }
+[data-theme="dark"] .text-blue-500 { color: var(--color-primary) !important; }
+[data-theme="dark"] .hover\:text-red-500:hover { color: var(--color-danger) !important; }
+[data-theme="dark"] .hover\:underline:hover { text-decoration: underline !important; }
+
+/* Dark theme — shadow overrides */
+[data-theme="dark"] .shadow-sm { box-shadow: 0 1px 2px rgba(0,0,0,0.3) !important; }
+[data-theme="dark"] .shadow { box-shadow: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2) !important; }
+
+/* Dark theme — text-white stays white */
+[data-theme="dark"] .text-white { color: #ffffff !important; }
+
+/* ========== Logo 渐变+投影 ========== */
+:root {
+  --logo-grad-start: #3b82f6;
+  --logo-grad-end: #1d4ed8;
+  --logo-shadow-color: rgba(37, 99, 235, 0.3);
+}
+[data-theme="dark"] {
+  --logo-grad-start: #60a5fa;
+  --logo-grad-end: #3b82f6;
+  --logo-shadow-color: rgba(96, 165, 250, 0.4);
+}
+[data-theme-style="notion-pro"] {
+  --logo-grad-start: #3b82f6;
+  --logo-grad-end: #1d4ed8;
+  --logo-shadow-color: rgba(37, 99, 235, 0.28);
+}
+[data-theme-style="scholar-paper"] {
+  --logo-grad-start: #8a6339;
+  --logo-grad-end: #5b6f54;
+  --logo-shadow-color: rgba(91, 111, 84, 0.24);
+}
+[data-theme-style="linear-saas"] {
+  --logo-grad-start: #a78bfa;
+  --logo-grad-end: #38bdf8;
+  --logo-shadow-color: rgba(124, 58, 237, 0.42);
+}
+[data-theme-style="apple-minimal"] {
+  --logo-grad-start: #111827;
+  --logo-grad-end: #475569;
+  --logo-shadow-color: rgba(15, 23, 42, 0.18);
+}

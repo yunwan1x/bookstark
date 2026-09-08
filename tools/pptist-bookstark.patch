@@ -1,0 +1,205 @@
+diff --git a/src/App.vue b/src/App.vue
+index 660741e..74e5185 100644
+--- a/src/App.vue
++++ b/src/App.vue
+@@ -8,7 +8,7 @@
+ </template>
+ 
+ <script lang="ts" setup>
+-import { onMounted } from 'vue'
++import { onMounted, watch } from 'vue'
+ import { storeToRefs } from 'pinia'
+ import { nanoid } from 'nanoid'
+ import { useScreenStore, useMainStore, useSnapshotStore, useSlidesStore } from '@/store'
+@@ -32,14 +32,117 @@ const { databaseId } = storeToRefs(mainStore)
+ const { slides } = storeToRefs(slidesStore)
+ const { screening } = storeToRefs(screenStore)
+ 
+-const isAudienceMode = new URLSearchParams(window.location.search).get('mode') === 'audience'
++const params = new URLSearchParams(window.location.search)
++const isAudienceMode = params.get('mode') === 'audience'
++const isBookStarkEmbed = params.get('bookstark') === '1'
++let bridgeInitialized = false
++let bridgeApplying = false
++let bridgeTimer = 0
++let bridgeSnapshot = ''
+ 
+-if (import.meta.env.MODE !== 'development') {
++interface BookStarkPresentation {
++  title?: string
++  width?: number
++  height?: number
++  theme?: Record<string, unknown>
++  slides?: any[]
++}
++
++const emptySlide = () => ({
++  id: nanoid(10),
++  elements: [],
++})
++
++const serializePresentation = () => ({
++  title: slidesStore.title,
++  width: slidesStore.viewportSize,
++  height: slidesStore.viewportSize * slidesStore.viewportRatio,
++  theme: slidesStore.theme,
++  slides: slidesStore.slides,
++})
++
++const emitBridgeChange = () => {
++  if (!isBookStarkEmbed || bridgeApplying || !bridgeInitialized) return
++  window.clearTimeout(bridgeTimer)
++  bridgeTimer = window.setTimeout(() => {
++    const payload = serializePresentation()
++    const snapshot = JSON.stringify(payload)
++    if (snapshot === bridgeSnapshot) return
++    bridgeSnapshot = snapshot
++    window.parent.postMessage({
++      source: 'bookstark-pptist',
++      type: 'change',
++      payload,
++    }, window.location.origin)
++  }, 350)
++}
++
++const applyBridgeData = async (data: BookStarkPresentation, readonly = false) => {
++  bridgeApplying = true
++  const width = Number(data.width) > 0 ? Number(data.width) : 1000
++  const height = Number(data.height) > 0 ? Number(data.height) : width * 0.5625
++  slidesStore.setTitle(String(data.title || '未命名演示文稿'))
++  slidesStore.setViewportSize(width)
++  slidesStore.setViewportRatio(height / width)
++  slidesStore.setSlides(
++    Array.isArray(data.slides) && data.slides.length ? data.slides : [emptySlide()],
++    (data.theme || {}) as any,
++  )
++  if (!readonly) {
++    await deleteDiscardedDB()
++    await snapshotStore.initSnapshotDatabase()
++  }
++  bridgeInitialized = true
++  bridgeSnapshot = JSON.stringify(serializePresentation())
++  bridgeApplying = false
++  if (readonly) screenStore.setScreening(true)
++}
++
++const handleBridgeMessage = (event: MessageEvent) => {
++  if (event.origin !== window.location.origin || event.source !== window.parent) return
++  const message = event.data
++  if (!message || message.source !== 'bookstark' || message.type !== 'init') return
++  applyBridgeData(message.payload || {}, Boolean(message.readonly)).then(() => {
++    window.parent.postMessage({
++      source: 'bookstark-pptist',
++      type: 'initialized',
++    }, window.location.origin)
++  })
++}
++
++(window as any).BookStarkPPTistBridge = {
++  getPresentation: serializePresentation,
++}
++
++if (import.meta.env.MODE !== 'development' && !isBookStarkEmbed) {
+   window.onbeforeunload = () => false
+ }
+ 
+ onMounted(async () => {
+-  if (isAudienceMode) {
++  if (isBookStarkEmbed) {
++    window.addEventListener('message', handleBridgeMessage)
++    watch(
++      () => [
++        slidesStore.title,
++        slidesStore.viewportSize,
++        slidesStore.viewportRatio,
++        slidesStore.theme,
++        slidesStore.slides,
++      ],
++      emitBridgeChange,
++      { deep: true },
++    )
++    slidesStore.$onAction(({ after }) => after(emitBridgeChange), true)
++    document.addEventListener('input', emitBridgeChange, true)
++    document.addEventListener('change', emitBridgeChange, true)
++    document.addEventListener('pointerup', emitBridgeChange, true)
++    document.addEventListener('keyup', emitBridgeChange, true)
++    window.parent.postMessage({
++      source: 'bookstark-pptist',
++      type: 'ready',
++    }, window.location.origin)
++  }
++  else if (isAudienceMode) {
+     slidesStore.setSlides([{
+       id: nanoid(10),
+       elements: [],
+@@ -57,6 +160,7 @@ onMounted(async () => {
+ 
+ // 应用注销时向 localStorage 中记录下本次 indexedDB 的数据库ID，用于之后清除数据库
+ window.addEventListener('beforeunload', () => {
++  if (isBookStarkEmbed) return
+   const discardedDB = localStorage.getItem(LOCALSTORAGE_KEY_DISCARDED_DB)
+   const discardedDBList: string[] = discardedDB ? JSON.parse(discardedDB) : []
+ 
+@@ -71,4 +175,4 @@ window.addEventListener('beforeunload', () => {
+ #app {
+   height: 100%;
+ }
+-</style>
+\ No newline at end of file
++</style>
+diff --git a/src/utils/image.ts b/src/utils/image.ts
+index 8cd40aa..256d578 100644
+--- a/src/utils/image.ts
++++ b/src/utils/image.ts
+@@ -37,12 +37,25 @@ export const getImageSize = (src: string): Promise<ImageSize> => {
+  * 读取图片文件的dataURL
+  * @param file 图片文件
+  */
+-export const getImageDataURL = (file: File): Promise<string> => {
+-  return new Promise(resolve => {
++export const getImageDataURL = async (file: File): Promise<string> => {
++  const parentWindow = window.parent as Window & {
++    BookStarkPPTistUploadImage?: (file: File) => Promise<{ url?: string } | string>
++  }
++  const isBookStarkEmbed = new URLSearchParams(window.location.search).get('bookstark') === '1'
++
++  if (isBookStarkEmbed && window.parent !== window && typeof parentWindow.BookStarkPPTistUploadImage === 'function') {
++    const uploaded = await parentWindow.BookStarkPPTistUploadImage(file)
++    const url = typeof uploaded === 'string' ? uploaded : uploaded?.url
++    if (!url) throw new Error('图片上传失败')
++    return url
++  }
++
++  return new Promise((resolve, reject) => {
+     const reader = new FileReader()
+     reader.addEventListener('load', () => {
+       resolve(reader.result as string)
+     })
++    reader.addEventListener('error', () => reject(reader.error || new Error('图片读取失败')))
+     reader.readAsDataURL(file)
+   })
+ }
+diff --git a/src/views/Editor/EditorHeader/index.vue b/src/views/Editor/EditorHeader/index.vue
+index ad6ea2a..4dcd63f 100644
+--- a/src/views/Editor/EditorHeader/index.vue
++++ b/src/views/Editor/EditorHeader/index.vue
+@@ -92,9 +92,6 @@
+       <div class="menu-item" v-tooltip="'导出'" @click="setDialogForExport('pptx')">
+         <i-icon-park-outline:download class="icon" />
+       </div>
+-      <a class="github-link" v-tooltip="'Copyright © 2020-PRESENT pipipi-pikachu'" href="https://github.com/pipipi-pikachu/PPTist" target="_blank">
+-        <div class="menu-item"><i-icon-park-outline:github class="icon" /></div>
+-      </a>
+     </div>
+ 
+     <Drawer
+@@ -362,8 +359,4 @@ const openAIPPTDialog = () => {
+     }
+   }
+ }
+-.github-link {
+-  display: inline-block;
+-  height: 30px;
+-}
+ </style>
+\ No newline at end of file

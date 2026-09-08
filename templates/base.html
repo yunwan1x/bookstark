@@ -1,0 +1,677 @@
+{{define "head-assets"}}
+<meta name="csrf-token" content="{{.CSRFToken}}">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="BookStark">
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v={{assetVer "/static/favicon.svg"}}">
+<link rel="icon" type="image/x-icon" href="/static/favicon.ico?v={{assetVer "/static/favicon.ico"}}">
+<link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v={{assetVer "/static/apple-touch-icon.png"}}">
+<script>(function(){var k='bookstark-theme',s={light:'light',dark:'dark','notion-pro':'light','scholar-paper':'light','linear-saas':'dark','apple-minimal':'light'},t=localStorage.getItem(k);if(!s[t])t=window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';document.documentElement.setAttribute('data-theme',s[t]);document.documentElement.setAttribute('data-theme-style',t);})();</script>
+<link rel="preload" href="/static/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/static/webfonts/fa-regular-400.woff2" as="font" type="font/woff2" crossorigin><link href="/static/css/font-awesome.min.css?v={{assetVer "/static/css/font-awesome.min.css"}}" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/variables.css?v={{assetVer "/static/css/variables.css"}}">
+<link rel="stylesheet" href="/static/css/components.css?v={{assetVer "/static/css/components.css"}}">
+<link rel="stylesheet" href="/static/css/command-palette.css?v={{assetVer "/static/css/command-palette.css"}}">
+<link rel="stylesheet" href="/static/css/offline-status.css?v={{assetVer "/static/css/offline-status.css"}}">
+<script src="/static/js/utils.js?v={{assetVer "/static/js/utils.js"}}"></script>
+<script src="/static/js/theme.js?v={{assetVer "/static/js/theme.js"}}"></script>
+<script src="/static/js/tab-url.js?v={{assetVer "/static/js/tab-url.js"}}"></script>
+<style>
+.role-admin, .bg-role-admin { background: var(--color-danger); }
+.role-user, .bg-role-user { background: var(--color-indigo); }
+/*
+ * BookStark Responsive Breakpoints (aligned with Tailwind)
+ * sm: 640px | md: 768px | lg: 1024px | xl: 1280px
+ * Use Tailwind classes (sm:, md:, lg:, xl:) in HTML
+ * Use @media (max-width: 640px) / (min-width: 640px) for sm in custom CSS
+ * Use @media (max-width: 768px) / (min-width: 768px) for md in custom CSS
+ */
+.nav-link { border-bottom: 2px solid transparent; color: var(--color-text-muted); transition: color 0.15s ease; }
+.nav-link:hover { color: var(--color-text); }
+.nav-link.active { border-bottom-color: var(--color-primary); color: var(--color-primary); }
+.header-nav-group { position: relative; display: inline-flex; align-items: center; }
+.header-nav-trigger { display: inline-flex; align-items: center; gap: 4px; border: 0; background: transparent; cursor: pointer; white-space: nowrap; }
+.header-nav-trigger .fa-chevron-down { font-size: 10px; margin-left: 1px; transition: transform 0.15s ease; }
+.header-nav-trigger[aria-expanded="true"] .fa-chevron-down { transform: rotate(180deg); }
+.header-cmdk-hint { display: none; align-items: center; gap: 6px; margin-left: 10px; padding-left: 12px; border-left: 1px solid var(--color-border); color: var(--color-text-muted); font-size: 12px; background: transparent; border-top: 0; border-right: 0; border-bottom: 0; cursor: pointer; opacity: 0.72; transition: opacity 0.15s ease, color 0.15s ease; }
+.header-cmdk-hint:hover { opacity: 1; color: var(--color-text-secondary); }
+.header-cmdk-hint kbd { border: 1px solid var(--color-border); border-bottom-width: 2px; border-radius: var(--radius-sm); padding: 0 5px; background: var(--color-bg-hover); color: var(--color-text-secondary); font-size: 11px; line-height: 18px; font-weight: 600; }
+@media (min-width: 1024px) { .header-cmdk-hint { display: inline-flex; } }
+.header-dropdown { position: absolute; top: 100%; left: 0; padding-top: 4px; z-index: 50; min-width: 150px; }
+.header-dropdown.align-right { left: auto; right: 0; }
+.header-dropdown-panel { background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 4px 0; }
+.header-menu-item { display: block; padding: 6px 12px; font-size: 13px; color: var(--color-text-secondary); transition: background 0.15s ease; }
+.header-menu-item:hover { background: var(--color-bg-hover); }
+.header-menu-item.disabled { color: var(--color-gray-400); cursor: default; pointer-events: none; }
+.header-menu-note { display: block; padding: 2px 12px 6px; font-size: 11px; color: var(--color-text-muted); }
+.nav-icon { margin-right: 4px; font-size: 14px; vertical-align: -1px; }
+.menu-icon { font-size: 14px; vertical-align: -1px; margin-right: 6px; }
+html, body, * { scrollbar-width: thin; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 3px; }
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); }
+:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+input:focus-visible, textarea:focus-visible, select:focus-visible { outline: none; border-color: var(--color-focus); box-shadow: 0 0 0 2px var(--color-focus-ring); }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; border-radius: 4px; }
+.page-btn:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 1px; }
+.row-action:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 1px; border-radius: 4px; }
+:focus:not(:focus-visible) { outline: none; }
+.search-trigger { width: 32px; height: 32px; border: none; background: none; cursor: pointer; border-radius: var(--radius-md); color: var(--color-gray-500); font-size: 14px; display: flex; align-items: center; justify-content: center; transition: background 0.15s ease, color 0.15s ease; flex-shrink: 0; }
+.search-trigger:hover { background: var(--color-gray-100); color: var(--color-gray-700); }
+.search-trigger:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.header-theme-toggle { display: none !important; }
+.header-search-bar { display: none; flex: 1; align-items: center; gap: 8px; }
+header.search-expanded nav { display: none !important; }
+header.search-expanded .header-cmdk-hint { display: none !important; }
+header.search-expanded .search-trigger { display: none !important; }
+header.search-expanded .header-create-wrapper { display: none !important; }
+header.search-expanded .header-search-bar { display: flex; }
+.header-search-bar input { flex: 1; border: none; outline: none; font-size: 14px; color: var(--color-gray-800); background: transparent; padding: 4px 0; }
+.header-search-bar input::placeholder { color: var(--color-gray-400); }
+	.header-search-bar input:focus-visible { outline: none; }
+.header-close-search { width: 28px; height: 28px; border: none; background: none; cursor: pointer; color: var(--color-gray-400); font-size: 14px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-md); transition: background 0.15s ease, color 0.15s ease; flex-shrink: 0; }
+.header-close-search:hover { background: var(--color-gray-100); color: var(--color-gray-600); }
+.logo-text { margin-right: 12px; font-size: 16px; font-weight: 700; letter-spacing: -0.5px; background: linear-gradient(180deg, var(--logo-grad-start), var(--logo-grad-end)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 2px 4px var(--logo-shadow-color)); }
+.header-menu-item.active { color: var(--color-primary); background: var(--color-primary-bg); font-weight: 600; }
+	@media (max-width: 640px) { .nav-text { display: inline; } .nav-icon { margin-right: 3px !important; } header { touch-action: pan-y; } #main-nav { overflow: visible; flex-shrink: 1; min-width: 0; touch-action: pan-y; } #main-nav .nav-link { white-space: nowrap; } .nav-link { padding-left: 7px !important; padding-right: 7px !important; } .header-nav-trigger .fa-chevron-down { display: none; } html { overscroll-behavior-x: none; } }
+	@media (max-width: 640px) { header { min-height: 48px; height: auto !important; } .search-trigger { width: 40px; height: 40px; } .header-close-search { width: 40px; height: 40px; } #user-menu-trigger { min-height: 40px; } .header-lang-switcher, .header-theme-toggle { display: none !important; } .header-login-link { margin-left: auto; } .header-dropdown { position: fixed; top: 48px; left: 8px; right: 8px; min-width: 0; } .header-dropdown.align-right { left: 8px; right: 8px; } .header-dropdown-panel { border-radius: var(--radius-lg); } .header-menu-item { padding: 10px 12px; font-size: 14px; } }
+.page-sticky-header { position: sticky; top: 40px; z-index: 10; background: transparent; border-bottom: 1px solid transparent; box-shadow: none; margin-bottom: 16px; transition: background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease; }
+.page-sticky-header.is-stuck { background: var(--color-bg); border-bottom: 1px solid var(--color-border); box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04); }
+@media (max-width: 640px) { .page-sticky-header { top: 48px; } }
+/* 页面标题统一样式 */
+.page-title { font-size: 18px; font-weight: 600; color: var(--color-gray-800); line-height: 1.4; }
+
+/* 列表项交错进入动画 */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.list-row, .bm-row {
+    animation: fadeInUp 0.2s ease-out both;
+}
+.list-row:nth-child(1), .bm-row:nth-child(1) { animation-delay: 0ms; }
+.list-row:nth-child(2), .bm-row:nth-child(2) { animation-delay: 30ms; }
+.list-row:nth-child(3), .bm-row:nth-child(3) { animation-delay: 60ms; }
+.list-row:nth-child(4), .bm-row:nth-child(4) { animation-delay: 90ms; }
+.list-row:nth-child(5), .bm-row:nth-child(5) { animation-delay: 120ms; }
+.list-row:nth-child(n+6), .bm-row:nth-child(n+6) { animation-delay: 150ms; }
+
+/* 按钮交互反馈 */
+button, .page-btn, a.bg-blue-600 {
+    transition: transform 0.1s ease, box-shadow 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+button:active:not(:disabled), .page-btn:active:not(:disabled) {
+    transform: scale(0.97);
+}
+
+/* Toast 滑入动画 */
+@keyframes slideInRight {
+    from { opacity: 0; transform: translateX(100%); }
+    to { opacity: 1; transform: translateX(0); }
+}
+@keyframes slideOutRight {
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(100%); }
+}
+.toast-enter { animation: slideInRight 0.25s ease-out forwards; }
+.toast-exit { animation: slideOutRight 0.2s ease-in forwards; }
+
+/* 尊重用户减少动效偏好 */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scrollbar-width: auto;
+    }
+}
+</style>
+{{end}}
+
+{{define "header"}}
+<header class="h-10 flex items-center px-3 sm:px-4 text-sm shrink-0" data-swipe-nav data-swipe-item="[data-nav-idx][href]" data-swipe-index="data-nav-idx" data-swipe-mode="href" data-swipe-ignore="input,textarea,select,#user-menu-trigger,#searchTrigger,#themeToggle,#langToggle,#headerCloseSearch,#headerCreateTrigger,[data-header-menu-trigger]" style="position:sticky;top:0;z-index:20;background:var(--color-bg-card);border-bottom:1px solid var(--color-border)">
+    <a href="/" class="logo-text py-2 sm:mr-6 hidden sm:inline">BookStark</a>
+    <nav class="flex gap-1" id="main-nav">
+        <div class="header-nav-group">
+            <a href="{{if .Account}}/notes{{else}}/bookmarks{{end}}" class="nav-link header-nav-trigger px-2 py-2.5 font-semibold {{if or (eq .Nav "notes") (eq .Nav "tasks") (eq .Nav "books") (eq .Nav "bookmarks")}}active{{end}}" data-nav-idx="0" data-header-menu-trigger data-header-menu-id="header-knowledge-menu" aria-haspopup="menu" aria-expanded="false">
+                <i class="fa-solid fa-layer-group nav-icon"></i><span class="nav-text">{{call .T "nav.knowledge"}}</span><i class="fa-solid fa-chevron-down"></i>
+            </a>
+            <div id="header-knowledge-menu" class="header-dropdown hidden" role="menu">
+                <div class="header-dropdown-panel">
+                    {{if .Account}}<a href="/notes" class="header-menu-item {{if and (eq .Nav "notes") (ne .ActiveKnowledgeTab "tasks") (ne .ActiveKnowledgeTab "articles")}}active{{end}}" role="menuitem"><i class="fa-solid fa-note-sticky menu-icon"></i>{{call .T "nav.notes"}}</a>{{end}}
+                    {{if .Account}}<a href="/notes?tab=tasks" class="header-menu-item {{if or (eq .Nav "tasks") (eq .ActiveKnowledgeTab "tasks")}}active{{end}}" role="menuitem"><i class="fa-solid fa-list-check menu-icon"></i>{{call .T "nav.todos"}}</a>{{end}}
+                    {{if .Account}}<a href="/notes?tab=articles" class="header-menu-item {{if eq .ActiveKnowledgeTab "articles"}}active{{end}}" role="menuitem"><i class="fa-solid fa-pen-nib menu-icon"></i>{{call .T "note.tab.articles"}}</a>{{end}}
+                    {{if .Account}}<a href="/books" class="header-menu-item {{if eq .Nav "books"}}active{{end}}" role="menuitem"><i class="fa-solid fa-book menu-icon"></i>{{call .T "nav.books"}}</a>{{end}}
+                    <a href="/bookmarks" class="header-menu-item {{if eq .Nav "bookmarks"}}active{{end}}" role="menuitem"><i class="fa-solid fa-bookmark menu-icon"></i>{{call .T "nav.bookmarks"}}</a>
+                </div>
+            </div>
+        </div>
+        {{if .Account}}
+        <div class="header-nav-group">
+            <a href="/topics" class="nav-link header-nav-trigger px-2 py-2.5 font-semibold {{if or (eq .Nav "topics") (eq .Nav "labels")}}active{{end}}" data-nav-idx="1" data-header-menu-trigger data-header-menu-id="header-collections-menu" aria-haspopup="menu" aria-expanded="false">
+                <i class="fa-solid fa-box-archive nav-icon"></i><span class="nav-text">{{call .T "nav.collections"}}</span><i class="fa-solid fa-chevron-down"></i>
+            </a>
+            <div id="header-collections-menu" class="header-dropdown hidden" role="menu">
+                <div class="header-dropdown-panel">
+                    <a href="/topics" class="header-menu-item {{if eq .Nav "topics"}}active{{end}}" role="menuitem"><i class="fa-solid fa-diagram-project menu-icon"></i>{{call .T "nav.topics"}}</a>
+                    {{if .IsAdmin}}<a href="/labels" class="header-menu-item {{if eq .Nav "labels"}}active{{end}}" role="menuitem"><i class="fa-solid fa-tags menu-icon"></i>{{call .T "user.menu.labels"}}</a>{{end}}
+                </div>
+            </div>
+        </div>
+        {{end}}
+        <div class="header-nav-group">
+            <a href="/" class="nav-link header-nav-trigger px-2 py-2.5 font-semibold {{if or (eq .Nav "nav") (eq .Nav "assets") (eq .Nav "shares")}}active{{end}}" data-nav-idx="2" data-header-menu-trigger data-header-menu-id="header-assets-menu" aria-haspopup="menu" aria-expanded="false">
+                <i class="fa-solid fa-server nav-icon"></i><span class="nav-text">{{call .T "nav.assets"}}</span><i class="fa-solid fa-chevron-down"></i>
+            </a>
+            <div id="header-assets-menu" class="header-dropdown hidden" role="menu">
+                <div class="header-dropdown-panel">
+                    <a href="/nav" class="header-menu-item {{if eq .Nav "nav"}}active{{end}}" role="menuitem"><i class="fa-solid fa-compass menu-icon"></i>{{call .T "nav.home"}}</a>
+                    <a href="/shares" class="header-menu-item {{if eq .Nav "shares"}}active{{end}}" role="menuitem"><i class="fa-solid fa-share-nodes menu-icon"></i>{{call .T "nav.shares"}}</a>
+                    {{if .IsAdmin}}<a href="/admin/assets" class="header-menu-item {{if eq .Nav "assets"}}active{{end}}" role="menuitem"><i class="fa-solid fa-server menu-icon"></i>{{call .T "page.assets.title"}}</a>{{end}}
+                </div>
+            </div>
+        </div>
+    </nav>
+    <button type="button" class="header-cmdk-hint" onclick="if(window.BookStarkCommandPalette)BookStarkCommandPalette.open()" aria-label="{{call .T "header.cmdk.label"}}" title="{{call .T "header.cmdk.label"}}">
+        <kbd>⌘K</kbd><span>{{call .T "header.cmdk.hint"}}</span>
+    </button>
+    {{if .Account}}
+    <button class="search-trigger ml-auto" id="searchTrigger" aria-label="{{call .T "header.search.label"}}" title="{{call .T "header.search.label"}}"><i class="fa-solid fa-magnifying-glass"></i></button>
+    <div class="header-search-bar" id="headerSearchBar">
+        <i class="fa-solid fa-magnifying-glass" style="color:var(--color-gray-400);font-size:14px;flex-shrink:0;"></i>
+        <input type="text" id="headerSearchInput" placeholder="{{call .T "header.search.placeholder"}}" autocomplete="off" aria-label="{{call .T "search.aria"}}">
+        <button class="header-close-search" id="headerCloseSearch" aria-label="{{call .T "header.search.close"}}"><i class="fa-solid fa-xmark" style="font-size:12px;"></i></button>
+    </div>
+    <div class="relative header-create-wrapper">
+        <button class="search-trigger" id="headerCreateTrigger" type="button" aria-label="{{call .T "nav.create"}}" title="{{call .T "nav.create"}}" data-header-menu-trigger data-header-menu-id="header-create-menu" aria-haspopup="menu" aria-expanded="false"><i class="fa-solid fa-plus"></i></button>
+        <div id="header-create-menu" class="header-dropdown align-right hidden" role="menu">
+            <div class="header-dropdown-panel">
+                <a href="/notes?command=new-note" class="header-menu-item" role="menuitem"><i class="fa-solid fa-note-sticky menu-icon"></i>{{call .T "nav.create_note"}}</a>
+                <a href="/notes?command=new-article" class="header-menu-item" role="menuitem"><i class="fa-solid fa-pen-nib menu-icon"></i>{{call .T "nav.create_article"}}</a>
+                <a href="/books?command=new-book" class="header-menu-item" role="menuitem"><i class="fa-solid fa-book menu-icon"></i>{{call .T "nav.create_book"}}</a>
+                <a href="/bookmarks?command=new-bookmark" class="header-menu-item" role="menuitem"><i class="fa-solid fa-bookmark menu-icon"></i>{{call .T "nav.create_bookmark"}}</a>
+                <a href="/notes?tab=tasks&command=new-task" class="header-menu-item" role="menuitem"><i class="fa-solid fa-list-check menu-icon"></i>{{call .T "nav.create_task"}}</a>
+                <a href="/topics?command=new-topic" class="header-menu-item" role="menuitem"><i class="fa-solid fa-diagram-project menu-icon"></i>{{call .T "nav.create_topic"}}</a>
+            </div>
+        </div>
+    </div>
+    <button class="search-trigger header-theme-toggle" id="themeToggle" aria-label="{{call .T "header.theme.toggle"}}" title="{{call .T "header.theme.toggle"}}" onclick="BookStarkTheme.toggle()"><i class="fa-solid fa-moon" id="theme-icon"></i></button>
+    <div class="relative lang-switcher-wrapper header-lang-switcher">
+        <button class="search-trigger" id="langToggle" aria-label="{{call .T "lang.selector.label"}}" title="{{call .T "lang.selector.label"}}" aria-haspopup="true" aria-expanded="false"><i class="fa-solid fa-globe"></i></button>
+        <div id="lang-dropdown" class="hidden absolute right-0 top-full pt-1 z-50" style="min-width:110px">
+            <div style="background:var(--color-bg-card);border:1px solid var(--color-border);border-radius:var(--radius-lg);box-shadow:0 4px 12px rgba(0,0,0,0.15)" class="py-1">
+                {{if eq .Lang "zh"}}
+                <button class="w-full text-left px-3 py-1.5 text-sm" style="background:var(--color-primary-bg);color:var(--color-primary);font-weight:600" onclick="switchLang('zh')"><i class="fa-solid fa-check mr-2 text-xs"></i>中文</button>
+                <button class="w-full text-left px-3 py-1.5 text-sm" onclick="switchLang('en')" style="color:var(--color-text-secondary)"><span class="inline-block w-5 mr-2"></span>English</button>
+                {{else}}
+                <button class="w-full text-left px-3 py-1.5 text-sm" onclick="switchLang('zh')" style="color:var(--color-text-secondary)"><span class="inline-block w-5 mr-2"></span>中文</button>
+                <button class="w-full text-left px-3 py-1.5 text-sm" style="background:var(--color-primary-bg);color:var(--color-primary);font-weight:600" onclick="switchLang('en')"><i class="fa-solid fa-check mr-2 text-xs"></i>English</button>
+                {{end}}
+            </div>
+        </div>
+    </div>
+    <div class="relative">
+        <button type="button" id="user-menu-trigger" class="flex items-center gap-2 cursor-pointer py-1 px-2 rounded-md select-none" style="transition:background 0.15s ease;background:none;border:0" aria-haspopup="menu" aria-expanded="false" aria-controls="user-menu-dropdown" onmouseenter="this.style.background='var(--color-bg-hover)'" onmouseleave="this.style.background=''">
+            <div class="w-7 h-7 bg-blue-600 rounded-full flex items-center justify-center"><i class="fa-solid fa-user text-white text-xs"></i></div>
+            <span class="hidden sm:inline text-sm" style="color:var(--color-text-secondary)">{{.Account}}</span>
+            <i class="fa-solid fa-chevron-down text-xs transition-transform duration-150" style="color:var(--color-text-muted)" id="user-menu-arrow"></i>
+        </button>
+        <div id="user-menu-dropdown" class="hidden absolute right-0 top-full pt-1 z-50" role="menu">
+            <div style="background:var(--color-bg-card);border:1px solid var(--color-border);border-radius:var(--radius-lg);box-shadow:0 4px 12px rgba(0,0,0,0.15)" class="py-1 w-32">
+                {{if .IsAdmin}}<a href="/admin/system" class="header-menu-item" role="menuitem"><i class="fa-solid fa-gear menu-icon"></i>{{call .T "user.menu.system"}}</a>{{end}}
+                {{if .IsAdmin}}<a href="/admin/dashboard" class="header-menu-item" role="menuitem"><i class="fa-solid fa-chart-line menu-icon"></i>{{call .T "user.menu.dashboard"}}</a>{{end}}
+                <a href="/profile" class="header-menu-item" role="menuitem"><i class="fa-solid fa-id-card menu-icon"></i>{{call .T "user.menu.profile"}}</a>
+                <a href="/images" class="header-menu-item" role="menuitem"><i class="fa-solid fa-images menu-icon"></i>{{call .T "user.menu.images"}}</a>
+                <a href="/trash" class="header-menu-item" role="menuitem"><i class="fa-solid fa-trash-can menu-icon"></i>{{call .T "user.menu.trash"}}</a>
+                <a href="/login" onclick="logout(event); return false;" class="header-menu-item" role="menuitem"><i class="fa-solid fa-right-from-bracket menu-icon"></i>{{call .T "user.menu.logout"}}</a>
+            </div>
+        </div>
+    </div>
+    {{else}}
+    <div class="relative lang-switcher-wrapper header-lang-switcher ml-auto">
+        <button class="search-trigger" id="langToggle" aria-label="{{call .T "lang.selector.label"}}" title="{{call .T "lang.selector.label"}}" aria-haspopup="true" aria-expanded="false"><i class="fa-solid fa-globe"></i></button>
+        <div id="lang-dropdown" class="hidden absolute right-0 top-full pt-1 z-50" style="min-width:110px">
+            <div style="background:var(--color-bg-card);border:1px solid var(--color-border);border-radius:var(--radius-lg);box-shadow:0 4px 12px rgba(0,0,0,0.15)" class="py-1">
+                {{if eq .Lang "zh"}}
+                <button class="w-full text-left px-3 py-1.5 text-sm" style="background:var(--color-primary-bg);color:var(--color-primary);font-weight:600" onclick="switchLang('zh')"><i class="fa-solid fa-check mr-2 text-xs"></i>中文</button>
+                <button class="w-full text-left px-3 py-1.5 text-sm" onclick="switchLang('en')" style="color:var(--color-text-secondary)"><span class="inline-block w-5 mr-2"></span>English</button>
+                {{else}}
+                <button class="w-full text-left px-3 py-1.5 text-sm" onclick="switchLang('zh')" style="color:var(--color-text-secondary)"><span class="inline-block w-5 mr-2"></span>中文</button>
+                <button class="w-full text-left px-3 py-1.5 text-sm" style="background:var(--color-primary-bg);color:var(--color-primary);font-weight:600" onclick="switchLang('en')"><i class="fa-solid fa-check mr-2 text-xs"></i>English</button>
+                {{end}}
+            </div>
+        </div>
+    </div>
+    <a href="/login" class="header-login-link text-sm px-2 py-1" style="color:var(--color-primary)">{{call .T "header.login"}}</a>
+    {{end}}
+</header>
+{{end}}
+
+{{define "footer"}}
+<footer class="flex flex-col items-center justify-center text-xs shrink-0 px-4 py-2 gap-1 min-h-8" style="border-top:1px solid var(--color-border);color:var(--color-text-muted);background:var(--color-bg-card)">
+    <div>BookStark · {{call .T "footer.tagline"}}</div>
+    {{if .FriendLinks}}
+    <div class="flex flex-wrap items-center justify-center gap-2 text-xs">
+        <span style="color:var(--color-text-muted)">{{call .T "footer.friendlinks"}}</span>
+        {{range $index, $item := .FriendLinks}}
+            {{if gt $index 0}}<span style="color:var(--color-gray-300)">|</span>{{end}}
+            <a href="{{$item.LinkURL}}" target="_blank" rel="noopener noreferrer" style="color:var(--color-primary)">{{$item.LinkName}}</a>
+        {{end}}
+    </div>
+    {{end}}
+    <div class="flex flex-wrap items-center justify-center gap-2">
+        <span>{{call .T "footer.build_time"}}: {{buildTime}}</span>
+        <span>Commit: <code title="{{gitCommit}}">{{substr (gitCommit) 0 12}}</code></span>
+    </div>
+</footer>
+<script>
+function logout(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    function done() {
+        // 兜底清理非 HttpOnly cookie（HttpOnly 的 token 由服务端清）
+        document.cookie = 'token=; path=/; max-age=0';
+        document.cookie = 'csrf_token=; path=/; max-age=0';
+        // 清空 API 和页面缓存，避免下次登录短暂显示旧用户页面
+        try {
+            if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_API_CACHE' });
+            }
+        } catch (_) {}
+        var clearPages = window.BookStarkPWA && window.BookStarkPWA.clearPageCache
+            ? window.BookStarkPWA.clearPageCache()
+            : Promise.resolve();
+        Promise.resolve(clearPages).catch(function() {}).then(function() {
+            // 用 replace 避免返回键回到已登出页
+            window.location.replace('/login');
+        });
+    }
+    csrfFetch('/api/logout', {method: 'POST'}).then(done).catch(done);
+}
+function closeHeaderDropdowns() {
+    var user = document.getElementById('user-menu-dropdown');
+    var userTrigger = document.getElementById('user-menu-trigger');
+    var userArrow = document.getElementById('user-menu-arrow');
+    var lang = document.getElementById('lang-dropdown');
+    var langTrigger = document.getElementById('langToggle');
+    document.querySelectorAll('.header-dropdown').forEach(function(menu) {
+        menu.classList.add('hidden');
+    });
+    document.querySelectorAll('[data-header-menu-trigger]').forEach(function(trigger) {
+        trigger.setAttribute('aria-expanded', 'false');
+    });
+    if (user) user.classList.add('hidden');
+    if (userTrigger) userTrigger.setAttribute('aria-expanded', 'false');
+    if (userArrow) userArrow.style.transform = '';
+    if (lang) lang.classList.add('hidden');
+    if (langTrigger) langTrigger.setAttribute('aria-expanded', 'false');
+}
+window.BookStarkHeaderMenus = { closeAll: closeHeaderDropdowns };
+(function() {
+    function isDesktopModalViewport() {
+        return !(window.matchMedia && window.matchMedia('(max-width: 768px)').matches);
+    }
+    function isModalBackdropClick(target) {
+        return !!(target && target.matches && target.matches('.asset-modal-backdrop, .editor-overlay, .book-modal-overlay, .bs-dialog-form-overlay'));
+    }
+    document.addEventListener('click', function(e) {
+        if (!isDesktopModalViewport()) return;
+        if (!isModalBackdropClick(e.target)) return;
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+    }, true);
+})();
+document.addEventListener('click', function(e) {
+    var item = e.target.closest('.header-dropdown a[href], .header-dropdown button, #user-menu-dropdown a[href], #user-menu-dropdown button, #lang-dropdown a[href], #lang-dropdown button');
+    if (item) closeHeaderDropdowns();
+}, true);
+window.addEventListener('pageshow', closeHeaderDropdowns);
+(function() {
+    function menuItems(menu) {
+        return Array.prototype.slice.call(menu.querySelectorAll('[role="menuitem"], a[href], button')).filter(function(item) {
+            return !item.disabled && item.getAttribute('aria-disabled') !== 'true' && item.offsetParent !== null;
+        });
+    }
+    function focusItem(menu, index) {
+        var items = menuItems(menu);
+        if (!items.length) return;
+        items[(index + items.length) % items.length].focus();
+    }
+    function setMenu(trigger, menu, open) {
+        if (!trigger || !menu) return;
+        if (open) {
+            closeHeaderDropdowns();
+            menu.classList.remove('hidden');
+        } else {
+            menu.classList.add('hidden');
+        }
+        trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+    document.querySelectorAll('[data-header-menu-trigger]').forEach(function(trigger) {
+        var menu = document.getElementById(trigger.getAttribute('data-header-menu-id') || '');
+        if (!menu) return;
+        trigger.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            setMenu(trigger, menu, menu.classList.contains('hidden'));
+        });
+        trigger.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                setMenu(trigger, menu, true);
+                focusItem(menu, e.key === 'ArrowDown' ? 0 : -1);
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                setMenu(trigger, menu, false);
+            }
+        });
+        menu.addEventListener('keydown', function(e) {
+            var items = menuItems(menu);
+            var idx = items.indexOf(document.activeElement);
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                setMenu(trigger, menu, false);
+                trigger.focus();
+            } else if (e.key === 'ArrowDown' && items.length) {
+                e.preventDefault();
+                items[(idx + 1 + items.length) % items.length].focus();
+            } else if (e.key === 'ArrowUp' && items.length) {
+                e.preventDefault();
+                focusItem(menu, idx - 1);
+            } else if (e.key === 'Home') {
+                e.preventDefault();
+                focusItem(menu, 0);
+            } else if (e.key === 'End') {
+                e.preventDefault();
+                focusItem(menu, -1);
+            }
+        });
+        var wrapper = trigger.parentElement;
+        if (wrapper && window.matchMedia('(pointer: fine)').matches) {
+            wrapper.addEventListener('mouseenter', function() { setMenu(trigger, menu, true); });
+            wrapper.addEventListener('mouseleave', function() { setMenu(trigger, menu, false); });
+        }
+    });
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('[data-header-menu-trigger], .header-dropdown')) closeHeaderDropdowns();
+    });
+})();
+(function() {
+    var trigger = document.getElementById('user-menu-trigger');
+    var dropdown = document.getElementById('user-menu-dropdown');
+    var arrow = document.getElementById('user-menu-arrow');
+    if (!trigger || !dropdown) return;
+        function menuItems() {
+            return Array.prototype.slice.call(dropdown.querySelectorAll('[role="menuitem"], a[href], button')).filter(function(item) {
+                return !item.disabled && item.getAttribute('aria-disabled') !== 'true' && item.offsetParent !== null;
+            });
+        }
+        function focusItem(index) {
+            var items = menuItems();
+            if (!items.length) return;
+            items[(index + items.length) % items.length].focus();
+        }
+	    function toggleMenu(show) {
+	        if (typeof show === 'boolean') {
+	            dropdown.classList.toggle('hidden', !show);
+	        } else {
+	            dropdown.classList.toggle('hidden');
+	        }
+	        var open = !dropdown.classList.contains('hidden');
+	        trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+	        if (arrow) arrow.style.transform = open ? 'rotate(180deg)' : '';
+	    }
+    trigger.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var willOpen = dropdown.classList.contains('hidden');
+        closeHeaderDropdowns();
+        toggleMenu(willOpen);
+    });
+	    document.addEventListener('click', function(e) {
+	        if (!dropdown.classList.contains('hidden') && !dropdown.contains(e.target)) {
+	            toggleMenu(false);
+	        }
+	    });
+	    trigger.addEventListener('keydown', function(e) {
+	        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+	            e.preventDefault();
+	            toggleMenu(true);
+	            focusItem(e.key === 'ArrowDown' ? 0 : -1);
+	        }
+	    });
+	    dropdown.addEventListener('keydown', function(e) {
+	        var items = menuItems();
+	        var idx = items.indexOf(document.activeElement);
+	        if (e.key === 'Escape') {
+	            e.preventDefault();
+	            toggleMenu(false);
+	            trigger.focus();
+	        } else if (e.key === 'ArrowDown' && items.length) {
+	            e.preventDefault();
+	            items[(idx + 1 + items.length) % items.length].focus();
+	        } else if (e.key === 'ArrowUp' && items.length) {
+	            e.preventDefault();
+	            focusItem(idx - 1);
+	        } else if (e.key === 'Home') {
+	            e.preventDefault();
+	            focusItem(0);
+	        } else if (e.key === 'End') {
+	            e.preventDefault();
+	            focusItem(-1);
+	        }
+	    });
+    // Desktop hover enhancement
+    var wrapper = trigger.parentElement;
+    wrapper.addEventListener('mouseenter', function() { closeHeaderDropdowns(); toggleMenu(true); });
+    wrapper.addEventListener('mouseleave', function() { toggleMenu(false); });
+})();
+
+// Header search expand/collapse
+(function() {
+    var trigger = document.getElementById('searchTrigger');
+    var header = document.querySelector('header');
+    var searchBar = document.getElementById('headerSearchBar');
+    var searchInput = document.getElementById('headerSearchInput');
+    var closeBtn = document.getElementById('headerCloseSearch');
+    if (!trigger || !header || !searchBar || !searchInput || !closeBtn) return;
+
+    function openSearch() {
+        header.classList.add('search-expanded');
+        searchInput.focus();
+    }
+    function closeSearch() {
+        header.classList.remove('search-expanded');
+        searchInput.value = '';
+    }
+
+    trigger.addEventListener('click', openSearch);
+    closeBtn.addEventListener('click', closeSearch);
+
+    searchInput.addEventListener('blur', function(e) {
+        // 延迟关闭，避免点击搜索按钮等操作时立刻关闭
+        setTimeout(function() {
+            if (!searchBar.contains(document.activeElement)) {
+                closeSearch();
+            }
+        }, 150);
+    });
+
+    searchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            var q = searchInput.value.trim();
+            if (q) {
+                if (window.location.pathname === '/search' && window.BookStarkSearch && window.BookStarkSearch.doSearch) {
+                    // Already on search page - use AJAX instead of full page reload
+                    window.BookStarkSearch.doSearch(q);
+                    closeSearch();
+                    var pageInput = document.getElementById('search-page-input');
+                    if (pageInput) pageInput.focus();
+                } else {
+                    window.location.href = '/search?q=' + encodeURIComponent(q);
+                }
+            }
+        }
+        if (e.key === 'Escape') {
+            closeSearch();
+        }
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            if (window.BookStarkCommandPalette && window.BookStarkCommandPalette.open) {
+                window.BookStarkCommandPalette.open();
+                return;
+            }
+            if (header.classList.contains('search-expanded')) {
+                closeSearch();
+            } else {
+                openSearch();
+            }
+        }
+    });
+})();
+
+</script>
+<style>
+.bs-dialog-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 9999; display: none; align-items: center; justify-content: center; }
+[data-theme="dark"] .bs-dialog-overlay { background: rgba(0,0,0,0.6); }
+.bs-dialog-overlay.active { display: flex; }
+.bs-dialog-box { background: var(--color-bg-card); border-radius: var(--radius-xl); box-shadow: 0 8px 30px rgba(0,0,0,0.15); padding: var(--spacing-xl) 28px 20px; min-width: 320px; max-width: 420px; width: 420px; word-break: break-word; overflow-wrap: break-word; animation: bs-dialog-in 0.15s ease-out; }
+@keyframes bs-dialog-in { from { opacity: 0; transform: scale(0.95) translateY(-8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+.bs-dialog-title { font-size: 14px; color: var(--color-text); line-height: 1.6; margin-bottom: 20px; }
+.bs-dialog-input-wrap { margin-bottom: 20px; }
+.bs-dialog-input { width: 100%; border: 1px solid var(--color-gray-300); border-radius: var(--radius-md); padding: 8px 12px; font-size: 14px; box-sizing: border-box; background: var(--color-white); color: var(--color-text); outline: none; transition: border-color 0.15s; }
+.bs-dialog-input:focus { border-color: var(--color-focus); box-shadow: 0 0 0 2px var(--color-focus-ring); }
+[data-theme="dark"] .bs-dialog-input { background: var(--color-gray-100); border-color: var(--color-gray-300); color: var(--color-text); }
+.bs-dialog-actions { display: flex; justify-content: flex-end; gap: var(--spacing-sm); }
+.bs-btn { padding: 6px 16px; border-radius: var(--radius-md); font-size: 13px; cursor: pointer; border: none; transition: background 0.15s; }
+.bs-btn-cancel { background: var(--color-gray-100); color: var(--color-gray-700); }
+.bs-btn-cancel:hover { background: var(--color-border); }
+.bs-btn-primary { background: var(--color-primary); color: white; }
+.bs-btn-primary:hover { background: var(--color-primary-hover); }
+@media (max-width: 640px) {
+    .bs-dialog-overlay.active { align-items: flex-start; }
+    .bs-dialog-box { width: 100% !important; min-width: 0; max-width: none !important; max-height: calc(var(--bs-vvh, 100dvh) - 8px) !important; overflow-y: auto; border-radius: 0 0 var(--radius-xl) var(--radius-xl); padding: 16px 20px 20px; animation: bs-dialog-slide-down 0.2s ease-out; }
+    .bs-dialog-form-overlay.active { align-items: flex-start; }
+    .bs-dialog-form-overlay .bs-dialog-form-box { max-height: calc(var(--bs-vvh, 100dvh) - 8px); overflow-y: auto; border-radius: 0 0 var(--radius-xl) var(--radius-xl); padding: 14px 16px 16px; animation: bs-dialog-slide-down 0.2s ease-out; }
+    .bs-dialog-box,
+    .bs-dialog-form-box,
+    .bs-dialog-box * {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    .bs-dialog-box::-webkit-scrollbar,
+    .bs-dialog-form-box::-webkit-scrollbar,
+    .bs-dialog-box *::-webkit-scrollbar {
+        display: none;
+    }
+}
+@keyframes bs-dialog-slide-down { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes bs-dialog-slide-up { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+<script src="/static/js/bs-dialog.js?v={{assetVer "/static/js/bs-dialog.js"}}"></script>
+<script src="/static/js/offline-queue.js?v={{assetVer "/static/js/offline-queue.js"}}"></script>
+<script src="/static/js/mobile-ui.js?v={{assetVer "/static/js/mobile-ui.js"}}"></script>
+<script src="/static/js/sticky-bg.js?v={{assetVer "/static/js/sticky-bg.js"}}"></script>
+<script src="/static/js/pagination.js?v={{assetVer "/static/js/pagination.js"}}"></script>
+<script>if(window.BookStarkTheme){window.BookStarkTheme.apply(window.BookStarkTheme.get());}</script>
+<script>window.BS_VERSION = '{{assetVer "/static/sw.js"}}';</script>
+<script src="/static/js/sw-register.js?v={{assetVer "/static/js/sw-register.js"}}"></script>
+<script src="/static/js/i18n.js?v={{assetVer "/static/js/i18n.js"}}"></script>
+<script>
+window.__I18N_MESSAGES = {{.JSBundle}};
+window.__currentLang = "{{.Lang}}";
+</script>
+<script src="/static/js/offline-status.js?v={{assetVer "/static/js/offline-status.js"}}"></script>
+<script src="/static/js/command-palette.js?v={{assetVer "/static/js/command-palette.js"}}"></script>
+<script>
+(function() {
+    var langBtn = document.getElementById('langToggle');
+    var langDropdown = document.getElementById('lang-dropdown');
+    if (!langBtn || !langDropdown) return;
+    function menuItems() {
+        return Array.prototype.slice.call(langDropdown.querySelectorAll('button, a[href], [role="menuitem"]')).filter(function(item) {
+            return !item.disabled && item.getAttribute('aria-disabled') !== 'true' && item.offsetParent !== null;
+        });
+    }
+    function focusItem(index) {
+        var items = menuItems();
+        if (!items.length) return;
+        items[(index + items.length) % items.length].focus();
+    }
+
+    function toggleLangMenu(show) {
+        if (typeof show === 'boolean') {
+            langDropdown.classList.toggle('hidden', !show);
+        } else {
+            langDropdown.classList.toggle('hidden');
+        }
+        langBtn.setAttribute('aria-expanded', langDropdown.classList.contains('hidden') ? 'false' : 'true');
+    }
+
+    langBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var willOpen = langDropdown.classList.contains('hidden');
+        closeHeaderDropdowns();
+        toggleLangMenu(willOpen);
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!langDropdown.classList.contains('hidden') && !langDropdown.contains(e.target)) {
+            toggleLangMenu(false);
+        }
+    });
+
+    var wrapper = langBtn.parentElement;
+    if (window.matchMedia('(pointer: fine)').matches) {
+        wrapper.addEventListener('mouseenter', function() { closeHeaderDropdowns(); toggleLangMenu(true); });
+        wrapper.addEventListener('mouseleave', function() { toggleLangMenu(false); });
+    }
+
+    langBtn.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            toggleLangMenu(true);
+            focusItem(e.key === 'ArrowDown' ? 0 : -1);
+        }
+    });
+    langDropdown.addEventListener('keydown', function(e) {
+        var items = menuItems();
+        var idx = items.indexOf(document.activeElement);
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            toggleLangMenu(false);
+            langBtn.focus();
+        } else if (e.key === 'ArrowDown' && items.length) {
+            e.preventDefault();
+            focusItem(idx + 1);
+        } else if (e.key === 'ArrowUp' && items.length) {
+            e.preventDefault();
+            focusItem(idx - 1);
+        } else if (e.key === 'Home') {
+            e.preventDefault();
+            focusItem(0);
+        } else if (e.key === 'End') {
+            e.preventDefault();
+            focusItem(-1);
+        }
+    });
+})();
+
+window.switchLang = function(lang) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/lang?lang=' + encodeURIComponent(lang), true);
+    xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            setTimeout(function() { window.location.reload(); }, 100);
+        }
+    };
+    xhr.onerror = function() {
+        window.location.href = '/api/set-lang?lang=' + encodeURIComponent(lang) + '&redirect=' + encodeURIComponent(window.location.pathname + window.location.search);
+    };
+    xhr.send();
+};
+</script>
+{{end}}

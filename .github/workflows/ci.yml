@@ -1,0 +1,37 @@
+# 常规 CI：每次 push / PR 跑一次本机编译，捕获语法/类型错误。
+# 不做交叉编译矩阵以省 CI 时间，只确保主分支始终能构建。
+name: ci
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  build:
+    name: Build & vet
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: Build
+        run: python3 build.py --build --output dist/bookstark
+
+      - name: Smoke binary
+        run: ./dist/bookstark --help || true

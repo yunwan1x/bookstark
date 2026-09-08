@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v={{assetVer "/static/favicon.svg"}}">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{{call .T "meta.description"}}">
+    <title>{{call .T "share.page.title"}} - BookStark</title>
+    <link href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}" rel="stylesheet">
+    <style>
+        /* ── Page layout ── */
+        .sh-page { max-width: 900px; margin: 0 auto; }
+
+        /* ── Search + filter chips ── */
+        .sh-search-wrap { margin-bottom: 20px; position: sticky; top: 40px; z-index: 10; background: transparent; border-bottom: 1px solid transparent; box-shadow: none; padding-top: 12px; padding-bottom: 12px; transition: background-color .16s ease, border-color .16s ease, box-shadow .16s ease; }
+        .sh-search-wrap.is-stuck { background: var(--color-bg); border-bottom: 1px solid var(--color-border); box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04); }
+        .sh-search-row { display: flex; gap: 8px; }
+        .sh-search-row input { flex: 1; height: 38px; border: 1px solid var(--color-border); border-radius: 8px; padding: 0 14px; font-size: 13px; background: var(--color-bg-card); color: var(--color-text); outline: none; transition: border-color .15s ease, box-shadow .15s ease; }
+        .sh-search-row input:focus { border-color: var(--color-focus); box-shadow: 0 0 0 2px var(--color-focus-ring); }
+        .sh-search-row button { padding: 0 16px; height: 38px; background: var(--color-primary); color: #fff; border: none; border-radius: 8px; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background-color .15s ease; }
+        .sh-search-row button:hover { background: var(--color-primary-hover); }
+        .sh-search-row button:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+        .sh-filter-chips { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+        .sh-filter-chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid var(--color-gray-200, #e2e8f0); background: var(--color-bg-card, #fff); color: var(--color-gray-500, #64748b); transition: background-color .15s ease, border-color .15s ease, color .15s ease; user-select: none; }
+        .sh-filter-chip:hover { border-color: var(--color-gray-300, #cbd5e1); color: var(--color-gray-600, #475569); }
+        .sh-filter-chip i { font-size: 10px; }
+        .sh-filter-chip.active { background: var(--color-primary-light, #eff6ff); border-color: var(--color-primary, #2563eb); color: var(--color-primary, #2563eb); }
+
+        /* ── Featured hero (pinned article) ── */
+        .sh-hero { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--color-border); border-radius: var(--radius-xl); overflow: hidden; margin-bottom: 28px; transition: background-color .2s ease, box-shadow .2s ease, border-color .2s ease; text-decoration: none; color: inherit; }
+        .sh-hero:hover { box-shadow: 0 8px 32px rgba(0,0,0,.08); border-color: var(--color-primary-border); }
+        .sh-hero-cover { background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 55%, #0ea5e9 100%); min-height: 200px; display: flex; align-items: center; justify-content: center; padding: 32px; flex-shrink: 0; }
+        .sh-hero-letter { color: rgba(255,255,255,.15); font-size: 80px; font-weight: 900; letter-spacing: -4px; line-height: 1; user-select: none; }
+        .sh-hero-body { padding: 24px 28px; display: flex; flex-direction: column; justify-content: center; background: var(--color-bg-card); transition: background-color .2s ease; }
+        .sh-hero-eyebrow { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+        .sh-hero-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--color-primary); background: var(--color-primary-light); padding: 3px 8px; border-radius: var(--radius-sm); display: inline-flex; align-items: center; gap: 5px; }
+        @media (prefers-reduced-motion: no-preference) { .sh-pin-dot { animation: sh-pulse 2s infinite; } }
+        @keyframes sh-pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+        .sh-pin-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--color-primary); flex-shrink: 0; }
+        .sh-hero-type { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--color-text-muted); }
+        .sh-hero-title { font-size: 19px; font-weight: 800; line-height: 1.3; letter-spacing: -.02em; color: var(--color-text); margin-bottom: 10px; display: block; transition: color .15s ease; }
+        .sh-hero:hover .sh-hero-title { color: var(--color-primary); }
+        .sh-hero-excerpt { font-size: 13px; color: var(--color-text-secondary); line-height: 1.75; margin-bottom: 14px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .sh-hero-meta { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--color-text-muted); flex-wrap: wrap; }
+        .sh-hero-avatar { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff; flex-shrink: 0; }
+        .sh-hero-tags { display: flex; gap: 5px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
+        .sh-hero-tag { padding: 2px 7px; border-radius: 20px; font-size: 11px; font-weight: 500; background: var(--color-gray-100); color: var(--color-text-secondary); }
+        .sh-hero-title-row { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 10px; }
+        .sh-hero-title-row .sh-hero-title { flex: 1; min-width: 0; margin-bottom: 0; }
+        .sh-hero-title-row .sh-hero-pin { flex-shrink: 0; margin-top: 2px; }
+        .sh-hero-pin:hover { color: var(--color-primary); background: var(--color-primary-light); }
+        .sh-hero-pin.is-pinned { color: var(--color-primary); }
+        .sh-hero-pin:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+
+        /* ── Section header ── */
+        .sh-sec { display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; }
+        .sh-sec-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--color-text-muted); }
+        .sh-sec-line { flex: 1; height: 1px; background: var(--color-border-light); }
+        .sh-sec-count { font-size: 11px; color: var(--color-text-muted); }
+
+        /* ── Article card grid ── */
+        .sh-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 28px; }
+        .sh-card { border: 1px solid var(--surface-border); border-radius: var(--surface-radius); overflow: hidden; display: flex; flex-direction: column; transition: background-color .15s ease, box-shadow .15s ease, border-color .15s ease; background: var(--color-bg-card); text-decoration: none; color: inherit; }
+        .sh-card:hover { box-shadow: var(--surface-shadow-hover); border-color: var(--color-primary-border); }
+        .sh-card:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+        .sh-card-accent { height: 2px; flex-shrink: 0; }
+        .sh-card-accent.t-blog { background: #2563eb; }
+        .sh-card-accent.t-doc  { background: #d97706; }
+        .sh-card-accent.t-note { background: #16a34a; }
+        .sh-card-accent.t-book { background: #7c3aed; }
+        .sh-card-body { padding: 13px 15px; flex: 1; display: flex; flex-direction: column; }
+        .sh-card-header { display: flex; align-items: flex-start; gap: 6px; margin-bottom: 5px; }
+        .sh-card-header .sh-card-title { flex: 1; min-width: 0; margin-bottom: 0; }
+        .sh-card-header .sh-card-pin { flex-shrink: 0; margin-top: -2px; }
+        .sh-card-type { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--color-text-muted); margin-bottom: 5px; display: flex; align-items: center; gap: 5px; }
+        .sh-type-chip { display: inline-flex; align-items: center; font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: var(--radius-sm); background: var(--color-primary-light); color: var(--color-primary); text-transform: none; letter-spacing: 0; }
+        .sh-card-title { font-size: 13px; font-weight: 700; color: var(--color-text); line-height: 1.45; margin-bottom: 5px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; transition: color .15s ease; }
+        .sh-card:hover .sh-card-title { color: var(--color-primary); }
+        .sh-card-excerpt { font-size: 12px; color: var(--color-text-secondary); line-height: 1.65; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 10px; }
+        .sh-card-empty-excerpt { color: var(--color-text-muted); font-style: italic; }
+        .sh-card-footer { display: flex; align-items: center; gap: 5px; margin-top: auto; font-size: 11px; color: var(--color-text-muted); padding-top: 8px; border-top: 1px solid var(--color-border-light); flex-wrap: wrap; }
+        .sh-card-tags { display: flex; gap: 4px; flex-wrap: wrap; padding-top: 6px; width: 100%; }
+        .sh-card-avatar { width: 17px; height: 17px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 700; color: #fff; flex-shrink: 0; }
+        .sh-card-book { font-size: 10px; padding: 1px 6px; border-radius: var(--radius-sm); background: var(--color-primary-light); color: var(--color-primary); margin-left: auto; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; }
+        .sh-card-pin { background: none; border: none; cursor: pointer; padding: 2px 4px; font-size: 11px; color: var(--color-text-muted); border-radius: var(--radius-sm); transition: color .15s ease, background-color .15s ease; flex-shrink: 0; }
+        .sh-card-pin:hover { color: var(--color-primary); background: var(--color-primary-light); }
+        .sh-card-pin.is-pinned { color: var(--color-primary); }
+        .sh-card-pin:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+
+        /* ── Notes feed ── */
+        .sh-note-feed { display: flex; flex-direction: column; gap: 10px; margin-bottom: 28px; }
+        .sh-note-row { padding: 14px 16px; border: 1px solid var(--surface-border); border-radius: var(--surface-radius); background: var(--color-bg-card); display: flex; gap: 13px; transition: background-color .15s ease, box-shadow .15s ease, border-color .15s ease; }
+        .sh-note-row:hover { box-shadow: var(--surface-shadow-hover); border-color: var(--color-primary-border); }
+        .sh-note-body { flex: 1; min-width: 0; }
+        .sh-note-header { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; flex-wrap: wrap; }
+        .sh-note-author-tag { display: inline-flex; align-items: center; min-height: 20px; padding: 1px 8px; border: 1px solid var(--color-primary-border); border-radius: var(--radius-full); background: var(--color-primary-light); color: var(--color-primary); font-size: 12px; font-weight: 700; line-height: 1.35; }
+        .sh-note-time { font-size: 12px; color: var(--color-text-muted); }
+        .sh-note-actions { margin-left: auto; display: inline-flex; align-items: center; gap: 2px; flex-shrink: 0; }
+        .note-copy-btn,
+        .note-comment-btn,
+        .note-fullscreen-btn { background: none; border: none; cursor: pointer; color: var(--color-gray-400, #94a3b8); padding: 2px 6px; border-radius: 4px; font-size: 12px; transition: color 0.15s, background 0.15s; }
+        .note-copy-btn:hover,
+        .note-comment-btn:hover,
+        .note-comment-btn[aria-expanded="true"],
+        .note-fullscreen-btn:hover { color: var(--color-primary, #2563eb); background: var(--color-gray-100, #f1f5f9); }
+        .sh-note-text { font-size: 13px; color: var(--color-text-secondary); line-height: 1.75; word-break: break-word; }
+        .sh-note-text img.note-image-lightbox-trigger { display: block; max-width: 100%; height: auto; border-radius: 8px; cursor: zoom-in; }
+        .sh-note-text img.note-image-lightbox-trigger:focus-visible { outline: 2px solid var(--color-focus, #2563eb); outline-offset: 3px; }
+        .sh-note-text p { margin: 0 0 6px; }
+        .sh-note-text p:last-child { margin-bottom: 0; }
+        .sh-note-text code { font-size: 12px; background: var(--color-gray-100); padding: 1px 4px; border-radius: 3px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; color: var(--color-gray-600); }
+        .sh-note-text pre { background: #fafbfc; color: #24292e; padding: 10px 12px; border-radius: var(--radius-lg); font-size: 12px; margin: 6px 0; overflow-x: auto; line-height: 1.5; font-family: "SF Mono","Fira Code",monospace; border: 1px solid #d1d9e0; }
+        .sh-note-text .code-block { position: relative; margin: 8px 0; border-radius: var(--radius-lg); overflow: hidden; border: 1px solid #d1d9e0; }
+        .sh-note-text .code-block-header { display: flex; align-items: center; height: 32px; padding: 0 12px; background: #f6f8fa; border-bottom: 1px solid #d1d9e0; }
+        .sh-note-text .code-block-dots { display: flex; gap: 6px; margin-right: 8px; }
+        .sh-note-text .code-block-dots i { width: 10px; height: 10px; border-radius: 50%; display: block; }
+        .sh-note-text .code-block-dots i:nth-child(1) { background: #ff5f56; }
+        .sh-note-text .code-block-dots i:nth-child(2) { background: #ffbd2e; }
+        .sh-note-text .code-block-dots i:nth-child(3) { background: #27c93f; }
+        .sh-note-text .code-block-lang { font-size: 12px; color: #656d76; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+        .sh-note-text .code-copy-btn { margin-left: auto; background: none; border: none; cursor: pointer; color: #656d76; font-size: 12px; padding: 4px 8px; border-radius: 4px; display: flex; align-items: center; gap: 4px; transition: color .15s ease, background-color .15s ease; }
+        .sh-note-text .code-copy-btn:hover { color: #24292e; background: rgba(0,0,0,.05); }
+        .sh-note-text .code-block pre { margin: 0; border: none; border-radius: 0; }
+        .sh-note-text pre code { background: none; padding: 0; font-size: inherit; color: inherit; border-radius: 0; display: block; }
+        .sh-note-text strong { font-weight: 600; color: var(--color-text); }
+        .sh-note-text em { font-style: italic; }
+        .sh-note-text a { color: var(--color-primary); text-decoration: none; }
+        .sh-note-text a:hover { text-decoration: underline; }
+        .sh-note-text ul, .sh-note-text ol { margin: 4px 0; padding-left: 20px; }
+        .sh-note-text ul { list-style: disc; }
+        .sh-note-text ol { list-style: decimal; }
+        .sh-note-text li { margin-bottom: 2px; line-height: 1.7; }
+        .sh-note-text li::marker { color: var(--color-text-muted); }
+        .sh-note-text blockquote { border-left: 3px solid var(--color-primary-border); padding-left: 10px; margin: 6px 0; color: var(--color-text-muted); }
+        .sh-note-text h1,.sh-note-text h2,.sh-note-text h3,.sh-note-text h4 { font-size: 13px; font-weight: 700; color: var(--color-text); margin: 8px 0 4px; }
+        .sh-note-text table { border-collapse: collapse; width: 100%; margin: 6px 0; font-size: 12px; overflow-x: auto; display: block; }
+        .sh-note-text table thead { background: var(--color-gray-100); }
+        .sh-note-text table th { font-weight: 600; text-align: left; padding: 6px 10px; border: 1px solid var(--color-gray-200); color: var(--color-text); }
+        .sh-note-text table td { padding: 5px 10px; border: 1px solid var(--color-gray-200); color: var(--color-text); }
+        .sh-note-text table tbody tr:nth-child(2n) { background: var(--color-gray-100); }
+        .sh-note-text table tbody tr:hover { background: var(--color-primary-light); }
+        .sh-note-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+        .sh-note-pin { background: none; border: none; cursor: pointer; padding: 2px 4px; font-size: 11px; color: var(--color-text-muted); border-radius: var(--radius-sm); transition: color .15s ease, background-color .15s ease; flex-shrink: 0; align-self: flex-start; margin-top: 2px; }
+        .sh-note-pin:hover { color: var(--color-primary); background: var(--color-primary-light); }
+        .sh-note-pin.is-pinned { color: var(--color-primary); }
+        .sh-note-pin:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+        .sh-note-comments { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--color-border-light); }
+        .sh-note-comments .share-comments-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+        .sh-note-comments .share-comments-title { display: inline-flex; align-items: center; gap: 7px; color: var(--color-text); font-size: 13px; font-weight: 700; }
+        .sh-note-comments .share-comments-count,
+        .sh-note-comments .share-comments-state,
+        .sh-note-comments .share-comments-identity { color: var(--color-text-muted); font-size: 12px; }
+        .sh-note-comments .share-comments-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+        .sh-note-comments .share-comment-item { padding: 9px 10px; border: 1px solid var(--color-border-light); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--color-bg-card) 80%, transparent); }
+        .sh-note-comments .share-comment-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
+        .sh-note-comments .share-comment-author { color: var(--color-text); font-size: 12px; font-weight: 700; }
+        .sh-note-comments .share-comment-time { color: var(--color-text-muted); font-size: 11px; }
+        .sh-note-comments .share-comment-content { color: var(--color-text-secondary); font-size: 13px; line-height: 1.65; white-space: pre-wrap; word-break: break-word; }
+        .sh-note-comments .share-comment-delete { border: 0; border-radius: 4px; background: transparent; color: var(--color-text-muted); cursor: pointer; padding: 2px 4px; }
+        .sh-note-comments .share-comment-delete:hover { color: var(--color-danger, #ef4444); background: color-mix(in srgb, var(--color-danger, #ef4444) 8%, transparent); }
+        .sh-note-comments .share-comment-tools { display: inline-flex; align-items: center; gap: 4px; }
+        .sh-note-comments .share-comment-reply { border: 0; border-radius: 4px; background: transparent; color: var(--color-text-muted); cursor: pointer; padding: 2px 4px; }
+        .sh-note-comments .share-comment-reply:hover { color: var(--color-primary); background: color-mix(in srgb, var(--color-primary) 8%, transparent); }
+        .sh-note-comments .share-comment-replies { margin-top: 9px; margin-left: 12px; padding-left: 10px; border-left: 2px solid var(--color-border-light); display: flex; flex-direction: column; gap: 7px; }
+        .sh-note-comments .share-comment-reply-item { background: color-mix(in srgb, var(--color-bg-card) 70%, transparent); }
+        .sh-note-comments .share-comment-reply-context { margin-bottom: 4px; color: var(--color-text-muted); font-size: 12px; }
+        .sh-note-comments .share-comment-reply-slot { margin-top: 9px; }
+        .sh-note-comments .share-comment-reply-form { margin-top: 0; }
+        .sh-note-comments .share-comment-replies-toggle { align-self: flex-start; border: 0; background: transparent; color: var(--color-primary); cursor: pointer; font-size: 12px; padding: 2px 0; }
+        .sh-note-comments .share-comment-content.is-deleted { color: var(--color-text-muted); font-style: italic; }
+        .sh-note-comments .share-comments-form { display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px solid var(--color-border-light); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--color-bg-card) 74%, transparent); }
+        .sh-note-comments .share-comments-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+        .sh-note-comments .share-comment-input,
+        .sh-note-comments .share-comment-textarea { width: 100%; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-bg-card); color: var(--color-text); font-size: 13px; padding: 7px 9px; outline: none; }
+        .sh-note-comments .share-comment-textarea { min-height: 68px; resize: vertical; }
+        .sh-note-comments .share-comment-input:focus,
+        .sh-note-comments .share-comment-textarea:focus { border-color: var(--color-focus); box-shadow: 0 0 0 2px var(--color-focus-ring); }
+        .sh-note-comments .share-comments-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .sh-note-comments .share-comments-submit { display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: var(--radius-md); background: var(--color-primary); color: #fff; cursor: pointer; font-size: 12px; font-weight: 700; padding: 7px 12px; }
+        .sh-note-comments .share-comments-submit:disabled { opacity: .62; cursor: not-allowed; }
+
+        /* dark mode for notes */
+        [data-theme="dark"] .sh-note-text code { background: rgba(110,118,129,.2); color: #e6edf3; }
+        [data-theme="dark"] .sh-note-text pre { background: #1e293b; color: #e2e8f0; border-color: #334155; }
+        [data-theme="dark"] .sh-note-text .code-block { border-color: #334155; }
+        [data-theme="dark"] .sh-note-text .code-block-header { background: #1c2128; border-bottom-color: #334155; }
+        [data-theme="dark"] .sh-note-text .code-block-lang { color: #94a3b8; }
+        [data-theme="dark"] .sh-note-text .code-copy-btn { color: #94a3b8; }
+        [data-theme="dark"] .sh-note-text .code-copy-btn:hover { color: #e2e8f0; background: rgba(255,255,255,.08); }
+        [data-theme="dark"] .sh-note-text li::marker { color: #64748b; }
+        [data-theme="dark"] .sh-note-text table thead { background: #1c2128; }
+        [data-theme="dark"] .sh-note-text table th, [data-theme="dark"] .sh-note-text table td { border-color: #334155; color: #e2e8f0; }
+        [data-theme="dark"] .sh-note-text table tbody tr:nth-child(2n) { background: #161b22; }
+        [data-theme="dark"] .sh-note-text table tbody tr:hover { background: rgba(37,99,235,.12); }
+        [data-theme="dark"] .note-copy-btn:hover,
+        [data-theme="dark"] .note-comment-btn:hover,
+        [data-theme="dark"] .note-comment-btn[aria-expanded="true"],
+        [data-theme="dark"] .note-fullscreen-btn:hover { background: var(--color-gray-200); }
+
+        /* Note fullscreen viewer + image lightbox, matching the notes page. */
+        #shareNoteViewerOverlay.editor-overlay,
+        #shareNoteImageLightboxOverlay.editor-overlay { display: none; position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.4); }
+        #shareNoteViewerOverlay.editor-overlay.active,
+        #shareNoteImageLightboxOverlay.editor-overlay.active { display: block; }
+        #shareNoteViewerOverlay.note-viewer-overlay { background: rgba(2, 6, 23, 0.86); backdrop-filter: blur(12px); }
+        .note-viewer-shell { position: relative; width: 100vw; height: 100vh; height: 100dvh; color: var(--color-text-primary, #0f172a); overflow: hidden; }
+        .note-viewer-stage { height: 100%; overflow-y: auto; padding: 32px 88px; scrollbar-width: none; -ms-overflow-style: none; display: flex; align-items: center; justify-content: center; }
+        .note-viewer-stage::-webkit-scrollbar { display: none; }
+        .note-viewer-panel { width: min(920px, 100%); height: calc(100vh - 64px); height: calc(100dvh - 64px); max-height: 720px; display: flex; flex-direction: column; overflow: hidden; background: var(--color-bg-card, #fff); border: 1px solid var(--color-border, #e2e8f0); border-radius: 18px; box-shadow: 0 28px 90px rgba(2, 6, 23, 0.38); }
+        .note-viewer-topbar { flex: 0 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 18px; padding: 18px 20px 14px; border-bottom: 1px solid var(--color-border, #e2e8f0); background: color-mix(in srgb, var(--color-bg-card, #fff) 94%, transparent); }
+        .note-viewer-heading { min-width: 0; }
+        .note-viewer-kicker { display: block; margin-bottom: 5px; color: var(--color-text-tertiary, #94a3b8); font-size: 12px; font-weight: 600; line-height: 1.2; }
+        .note-viewer-title { margin: 0; color: var(--color-text-primary, #0f172a); font-size: 19px; font-weight: 700; line-height: 1.35; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .note-viewer-meta { min-height: 18px; margin-top: 5px; color: var(--color-text-secondary, #64748b); font-size: 12px; line-height: 1.45; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .note-viewer-actions { display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px; }
+        .note-viewer-icon-btn,
+        .note-viewer-nav { width: 38px; height: 38px; border: 1px solid var(--color-border, #e2e8f0); border-radius: 999px; background: var(--color-bg-card, #fff); color: var(--color-text-secondary, #64748b); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12); transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.16s ease, opacity 0.16s ease; }
+        .note-viewer-icon-btn:hover,
+        .note-viewer-nav:hover { background: var(--color-gray-100, #f1f5f9); border-color: var(--color-gray-200, #e2e8f0); color: var(--color-primary, #2563eb); transform: translateY(-1px); }
+        .note-viewer-nav { position: fixed; z-index: 2; top: 50%; margin-top: -22px; width: 44px; height: 44px; background: rgba(255,255,255,0.92); }
+        .note-viewer-prev { left: max(18px, env(safe-area-inset-left)); }
+        .note-viewer-next { right: max(18px, env(safe-area-inset-right)); }
+        .note-viewer-nav:disabled { opacity: 0.35; cursor: default; transform: none; pointer-events: none; }
+        .note-viewer-content { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 22px 24px 28px; color: var(--color-text-primary, #0f172a); font-size: 16px; line-height: 1.86; scrollbar-width: thin; }
+        #shareNoteImageLightboxOverlay.note-image-lightbox-overlay { background: rgba(2, 6, 23, 0.92); backdrop-filter: blur(14px); }
+        .note-image-lightbox-shell { position: relative; width: 100vw; height: 100vh; height: 100dvh; display: flex; align-items: center; justify-content: center; overflow: hidden; color: #f8fafc; }
+        .note-image-lightbox-figure { margin: 0; width: min(1180px, calc(100vw - 176px)); height: calc(100vh - 112px); height: calc(100dvh - 112px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+        .note-image-lightbox-img { display: block; max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 10px; box-shadow: 0 28px 90px rgba(0, 0, 0, 0.42); }
+        .note-image-lightbox-caption { min-height: 20px; max-width: min(760px, 100%); color: rgba(248, 250, 252, 0.82); font-size: 13px; line-height: 1.5; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .note-image-lightbox-close,
+        .note-image-lightbox-nav { position: fixed; z-index: 2; width: 44px; height: 44px; border: 1px solid rgba(226, 232, 240, 0.18); border-radius: 999px; background: rgba(15, 23, 42, 0.72); color: #f8fafc; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28); transition: background 0.16s ease, transform 0.16s ease, opacity 0.16s ease; }
+        .note-image-lightbox-close:hover,
+        .note-image-lightbox-nav:hover { background: rgba(30, 41, 59, 0.92); transform: translateY(-1px); }
+        .note-image-lightbox-close { top: max(18px, env(safe-area-inset-top)); right: max(18px, env(safe-area-inset-right)); }
+        .note-image-lightbox-nav { top: 50%; margin-top: -22px; }
+        .note-image-lightbox-prev { left: max(18px, env(safe-area-inset-left)); }
+        .note-image-lightbox-next { right: max(18px, env(safe-area-inset-right)); }
+        .note-image-lightbox-nav:disabled { opacity: 0.28; cursor: default; transform: none; pointer-events: none; }
+        .note-image-lightbox-counter { position: fixed; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); transform: translateX(-50%); min-width: 54px; padding: 5px 10px; border-radius: 999px; background: rgba(15, 23, 42, 0.72); color: rgba(248,250,252,0.86); font-size: 12px; text-align: center; }
+
+        /* ── Book grid ── */
+        .sh-book-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+        .sh-book-card { position: relative; display: block; border: 1px solid var(--surface-border); border-radius: var(--surface-radius); overflow: hidden; transition: background-color .15s ease, box-shadow .15s ease, border-color .15s ease; background: var(--color-bg-card); color: inherit; cursor: pointer; text-decoration: none; }
+        .sh-book-card:hover { box-shadow: var(--surface-shadow-hover); border-color: var(--color-primary-border); }
+        .sh-book-card.selected { border-color: var(--color-primary); box-shadow: 0 0 0 2px var(--color-primary-border); }
+        .sh-book-card:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+        .sh-book-cover { height: 78px; display: flex; align-items: center; justify-content: center; }
+        .sh-book-icon { width: 34px; height: 34px; background: rgba(255,255,255,.18); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; }
+        .sh-book-body { padding: 10px 14px 12px; }
+        .sh-book-title { font-size: 13px; font-weight: 700; color: var(--color-text); line-height: 1.4; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; transition: color .15s ease; }
+        .sh-book-card:hover .sh-book-title, .sh-book-card.selected .sh-book-title { color: var(--color-primary); }
+        .sh-book-meta { display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: var(--color-text-muted); }
+        .sh-book-count { display: flex; align-items: center; gap: 4px; font-weight: 600; color: var(--color-text-secondary); }
+        .sh-book-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--color-primary); flex-shrink: 0; }
+
+        /* ── Book detail panel ── */
+        .sh-book-detail { border: 1px solid var(--color-primary-border); border-radius: var(--radius-xl); overflow: hidden; margin-top: 4px; }
+        .sh-book-detail-head { background: var(--color-primary-light); padding: 13px 18px; display: flex; align-items: center; gap: 10px; }
+        .sh-book-detail-icon { width: 28px; height: 28px; border-radius: var(--radius-md); background: var(--color-primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .sh-book-detail-name { font-size: 13px; font-weight: 700; color: var(--color-text); }
+        .sh-book-detail-sub { font-size: 11px; color: var(--color-text-secondary); margin-top: 1px; }
+        .sh-book-detail-list { background: var(--color-bg-card); }
+        .sh-bdr { display: flex; align-items: center; gap: 12px; padding: 11px 18px; border-bottom: 1px solid var(--color-border-light); transition: background-color .15s ease; text-decoration: none; color: inherit; }
+        .sh-bdr:last-child { border-bottom: none; }
+        .sh-bdr:hover { background: var(--color-bg-hover); }
+        .sh-bdr:focus-visible { outline: 2px solid var(--color-focus); outline-offset: -2px; }
+        .sh-bdr-type { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--color-text-muted); width: 28px; flex-shrink: 0; }
+        .sh-bdr-title { font-size: 13px; font-weight: 600; color: var(--color-text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transition: color .15s ease; }
+        .sh-bdr:hover .sh-bdr-title { color: var(--color-primary); }
+        .sh-bdr-date { font-size: 11px; color: var(--color-text-muted); flex-shrink: 0; }
+
+        /* ── Empty / skeleton ── */
+        .sh-empty { text-align: center; padding: 60px 20px; color: var(--color-text-muted); }
+        .sh-empty-icon { font-size: 42px; margin-bottom: 12px; }
+        .sh-empty-text { font-size: 14px; }
+        .skel-hero { background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: var(--radius-xl); margin-bottom: 28px; overflow: hidden; display: grid; grid-template-columns: 1fr 1fr; }
+        .skel-cover { min-height: 160px; background: var(--color-gray-100); }
+        .skel-body { padding: 24px 28px; display: flex; flex-direction: column; gap: 10px; justify-content: center; }
+        .skel-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 28px; }
+        .skel-card { background: var(--color-bg-card); border: 1px solid var(--surface-border); border-radius: var(--surface-radius); padding: 14px 15px; display: flex; flex-direction: column; gap: 8px; }
+        .skel-line { border-radius: 4px; background: linear-gradient(90deg, var(--color-gray-100) 25%, var(--color-gray-50) 50%, var(--color-gray-100) 75%); background-size: 200% 100%; animation: skel-shimmer 1.5s ease-in-out infinite; }
+        @keyframes skel-shimmer { 0%{background-position:100% 0} 100%{background-position:-100% 0} }
+        @media (prefers-reduced-motion: reduce) { .skel-line { animation: none; } }
+
+        /* ── Avatar colors ── */
+        .avatar-c0 { background: #6366f1; }
+        .avatar-c1 { background: #ec4899; }
+        .avatar-c2 { background: #14b8a6; }
+        .avatar-c3 { background: #f59e0b; color: #1e293b; }
+        .avatar-c4 { background: #8b5cf6; }
+        .avatar-c5 { background: #06b6d4; }
+
+        /* ── Lock / type chips ── */
+        .sh-lock-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: var(--radius-sm); margin-bottom: 6px; background: var(--color-gray-100); color: var(--color-text-muted); }
+        .sh-type-chip { display: inline-flex; align-items: center; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: var(--radius-sm); background: var(--color-primary-light); color: var(--color-primary); }
+        [data-theme="dark"] .sh-lock-chip { background: var(--color-gray-200); color: var(--color-gray-500); border: 1px solid var(--color-border); }
+        [data-theme="dark"] .sh-type-chip { background: rgba(37,99,235,.15); color: #93c5fd; border: 1px solid rgba(37,99,235,.25); }
+        [data-theme="dark"] .sh-card-book { background: rgba(59,130,246,.12); color: #93c5fd; border: 1px solid rgba(59,130,246,.25); }
+        [data-theme="dark"] .sh-hero-tag { background: var(--color-gray-200); color: var(--color-gray-600); border: 1px solid var(--color-border); }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .sh-grid { grid-template-columns: repeat(2, 1fr); }
+            .sh-book-grid { grid-template-columns: repeat(2, 1fr); }
+            .sh-hero { grid-template-columns: 1fr; }
+            .sh-hero-cover { min-height: 120px; }
+            .sh-hero-letter { font-size: 56px; }
+            .sh-hero-title { font-size: 17px; }
+            .sh-hero-body { padding: 20px; }
+            .skel-hero { grid-template-columns: 1fr; }
+            .skel-cover { min-height: 90px; }
+            .skel-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 640px) {
+            .sh-grid { grid-template-columns: 1fr; }
+            .sh-book-grid { grid-template-columns: repeat(2, 1fr); }
+            .sh-hero-body { padding: 16px; }
+            .sh-hero-title { font-size: 16px; }
+            .sh-hero-excerpt { display: none; }
+            .sh-hero-cover { min-height: 100px; }
+            .sh-hero-letter { font-size: 44px; }
+            .skel-grid { grid-template-columns: 1fr; }
+            .sh-search-wrap { margin-bottom: 16px; }
+            .sh-note-header { align-items: center; gap: 4px; flex-wrap: nowrap; }
+            .sh-note-time { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .sh-note-actions { margin-left: auto; gap: 0; }
+            .sh-note-comments .share-comments-fields { grid-template-columns: 1fr; }
+            .sh-note-comments .share-comments-actions { align-items: stretch; flex-direction: column; }
+            .sh-note-comments .share-comments-submit { justify-content: center; min-height: 40px; }
+            .note-copy-btn,
+            .note-comment-btn,
+            .note-fullscreen-btn { width: 28px; height: 28px; min-width: 28px; min-height: 28px; display: inline-flex; align-items: center; justify-content: center; padding: 0; font-size: 13px; }
+            #shareNoteViewerOverlay.editor-overlay.active,
+            #shareNoteImageLightboxOverlay.editor-overlay.active { align-items: stretch; overflow: hidden; }
+            .note-viewer-shell,
+            .note-image-lightbox-shell { height: var(--bs-vvh, 100dvh); }
+            .note-viewer-stage { align-items: stretch; justify-content: stretch; padding: 10px 10px max(10px, env(safe-area-inset-bottom)); }
+            .note-viewer-panel { width: 100%; height: calc(var(--bs-vvh, 100dvh) - 20px); max-height: calc(var(--bs-vvh, 100dvh) - 20px); border-radius: 14px; }
+            .note-viewer-topbar { grid-template-columns: minmax(0, 1fr) auto; gap: 10px; padding: 12px 12px 10px; }
+            .note-viewer-kicker { font-size: 11px; margin-bottom: 4px; }
+            .note-viewer-title { max-width: none; font-size: 16px; }
+            .note-viewer-meta { font-size: 11px; }
+            .note-viewer-actions { gap: 6px; }
+            .note-viewer-icon-btn { width: 34px; height: 34px; }
+            .note-viewer-content { max-width: none; padding: 16px 16px 20px; font-size: 15px; line-height: 1.78; }
+            .note-viewer-nav { width: 38px; height: 38px; top: auto; bottom: max(18px, env(safe-area-inset-bottom)); margin-top: 0; background: rgba(255,255,255,0.94); }
+            .note-image-lightbox-figure { width: 100%; height: calc(var(--bs-vvh, 100dvh) - 104px); padding: 52px 12px 48px; gap: 10px; }
+            .note-image-lightbox-img { max-height: calc(var(--bs-vvh, 100dvh) - 150px); border-radius: 8px; }
+            .note-image-lightbox-caption { max-width: calc(100vw - 28px); font-size: 12px; }
+            .note-image-lightbox-close,
+            .note-image-lightbox-nav { width: 40px; height: 40px; }
+            .note-image-lightbox-close { top: max(10px, env(safe-area-inset-top)); right: max(10px, env(safe-area-inset-right)); }
+            .note-image-lightbox-prev { left: max(8px, env(safe-area-inset-left)); }
+            .note-image-lightbox-next { right: max(8px, env(safe-area-inset-right)); }
+            .note-image-lightbox-counter { bottom: max(10px, env(safe-area-inset-bottom)); }
+        }
+    </style>
+{{template "head-assets" .}}
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col">
+    <script src="/static/js/marked.min.js?v={{assetVer "/static/js/marked.min.js"}}"></script>
+    {{template "header" .}}
+    <main class="flex-1" role="main">
+        <div class="px-4 sm:px-6 md:px-8 py-6">
+            <div class="sh-page">
+
+                <!-- search + filter chips -->
+                <div class="sh-search-wrap">
+                    <div class="sh-search-row">
+                        <input id="share-search" type="text" placeholder="{{call .T "share.search.placeholder"}}" aria-label="{{call .T "share.search.aria"}}" onkeydown="if(event.key==='Enter'){event.preventDefault();doShareSearch()}">
+                        <button onclick="doShareSearch()" aria-label="{{call .T "share.search.aria"}}"><i class="fa-solid fa-magnifying-glass" style="font-size:12px;"></i></button>
+                    </div>
+                    <div class="sh-filter-chips" data-swipe-nav data-swipe-item=".sh-filter-chip" data-swipe-mode="click">
+                        <span class="sh-filter-chip active" data-tab="latest" data-swipe-idx="0" onclick="switchFilter(this)">{{call .T "share.filter.latest"}}</span>
+                        <span class="sh-filter-chip" data-tab="article" data-swipe-idx="1" onclick="switchFilter(this)"><i class="fa-solid fa-pen-nib"></i> {{call .T "share.filter.article"}}</span>
+                        <span class="sh-filter-chip" data-tab="note" data-swipe-idx="2" onclick="switchFilter(this)"><i class="fa-solid fa-note-sticky"></i> {{call .T "share.filter.note"}}</span>
+                        <span class="sh-filter-chip" data-tab="book" data-swipe-idx="3" onclick="switchFilter(this)"><i class="fa-solid fa-book"></i> {{call .T "share.filter.book"}}</span>
+                    </div>
+                </div>
+
+                <!-- skeleton -->
+                <div id="share-loading" style="display:none">
+                    <div class="skel-hero">
+                        <div class="skel-cover"></div>
+                        <div class="skel-body">
+                            <div class="skel-line" style="height:12px;width:40%"></div>
+                            <div class="skel-line" style="height:18px;width:85%"></div>
+                            <div class="skel-line" style="height:12px;width:70%"></div>
+                            <div class="skel-line" style="height:12px;width:55%"></div>
+                        </div>
+                    </div>
+                    <div class="skel-grid">
+                        <div class="skel-card"><div class="skel-line" style="height:3px;margin:-14px -15px 10px;border-radius:0"></div><div class="skel-line" style="height:11px;width:30%"></div><div class="skel-line" style="height:14px;width:90%"></div><div class="skel-line" style="height:14px;width:70%"></div><div class="skel-line" style="height:11px;width:50%;margin-top:4px"></div></div>
+                        <div class="skel-card"><div class="skel-line" style="height:3px;margin:-14px -15px 10px;border-radius:0"></div><div class="skel-line" style="height:11px;width:30%"></div><div class="skel-line" style="height:14px;width:80%"></div><div class="skel-line" style="height:14px;width:60%"></div><div class="skel-line" style="height:11px;width:40%;margin-top:4px"></div></div>
+                        <div class="skel-card"><div class="skel-line" style="height:3px;margin:-14px -15px 10px;border-radius:0"></div><div class="skel-line" style="height:11px;width:25%"></div><div class="skel-line" style="height:14px;width:90%"></div><div class="skel-line" style="height:11px;width:45%;margin-top:4px"></div></div>
+                    </div>
+                </div>
+
+                <div id="share-content"></div>
+                <div class="pagination" id="sharesPagination"></div>
+
+            </div>
+        </div>
+    </main>
+
+    <div class="editor-overlay note-viewer-overlay" id="shareNoteViewerOverlay" role="dialog" aria-modal="true" aria-labelledby="shareNoteViewerTitle" onclick="if(event.target===this)closeShareNoteViewer()">
+        <div class="note-viewer-shell">
+            <button class="note-viewer-nav note-viewer-prev" id="shareNoteViewerPrevBtn" type="button" onclick="showAdjacentShareNoteViewer(-1)" aria-label="{{call .T "note.viewer.previous"}}" title="{{call .T "note.viewer.previous"}}"><i class="fa-solid fa-chevron-left"></i></button>
+            <button class="note-viewer-nav note-viewer-next" id="shareNoteViewerNextBtn" type="button" onclick="showAdjacentShareNoteViewer(1)" aria-label="{{call .T "note.viewer.next"}}" title="{{call .T "note.viewer.next"}}"><i class="fa-solid fa-chevron-right"></i></button>
+            <div class="note-viewer-stage">
+                <article class="note-viewer-panel">
+                    <header class="note-viewer-topbar">
+                        <div class="note-viewer-heading">
+                            <span class="note-viewer-kicker">{{call .T "share.type.note"}}</span>
+                            <h2 class="note-viewer-title" id="shareNoteViewerTitle">{{call .T "share.type.note"}}</h2>
+                            <div class="note-viewer-meta" id="shareNoteViewerMeta"></div>
+                        </div>
+                        <div class="note-viewer-actions">
+                            <button class="note-viewer-icon-btn" id="shareNoteViewerCopyBtn" type="button" onclick="copyShareNoteViewerContent()" aria-label="{{call .T "note.action.copy"}}" title="{{call .T "note.action.copy"}}"><i class="fa-regular fa-copy"></i></button>
+                            <button class="note-viewer-icon-btn note-viewer-close" type="button" onclick="closeShareNoteViewer()" aria-label="{{call .T "note.viewer.close"}}" title="{{call .T "note.viewer.close"}}"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    </header>
+                    <div class="sh-note-text note-viewer-content" id="shareNoteViewerContent"></div>
+                </article>
+            </div>
+        </div>
+    </div>
+
+    <div class="editor-overlay note-image-lightbox-overlay" id="shareNoteImageLightboxOverlay" role="dialog" aria-modal="true" aria-label="{{call .T "note.compose.image"}}" onclick="if(event.target===this)closeShareImageLightbox()">
+        <div class="note-image-lightbox-shell">
+            <button class="note-image-lightbox-close" id="shareNoteImageLightboxCloseBtn" type="button" onclick="closeShareImageLightbox()" aria-label="{{call .T "note.viewer.close"}}" title="{{call .T "note.viewer.close"}}"><i class="fa-solid fa-xmark"></i></button>
+            <button class="note-image-lightbox-nav note-image-lightbox-prev" id="shareNoteImageLightboxPrevBtn" type="button" onclick="showAdjacentShareImageLightbox(-1)" aria-label="{{call .T "note.viewer.previous"}}" title="{{call .T "note.viewer.previous"}}"><i class="fa-solid fa-chevron-left"></i></button>
+            <figure class="note-image-lightbox-figure">
+                <img class="note-image-lightbox-img" id="shareNoteImageLightboxImg" alt="">
+                <figcaption class="note-image-lightbox-caption" id="shareNoteImageLightboxCaption"></figcaption>
+            </figure>
+            <button class="note-image-lightbox-nav note-image-lightbox-next" id="shareNoteImageLightboxNextBtn" type="button" onclick="showAdjacentShareImageLightbox(1)" aria-label="{{call .T "note.viewer.next"}}" title="{{call .T "note.viewer.next"}}"><i class="fa-solid fa-chevron-right"></i></button>
+            <div class="note-image-lightbox-counter" id="shareNoteImageLightboxCounter">0 / 0</div>
+        </div>
+    </div>
+
+    {{template "footer" .}}
+
+    <script>
+    window.__SHARE_COMMENTS_ENABLED__ = {{if .ShareCommentsEnabled}}true{{else}}false{{end}};
+    window.__SHARE_COMMENT_ACCOUNT__ = {{jsonJS .Account}};
+    window.__SHARE_COMMENT_MAX_LENGTH__ = {{.ShareCommentMaxLength}};
+    </script>
+    <script src="/static/js/share-comments.js?v={{assetVer "/static/js/share-comments.js"}}"></script>
+    <script>
+    /* ─── State ─── */
+    var shareKeyword = '';
+    var isAdmin = {{.IsAdmin}};
+    var currentTab = 'latest';
+    var PAGE_SIZE = { article: 15, note: 20, book: 12 };
+    var tabState = {
+        article: { page: 1, totalPages: 1, total: 0 },
+        note:    { page: 1, totalPages: 1, total: 0 },
+        book:    { page: 1, totalPages: 1, total: 0 }
+    };
+    var latestLoaded = false;
+    var latestCache = { articles: [], books: [], notes: [] };
+    var shareNoteStore = {};
+    var shareNoteOrder = [];
+    var shareNoteViewerCurrentKey = null;
+    var shareImageLightboxIndex = null;
+    var shareImageLightboxTrapHandler = null;
+    var shareImageLightboxPrevFocus = null;
+    var shareNoteViewerTrapHandler = null;
+    var shareNoteViewerPrevFocus = null;
+
+    /* ─── Markdown renderer (for notes) ─── */
+    if (typeof marked !== 'undefined') {
+        marked.setOptions({ breaks: true, gfm: true });
+        var _renderer = new marked.Renderer();
+        _renderer.code = function(obj) {
+            var text = (typeof obj === 'object' && obj !== null) ? obj.text : obj;
+            var lang = (typeof obj === 'object' && obj !== null) ? obj.lang : arguments[1];
+            var escaped = typeof escHtml === 'function' ? escHtml(text) : String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            if (lang) {
+                var escapedLang = typeof escAttr === 'function' ? escAttr(lang) : String(lang).replace(/"/g,'&quot;');
+                return '<div class="code-block" data-lang="'+escapedLang+'">' +
+                    '<div class="code-block-header">' +
+                    '<span class="code-block-dots"><i></i><i></i><i></i></span>' +
+                    '<span class="code-block-lang">' + (typeof escHtml === 'function' ? escHtml(lang) : lang) + '</span>' +
+                    '<button class="code-copy-btn" title="' + window.__('share.code.copy') + '" aria-label="' + window.__('share.code.copy') + '"><i class="fa-regular fa-copy"></i></button>' +
+                    '</div><pre><code>' + escaped + '</code></pre></div>';
+            }
+            return '<pre><code>' + escaped + '</code></pre>';
+        };
+        marked.setOptions({ renderer: _renderer });
+    }
+
+    /* ─── Code copy ─── */
+    document.addEventListener('click', function(e) {
+        var btn = e.target.closest('.sh-note-text .code-copy-btn');
+        if (!btn) return;
+        var code = btn.closest('.code-block') && btn.closest('.code-block').querySelector('code');
+        if (!code) return;
+        var icon = btn.querySelector('i');
+        var done = function() { if (icon) { icon.className = 'fa-solid fa-check'; setTimeout(function() { icon.className = 'fa-regular fa-copy'; }, 1200); } };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(code.textContent).then(done).catch(function() { if (typeof toast === 'function') toast(window.__('share.code.copy_error'), 'error'); });
+        } else {
+            var ta = document.createElement('textarea');
+            ta.value = code.textContent; ta.style.cssText = 'position:fixed;opacity:0';
+            document.body.appendChild(ta); ta.select();
+            try { document.execCommand('copy'); done(); } catch(e) {}
+            document.body.removeChild(ta);
+        }
+    });
+
+    function resetShareNoteStore() {
+        shareNoteStore = {};
+        shareNoteOrder = [];
+    }
+
+    function registerShareNote(noteKey, note) {
+        if (!noteKey) return;
+        shareNoteStore[noteKey] = note;
+        if (shareNoteOrder.indexOf(noteKey) < 0) shareNoteOrder.push(noteKey);
+    }
+
+    function copyTextToClipboard(text, successMessage) {
+        var done = function() {
+            if (window.BSDialog) BSDialog.toast(successMessage || window.__('note.toast.copied'), 'success');
+        };
+        var fail = function() {
+            if (window.BSDialog) BSDialog.toast(window.__('note.code_copy_failed'), 'error');
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(done).catch(function() {
+                var ta = document.createElement('textarea');
+                ta.value = text; ta.style.position = 'fixed'; ta.style.left = '-9999px';
+                document.body.appendChild(ta); ta.select();
+                try { document.execCommand('copy'); done(); } catch(ex) { fail(); }
+                document.body.removeChild(ta);
+            });
+            return;
+        }
+        var ta = document.createElement('textarea');
+        ta.value = text; ta.style.position = 'fixed'; ta.style.left = '-9999px';
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); done(); } catch(ex) { fail(); }
+        document.body.removeChild(ta);
+    }
+
+    function copyShareNoteContent(noteKey) {
+        var note = shareNoteStore[noteKey];
+        if (!note) return;
+        copyTextToClipboard(note.content || '');
+    }
+
+    function copyShareNoteViewerContent() {
+        if (!shareNoteViewerCurrentKey) return;
+        copyShareNoteContent(shareNoteViewerCurrentKey);
+    }
+
+    function updateShareNoteViewerNav() {
+        var idx = shareNoteOrder.indexOf(shareNoteViewerCurrentKey);
+        var prevBtn = document.getElementById('shareNoteViewerPrevBtn');
+        var nextBtn = document.getElementById('shareNoteViewerNextBtn');
+        if (prevBtn) prevBtn.disabled = idx <= 0;
+        if (nextBtn) nextBtn.disabled = idx < 0 || idx >= shareNoteOrder.length - 1;
+    }
+
+    function setShareNoteViewer(noteKey) {
+        var note = shareNoteStore[noteKey];
+        var titleEl = document.getElementById('shareNoteViewerTitle');
+        var metaEl = document.getElementById('shareNoteViewerMeta');
+        var contentEl = document.getElementById('shareNoteViewerContent');
+        if (!note || !contentEl) return;
+        shareNoteViewerCurrentKey = noteKey;
+        if (titleEl) titleEl.textContent = note.title || window.__('share.type.note');
+        if (metaEl) {
+            var meta = [];
+            if (note.author) meta.push(note.author);
+            if (note.time) meta.push(fmtDate(note.time) + ' ' + fmtHM(note.time));
+            if (note.labels && note.labels.length) meta.push(note.labels.join(' / '));
+            metaEl.textContent = meta.join(' · ');
+        }
+        contentEl.innerHTML = typeof marked !== 'undefined'
+            ? sanitizeRenderedHTML(marked.parse(note.content || ''))
+            : escHtml(note.content || '');
+        contentEl.scrollTop = 0;
+        prepareShareNoteImages(contentEl);
+        updateShareNoteViewerNav();
+    }
+
+    function openShareNoteViewer(noteKey) {
+        var overlay = document.getElementById('shareNoteViewerOverlay');
+        if (!overlay || !shareNoteStore[noteKey]) return;
+        shareNoteViewerPrevFocus = document.activeElement;
+        overlay.classList.add('active');
+        if (window.BookStarkScrollLock) BookStarkScrollLock.lock('share-note-viewer');
+        setShareNoteViewer(noteKey);
+        trapShareNoteViewer(true);
+    }
+
+    function showAdjacentShareNoteViewer(delta) {
+        var idx = shareNoteOrder.indexOf(shareNoteViewerCurrentKey);
+        var nextKey = idx >= 0 ? shareNoteOrder[idx + delta] : null;
+        if (!nextKey) return;
+        setShareNoteViewer(nextKey);
+    }
+
+    function closeShareNoteViewer() {
+        var overlay = document.getElementById('shareNoteViewerOverlay');
+        if (overlay) overlay.classList.remove('active');
+        var contentEl = document.getElementById('shareNoteViewerContent');
+        if (contentEl) contentEl.innerHTML = '';
+        shareNoteViewerCurrentKey = null;
+        if (window.BookStarkScrollLock) BookStarkScrollLock.unlock('share-note-viewer');
+        trapShareNoteViewer(false);
+    }
+
+    function prepareShareNoteImages(root) {
+        root = root || document.getElementById('share-content');
+        if (!root) return;
+        var images = root.querySelectorAll('.sh-note-text img');
+        Array.prototype.forEach.call(images, function(img) {
+            if (img.dataset.shareLightboxReady === '1') return;
+            img.dataset.shareLightboxReady = '1';
+            img.classList.add('note-image-lightbox-trigger');
+            img.setAttribute('tabindex', '0');
+            img.setAttribute('role', 'button');
+            img.setAttribute('aria-label', window.__('note.compose.image') || '查看图片');
+            img.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                openShareImageLightbox(img);
+            });
+            img.addEventListener('keydown', function(e) {
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                e.preventDefault();
+                e.stopPropagation();
+                openShareImageLightbox(img);
+            });
+        });
+    }
+
+    function getShareImageLightboxItems() {
+        var images = document.querySelectorAll('#share-content .sh-note-row .sh-note-text img.note-image-lightbox-trigger, #shareNoteViewerContent img.note-image-lightbox-trigger');
+        return Array.prototype.slice.call(images).map(function(img, index) {
+            return {
+                img: img,
+                src: img.currentSrc || img.src || img.getAttribute('src') || '',
+                alt: img.getAttribute('alt') || '',
+                title: img.getAttribute('title') || '',
+                index: index
+            };
+        }).filter(function(item) { return !!item.src; });
+    }
+
+    function setShareImageLightboxItem(index) {
+        var items = getShareImageLightboxItems();
+        var overlayImg = document.getElementById('shareNoteImageLightboxImg');
+        var captionEl = document.getElementById('shareNoteImageLightboxCaption');
+        var counterEl = document.getElementById('shareNoteImageLightboxCounter');
+        var prevBtn = document.getElementById('shareNoteImageLightboxPrevBtn');
+        var nextBtn = document.getElementById('shareNoteImageLightboxNextBtn');
+        if (!items.length || !overlayImg) {
+            closeShareImageLightbox();
+            return;
+        }
+        var nextIndex = Math.max(0, Math.min(index, items.length - 1));
+        var item = items[nextIndex];
+        shareImageLightboxIndex = nextIndex;
+        overlayImg.src = item.src;
+        overlayImg.alt = item.alt || item.title || '';
+        if (captionEl) captionEl.textContent = item.alt || item.title || '';
+        if (counterEl) counterEl.textContent = (nextIndex + 1) + ' / ' + items.length;
+        if (prevBtn) prevBtn.disabled = nextIndex <= 0;
+        if (nextBtn) nextBtn.disabled = nextIndex >= items.length - 1;
+    }
+
+    function openShareImageLightbox(targetImg) {
+        var overlay = document.getElementById('shareNoteImageLightboxOverlay');
+        if (!overlay || !targetImg) return;
+        var items = getShareImageLightboxItems();
+        var index = items.findIndex(function(item) { return item.img === targetImg; });
+        if (index < 0) return;
+        shareImageLightboxPrevFocus = document.activeElement;
+        overlay.classList.add('active');
+        if (window.BookStarkScrollLock) BookStarkScrollLock.lock('share-note-image-lightbox');
+        setShareImageLightboxItem(index);
+        trapShareImageLightbox(true);
+    }
+
+    function showAdjacentShareImageLightbox(delta) {
+        var items = getShareImageLightboxItems();
+        if (!items.length) return;
+        var current = typeof shareImageLightboxIndex === 'number' ? shareImageLightboxIndex : 0;
+        setShareImageLightboxItem(current + delta);
+    }
+
+    function closeShareImageLightbox() {
+        var overlay = document.getElementById('shareNoteImageLightboxOverlay');
+        if (overlay) overlay.classList.remove('active');
+        var overlayImg = document.getElementById('shareNoteImageLightboxImg');
+        if (overlayImg) {
+            overlayImg.removeAttribute('src');
+            overlayImg.alt = '';
+        }
+        shareImageLightboxIndex = null;
+        if (window.BookStarkScrollLock) BookStarkScrollLock.unlock('share-note-image-lightbox');
+        trapShareImageLightbox(false);
+    }
+
+    function trapShareNoteViewer(on) {
+        if (on) {
+            if (shareNoteViewerTrapHandler) return;
+            shareNoteViewerTrapHandler = function(e) {
+                if (e.key === 'Escape') { e.preventDefault(); closeShareNoteViewer(); return; }
+                if (e.key === 'ArrowLeft') { e.preventDefault(); showAdjacentShareNoteViewer(-1); return; }
+                if (e.key === 'ArrowRight') { e.preventDefault(); showAdjacentShareNoteViewer(1); return; }
+            };
+            document.addEventListener('keydown', shareNoteViewerTrapHandler);
+            var closeBtn = document.querySelector('#shareNoteViewerOverlay .note-viewer-close');
+            if (closeBtn) closeBtn.focus();
+        } else {
+            if (shareNoteViewerTrapHandler) {
+                document.removeEventListener('keydown', shareNoteViewerTrapHandler);
+                shareNoteViewerTrapHandler = null;
+            }
+            if (shareNoteViewerPrevFocus && typeof shareNoteViewerPrevFocus.focus === 'function') {
+                try { shareNoteViewerPrevFocus.focus(); } catch(e) {}
+                shareNoteViewerPrevFocus = null;
+            }
+        }
+    }
+
+    function trapShareImageLightbox(on) {
+        if (on) {
+            if (shareImageLightboxTrapHandler) return;
+            shareImageLightboxTrapHandler = function(e) {
+                if (e.key === 'Escape') { e.preventDefault(); closeShareImageLightbox(); return; }
+                if (e.key === 'ArrowLeft') { e.preventDefault(); showAdjacentShareImageLightbox(-1); return; }
+                if (e.key === 'ArrowRight') { e.preventDefault(); showAdjacentShareImageLightbox(1); return; }
+            };
+            document.addEventListener('keydown', shareImageLightboxTrapHandler);
+            var closeBtn = document.getElementById('shareNoteImageLightboxCloseBtn');
+            if (closeBtn) closeBtn.focus();
+        } else {
+            if (shareImageLightboxTrapHandler) {
+                document.removeEventListener('keydown', shareImageLightboxTrapHandler);
+                shareImageLightboxTrapHandler = null;
+            }
+            if (shareImageLightboxPrevFocus && typeof shareImageLightboxPrevFocus.focus === 'function') {
+                try { shareImageLightboxPrevFocus.focus(); } catch(e) {}
+                shareImageLightboxPrevFocus = null;
+            }
+        }
+    }
+
+    /* ─── Helpers ─── */
+    function avatarColor(name) {
+        var colors = ['avatar-c0','avatar-c1','avatar-c2','avatar-c3','avatar-c4','avatar-c5'];
+        var h = 0; for (var i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+        return colors[Math.abs(h) % colors.length];
+    }
+    function avatarLetter(name) { return (name || '?').charAt(0).toUpperCase(); }
+    function isSpecialDoc(docType) { return docType === 'spreadsheet' || docType === 'presentation' || docType === 'drawing' || docType === 'html' || docType === 'mindmap' || docType === 'richdoc'; }
+    function docLabel(docType) { return { spreadsheet: window.__('share.type.spreadsheet'), presentation: window.__('share.type.presentation'), drawing: window.__('share.type.drawing'), html: 'HTML', mindmap: window.__('share.type.mindmap'), richdoc: window.__('share.type.richdoc') }[docType] || window.__('share.type.doc'); }
+    function isNote(s) { return s.share_type === 'blog' && s.blog_type === 'note'; }
+    function stripContent(text) {
+        if (!text) return '';
+        return text.replace(/<[^>]*>/g,'').replace(/!\[[^\]]*\]\([^)]*\)/g,'').replace(/\[([^\]]*)\]\([^)]*\)/g,'$1')
+            .replace(/#{1,6}\s+/g,'').replace(/[*_]{1,3}([^*_\n]*)[*_]{1,3}/g,'$1')
+            .replace(/`{1,3}[^`]*`{1,3}/g,'').replace(/>\s+/g,'').replace(/[-*+]\s+/g,'')
+            .replace(/\d+\.\s+/g,'').replace(/---+/g,'').replace(/\n+/g,' ').trim();
+    }
+    function shareExcerpt(s) {
+        if (!s) return '';
+        if (s.has_password) return s.content || '';
+        return stripContent(s.description || s.content || '');
+    }
+    function fmtTime(t) { if (!t) return ''; return t.substring(0, 16).replace('T', ' '); }
+    function fmtDate(t) {
+        if (!t) return '';
+        var d = new Date(t); if (isNaN(d.getTime())) return t.substring(0, 10);
+        var now = new Date();
+        var diff = Math.floor((new Date(now.getFullYear(),now.getMonth(),now.getDate()) - new Date(d.getFullYear(),d.getMonth(),d.getDate())) / 86400000);
+        if (diff === 0) return window.__('share.date.today'); if (diff === 1) return window.__('share.date.yesterday'); if (diff < 7) return diff + window.__('share.date.days_ago');
+        return d.getFullYear() === now.getFullYear() ? (d.getMonth()+1) + window.__('share.date.month_day') + d.getDate() + window.__('share.date.day_unit') : d.getFullYear() + window.__('share.date.year_unit') + (d.getMonth()+1) + window.__('share.date.month_day') + d.getDate() + window.__('share.date.day_unit');
+    }
+    function fmtHM(t) {
+        if (!t) return '';
+        var d = new Date(t); if (isNaN(d.getTime())) return t.substring(11, 16);
+        return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+    }
+    var BOOK_COVERS = [
+        'linear-gradient(135deg,#1e3a8a,#3b82f6)',
+        'linear-gradient(135deg,#7c3aed,#a78bfa)',
+        'linear-gradient(135deg,#065f46,#34d399)',
+        'linear-gradient(135deg,#92400e,#f59e0b)',
+        'linear-gradient(135deg,#9f1239,#fb7185)',
+        'linear-gradient(135deg,#0c4a6e,#38bdf8)',
+    ];
+    function bookCover(name) {
+        var h = 0; for (var i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+        return BOOK_COVERS[Math.abs(h) % BOOK_COVERS.length];
+    }
+    var BOOK_DOT_COLORS = ['#3b82f6','#7c3aed','#16a34a','#d97706','#e11d48','#0ea5e9'];
+    function bookDotColor(name) {
+        var h = 0; for (var i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h);
+        return BOOK_DOT_COLORS[Math.abs(h) % BOOK_DOT_COLORS.length];
+    }
+    function typeAccentClass(s) {
+        if (isNote(s)) return 't-note';
+        if (s.share_type === 'book') return 't-book';
+        return 't-blog';
+    }
+    function typeLabel(s) {
+        if (s.share_type === 'book') return window.__('share.type.book');
+        return isNote(s) ? window.__('share.type.note') : window.__('share.type.blog');
+    }
+
+    /* ─── Filter chip switching ─── */
+    function switchFilter(chip, opts) {
+        opts = opts || {};
+        document.querySelectorAll('.sh-filter-chip').forEach(function(c) { c.classList.remove('active'); });
+        chip.classList.add('active');
+        currentTab = chip.dataset.tab;
+        if (opts.updateUrl !== false && window.BookStarkTabURL) window.BookStarkTabURL.set('tab', currentTab);
+        shareKeyword = '';
+        document.getElementById('share-search').value = '';
+        // search row visible only for non-latest tabs
+        var searchRow = document.querySelector('.sh-search-row');
+        searchRow.style.display = currentTab === 'latest' ? 'none' : '';
+        if (currentTab === 'latest') {
+            loadLatest();
+        } else {
+            loadTabPage(currentTab, 1);
+        }
+    }
+
+    /* ─── Search ─── */
+    function doShareSearch() {
+        shareKeyword = document.getElementById('share-search').value.trim();
+        if (currentTab !== 'latest') loadTabPage(currentTab, 1);
+    }
+
+    /* ─── "最新" tab: 3 parallel fetches ─── */
+    function loadLatest() {
+        document.getElementById('sharesPagination').innerHTML = '';
+        if (latestLoaded) {
+            renderLatest(latestCache.articles, latestCache.books, latestCache.notes);
+            return;
+        }
+        var container = document.getElementById('share-content');
+        container.innerHTML = document.getElementById('share-loading').innerHTML;
+        Promise.all([
+            fetch('/api/shares?type=article&page=1&page_size=10').then(function(r) { return r.json(); }),
+            fetch('/api/shares?type=book&page=1&page_size=9').then(function(r) { return r.json(); }),
+            fetch('/api/shares?type=note&page=1&page_size=50').then(function(r) { return r.json(); })
+        ]).then(function(results) {
+            if (currentTab !== 'latest') return;
+            latestCache.articles = results[0].data || [];
+            latestCache.books    = results[1].data || [];
+            latestCache.notes    = results[2].data || [];
+            renderLatest(latestCache.articles, latestCache.books, latestCache.notes);
+            latestLoaded = true;
+        }).catch(function() {
+            if (currentTab !== 'latest') return;
+            container.innerHTML = '<div class="sh-empty"><div class="sh-empty-icon"><i class="fa-solid fa-triangle-exclamation"></i></div><div class="sh-empty-text">'+window.__('share.load_error')+'</div></div>';
+        });
+    }
+
+    function renderLatest(articles, books, notes) {
+        var container = document.getElementById('share-content');
+        resetShareNoteStore();
+        if (!articles.length && !books.length && !notes.length) {
+            container.innerHTML = '<div class="sh-empty"><div class="sh-empty-icon"><i class="fa-regular fa-folder-open"></i></div><div class="sh-empty-text">'+window.__('share.empty')+'</div></div>';
+            return;
+        }
+        var html = '';
+
+        // Hero: first pinned article
+        var hero = null;
+        var gridArticles = articles;
+        if (articles.length > 0 && articles[0].is_pinned) {
+            hero = articles[0];
+            gridArticles = articles.slice(1);
+        }
+        if (hero) {
+            var pPinBtn = '';
+            var pExcerpt = shareExcerpt(hero);
+            var pTags = (hero.labels && hero.labels.length) ? hero.labels.slice(0,4).map(function(l){return '<span class="sh-hero-tag">'+escHtml(l)+'</span>';}).join('') : '';
+            var heroLetter = (hero.title||'?').charAt(0).toUpperCase();
+            html += '<a class="sh-hero" href="/shares/'+escHtml(hero.share_identify)+'?from='+encodeURIComponent(location.pathname+location.search)+'">' +
+                '<div class="sh-hero-cover"><div class="sh-hero-letter">'+escHtml(heroLetter)+'</div></div>' +
+                '<div class="sh-hero-body">' +
+                    '<div class="sh-hero-title-row"><span class="sh-hero-title">'+escHtml(hero.title)+'</span></div>' +
+                    '<div class="sh-hero-excerpt">'+(pExcerpt ? escHtml(pExcerpt) : '<span style="color:var(--color-text-muted);font-style:italic">' + window.__('share.hero.no_text') + '</span>')+'</div>' +
+                    '<div class="sh-hero-meta">' +
+                        '<div class="sh-hero-avatar '+avatarColor(hero.author)+'">'+avatarLetter(hero.author)+'</div>' +
+                        '<span>'+escHtml(hero.author)+'</span><span>·</span><span>'+fmtTime(hero.share_time)+'</span>' +
+                        '<span class="sh-hero-badge" style="margin-left:4px"><span class="sh-pin-dot"></span>'+window.__('share.hero.pinned')+'</span>' +
+                    '</div>' +
+                    (pTags ? '<div class="sh-hero-tags">'+pTags+'</div>' : '') +
+                '</div>' +
+            '</a>';
+        }
+
+        if (gridArticles.length > 0) {
+            html += '<div class="sh-sec"><span class="sh-sec-title">'+window.__('share.section.articles')+'</span><span class="sh-sec-line"></span><span class="sh-sec-count">'+gridArticles.length+' '+window.__('share.book_unit')+'</span></div>';
+            html += '<div class="sh-grid">';
+            gridArticles.forEach(function(s) { html += buildArticleCard(s); });
+            html += '</div>';
+        }
+        if (books.length > 0) {
+            var svgBook = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>';
+            html += '<div class="sh-sec"><span class="sh-sec-title">'+window.__('share.section.books')+'</span><span class="sh-sec-line"></span><span class="sh-sec-count">'+books.length+' '+window.__('share.book_volume')+'</span></div>';
+            html += '<div class="sh-book-grid">';
+            books.forEach(function(s) { html += buildBookCard(s, svgBook); });
+            html += '</div>';
+        }
+        if (notes.length > 0) {
+            html += '<div class="sh-sec"><span class="sh-sec-title">'+window.__('share.section.notes')+'</span><span class="sh-sec-line"></span><span class="sh-sec-count">'+notes.length+' '+window.__('share.book_note_unit')+'</span></div>';
+            html += '<div class="sh-note-feed">';
+            notes.forEach(function(s) { html += buildNoteRow(s); });
+            html += '</div>';
+        }
+        container.innerHTML = html;
+        prepareShareNoteImages();
+        initShareComments();
+    }
+
+    /* ─── Per-tab paginated load ─── */
+    function loadTabPage(type, page) {
+        var container = document.getElementById('share-content');
+        container.innerHTML = document.getElementById('share-loading').innerHTML;
+        document.getElementById('sharesPagination').innerHTML = '';
+        var params = 'type=' + type + '&page=' + page + '&page_size=' + PAGE_SIZE[type];
+        if (shareKeyword) params += '&keyword=' + encodeURIComponent(shareKeyword);
+        var capturedTab = currentTab;
+        fetch('/api/shares?' + params)
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+                if (currentTab !== capturedTab) return; // tab switched, discard
+                var items = d.data || [];
+                var total = d.total || 0;
+                var pageSize = PAGE_SIZE[type];
+                var totalPages = Math.max(1, Math.ceil(total / pageSize));
+                tabState[type].page = page;
+                tabState[type].totalPages = totalPages;
+                tabState[type].total = total;
+                renderTabContent(type, items, page, totalPages, total);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            })
+            .catch(function() {
+                if (currentTab !== capturedTab) return;
+                container.innerHTML = '<div class="sh-empty"><div class="sh-empty-icon"><i class="fa-solid fa-triangle-exclamation"></i></div><div class="sh-empty-text">'+window.__('share.load_error')+'</div></div>';
+            });
+    }
+
+    function renderTabContent(type, items, page, totalPages, total) {
+        var container = document.getElementById('share-content');
+        resetShareNoteStore();
+        if (!items || items.length === 0) {
+            container.innerHTML = '<div class="sh-empty"><div class="sh-empty-icon"><i class="fa-regular fa-folder-open"></i></div><div class="sh-empty-text">'+window.__('share.tab.empty')+'</div></div>';
+            document.getElementById('sharesPagination').innerHTML = '';
+            return;
+        }
+        var html = '';
+        var secTitle = type === 'article' ? window.__('share.section.all_articles') : (type === 'book' ? window.__('share.section.all_books') : window.__('share.section.all_notes'));
+        var unit = type === 'book' ? window.__('share.book_volume') : window.__('share.book_note_unit');
+        html += '<div class="sh-sec"><span class="sh-sec-title">'+secTitle+'</span><span class="sh-sec-line"></span><span class="sh-sec-count">'+total+' '+unit+'</span></div>';
+
+        if (type === 'article') {
+            html += '<div class="sh-grid">';
+            items.forEach(function(s) { html += buildArticleCard(s); });
+            html += '</div>';
+        } else if (type === 'book') {
+            var svgBook = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>';
+            html += '<div class="sh-book-grid">';
+            items.forEach(function(s) { html += buildBookCard(s, svgBook); });
+            html += '</div>';
+        } else if (type === 'note') {
+            html += '<div class="sh-note-feed">';
+            items.forEach(function(s) { html += buildNoteRow(s); });
+            html += '</div>';
+        }
+        container.innerHTML = html;
+        prepareShareNoteImages();
+        initShareComments();
+        renderPagination('sharesPagination', page, totalPages, function(p) {
+            loadTabPage(type, p);
+        }, { showCount: false });
+    }
+
+    /* ─── Card builders ─── */
+    function buildArticleCard(s) {
+        var pinBtn = isAdmin ? '<button class="sh-card-pin'+(s.is_pinned?' is-pinned':'')+'" onclick="event.preventDefault();togglePin(\''+s.share_type+'\','+s.target_id+',this)" aria-label="'+(s.is_pinned?window.__('share.unpin.title'):window.__('share.pin.title'))+'"><i class="fa-solid fa-thumbtack"></i></button>' : '';
+        var docChip = isSpecialDoc(s.doc_type) ? '<span class="sh-type-chip">'+escHtml(docLabel(s.doc_type))+'</span>' : '';
+        var typeChip = '<span class="sh-type-chip" style="margin-left:4px">'+escHtml(typeLabel(s))+'</span>';
+        var excerpt = shareExcerpt(s);
+        var tags = (s.labels && s.labels.length) ? s.labels.map(function(l) { return '<span class="tag-badge">'+escHtml(l)+'</span>'; }).join('') : '';
+        return '<a class="sh-card" href="/shares/'+escHtml(s.share_identify)+'?from='+encodeURIComponent(location.pathname+location.search)+'">' +
+            '<div class="sh-card-accent '+typeAccentClass(s)+'"></div>' +
+            '<div class="sh-card-body">' +
+                '<div class="sh-card-header"><div class="sh-card-title">'+escHtml(s.title)+'</div>'+pinBtn+'</div>' +
+            '<div class="sh-card-excerpt">'+(excerpt ? escHtml(excerpt) : '<span class="sh-card-empty-excerpt">' + window.__('share.card.no_text') + '</span>')+'</div>' +
+                '<div class="sh-card-footer">' +
+                    '<div class="sh-card-avatar '+avatarColor(s.author)+'">'+avatarLetter(s.author)+'</div>' +
+                    '<span>'+escHtml(s.author)+'</span><span>·</span><span>'+fmtTime(s.share_time).substring(5,10)+'</span>' +
+                    typeChip + (docChip ? ' '+docChip : '') +
+                    (s.has_password?'<i class="fa-solid fa-lock" style="opacity:.5;margin-left:4px"></i>':'') +
+                    (tags ? '<div class="sh-card-tags">'+tags+'</div>' : '') +
+                '</div>' +
+            '</div>' +
+        '</a>';
+    }
+
+    function buildBookCard(s, svgBook) {
+        var dot = bookDotColor(s.title);
+        return '<a class="sh-book-card" href="/shares/'+escHtml(s.share_identify)+'?from='+encodeURIComponent(location.pathname+location.search)+'">' +
+            '<div class="sh-book-cover" style="background:'+bookCover(s.title)+'"><div class="sh-book-icon">'+svgBook+'</div></div>' +
+            '<div class="sh-book-body"><div class="sh-book-title">'+escHtml(s.title)+'</div>' +
+            '<div class="sh-book-meta"><span class="sh-book-count"><span class="sh-book-dot" style="background:'+dot+'"></span>'+s.doc_count+' '+window.__('share.book_unit')+'</span>' +
+            '<span>'+fmtTime(s.share_time).substring(5,10)+'</span></div></div>' +
+        '</a>';
+    }
+
+    function buildShareCommentsBlock(identify, extraClass) {
+        if (!window.__SHARE_COMMENTS_ENABLED__ || !identify) return '';
+        var classes = 'share-comments sh-note-comments' + (extraClass ? ' ' + extraClass : '');
+        return '<section class="'+classes+'" data-share-identify="'+escAttr(identify)+'" data-comments-lazy="1" hidden data-comments-hydrated="0" aria-label="'+escAttr(window.__('share_comments.title'))+'"></section>';
+    }
+
+    function buildNoteRow(s) {
+        var lock = s.has_password ? '<i class="fa-solid fa-lock" style="font-size:10px;color:var(--color-text-muted);margin-left:2px"></i>' : '';
+        var tags = (s.labels && s.labels.length) ? '<div class="sh-note-tags">'+s.labels.slice(0,3).map(function(l){return '<span class="tag-badge">'+escHtml(l)+'</span>';}).join('')+'</div>' : '';
+        var content = s.content || s.title || '';
+        var rendered = typeof marked !== 'undefined'
+            ? sanitizeRenderedHTML(marked.parse(content))
+            : escHtml(content);
+        var noteKey = 'share-note-' + (s.share_identify || s.target_id || s.id || shareNoteOrder.length);
+        registerShareNote(noteKey, {
+            title: s.title || window.__('share.type.note'),
+            content: content,
+            author: s.author || '',
+            time: s.share_time || '',
+            labels: s.labels || []
+        });
+        var noteKeyArg = noteKey.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+        var commentAction = window.__SHARE_COMMENTS_ENABLED__ ? '<button type="button" class="sh-note-comment-btn note-comment-btn" onclick="event.stopPropagation();toggleShareNoteComments(this)" aria-expanded="false" aria-label="'+window.__('share_comments.title')+'" title="'+window.__('share_comments.title')+'"><i class="fa-regular fa-comments"></i></button>' : '';
+        return '<div class="sh-note-row" data-note-key="'+escAttr(noteKey)+'">' +
+            '<div class="sh-note-body">' +
+                '<div class="sh-note-header"><span class="sh-note-author-tag">'+escHtml(s.author)+'</span><span class="sh-note-time">'+fmtDate(s.share_time)+' '+fmtHM(s.share_time)+lock+'</span><span class="sh-note-actions"><button type="button" class="sh-note-copy-btn note-copy-btn" onclick="event.stopPropagation();copyShareNoteContent(\''+noteKeyArg+'\')" aria-label="'+window.__('note.action.copy')+'" title="'+window.__('note.action.copy')+'"><i class="fa-regular fa-copy"></i></button>'+commentAction+'<button type="button" class="sh-note-fullscreen-btn note-fullscreen-btn" onclick="event.stopPropagation();openShareNoteViewer(\''+noteKeyArg+'\')" aria-label="'+window.__('note.action.fullscreen')+'" title="'+window.__('note.action.fullscreen')+'"><i class="fa-solid fa-expand"></i></button></span></div>' +
+                '<div class="sh-note-text">'+rendered+'</div>' +
+                tags +
+                buildShareCommentsBlock(s.share_identify, 'sh-note-inline-comments') +
+            '</div>' +
+        '</div>';
+    }
+
+    function initShareComments() {
+        if (window.BookStarkShareComments && typeof window.BookStarkShareComments.init === 'function') {
+            BookStarkShareComments.init();
+        }
+    }
+
+    function toggleShareNoteComments(btn) {
+        var row = btn && btn.closest ? btn.closest('.sh-note-row') : null;
+        var section = row ? row.querySelector('.share-comments') : null;
+        if (!section) return;
+        if (window.BookStarkShareComments && typeof window.BookStarkShareComments.toggle === 'function') {
+            BookStarkShareComments.toggle(section, btn);
+        }
+    }
+
+    /* ─── Pin toggle ─── */
+    function togglePin(type, id, btn) {
+        var request = window.BookStarkRequestLock
+            ? BookStarkRequestLock.run('shares:pin:' + type + ':' + id, function() {
+                return csrfFetch('/api/shares/' + type + '/' + id + '/pin', { method: 'PATCH' });
+            }, btn)
+            : csrfFetch('/api/shares/' + type + '/' + id + '/pin', { method: 'PATCH' });
+        if (!request) return;
+        request
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            if (d.code !== 0) { BSDialog.toast(d.message || window.__('share.pin.error'), 'error'); return; }
+            BSDialog.toast(d.data && d.data.is_pinned ? window.__('share.pin.success') : window.__('share.unpin.success'), 'success');
+            latestLoaded = false;
+            latestCache = { articles: [], books: [], notes: [] };
+            if (currentTab === 'latest') {
+                loadLatest();
+            } else {
+                loadTabPage(currentTab, tabState[currentTab].page);
+            }
+        }).catch(function() { BSDialog.toast(window.__('share.pin.error'), 'error'); });
+    }
+
+    /* ─── Init ─── */
+    var initialTab = window.BookStarkTabURL ? window.BookStarkTabURL.get('tab', ['latest', 'article', 'note', 'book'], 'latest') : 'latest';
+    var initialChip = document.querySelector('.sh-filter-chip[data-tab="' + initialTab + '"]');
+    if (initialChip && initialTab !== 'latest') {
+        switchFilter(initialChip, { updateUrl: false });
+    } else {
+        document.querySelector('.sh-search-row').style.display = 'none';
+        loadLatest();
+    }
+    </script>
+</body>
+</html>

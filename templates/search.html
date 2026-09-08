@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v={{assetVer "/static/favicon.svg"}}">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{{call .T "meta.description.search"}}">
+    <title>{{call .T "page.search.title"}} - BookStark</title>
+    <link href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/search.css?v={{assetVer "/static/css/search.css"}}">
+{{template "head-assets" .}}
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col">
+    {{template "header" .}}
+    <main class="flex-1" role="main">
+        <div class="px-4 sm:px-6 md:px-8 py-6">
+            <div class="max-w-[720px] mx-auto">
+                <div class="page-sticky-header">
+                    <div class="flex items-center gap-3 mb-3">
+                        <h1 class="page-title">{{call .T "search.page.title"}}</h1>
+                    </div>
+                    <div class="flex gap-2">
+                        <input id="search-page-input" type="text" class="search-input" placeholder="{{call .T "search.placeholder"}}" aria-label="{{call .T "search.aria"}}" value="">
+                        <button id="search-page-btn" class="px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 whitespace-nowrap" aria-label="{{call .T "search.btn"}}"><i class="fa-solid fa-magnifying-glass nav-icon"></i>{{call .T "search.btn"}}</button>
+                    </div>
+                </div>
+
+                <div id="search-summary" class="search-summary mb-4" style="display:none"></div>
+
+                <div class="search-tabs" id="search-tabs" aria-label="{{call .T "search.page.title"}}">
+                    <button class="search-tab active" data-tab="all" data-swipe-idx="0">{{call .T "search.tab.all"}} <span class="tab-count" id="count-all">0</span></button>
+                    <button class="search-tab" data-tab="documents" data-swipe-idx="1">{{call .T "search.tab.docs"}} <span class="tab-count" id="count-documents">0</span></button>
+                    <button class="search-tab" data-tab="notes" data-swipe-idx="2">{{call .T "search.tab.notes"}} <span class="tab-count" id="count-notes">0</span></button>
+                    <button class="search-tab" data-tab="articles" data-swipe-idx="3">{{call .T "search.tab.articles"}} <span class="tab-count" id="count-articles">0</span></button>
+                    <button class="search-tab" data-tab="books" data-swipe-idx="4">{{call .T "search.tab.books"}} <span class="tab-count" id="count-books">0</span></button>
+                    <button class="search-tab" data-tab="bookmarks" data-swipe-idx="5">{{call .T "search.tab.bookmarks"}} <span class="tab-count" id="count-bookmarks">0</span></button>
+                    <button class="search-tab" data-tab="tasks" data-swipe-idx="6">{{call .T "search.tab.tasks"}} <span class="tab-count" id="count-tasks">0</span></button>
+                    <button class="search-tab" data-tab="topics" data-swipe-idx="7">{{call .T "search.tab.topics"}} <span class="tab-count" id="count-topics">0</span></button>
+                    <button class="search-tab" data-tab="labels" data-swipe-idx="8">{{call .T "search.tab.labels"}} <span class="tab-count" id="count-labels">0</span></button>
+                </div>
+
+                <div id="search-results">
+                    <!-- JS renders results here -->
+                </div>
+            </div>
+        </div>
+    </main>
+    {{template "footer" .}}
+    <script src="/static/js/search.js?v={{assetVer "/static/js/search.js"}}"></script>
+</body>
+</html>

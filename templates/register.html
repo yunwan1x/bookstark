@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v={{assetVer "/static/favicon.svg"}}">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{{call .T "meta.description"}}">
+    <title>{{call .T "page.register.title"}}</title>
+    <script>(function(){var k='bookstark-theme',s={light:'light',dark:'dark','notion-pro':'light','scholar-paper':'light','linear-saas':'dark','apple-minimal':'light'},t=localStorage.getItem(k);if(!s[t])t=window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';document.documentElement.setAttribute('data-theme',s[t]);document.documentElement.setAttribute('data-theme-style',t);})();</script>
+    <link href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/variables.css?v={{assetVer "/static/css/variables.css"}}">
+    <script src="/static/js/theme.js?v={{assetVer "/static/js/theme.js"}}"></script>
+    </head>
+<body class="bg-slate-50">
+    <main role="main" class="min-h-screen flex items-center justify-center px-4">
+        <h1 class="sr-only">{{call .T "auth.register.heading"}}</h1>
+        <div class="w-full max-w-[360px] bg-white border border-slate-200 rounded-lg p-6 sm:p-7">
+            <div class="text-center mb-6">
+                <div class="text-xl font-bold">{{call .T "auth.register.heading"}}</div>
+                <div id="reg-notice" class="text-sm text-amber-600 mt-2 bg-amber-50 p-2 rounded">{{call .T "auth.register.notice.approval"}}</div>
+            </div>
+            <div id="error" class="hidden mb-4 p-3 bg-red-50 text-red-600 text-sm rounded"></div>
+            <div id="success" class="hidden mb-4 p-3 bg-green-50 text-green-600 text-sm rounded"></div>
+            <div id="invite-code-wrap" class="mb-4" style="display:none">
+                <label for="reg-invite-code" class="block text-sm font-medium mb-1.5">{{call .T "auth.field.invite.label"}}</label>
+                <input id="reg-invite-code" type="text" class="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20" placeholder="{{call .T "auth.field.invite.placeholder"}}">
+            </div>
+            <div class="mb-4">
+                <label for="reg-account" class="block text-sm font-medium mb-1.5">{{call .T "auth.field.account.label"}} *</label>
+                <input id="reg-account" type="text" class="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20" placeholder="{{call .T "auth.field.account.placeholder"}}">
+            </div>
+            <div class="mb-4">
+                <label for="reg-email" class="block text-sm font-medium mb-1.5">{{call .T "auth.field.email.label"}}</label>
+                <input id="reg-email" type="email" class="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20" placeholder="{{call .T "auth.field.email.placeholder"}}">
+            </div>
+            <div class="mb-4">
+                <label for="reg-password" class="block text-sm font-medium mb-1.5">{{call .T "auth.field.password.label"}} *</label>
+                <input id="reg-password" type="password" class="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20" placeholder="{{call .T "auth.field.password.min"}}">
+            </div>
+            <div class="mb-5">
+                <label for="reg-password-confirm" class="block text-sm font-medium mb-1.5">{{call .T "auth.field.password.confirm.label"}}</label>
+                <input id="reg-password-confirm" type="password" class="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20" placeholder="{{call .T "auth.field.password.confirm.placeholder"}}">
+            </div>
+            <button onclick="doRegister()" class="w-full bg-blue-600 text-white py-2.5 rounded-md text-sm font-medium hover:bg-blue-700">{{call .T "auth.register.submit"}}</button>
+            <div class="text-center mt-4 text-sm text-slate-500">
+                {{call .T "auth.register.has_account"}}<a href="/login" class="text-blue-600 hover:underline">{{call .T "auth.register.login_link"}}</a>
+            </div>
+        </div>
+    </main>
+    <script>
+    var inviteCodeEnabled = false;
+    (async function() {
+        try {
+            var r = await fetch('/api/register-config');
+            var d = await r.json();
+            inviteCodeEnabled = !!(d.data && d.data.invite_code_enabled);
+            if (inviteCodeEnabled) {
+                document.getElementById('invite-code-wrap').style.display = '';
+                document.getElementById('reg-notice').textContent = window.__('auth.register.notice.invite');
+                document.getElementById('reg-notice').className = 'text-sm text-blue-600 mt-2 bg-blue-50 p-2 rounded';
+            }
+        } catch(e) {}
+    })();
+
+    async function doRegister() {
+        const errEl = document.getElementById('error');
+        const sucEl = document.getElementById('success');
+        errEl.classList.add('hidden');
+        sucEl.classList.add('hidden');
+        const account = document.getElementById('reg-account').value.trim();
+        const email = document.getElementById('reg-email').value.trim();
+        const password = document.getElementById('reg-password').value;
+        const confirm_password = document.getElementById('reg-password-confirm').value;
+        const invite_code = document.getElementById('reg-invite-code').value.trim();
+        if (!account || !email || !password || !confirm_password) {
+            errEl.textContent = window.__('auth.register.error.empty');
+            errEl.classList.remove('hidden');
+            return;
+        }
+        if (inviteCodeEnabled && !invite_code) {
+            errEl.textContent = window.__('auth.register.error.no_invite');
+            errEl.classList.remove('hidden');
+            return;
+        }
+        if (password !== confirm_password) {
+            errEl.textContent = window.__('auth.register.error.mismatch');
+            errEl.classList.remove('hidden');
+            return;
+        }
+        try {
+            var body = {account, email, password, confirm_password, invite_code};
+            const res = await fetch('/api/register', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(body)
+            });
+            const data = await res.json();
+            if (res.ok) {
+                sucEl.textContent = data.message;
+                sucEl.classList.remove('hidden');
+            } else {
+                errEl.textContent = data.message || window.__('auth.register.error.default');
+                errEl.classList.remove('hidden');
+            }
+        } catch(e) {
+            errEl.textContent = window.__('auth.error.network');
+            errEl.classList.remove('hidden');
+        }
+    }
+    </script>
+<script src="/static/js/i18n.js?v={{assetVer "/static/js/i18n.js"}}"></script>
+<script>
+window.__I18N_MESSAGES = {{.JSBundle}};
+window.__currentLang = "{{.Lang}}";
+</script>
+<script src="/static/js/sw-register.js?v={{assetVer "/static/js/sw-register.js"}}"></script>
+</body>
+</html>

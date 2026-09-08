@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>资产管理 · BookStark</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.2/css/all.min.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root {
+    --color-primary: #2563eb;
+    --color-primary-hover: #1d4ed8;
+    --color-focus: #2563eb;
+    --color-focus-ring: rgba(37, 99, 235, 0.2);
+    --color-danger: #ef4444;
+    --color-success: #10b981;
+    --color-warning: #f59e0b;
+    --color-bg: #f8fafc;
+    --color-bg-card: #ffffff;
+    --color-border: #e2e8f0;
+    --color-text: #1e293b;
+    --color-text-secondary: #475569;
+    --color-text-muted: #64748b;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+  }
+
+  body { background: var(--color-bg); color: var(--color-text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+
+  .page-title { font-size: 18px; font-weight: 600; color: var(--color-text); }
+
+  /* Tabs */
+  .asset-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--color-border); }
+  .asset-tab {
+    padding: 10px 16px; font-size: 13px; color: var(--color-text-secondary);
+    border-bottom: 2px solid transparent; cursor: pointer; user-select: none;
+    transition: color 0.15s ease, border-color 0.15s ease;
+    background: transparent; border-left: 0; border-right: 0; border-top: 0;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .asset-tab:hover { color: var(--color-text); }
+  .asset-tab.active { color: var(--color-primary); border-bottom-color: var(--color-primary); font-weight: 600; }
+  .asset-tab:focus-visible { outline: 2px solid var(--color-focus); outline-offset: -2px; border-radius: 4px; }
+  .asset-tab .count { font-size: 11px; color: var(--color-text-muted); padding: 1px 6px; background: #f1f5f9; border-radius: 999px; }
+  .asset-tab.active .count { background: #dbeafe; color: var(--color-primary); }
+
+  /* Toolbar */
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .toolbar input[type="text"], .toolbar select {
+    border: 1px solid #cbd5e1; border-radius: var(--radius-md);
+    padding: 6px 10px; font-size: 13px; background: var(--color-bg-card);
+    color: var(--color-text); outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .toolbar input[type="text"]:focus, .toolbar select:focus {
+    border-color: var(--color-focus);
+    box-shadow: 0 0 0 2px var(--color-focus-ring);
+  }
+  .toolbar input[type="text"] { min-width: 200px; }
+  .toolbar input[type="text"]:focus:not(:focus-visible) { outline: none; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px; font-size: 13px; border-radius: var(--radius-md);
+    cursor: pointer; transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    border: 1px solid transparent;
+  }
+  .btn-primary { background: var(--color-primary); color: #fff; }
+  .btn-primary:hover { background: var(--color-primary-hover); }
+  .btn-secondary { background: #fff; color: var(--color-text-secondary); border-color: #cbd5e1; }
+  .btn-secondary:hover { background: #f8fafc; color: var(--color-text); border-color: #94a3b8; }
+  .btn-danger { background: #fff; color: var(--color-danger); border-color: #fecaca; }
+  .btn-danger:hover { background: #fef2f2; }
+  .btn:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+
+  /* List */
+  .list-card { background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; }
+  .list-row {
+    display: grid; align-items: center; gap: 12px;
+    padding: 12px 16px; border-bottom: 1px solid var(--color-border);
+    transition: background-color 0.15s ease;
+  }
+  .list-row:last-child { border-bottom: none; }
+  .list-row:hover { background: #f8fafc; }
+  .list-row-title { font-size: 14px; font-weight: 600; color: var(--color-text); }
+  .list-row-meta { font-size: 12px; color: var(--color-text-muted); }
+  .list-row-meta i { color: var(--color-text-muted); }
+
+  /* Grid layouts per asset type */
+  .ssh-grid { grid-template-columns: minmax(180px, 1.4fr) minmax(160px, 1.2fr) minmax(110px, 0.6fr) minmax(120px, 0.7fr) minmax(180px, 0.8fr) auto; }
+  .docker-grid { grid-template-columns: minmax(160px, 1.4fr) minmax(140px, 1.2fr) minmax(110px, 0.6fr) minmax(140px, 0.8fr) minmax(120px, 0.7fr) auto; }
+  .header-row { background: #f8fafc; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted); font-weight: 600; }
+  .header-row:hover { background: #f8fafc; }
+
+  /* Tag badges (status / labels) */
+  .tag-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 1px 8px; font-size: 11px; font-weight: 500;
+    border-radius: 999px; line-height: 1.6;
+  }
+  .tag-online { background: #d1fae5; color: #065f46; }
+  .tag-offline { background: #fee2e2; color: #991b1b; }
+  .tag-running { background: #d1fae5; color: #065f46; }
+  .tag-stopped { background: #f1f5f9; color: #475569; }
+  .tag-paused { background: #fef3c7; color: #92400e; }
+  .tag-restarting { background: #fef3c7; color: #92400e; animation: pulse 1.5s ease-in-out infinite; }
+  .tag-neutral { background: #f1f5f9; color: var(--color-text-secondary); }
+  .tag-blue { background: #dbeafe; color: #1e40af; }
+
+  @keyframes pulse { 0%, 100% { opacity: 1 } 50% { opacity: 0.6 } }
+
+  .status-dot { width: 6px; height: 6px; border-radius: 999px; display: inline-block; }
+  .status-dot.online { background: var(--color-success); }
+  .status-dot.offline { background: #94a3b8; }
+
+  /* Row actions */
+  .row-actions { display: flex; gap: 2px; justify-content: flex-end; }
+  .row-action {
+    width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;
+    color: var(--color-text-muted); border-radius: var(--radius-md); cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+    background: transparent; border: 0; font-size: 12px;
+  }
+  .row-action:hover { background: #eff6ff; color: var(--color-primary); }
+  .row-action.del:hover { background: #fef2f2; color: var(--color-danger); }
+  .row-action:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 1px; }
+
+  /* Stat cards */
+  .stat-card { background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 14px 16px; }
+  .stat-card .num { font-size: 22px; font-weight: 700; color: var(--color-text); line-height: 1.1; }
+  .stat-card .label { font-size: 12px; color: var(--color-text-muted); margin-top: 4px; }
+  .stat-card .icon-wrap { width: 36px; height: 36px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; }
+
+  /* Modal */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.5); z-index: 50; display: none; align-items: center; justify-content: center; padding: 16px; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--color-bg-card); border-radius: var(--radius-lg); width: 100%; max-width: 480px; box-shadow: 0 20px 60px rgba(15, 23, 42, 0.25); animation: modalIn 0.18s ease-out; }
+  @keyframes modalIn { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: translateY(0) } }
+  .modal-header { padding: 14px 16px; border-bottom: 1px solid var(--color-border); display: flex; align-items: center; justify-content: space-between; }
+  .modal-title { font-size: 14px; font-weight: 600; }
+  .modal-body { padding: 16px; max-height: 70vh; overflow-y: auto; }
+  .modal-footer { padding: 12px 16px; border-top: 1px solid var(--color-border); display: flex; gap: 8px; justify-content: flex-end; }
+  .form-row { margin-bottom: 12px; }
+  .form-row label { display: block; font-size: 12px; color: var(--color-text-secondary); margin-bottom: 4px; }
+  .form-row input, .form-row select, .form-row textarea {
+    width: 100%; border: 1px solid #cbd5e1; border-radius: var(--radius-md);
+    padding: 6px 10px; font-size: 13px; outline: none;
+    background: var(--color-bg-card); color: var(--color-text);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .form-row input:focus, .form-row select:focus, .form-row textarea:focus {
+    border-color: var(--color-focus); box-shadow: 0 0 0 2px var(--color-focus-ring);
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .ssh-grid, .docker-grid { grid-template-columns: 1fr; }
+    .header-row { display: none; }
+    .list-row { padding: 14px 16px; gap: 6px; }
+    .col-label { font-size: 11px; color: var(--color-text-muted); margin-right: 6px; }
+    .col-label::after { content: ":"; }
+  }
+  @media (max-width: 640px) {
+    .toolbar input[type="text"] { min-width: 0; flex: 1; }
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .modal { animation: none; }
+    .tag-restarting { animation: none; }
+    .btn, .asset-tab, .row-action, .list-row { transition: none; }
+  }
+</style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+<!-- Mock 顶栏 -->
+<header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+  <div class="max-w-[1280px] mx-auto px-4 h-12 flex items-center gap-6">
+    <span class="font-semibold">BookStark</span>
+    <nav class="hidden md:flex items-center gap-4 text-sm text-slate-600">
+      <a href="#" class="hover:text-slate-900">导航</a>
+      <a href="#" class="hover:text-slate-900">书籍</a>
+      <a href="#" class="hover:text-slate-900">笔记</a>
+      <a href="#" class="hover:text-slate-900">书签</a>
+      <a href="#" class="text-blue-600 font-medium" aria-current="page">资产</a>
+    </nav>
+    <div class="ml-auto flex items-center gap-2 text-sm text-slate-600">
+      <button class="row-action" aria-label="切换主题"><i class="fa-solid fa-moon"></i></button>
+      <span class="hidden sm:inline">admin</span>
+    </div>
+  </div>
+</header>
+
+<main role="main" class="flex-1">
+  <div class="max-w-[1280px] mx-auto px-4 py-5">
+
+    <!-- Page header -->
+    <div class="flex items-center justify-between flex-wrap gap-2 mb-4">
+      <div>
+        <h1 class="page-title">资产管理</h1>
+        <p class="text-xs text-slate-500 mt-0.5">统一管理 SSH 主机与 Docker 容器</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button class="btn btn-secondary" aria-label="刷新">
+          <i class="fa-solid fa-rotate"></i><span class="hidden sm:inline">刷新</span>
+        </button>
+        <button class="btn btn-primary" id="btn-add" aria-label="新增主机">
+          <i class="fa-solid fa-plus"></i><span>新增主机</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Stat cards -->
+    <div class="stat-grid grid grid-cols-4 gap-3 mb-5">
+      <div class="stat-card flex items-center gap-3">
+        <div class="icon-wrap" style="background:#dbeafe;color:#1e40af"><i class="fa-solid fa-server"></i></div>
+        <div><div class="num">8</div><div class="label">SSH 主机</div></div>
+      </div>
+      <div class="stat-card flex items-center gap-3">
+        <div class="icon-wrap" style="background:#d1fae5;color:#065f46"><i class="fa-solid fa-circle-check"></i></div>
+        <div><div class="num">6</div><div class="label">在线主机</div></div>
+      </div>
+      <div class="stat-card flex items-center gap-3">
+        <div class="icon-wrap" style="background:#ede9fe;color:#5b21b6"><i class="fa-brands fa-docker"></i></div>
+        <div><div class="num">23</div><div class="label">Docker 容器</div></div>
+      </div>
+      <div class="stat-card flex items-center gap-3">
+        <div class="icon-wrap" style="background:#fef3c7;color:#92400e"><i class="fa-solid fa-bolt"></i></div>
+        <div><div class="num">17</div><div class="label">运行中</div></div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div role="tablist" aria-label="资产类型" class="asset-tabs mb-3">
+      <button role="tab" aria-selected="true" id="tab-ssh-btn" aria-controls="tab-ssh" class="asset-tab active" data-tab="ssh">
+        <i class="fa-solid fa-server"></i> SSH 主机 <span class="count">8</span>
+      </button>
+      <button role="tab" aria-selected="false" id="tab-docker-btn" aria-controls="tab-docker" class="asset-tab" data-tab="docker" tabindex="-1">
+        <i class="fa-brands fa-docker"></i> Docker 容器 <span class="count">23</span>
+      </button>
+    </div>
+
+    <!-- SSH Tab -->
+    <section id="tab-ssh" role="tabpanel" aria-labelledby="tab-ssh-btn">
+      <!-- Toolbar -->
+      <div class="toolbar mb-3">
+        <div class="relative flex-1 max-w-md">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" aria-hidden="true"></i>
+          <input type="text" id="ssh-search" placeholder="搜索主机名 / IP / 标签" aria-label="搜索 SSH 主机" style="padding-left:30px; width:100%;">
+        </div>
+        <select id="ssh-filter-status" aria-label="按状态筛选">
+          <option value="">全部状态</option>
+          <option value="online">在线</option>
+          <option value="offline">离线</option>
+        </select>
+        <select id="ssh-filter-group" aria-label="按分组筛选">
+          <option value="">全部分组</option>
+          <option value="prod">生产</option>
+          <option value="staging">预发</option>
+          <option value="dev">开发</option>
+        </select>
+      </div>
+
+      <!-- List -->
+      <div class="list-card">
+        <div class="list-row header-row ssh-grid">
+          <div>主机</div>
+          <div>地址</div>
+          <div>状态</div>
+          <div>分组</div>
+          <div>最后连接</div>
+          <div class="text-right">操作</div>
+        </div>
+
+        <!-- 行 1 -->
+        <div class="list-row ssh-grid">
+          <div>
+            <div class="list-row-title">prod-web-01</div>
+            <div class="list-row-meta"><i class="fa-regular fa-user"></i> root · ed25519</div>
+          </div>
+          <div>
+            <div class="font-mono text-sm">10.0.1.21</div>
+            <div class="list-row-meta">port 22</div>
+          </div>
+          <div><span class="tag-badge tag-online"><span class="status-dot online"></span>在线</span></div>
+          <div><span class="tag-badge tag-blue">prod</span></div>
+          <div class="list-row-meta">5 分钟前</div>
+          <div class="row-actions">
+            <button class="row-action" title="连接终端" aria-label="连接终端"><i class="fa-solid fa-terminal"></i></button>
+            <button class="row-action" title="复制 SSH 命令" aria-label="复制 SSH 命令"><i class="fa-regular fa-copy"></i></button>
+            <button class="row-action" title="编辑" aria-label="编辑"><i class="fa-regular fa-pen-to-square"></i></button>
+            <button class="row-action del" title="删除" aria-label="删除"><i class="fa-regular fa-trash-can"></i></button>
+          </div>
+        </div>
+
+        <!-- 行 2 -->
+        <div class="list-row ssh-grid">
+          <div>
+            <div class="list-row-title">prod-db-01</div>
+            <div class="list-row-meta"><i class="fa-regular fa-user"></i> deploy · password</div>
+          </div>
+          <div>
+            <div class="font-mono text-sm">10.0.1.45</div>
+            <div class="list-row-meta">port 22</div>
+          </div>
+          <div><span class="tag-badge tag-online"><span class="status-dot online"></span>在线</span></div>
+          <div><span class="tag-badge tag-blue">prod</span></div>
+          <div class="list-row-meta">2 小时前</div>
+          <div class="row-actions">
+            <button class="row-action" title="连接终端" aria-label="连接终端"><i class="fa-solid fa-terminal"></i></button>
+            <button class="row-action" title="复制 SSH 命令" aria-label="复制 SSH 命令"><i class="fa-regular fa-copy"></i></button>
+            <button class="row-action" title="编辑" aria-label="编辑"><i class="fa-regular fa-pen-to-square"></i></button>
+            <button class="row-action del" title="删除" aria-label="删除"><i class="fa-regular fa-trash-can"></i></button>
+          </div>
+        </div>
+
+        <!-- 行 3 -->
+        <div class="list-row ssh-grid">
+          <div>
+            <div class="list-row-title">staging-app-01</div>
+            <div class="list-row-meta"><i class="fa-regular fa-user"></i> ubuntu · ed25519</div>
+          </div>
+          <div>
+            <div class="font-mono text-sm">192.168.50.12</div>
+            <div class="list-row-meta">port 2222</div>
+          </div>
+          <div><span class="tag-badge tag-online"><span class="status-dot online"></span>在线</span></div>
+          <div><span class="tag-badge tag-neutral">staging</span></div>
+          <div class="list-row-meta">昨天 16:42</div>
+          <div class="row-actions">
+            <button class="row-action" title="连接终端" aria-label="连接终端"><i class="fa-solid fa-terminal"></i></button>
+            <button class="row-action" title="复制 SSH 命令" aria-label="复制 SSH 命令"><i class="fa-regular fa-copy"></i></button>
+            <button class="row-action" title="编辑" aria-label="编辑"><i class="fa-regular fa-pen-to-square"></i></button>
+            <button class="row-action del" title="删除" aria-label="删除"><i class="fa-regular fa-trash-can"></i></button>
+          </div>
+        </div>
+
+        <!-- 行 4 -->
+        <div class="list-row ssh-grid">
+          <div>
+            <div class="list-row-title">dev-builder</div>
+            <div class="list-row-meta"><i class="fa-regular fa-user"></i> wy · ed25519</div>
+          </div>
+          <div>
+            <div class="font-mono text-sm">172.16.10.5</div>
+            <div class="list-row-meta">port 22</div>
+          </div>
+          <div><span class="tag-badge tag-offline"><span class="status-dot offline"></span>离线</span></div>
+          <div><span class="tag-badge tag-neutral">dev</span></div>
+          <div class="list-row-meta">3 天前</div>
+          <div class="row-actions">
+            <button class="row-action" title="连接终端" aria-label="连接终端"><i class="fa-solid fa-terminal"></i></button>
+            <button class="row-action" title="复制 SSH 命令" aria-label="复制 SSH 命令"><i class="fa-regular fa-copy"></i></button>
+            <button class="row-action" title="编辑" aria-label="编辑"><i class="fa-regular fa-pen-to-square"></i></button>
+            <button class="row-action del" title="删除" aria-label="删除"><i class="fa-regular fa-trash-can"></i></button>
+          </div>
+        </div>
+
+        <!-- 行 5 -->
+        <div class="list-row ssh-grid">
+          <div>
+            <div class="list-row-title">edge-cdn-tokyo</div>
+            <div class="list-row-meta"><i class="fa-regular fa-user"></i> ec2-user · pem</div>
+          </div>
+          <div>
+            <div class="font-mono text-sm">52.198.x.x</div>
+            <div class="list-row-meta">port 22</div>
+          </div>
+          <div><span class="tag-badge tag-online"><span class="status-dot online"></span>在线</span></div>
+          <div><span class="tag-badge tag-blue">prod</span></div>
+          <div class="list-row-meta">10 分钟前</div>
+          <div class="row-actions">
+            <button class="row-action" title="连接终端" aria-label="连接终端"><i class="fa-solid fa-terminal"></i></button>
+            <button class="row-action" title="复制 SSH 命令" aria-label="复制 SSH 命令"><i class="fa-regular fa-copy"></i></button>
+            <button class="row-action" title="编辑" aria-label="编辑"><i class="fa-regular fa-pen-to-square"></i></button>
+            <button class="row-action del" title="删除" aria-label="删除"><i class="fa-regular fa-trash-can"></i></button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Docker Tab -->
+    <section id="tab-docker" role="tabpanel" aria-labelledby="tab-docker-btn" hidden>
+      <div class="toolbar mb-3">
+        <div class="relative flex-1 max-w-md">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" aria-hidden="true"></i>
+          <input type="text" id="docker-search" placeholder="搜索容器名 / 镜像" aria-label="搜索容器" style="padding-left:30px; width:100%;">
+        </div>
+        <select id="docker-filter-host" aria-label="按主机筛选">
+          <option value="">全部主机</option>
+          <option value="prod-web-01">prod-web-01</option>
+          <option value="prod-db-01">prod-db-01</option>
+          <option value="staging-app-01">staging-app-01</option>
+        </select>
+        <select id="docker-filter-status" aria-label="按状态筛选">
+          <option value="">全部状态</option>
+          <option value="running">运行中</option>
+          <option value="stopped">已停止</option>
+          <option value="paused">已暂停</option>
+        </select>
+      </div>
+
+      <div class="list-card">
+        <div class="list-row header-row docker-grid">
+          <div>容器</div>
+          <div>镜像</div>
+          <div>状态</div>
+          <div>端口</div>
+          <div>所属主机</div>
+          <div class="text-right">操作</div>
+        </div>
+
+        <!-- 容器 1 -->
+        <div class="list-row docker-grid">
+          <div>
+            <div class="list-row-title">nginx-edge</div>
+            <div class="list-row-meta"><span class="font-mono">a3f1b8c4d2e9</span> · 7d</div>
+          </div>
+          <div>
+            <div class="text-sm font-medium">nginx</div>
+            <div class="list-row-meta">1.27-alpine</div>
+          </div>
+          <div><span class="tag-badge tag-running"><span class="status-dot online"></span>运行中</span></div>
+          <div class="list-row-meta">80→8080, 443→8443</div>
+          <div class="list-row-meta"><i class="fa-solid fa-server"></i> prod-web-01</div>
+          <div class="row-actions">
+            <button class="row-action" title="查看日志" aria-label="查看日志"><i class="fa-regular fa-file-lines"></i></button>
+            <button class="row-action" title="进入终端" aria-label="进入终端"><i class="fa-solid fa-terminal"></i></button>
+            <button class="row-action" title="重启" aria-label="重启"><i class="fa-solid fa-rotate"></i></button>
+            <button class="row-action" title="停止" aria-label="停止"><i class="fa-solid fa-stop"></i></button>
+            <button class="row-action del" title="删除" aria-label="删除"><i class="fa-regular fa-trash-can"></i></button>
+          </div>
+        </div>
+
+        <!-- 容器 2 -->
+        <div class="list-row docker-grid">
+          <div>
+            <div class="list-row-title">postgres-main</div>
+            <div class="list-row-meta"><span class="font-mono">b85c2f7e1a4b</span> · 14d</div>
+          </div>
+          <div>
+            <div class="text-sm font-medium">postgres</div>
+            <div class="list-row-meta">16.3</div>
+          </div>
+          <div><span class="tag-badge tag-running"><span class="status-dot online"></span>运行中</span></div>
+          <div class="list-row-meta">5432→5432</div>
+          <div class="list-row-meta"><i class="fa-solid fa-server"></i> prod-db-01</div>
+          <div class="row-actions">
+            <button class="row-action" title="查看日志" aria-label="查看日志"><i class="fa-regular fa-file-lines"></i></button>
+            <button class="row-action" title="进入终端" aria-label="进入终端"><i class="fa-solid fa-terminal"></i></button>
+            <button class="row-action" title="重启" aria-label="重启"><i class="fa-solid fa-rotate"></i></button>
+            <button class="row-action" title="停止" aria-label="停止"><i class="fa-solid fa-stop"></i></button>
+            <button class="row-action del" title="删除" aria-label="删除"><i class="fa-regular fa-trash-can"></i></button>
+          </div>
+        </div>
+
+        <!-- 容器 3 -->
+        <div class="list-row docker-grid">
+          <div>
+            <div class="list-row-title">redis-cache</div>
+            <div class="list-row-meta"><span class="font-mono">c91d8a5b3f2c</span> · 30d</div>
+          </div>
+          <div>
+            <div class="text-sm font-medium">redis</div>
+            <div class="list-row-meta">7.2-alpine</div>
+          </div>
+          <div><span class="tag-badge tag-running"><span class="status-dot online"></span>运行中</span></div>
+          <div class="list-row-meta">6379→6379</div>
+          <div class="list-row-meta"><i class="fa-solid fa-server"></i> prod-web-01</div>
+          <div class="row-actions">
+            <button class="row-action" title="查看日志" aria-label="查看日志"><i class="fa-regular fa-file-lines"></i></button>
+            <button class="row-action" title="进入终端" aria-label="进入终端"><i class="fa-solid fa-terminal"></i></button>
+            <button class="row-action" title="重启" aria-label="重启"><i class="fa-solid fa-rotate"></i></button>
+            <button class="row-action" title="停止" aria-label="停止"><i class="fa-solid fa-stop"></i></button>
+            <button class="row-action del" title="删除" aria-label="删除"><i class="fa-regular fa-trash-can"></i></button>
+          </div>
+        </div>
+
+        <!-- 容器 4 - paused -->
+        <div class="list-row docker-grid">
+          <div>
+            <div class="list-row-title">migrate-worker</div>
+            <div class="list-row-meta"><span class="font-mono">d72e6b4c8d1a</span> · 2h</div>
+          </div>
+          <div>
+            <div class="text-sm font-medium">my-app/migrate</div>
+            <div class="list-row-meta">v1.4.2</div>
+          </div>
+          <div><span class="tag-badge tag-paused"><i class="fa-solid fa-pause" style="font-size:9px"></i>已暂停</span></div>
+          <div class="list-row-meta">—</div>
+          <div class="list-row-meta"><i class="fa-solid fa-server"></i> staging-app-01</div>
+          <div class="row-actions">
+            <button class="row-action" title="查看日志" aria-label="查看日志"><i class="fa-regular fa-file-lines"></i></button>
+            <button class="row-action" title="启动" aria-label="启动"><i class="fa-solid fa-play"></i></button>
+            <button class="row-action" title="重启" aria-label="重启"><i class="fa-solid fa-rotate"></i></button>
+            <button class="row-action del" title="删除" aria-label="删除"><i class="fa-regular fa-trash-can"></i></button>
+          </div>
+        </div>
+
+        <!-- 容器 5 - stopped -->
+        <div class="list-row docker-grid">
+          <div>
+            <div class="list-row-title">old-batch-job</div>
+            <div class="list-row-meta"><span class="font-mono">e63f9c5d7e4b</span> · 5d</div>
+          </div>
+          <div>
+            <div class="text-sm font-medium">my-app/batch</div>
+            <div class="list-row-meta">v1.0.0</div>
+          </div>
+          <div><span class="tag-badge tag-stopped"><span class="status-dot offline"></span>已停止</span></div>
+          <div class="list-row-meta">—</div>
+          <div class="list-row-meta"><i class="fa-solid fa-server"></i> staging-app-01</div>
+          <div class="row-actions">
+            <button class="row-action" title="查看日志" aria-label="查看日志"><i class="fa-regular fa-file-lines"></i></button>
+            <button class="row-action" title="启动" aria-label="启动"><i class="fa-solid fa-play"></i></button>
+            <button class="row-action del" title="删除" aria-label="删除"><i class="fa-regular fa-trash-can"></i></button>
+          </div>
+        </div>
+
+        <!-- 容器 6 - restarting -->
+        <div class="list-row docker-grid">
+          <div>
+            <div class="list-row-title">prometheus</div>
+            <div class="list-row-meta"><span class="font-mono">f5a8d7e2b9c1</span> · 21d</div>
+          </div>
+          <div>
+            <div class="text-sm font-medium">prom/prometheus</div>
+            <div class="list-row-meta">v2.51.0</div>
+          </div>
+          <div><span class="tag-badge tag-restarting"><i class="fa-solid fa-rotate" style="font-size:9px"></i>重启中</span></div>
+          <div class="list-row-meta">9090→9090</div>
+          <div class="list-row-meta"><i class="fa-solid fa-server"></i> prod-web-01</div>
+          <div class="row-actions">
+            <button class="row-action" title="查看日志" aria-label="查看日志"><i class="fa-regular fa-file-lines"></i></button>
+            <button class="row-action" title="进入终端" aria-label="进入终端"><i class="fa-solid fa-terminal"></i></button>
+            <button class="row-action" title="停止" aria-label="停止"><i class="fa-solid fa-stop"></i></button>
+            <button class="row-action del" title="删除" aria-label="删除"><i class="fa-regular fa-trash-can"></i></button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<!-- 新增主机 Modal -->
+<div class="modal-overlay" id="addModal" role="dialog" aria-modal="true" aria-labelledby="addModalTitle">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="addModalTitle">新增 SSH 主机</span>
+      <button class="row-action" onclick="closeAddModal()" aria-label="关闭"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <label for="host-name">名称</label>
+        <input id="host-name" type="text" placeholder="prod-web-02">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="form-row">
+          <label for="host-addr">主机地址</label>
+          <input id="host-addr" type="text" placeholder="10.0.1.22">
+        </div>
+        <div class="form-row">
+          <label for="host-port">端口</label>
+          <input id="host-port" type="number" value="22">
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div class="form-row">
+          <label for="host-user">用户名</label>
+          <input id="host-user" type="text" placeholder="root">
+        </div>
+        <div class="form-row">
+          <label for="host-auth">认证方式</label>
+          <select id="host-auth">
+            <option value="key">SSH 密钥</option>
+            <option value="password">密码</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <label for="host-group">分组</label>
+        <select id="host-group">
+          <option value="prod">生产</option>
+          <option value="staging">预发</option>
+          <option value="dev">开发</option>
+        </select>
+      </div>
+      <div class="form-row" style="margin-bottom:0">
+        <label for="host-note">备注</label>
+        <textarea id="host-note" rows="2" placeholder="可选"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeAddModal()">取消</button>
+      <button class="btn btn-primary">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Tabs
+  document.querySelectorAll('.asset-tab').forEach(function(t) {
+    t.addEventListener('click', function() {
+      var name = t.getAttribute('data-tab');
+      document.querySelectorAll('.asset-tab').forEach(function(x) {
+        var on = x === t;
+        x.classList.toggle('active', on);
+        x.setAttribute('aria-selected', on ? 'true' : 'false');
+        x.setAttribute('tabindex', on ? '0' : '-1');
+      });
+      var sshPanel = document.getElementById('tab-ssh');
+      var dockerPanel = document.getElementById('tab-docker');
+      sshPanel.hidden = name !== 'ssh';
+      dockerPanel.hidden = name !== 'docker';
+    });
+  });
+
+  // Modal
+  function openAddModal() { document.getElementById('addModal').classList.add('open'); }
+  function closeAddModal() { document.getElementById('addModal').classList.remove('open'); }
+  document.getElementById('btn-add').addEventListener('click', openAddModal);
+  document.getElementById('addModal').addEventListener('click', function(e) {
+    if (e.target === this) closeAddModal();
+  });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeAddModal();
+  });
+</script>
+
+</body>
+</html>

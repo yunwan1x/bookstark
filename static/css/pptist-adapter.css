@@ -1,0 +1,101 @@
+.pptist-host {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--color-bg, #f5f7fa);
+}
+
+.pptist-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  opacity: 0;
+  background: #fff;
+  transition: opacity 160ms ease;
+}
+
+.pptist-host.is-ready .pptist-frame {
+  opacity: 1;
+}
+
+.pptist-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--color-text-secondary, #64748b);
+  font-size: 14px;
+}
+
+.pptist-host.is-ready .pptist-loading {
+  display: none;
+}
+
+.pptist-upload-status {
+  position: absolute;
+  z-index: 3;
+  right: 12px;
+  bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 7px 11px;
+  border: 1px solid var(--color-border, #dbe2ea);
+  border-radius: 6px;
+  background: var(--color-bg-card, #fff);
+  background: color-mix(in srgb, var(--color-bg-card, #fff) 94%, transparent);
+  color: var(--color-text, #1e293b);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16);
+  backdrop-filter: blur(8px);
+  font-size: 13px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.pptist-upload-status[hidden] {
+  display: none;
+}
+
+.pptist-upload-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--color-border, #dbe2ea);
+  border-top-color: var(--color-primary, #2563eb);
+  border-radius: 50%;
+  animation: pptist-spin 700ms linear infinite;
+}
+
+.pptist-loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--color-border, #dbe2ea);
+  border-top-color: var(--color-primary, #2563eb);
+  border-radius: 50%;
+  animation: pptist-spin 700ms linear infinite;
+}
+
+@keyframes pptist-spin {
+  to { transform: rotate(360deg); }
+}
+
+#presentation-container.presentation-fullwidth {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+}
+
+@media (max-width: 768px) {
+  .pptist-upload-status {
+    right: 8px;
+    bottom: 58px;
+    max-width: calc(100% - 16px);
+  }
+}

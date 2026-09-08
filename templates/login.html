@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v={{assetVer "/static/favicon.svg"}}">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{{call .T "meta.description"}}">
+    <title>{{call .T "page.login.title"}}</title>
+    <script>(function(){var k='bookstark-theme',s={light:'light',dark:'dark','notion-pro':'light','scholar-paper':'light','linear-saas':'dark','apple-minimal':'light'},t=localStorage.getItem(k);if(!s[t])t=window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';document.documentElement.setAttribute('data-theme',s[t]);document.documentElement.setAttribute('data-theme-style',t);})();</script>
+    <link href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/variables.css?v={{assetVer "/static/css/variables.css"}}">
+    <script src="/static/js/theme.js?v={{assetVer "/static/js/theme.js"}}"></script>
+    </head>
+<body class="bg-slate-50">
+    <main role="main" class="min-h-screen flex items-center justify-center px-4">
+        <h1 class="sr-only">{{call .T "auth.login.submit"}}</h1>
+        <div class="w-full max-w-[360px] bg-white border border-slate-200 rounded-lg p-6 sm:p-7">
+            <div class="text-center mb-6">
+                <div class="text-xl font-bold">BookStark</div>
+                <div class="text-sm text-slate-500 mt-1">{{call .T "footer.tagline"}}</div>
+            </div>
+            <div id="error" class="hidden mb-4 p-3 bg-red-50 text-red-600 text-sm rounded"></div>
+            <div class="mb-4">
+                <label for="account" class="block text-sm font-medium mb-1.5">{{call .T "auth.field.account.label"}}</label>
+                <input id="account" type="text" class="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20" placeholder="{{call .T "auth.field.account.placeholder"}}">
+            </div>
+            <div class="mb-5">
+                <label for="password" class="block text-sm font-medium mb-1.5">{{call .T "auth.field.password.label"}}</label>
+                <input id="password" type="password" class="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20" placeholder="{{call .T "auth.field.password.placeholder"}}">
+            </div>
+            <button onclick="doLogin()" class="w-full bg-blue-600 text-white py-2.5 rounded-md text-sm font-medium hover:bg-blue-700">{{call .T "auth.login.submit"}}</button>
+            <div class="text-center mt-4 text-sm text-slate-500">
+                {{call .T "auth.login.no_account"}}<a href="/register" class="text-blue-600 hover:underline">{{call .T "auth.login.register_link"}}</a>
+                <span class="mx-2 text-slate-300">|</span>
+                {{if .PasswordResetAvailable}}<a href="/forgot-password" class="text-blue-600 hover:underline">{{call .T "auth.login.forgot_link"}}</a>{{else}}<span class="text-slate-400">{{call .T "auth.login.forgot_hint"}}</span>{{end}}
+            </div>
+        </div>
+    </main>
+    <script>
+    async function doLogin() {
+        const errEl = document.getElementById('error');
+        errEl.classList.add('hidden');
+        const account = document.getElementById('account').value.trim();
+        const password = document.getElementById('password').value;
+        if (!account || !password) {
+            errEl.textContent = window.__('auth.login.error.empty');
+            errEl.classList.remove('hidden');
+            return;
+        }
+        try {
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({account, password})
+            });
+            const data = await res.json();
+            if (res.ok) {
+                if (window.BookStarkPWA && window.BookStarkPWA.clearPageCache) {
+                    await window.BookStarkPWA.clearPageCache().catch(function() {});
+                }
+                window.location.href = '/';
+            } else {
+                errEl.textContent = data.message || window.__('auth.login.error.default');
+                errEl.classList.remove('hidden');
+            }
+        } catch(e) {
+            errEl.textContent = window.__('auth.error.network');
+            errEl.classList.remove('hidden');
+        }
+    }
+    document.getElementById('password').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+    </script>
+<script src="/static/js/i18n.js?v={{assetVer "/static/js/i18n.js"}}"></script>
+<script>
+window.__I18N_MESSAGES = {{.JSBundle}};
+window.__currentLang = "{{.Lang}}";
+</script>
+<script src="/static/js/sw-register.js?v={{assetVer "/static/js/sw-register.js"}}"></script>
+</body>
+</html>

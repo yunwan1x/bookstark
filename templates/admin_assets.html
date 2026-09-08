@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="{{.Lang}}">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v={{assetVer "/static/favicon.svg"}}">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{{call .T "asset.meta.description"}}">
+    <title>{{call .T "page.assets.title"}} - BookStark</title>
+    <link href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}" rel="stylesheet">
+    {{template "head-assets" .}}
+    <link rel="stylesheet" href="/static/css/xterm/xterm.css?v={{assetVer "/static/css/xterm/xterm.css"}}">
+    <link rel="stylesheet" href="/static/css/assets.css?v={{assetVer "/static/css/assets.css"}}">
+    <link rel="stylesheet" href="/static/css/code-editor-modal.css?v={{assetVer "/static/css/code-editor-modal.css"}}">
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col">
+    {{template "header" .}}
+    <main class="flex-1" role="main">
+        <div class="asset-page" data-asset-mode="{{.AssetPageMode}}" data-docker-host-id="{{.DockerHostID}}">
+            <div class="asset-docker-page-head{{if and (ne .AssetPageMode "docker-host") (ne .AssetPageMode "files-host") (ne .AssetPageMode "webdav-files")}} asset-hidden{{end}}">
+                <div>
+                    <h1 id="dockerPageTitle">{{if eq .AssetPageMode "files-host"}}{{call .T "asset.files.title"}}{{else if eq .AssetPageMode "webdav-files"}}{{call .T "asset.webdav.files.title"}}{{else}}{{call .T "asset.tab.docker"}}{{end}}</h1>
+                </div>
+                <a class="asset-back-link" href="/admin/assets">
+                    <i class="fa-solid fa-arrow-left"></i>{{call .T "asset.action.back_assets"}}
+                </a>
+            </div>
+
+            <div class="asset-tabs{{if or (eq .AssetPageMode "docker-host") (eq .AssetPageMode "files-host") (eq .AssetPageMode "webdav-files")}} asset-hidden{{end}}" role="tablist" aria-label="{{call .T "asset.tabs.aria"}}" data-swipe-nav data-swipe-item=".asset-tab" data-swipe-mode="click">
+                <button class="asset-tab active" role="tab" aria-selected="true" data-tab="ssh" data-swipe-idx="0">
+                    <i class="fa-solid fa-server"></i> {{call .T "asset.tab.ssh"}}
+                </button>
+                <button class="asset-tab" role="tab" aria-selected="false" data-tab="webdav" data-swipe-idx="1">
+                    <i class="fa-solid fa-cloud"></i> {{call .T "asset.tab.webdav"}}
+                </button>
+                <button class="asset-tab" role="tab" aria-selected="false" data-tab="settings" data-swipe-idx="2">
+                    <i class="fa-solid fa-sliders"></i> {{call .T "asset.tab.settings"}}
+                </button>
+            </div>
+
+            <section class="asset-panel asset-tab-panel{{if and (ne .AssetPageMode "docker-host") (ne .AssetPageMode "files-host") (ne .AssetPageMode "webdav-files")}} active{{end}}{{if or (eq .AssetPageMode "docker-host") (eq .AssetPageMode "files-host") (eq .AssetPageMode "webdav-files")}} asset-hidden{{end}}" id="panel-ssh">
+                <div class="asset-panel-head asset-filter-head asset-search-row">
+                    <div class="asset-toolbar asset-search-row">
+                        <input id="sshSearch" class="search-input asset-search-input" type="search" placeholder="{{call .T "asset.ssh.search.placeholder"}}" aria-label="{{call .T "asset.ssh.search.aria"}}">
+                    </div>
+                    <button class="bs-btn bs-btn-primary asset-panel-action" id="addSshBtn"><i class="fa-solid fa-plus"></i>{{call .T "asset.ssh.add"}}</button>
+                </div>
+                <div class="asset-table-wrap">
+                    <table class="asset-table">
+                        <thead>
+                            <tr>
+                                <th>{{call .T "asset.table.name"}}</th>
+                                <th>{{call .T "asset.table.address"}}</th>
+                                <th>{{call .T "asset.table.user"}}</th>
+                                <th>{{call .T "asset.table.auth"}}</th>
+                                <th>{{call .T "asset.table.status"}}</th>
+                                <th class="asset-right">{{call .T "asset.table.actions"}}</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sshRows"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="asset-panel asset-tab-panel{{if eq .AssetPageMode "docker-host"}} active{{end}}{{if or (eq .AssetPageMode "files-host") (eq .AssetPageMode "webdav-files")}} asset-hidden{{end}}" id="panel-docker">
+                <div class="asset-docker-subtabs" role="tablist" aria-label="{{call .T "asset.docker.tabs.aria"}}">
+                    <button type="button" class="asset-docker-subtab active" data-docker-resource-tab="containers"><i class="fa-solid fa-cube"></i>{{call .T "asset.docker.tab.containers"}} <span id="dockerCount">0</span></button>
+                    <button type="button" class="asset-docker-subtab" data-docker-resource-tab="networks"><i class="fa-solid fa-network-wired"></i>{{call .T "asset.docker.tab.networks"}} <span id="dockerNetworkCount">0</span></button>
+                    <button type="button" class="asset-docker-subtab" data-docker-resource-tab="volumes"><i class="fa-solid fa-hard-drive"></i>{{call .T "asset.docker.tab.volumes"}} <span id="dockerVolumeCount">0</span></button>
+                    <button type="button" class="asset-docker-subtab" data-docker-resource-tab="images"><i class="fa-solid fa-layer-group"></i>{{call .T "asset.docker.tab.images"}} <span id="dockerImageCount">0</span></button>
+                </div>
+                <div class="asset-panel-head asset-filter-head">
+                    <div class="asset-toolbar">
+                        <input id="dockerSearch" class="search-input asset-search-input" type="search" placeholder="{{call .T "asset.docker.search.placeholder"}}" aria-label="{{call .T "asset.docker.search.aria"}}">
+                        <div class="asset-status-filter" id="dockerStatusFilter" role="group" aria-label="{{call .T "asset.table.status"}}">
+                            <label><input type="checkbox" data-status-filter="docker" value="unknown" checked><span>{{call .T "asset.status.unknown"}}</span></label>
+                            <label><input type="checkbox" data-status-filter="docker" value="running" checked><span>{{call .T "asset.status.running"}}</span></label>
+                            <label><input type="checkbox" data-status-filter="docker" value="stopped" checked><span>{{call .T "asset.status.stopped"}}</span></label>
+                        </div>
+                    </div>
+                    <div class="asset-docker-head-actions">
+                        <button class="asset-create-button" id="addDockerContainerBtn" type="button"><i class="fa-solid fa-plus"></i>{{call .T "asset.docker.create"}}</button>
+                        <button class="asset-create-button asset-hidden" id="addDockerNetworkBtn" type="button"><i class="fa-solid fa-plus"></i>{{call .T "asset.docker.network.create"}}</button>
+                        <button class="asset-create-button asset-hidden" id="addDockerVolumeBtn" type="button"><i class="fa-solid fa-plus"></i>{{call .T "asset.docker.volume.create"}}</button>
+                        <button class="asset-create-button asset-hidden" id="pullDockerImageBtn" type="button"><i class="fa-solid fa-download"></i>{{call .T "asset.docker.image.pull"}}</button>
+                        <button class="asset-create-button asset-prune-button" id="pruneDockerBtn" type="button"><i class="fa-solid fa-broom"></i>{{call .T "asset.docker.prune"}}</button>
+                        <button class="asset-refresh-button" id="refreshDockerBtn" type="button" title="{{call .T "asset.action.refresh"}}" aria-label="{{call .T "asset.action.refresh"}}"><i class="fa-solid fa-rotate-right"></i></button>
+                    </div>
+                </div>
+                <div class="asset-table-wrap asset-docker-resource-panel active" id="docker-resource-containers">
+                    <table class="asset-table">
+                        <thead>
+                            <tr>
+                                <th>{{call .T "asset.table.container"}}</th>
+                                <th>{{call .T "asset.table.image"}}</th>
+                                <th>{{call .T "asset.table.status"}}</th>
+                                <th>{{call .T "asset.table.ports"}}</th>
+                                <th class="asset-right">{{call .T "asset.table.actions"}}</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dockerRows"></tbody>
+                    </table>
+                </div>
+                <div class="asset-table-wrap asset-docker-resource-panel" id="docker-resource-networks">
+                    <table class="asset-table">
+                        <thead>
+                            <tr>
+                                <th>{{call .T "asset.table.name"}}</th>
+                                <th>ID</th>
+                                <th>{{call .T "asset.docker.driver"}}</th>
+                                <th>{{call .T "asset.docker.scope"}}</th>
+                                <th class="asset-right">{{call .T "asset.table.actions"}}</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dockerNetworkRows"></tbody>
+                    </table>
+                </div>
+                <div class="asset-table-wrap asset-docker-resource-panel" id="docker-resource-volumes">
+                    <table class="asset-table">
+                        <thead>
+                            <tr>
+                                <th>{{call .T "asset.table.name"}}</th>
+                                <th>{{call .T "asset.docker.driver"}}</th>
+                                <th>{{call .T "asset.docker.scope"}}</th>
+                                <th>{{call .T "asset.docker.mountpoint"}}</th>
+                                <th class="asset-right">{{call .T "asset.table.actions"}}</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dockerVolumeRows"></tbody>
+                    </table>
+                </div>
+                <div class="asset-table-wrap asset-docker-resource-panel" id="docker-resource-images">
+                    <table class="asset-table">
+                        <thead>
+                            <tr>
+                                <th>{{call .T "asset.table.image"}}</th>
+                                <th>ID</th>
+                                <th>{{call .T "asset.files.size"}}</th>
+                                <th>{{call .T "asset.inspect.created"}}</th>
+                                <th class="asset-right">{{call .T "asset.table.actions"}}</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dockerImageRows"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="asset-panel asset-tab-panel{{if or (eq .AssetPageMode "docker-host") (eq .AssetPageMode "files-host") (eq .AssetPageMode "webdav-files")}} asset-hidden{{end}}" id="panel-webdav">
+                <div class="asset-panel-head asset-filter-head asset-search-row">
+                    <div class="asset-toolbar asset-search-row">
+                        <input id="webdavSearch" class="search-input asset-search-input" type="search" placeholder="{{call .T "asset.webdav.search.placeholder"}}" aria-label="{{call .T "asset.webdav.search.aria"}}">
+                    </div>
+                    <button class="bs-btn bs-btn-primary asset-panel-action" id="addWebdavBtn"><i class="fa-solid fa-plus"></i>{{call .T "asset.webdav.add"}}</button>
+                </div>
+                <div class="asset-table-wrap">
+                    <table class="asset-table">
+                        <thead>
+                            <tr>
+                                <th>{{call .T "asset.table.name"}}</th>
+                                <th>URL</th>
+                                <th>{{call .T "asset.webdav.root_path"}}</th>
+                                <th>{{call .T "asset.field.credential"}}</th>
+                                <th>{{call .T "asset.table.status"}}</th>
+                                <th class="asset-right">{{call .T "asset.table.actions"}}</th>
+                            </tr>
+                        </thead>
+                        <tbody id="webdavRows"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="asset-panel asset-tab-panel{{if or (eq .AssetPageMode "docker-host") (eq .AssetPageMode "files-host") (eq .AssetPageMode "webdav-files")}} asset-hidden{{end}}" id="panel-settings">
+                <div class="asset-panel-head">
+                    <div>
+                        <h2>{{call .T "asset.settings.title"}}</h2>
+                        <p>{{call .T "asset.settings.subtitle"}}</p>
+                    </div>
+                </div>
+                <div class="asset-settings-tabs" role="tablist" aria-label="{{call .T "asset.settings.tabs.aria"}}">
+                    <button type="button" class="asset-settings-tab active" data-settings-tab="credentials">{{call .T "asset.settings.tab.credentials"}}</button>
+                    <button type="button" class="asset-settings-tab" data-settings-tab="base">{{call .T "asset.settings.tab.base"}}</button>
+                </div>
+                <div class="asset-settings-panel active" id="settings-credentials">
+                    <div class="asset-panel-head asset-filter-head">
+                        <div class="asset-sub">{{call .T "asset.credentials.subtitle"}}</div>
+                        <button class="bs-btn bs-btn-primary asset-panel-action" id="addCredentialBtn"><i class="fa-solid fa-plus"></i>{{call .T "asset.credentials.add"}}</button>
+                    </div>
+                    <div class="asset-table-wrap">
+                        <table class="asset-table">
+                            <thead>
+                                <tr>
+                                    <th>{{call .T "asset.table.name"}}</th>
+                                    <th>{{call .T "asset.table.user"}}</th>
+                                    <th>{{call .T "asset.table.auth"}}</th>
+                                    <th class="asset-right">{{call .T "asset.table.actions"}}</th>
+                                </tr>
+                            </thead>
+                            <tbody id="credentialRows"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="asset-settings-panel" id="settings-base">
+                    <div class="asset-settings-grid">
+                        <label>{{call .T "asset.settings.idle_timeout"}}<input id="settingIdle" class="dialog-input" type="number" min="1" max="86400" step="1" value="1800"></label>
+                        <label>{{call .T "asset.settings.scrollback_lines"}}<input id="settingScrollback" class="dialog-input" type="number" min="500" max="50000" step="100" value="5000"></label>
+                        <label>{{call .T "asset.settings.credential_secret"}}
+                            <span class="asset-password-wrap">
+                                <input id="settingCredentialSecret" class="dialog-input" type="password" autocomplete="new-password" placeholder="{{call .T "asset.settings.credential_secret.placeholder"}}">
+                                <button class="row-action asset-password-toggle" id="settingCredentialSecretToggle" type="button" aria-label="{{call .T "asset.password.show"}}"><i class="fa-solid fa-eye"></i></button>
+                            </span>
+                        </label>
+                    </div>
+                    <div class="asset-settings-actions">
+                        <button class="bs-btn bs-btn-primary" id="saveSettingsBtn"><i class="fa-solid fa-floppy-disk"></i>{{call .T "asset.settings.save"}}</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="asset-panel asset-tab-panel{{if or (eq .AssetPageMode "files-host") (eq .AssetPageMode "webdav-files")}} active{{else}} asset-hidden{{end}}" id="panel-files">
+                <div class="asset-panel-head asset-filter-head">
+                    <div class="asset-file-pathbar">
+                        <button class="asset-refresh-button" id="fileUpBtn" type="button" title="{{call .T "asset.files.up"}}" aria-label="{{call .T "asset.files.up"}}"><i class="fa-solid fa-arrow-up"></i></button>
+                        <div class="asset-file-path" id="filePathBreadcrumb"></div>
+                        <div class="asset-file-quick-paths" id="fileQuickPaths"></div>
+                    </div>
+                    <div class="asset-docker-head-actions">
+                        <input id="fileUploadInput" type="file" class="asset-hidden">
+                        <button class="asset-create-button" id="uploadFileBtn" type="button"><i class="fa-solid fa-upload"></i>{{call .T "asset.files.upload"}}</button>
+                        <button class="asset-create-button" id="newDirBtn" type="button"><i class="fa-solid fa-folder-plus"></i>{{call .T "asset.files.new_dir"}}</button>
+                        <button class="asset-refresh-button" id="refreshFilesBtn" type="button" title="{{call .T "asset.action.refresh"}}" aria-label="{{call .T "asset.action.refresh"}}"><i class="fa-solid fa-rotate-right"></i></button>
+                    </div>
+                </div>
+                <div class="asset-file-limit-notice asset-hidden" id="fileLimitNotice"></div>
+                <div class="asset-table-wrap">
+                    <table class="asset-table">
+                        <thead>
+                            <tr>
+                                <th>{{call .T "asset.table.name"}}</th>
+                                <th>{{call .T "asset.files.type"}}</th>
+                                <th>{{call .T "asset.files.size"}}</th>
+                                <th>{{call .T "asset.files.mode"}}</th>
+                                <th>{{call .T "asset.files.modified"}}</th>
+                                <th class="asset-right">{{call .T "asset.table.actions"}}</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fileRows"></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <div class="asset-modal-backdrop" id="sshModal" aria-hidden="true">
+        <form class="asset-modal" id="sshForm" role="dialog" aria-modal="true" aria-labelledby="sshModalTitle">
+            <div class="asset-modal-head">
+                <h2 id="sshModalTitle">{{call .T "asset.ssh.modal.new"}}</h2>
+                <button class="row-action asset-icon-btn" type="button" data-close-modal aria-label="{{call .T "asset.action.close"}}"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <input type="hidden" id="sshId">
+            <div class="asset-form-grid">
+                <label>{{call .T "asset.field.name"}}<input id="sshName" class="dialog-input" required placeholder="prod-web-01"></label>
+                <label>{{call .T "asset.field.host_address"}}<input id="sshHost" class="dialog-input" required placeholder="10.0.1.21"></label>
+                <label>{{call .T "asset.field.port"}}<input id="sshPort" class="dialog-input" type="number" min="1" max="65535" value="22"></label>
+                <label>{{call .T "asset.field.shell"}}
+                    <span class="asset-autocomplete">
+                        <input id="sshShell" class="dialog-input" required autocomplete="off" value="/bin/sh" placeholder="/bin/sh" aria-controls="sshShellOptions" aria-expanded="false">
+                        <div class="asset-autocomplete-options asset-hidden" id="sshShellOptions" role="listbox"></div>
+                    </span>
+                </label>
+                <label>{{call .T "asset.field.cwd"}}<input id="sshCwd" class="dialog-input" placeholder="{{call .T "asset.field.cwd.placeholder"}}"></label>
+                <label class="asset-full">Docker Socket<input id="sshDockerSocketPath" class="dialog-input" value="/var/run/docker.sock" placeholder="/var/run/docker.sock"></label>
+                <label class="asset-full asset-combobox-field">
+                    <span>{{call .T "asset.field.credential"}}</span>
+                    <input type="hidden" id="sshCredential" required>
+                    <div class="asset-combobox" id="sshCredentialPicker">
+                        <input id="sshCredentialSearch" class="asset-combobox-input dialog-input" type="text" autocomplete="off" placeholder="{{call .T "asset.credential.search.placeholder"}}" aria-controls="sshCredentialDropdown" aria-expanded="false">
+                        <div class="asset-combobox-dropdown asset-hidden" id="sshCredentialDropdown" role="listbox"></div>
+                    </div>
+                </label>
+            </div>
+            <div class="asset-modal-foot">
+                <button class="bs-btn bs-btn-cancel" type="button" data-close-modal>{{call .T "asset.action.cancel"}}</button>
+                <button class="bs-btn bs-btn-primary" type="submit">{{call .T "asset.action.save"}}</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="asset-modal-backdrop" id="credentialModal" aria-hidden="true">
+        <form class="asset-modal" id="credentialForm" role="dialog" aria-modal="true" aria-labelledby="credentialModalTitle">
+            <div class="asset-modal-head">
+                <h2 id="credentialModalTitle">{{call .T "asset.credentials.modal.new"}}</h2>
+                <button class="row-action asset-icon-btn" type="button" data-close-modal aria-label="{{call .T "asset.action.close"}}"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <input type="hidden" id="credentialId">
+            <div class="asset-form-grid">
+                <label>{{call .T "asset.field.name"}}<input id="credentialName" class="dialog-input" required placeholder="root-prod"></label>
+                <label>{{call .T "asset.field.username"}}<input id="credentialUser" class="dialog-input" required placeholder="root"></label>
+                <div>
+                    <span class="asset-field-label">{{call .T "asset.field.auth"}}</span>
+                    <div class="asset-segmented" id="credentialAuthSwitch">
+                        <button type="button" class="active" data-credential-auth="password">{{call .T "asset.auth.password"}}</button>
+                        <button type="button" data-credential-auth="key">Private Key</button>
+                    </div>
+                </div>
+                <label class="asset-full" id="credentialPasswordField">
+                    <span>{{call .T "asset.field.password"}}</span>
+                    <span class="asset-password-wrap">
+                        <input id="credentialPassword" class="dialog-input" type="password" autocomplete="new-password" placeholder="{{call .T "asset.field.password.placeholder"}}">
+                        <button class="row-action asset-password-toggle" id="credentialPasswordToggle" type="button" aria-label="{{call .T "asset.password.show"}}"><i class="fa-solid fa-eye"></i></button>
+                    </span>
+                </label>
+                <label class="asset-full asset-hidden" id="credentialKeyField">Private Key<textarea id="credentialKey" class="dialog-input" rows="5" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----"></textarea></label>
+            </div>
+            <div class="asset-modal-foot">
+                <button class="bs-btn bs-btn-cancel" type="button" data-close-modal>{{call .T "asset.action.cancel"}}</button>
+                <button class="bs-btn bs-btn-primary" type="submit">{{call .T "asset.action.save"}}</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="asset-modal-backdrop" id="webdavModal" aria-hidden="true">
+        <form class="asset-modal" id="webdavForm" role="dialog" aria-modal="true" aria-labelledby="webdavModalTitle">
+            <div class="asset-modal-head">
+                <h2 id="webdavModalTitle">{{call .T "asset.webdav.modal.new"}}</h2>
+                <button class="row-action asset-icon-btn" type="button" data-close-modal aria-label="{{call .T "asset.action.close"}}"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <input type="hidden" id="webdavId">
+            <div class="asset-form-grid">
+                <label>{{call .T "asset.field.name"}}<input id="webdavName" class="dialog-input" required placeholder="nextcloud"></label>
+                <label>{{call .T "asset.webdav.root_path"}}<input id="webdavRootPath" class="dialog-input" value="/" placeholder="/"></label>
+                <label class="asset-full">{{call .T "asset.webdav.url"}}<input id="webdavUrl" class="dialog-input" required placeholder="https://example.com/remote.php/dav/files/user"></label>
+                <label class="asset-full asset-combobox-field">
+                    <span>{{call .T "asset.field.credential"}}</span>
+                    <input type="hidden" id="webdavCredential" required>
+                    <div class="asset-combobox" id="webdavCredentialPicker">
+                        <input id="webdavCredentialSearch" class="asset-combobox-input dialog-input" type="text" autocomplete="off" placeholder="{{call .T "asset.credential.search.placeholder"}}" aria-controls="webdavCredentialDropdown" aria-expanded="false">
+                        <div class="asset-combobox-dropdown asset-hidden" id="webdavCredentialDropdown" role="listbox"></div>
+                    </div>
+                </label>
+            </div>
+            <div class="asset-modal-foot">
+                <button class="bs-btn bs-btn-cancel" type="button" data-close-modal>{{call .T "asset.action.cancel"}}</button>
+                <button class="bs-btn bs-btn-primary" type="submit">{{call .T "asset.action.save"}}</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="asset-modal-backdrop" id="dockerCreateModal" aria-hidden="true">
+        <form class="asset-modal asset-docker-create-modal" id="dockerCreateForm" role="dialog" aria-modal="true" aria-labelledby="dockerCreateTitle">
+            <div class="asset-modal-head">
+                <h2 id="dockerCreateTitle">{{call .T "asset.docker.create.title"}}</h2>
+                <button class="row-action asset-icon-btn" type="button" data-close-modal aria-label="{{call .T "asset.action.close"}}"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="asset-docker-create-tabs" role="tablist" aria-label="{{call .T "asset.docker.create.title"}}">
+                <button type="button" class="asset-docker-create-tab active" data-docker-create-tab="base">{{call .T "asset.docker.create.tab.base"}}</button>
+                <button type="button" class="asset-docker-create-tab" data-docker-create-tab="ports">{{call .T "asset.docker.create.tab.ports"}}</button>
+                <button type="button" class="asset-docker-create-tab" data-docker-create-tab="volumes">{{call .T "asset.docker.create.tab.volumes"}}</button>
+                <button type="button" class="asset-docker-create-tab" data-docker-create-tab="env">{{call .T "asset.docker.create.tab.env"}}</button>
+            </div>
+            <div class="asset-docker-create-panel active" id="docker-create-base">
+                <div class="asset-form-grid">
+                    <label>{{call .T "asset.field.image"}}
+                        <span class="asset-autocomplete">
+                            <input id="dockerCreateImage" class="dialog-input" required autocomplete="off" placeholder="nginx:latest" aria-controls="dockerCreateImageOptions" aria-expanded="false">
+                            <div class="asset-autocomplete-options asset-hidden" id="dockerCreateImageOptions" role="listbox"></div>
+                        </span>
+                    </label>
+                    <label>{{call .T "asset.field.container_name"}}<input id="dockerCreateName" class="dialog-input" placeholder="web-edge"></label>
+                    <label class="asset-full">{{call .T "asset.docker.create.command"}}<input id="dockerCreateCommand" class="dialog-input" placeholder="nginx -g 'daemon off;'"></label>
+                    <label>{{call .T "asset.restart_policy.placeholder"}}
+                        <select id="dockerCreateRestartPolicy" class="dialog-input">
+                            <option value="">{{call .T "asset.docker.create.restart.default"}}</option>
+                            <option value="no">{{call .T "asset.restart_policy.no"}}</option>
+                            <option value="always">{{call .T "asset.restart_policy.always"}}</option>
+                            <option value="unless-stopped">{{call .T "asset.restart_policy.unless_stopped"}}</option>
+                            <option value="on-failure">{{call .T "asset.restart_policy.on_failure"}}</option>
+                        </select>
+                    </label>
+                    <label>{{call .T "asset.docker.create.network"}}
+                        <span class="asset-autocomplete">
+                            <input id="dockerCreateNetwork" class="dialog-input" autocomplete="off" placeholder="bridge" aria-controls="dockerCreateNetworkOptions" aria-expanded="false">
+                            <div class="asset-autocomplete-options asset-hidden" id="dockerCreateNetworkOptions" role="listbox"></div>
+                        </span>
+                    </label>
+                    <label>{{call .T "asset.docker.create.memory"}}<input id="dockerCreateMemory" class="dialog-input" placeholder="256m"></label>
+                    <label>{{call .T "asset.docker.create.cpus"}}<input id="dockerCreateCpus" class="dialog-input" placeholder="0.5"></label>
+                    <label class="asset-check-row"><input id="dockerCreateStart" type="checkbox" checked>{{call .T "asset.docker.create.start_after_create"}}</label>
+                    <label class="asset-check-row"><input id="dockerCreatePrivileged" type="checkbox">{{call .T "asset.docker.create.privileged"}}</label>
+                </div>
+            </div>
+            <div class="asset-docker-create-panel" id="docker-create-ports">
+                <div class="asset-repeat-section">
+                <div class="asset-repeat-head">
+                    <strong>{{call .T "asset.docker.create.ports"}}</strong>
+                    <button class="asset-repeat-add" type="button" data-docker-create-add="port"><i class="fa-solid fa-plus"></i>{{call .T "asset.action.add"}}</button>
+                </div>
+                <div id="dockerCreatePorts" class="asset-repeat-list"></div>
+                </div>
+            </div>
+            <div class="asset-docker-create-panel" id="docker-create-volumes">
+                <div class="asset-repeat-section">
+                <div class="asset-repeat-head">
+                    <strong>{{call .T "asset.docker.create.volumes"}}</strong>
+                    <button class="asset-repeat-add" type="button" data-docker-create-add="volume"><i class="fa-solid fa-plus"></i>{{call .T "asset.action.add"}}</button>
+                </div>
+                <div id="dockerCreateVolumes" class="asset-repeat-list"></div>
+                </div>
+            </div>
+            <div class="asset-docker-create-panel" id="docker-create-env">
+                <div class="asset-repeat-section">
+                <div class="asset-repeat-head">
+                    <strong>{{call .T "asset.docker.create.env"}}</strong>
+                    <button class="asset-repeat-add" type="button" data-docker-create-add="env"><i class="fa-solid fa-plus"></i>{{call .T "asset.action.add"}}</button>
+                </div>
+                <div id="dockerCreateEnv" class="asset-repeat-list"></div>
+                </div>
+            </div>
+            <div class="asset-modal-foot">
+                <button class="bs-btn bs-btn-cancel" type="button" data-close-modal>{{call .T "asset.action.cancel"}}</button>
+                <button class="bs-btn bs-btn-primary" id="dockerCreateSubmit" type="submit"><i class="fa-solid fa-plus"></i>{{call .T "asset.docker.create.submit"}}</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="asset-modal-backdrop" id="dockerInspectModal" aria-hidden="true">
+        <section class="asset-modal" role="dialog" aria-modal="true" aria-labelledby="dockerInspectTitle">
+            <div class="asset-modal-head">
+                <h2 id="dockerInspectTitle">{{call .T "asset.inspect.title"}}</h2>
+                <button class="row-action asset-icon-btn" type="button" data-close-modal aria-label="{{call .T "asset.action.close"}}"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="asset-inspect-grid" id="dockerInspectBody"></div>
+            <div class="asset-modal-foot">
+                <button class="bs-btn bs-btn-cancel" type="button" data-close-modal>{{call .T "asset.action.close"}}</button>
+            </div>
+        </section>
+    </div>
+
+    <div class="asset-modal-backdrop" id="dockerLogsModal" aria-hidden="true">
+        <section class="asset-modal asset-log-modal" role="dialog" aria-modal="true" aria-labelledby="dockerLogsTitle">
+            <div class="asset-modal-head">
+                <div class="asset-log-title">
+                    <h2 id="dockerLogsTitle">{{call .T "asset.logs.title"}}</h2>
+                    <span id="dockerLogStatus">{{call .T "asset.logs.status.idle"}}</span>
+                </div>
+                <button class="row-action asset-icon-btn" type="button" data-close-modal aria-label="{{call .T "asset.action.close"}}"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="asset-log-toolbar">
+                <label>{{call .T "asset.logs.tail"}}
+                    <input id="dockerLogTail" class="dialog-input" type="number" min="1" max="10000" step="1" value="200">
+                </label>
+                <button class="asset-log-tool-toggle" id="dockerLogFollowBtn" type="button" aria-pressed="false" title="{{call .T "asset.logs.follow"}}" aria-label="{{call .T "asset.logs.follow"}}">
+                    <i class="fa-solid fa-satellite-dish"></i><span>{{call .T "asset.logs.follow"}}</span>
+                </button>
+                <button class="asset-refresh-button asset-log-icon-btn" id="refreshDockerLogsBtn" type="button" title="{{call .T "asset.action.refresh"}}" aria-label="{{call .T "asset.action.refresh"}}"><i class="fa-solid fa-rotate-right"></i></button>
+                <button class="asset-refresh-button asset-log-icon-btn" id="clearDockerLogsBtn" type="button" title="{{call .T "asset.logs.clear"}}" aria-label="{{call .T "asset.logs.clear"}}"><i class="fa-solid fa-eraser"></i></button>
+            </div>
+            <pre class="asset-log-output" id="dockerLogOutput"></pre>
+        </section>
+    </div>
+
+    <div class="asset-modal-backdrop asset-session-backdrop" id="sessionModal" aria-hidden="true">
+        <section class="asset-session-window" role="dialog" aria-modal="true" aria-labelledby="terminalTitle">
+            <div class="asset-terminal-head">
+                <div class="asset-terminal-window-controls">
+                    <button type="button" class="asset-window-dot red" id="closeTerminalDot" aria-label="{{call .T "asset.session.close"}}"></button>
+                    <span class="asset-window-dot yellow" aria-hidden="true"></span>
+                    <button type="button" class="asset-window-dot green" id="maximizeTerminalDot" aria-label="{{call .T "asset.session.maximize"}}"></button>
+                </div>
+                <div class="asset-terminal-titlebar">
+                    <strong id="terminalTitle">{{call .T "asset.session.disconnected"}}</strong>
+                    <span id="terminalSubtitle">{{call .T "asset.session.hint"}}</span>
+                    <button class="asset-terminal-reconnect" type="button" id="terminalReconnectBtn" aria-label="{{call .T "asset.session.reconnect"}}" title="{{call .T "asset.session.reconnect"}}" hidden><i class="fa-solid fa-rotate-right"></i></button>
+                </div>
+                <div class="asset-terminal-actions">
+                    <button class="row-action asset-icon-btn" type="button" id="maximizeTerminalBtn" aria-label="{{call .T "asset.session.maximize"}}"><i class="fa-solid fa-up-right-and-down-left-from-center"></i></button>
+                    <button class="row-action asset-icon-btn" type="button" data-close-modal aria-label="{{call .T "asset.session.close"}}"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </div>
+            <div class="asset-terminal-body" id="terminalPane"></div>
+        </section>
+    </div>
+
+    <div class="asset-modal-backdrop asset-preview-backdrop" id="filePreviewModal" aria-hidden="true">
+        <section class="asset-preview-window" role="dialog" aria-modal="true" aria-labelledby="filePreviewTitle">
+            <div class="asset-preview-head">
+                <div class="asset-preview-titlebar">
+                    <strong id="filePreviewTitle">{{call .T "asset.files.preview.title"}}</strong>
+                    <span id="filePreviewSubtitle"></span>
+                </div>
+                <div class="asset-preview-actions">
+                    <a class="row-action asset-icon-btn" id="filePreviewOpen" href="#" target="_blank" rel="noopener" aria-label="{{call .T "asset.files.preview.open"}}" title="{{call .T "asset.files.preview.open"}}"><i class="fa-solid fa-up-right-from-square"></i></a>
+                    <button class="row-action asset-icon-btn" type="button" id="closeFilePreviewDot" aria-label="{{call .T "asset.files.preview.close"}}"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </div>
+            <div class="asset-preview-body">
+                <img class="asset-preview-media asset-preview-image asset-hidden" id="filePreviewImage" alt="">
+                <video class="asset-preview-media asset-preview-video asset-hidden" id="filePreviewVideo" controls playsinline preload="metadata"></video>
+            </div>
+        </section>
+    </div>
+
+    <button class="asset-mobile-fab asset-hidden" id="assetMobileFab" type="button" aria-label="{{call .T "asset.ssh.add"}}">
+        <i class="fa-solid fa-plus"></i>
+    </button>
+
+    {{template "footer" .}}
+    <script src="/static/js/xterm/xterm.js?v={{assetVer "/static/js/xterm/xterm.js"}}"></script>
+    <script src="/static/js/xterm/addon-fit.js?v={{assetVer "/static/js/xterm/addon-fit.js"}}"></script>
+    <script src="/static/js/codemirror-html.min.js?v={{assetVer "/static/js/codemirror-html.min.js"}}"></script>
+    <script src="/static/js/code-editor-modal.js?v={{assetVer "/static/js/code-editor-modal.js"}}"></script>
+    <script>
+      window.__ASSET_PAGE_MODE__ = {{json .AssetPageMode}};
+      window.__DOCKER_HOST_ID__ = {{json .DockerHostID}};
+      window.__FILES_HOST_ID__ = {{json .FilesHostID}};
+      window.__WEBDAV_SERVER_ID__ = {{json .WebDAVServerID}};
+    </script>
+    <script src="/static/js/assets.js?v={{assetVer "/static/js/assets.js"}}"></script>
+</body>
+</html>

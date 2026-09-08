@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v={{assetVer "/static/favicon.svg"}}">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{{call .T "meta.description"}}">
+    <title>{{call .T "page.labels.title"}} - BookStark</title>
+    <link href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}" rel="stylesheet">
+    <style>
+    /* === Layout === */
+    .labels-body { height: 100vh; overflow: hidden; }
+    .label-layout { display: flex; height: 100%; min-height: 0; overflow: hidden; }
+    .label-left { width: 340px; min-width: 260px; border-right: 1px solid var(--color-border); background: var(--color-bg-card); display: flex; flex-direction: column; }
+    .label-right { flex: 1; overflow-y: auto; padding: 24px; background: var(--color-bg); }
+
+    /* === Left Panel === */
+    .left-header { padding: 16px; border-bottom: 1px solid var(--color-border); }
+    .left-header .search-wrap { position: relative; margin-bottom: 8px; }
+    .left-header .search-wrap i { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--color-gray-400); font-size: 12px; }
+    .left-header .search-input { width: 100%; padding: 7px 10px 7px 30px; border: 1px solid var(--color-gray-300); border-radius: var(--radius-md); font-size: 13px; transition: border-color 0.15s, box-shadow 0.15s; }
+    .left-header .search-input:focus { border-color: var(--color-focus); box-shadow: 0 0 0 2px var(--color-focus-ring); }
+    .left-actions { display: flex; gap: 6px; }
+    .left-actions .btn-create { flex: 1; justify-content: center; padding: 7px 12px; font-size: 13px; border-radius: 6px; border: none; cursor: pointer; transition: background 0.15s; }
+    .left-stats { padding: 8px 16px; font-size: 11px; color: var(--color-gray-400); border-bottom: 1px solid var(--color-border-light); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .left-stats .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 3px; vertical-align: middle; }
+    .btn-clear-unused { border: 1px solid var(--color-border); background: var(--color-bg-card); color: var(--color-gray-500); border-radius: 4px; padding: 1px 6px; cursor: pointer; line-height: 1.5; transition: color 0.15s, border-color 0.15s, background-color 0.15s; }
+    .btn-clear-unused:hover:not(:disabled) { color: var(--color-danger); border-color: #fecaca; background: var(--color-danger-light); }
+    .btn-clear-unused:disabled { opacity: 0.45; cursor: not-allowed; }
+    .strategy-entry { flex: 1; justify-content: center; padding: 7px 10px; font-size: 13px; border-radius: 6px; border: 1px solid var(--color-border); background: var(--color-bg-card); color: var(--color-gray-600); display: inline-flex; align-items: center; gap: 6px; cursor: pointer; text-align: center; transition: color 0.15s, border-color 0.15s, background-color 0.15s; white-space: nowrap; overflow: hidden; }
+    .strategy-entry:hover, .strategy-entry.active { border-color: var(--color-primary); color: var(--color-primary); }
+    .strategy-entry.active { background: var(--color-primary-light); }
+    .strategy-entry-icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .strategy-entry-main { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+    .strategy-entry-title { display: inline; font-weight: 400; line-height: 1.2; }
+    .strategy-entry-sub { display: none; }
+
+    /* === Tag List === */
+    .sort-header { display: flex; align-items: center; padding: 5px 16px; border-bottom: 1px solid var(--color-border); background: var(--color-gray-50, #f8fafc); font-size: 11px; color: var(--color-gray-400); user-select: none; gap: 0; }
+    .sort-header-col { cursor: pointer; display: flex; align-items: center; gap: 2px; padding: 3px 4px; border-radius: 4px; transition: color 0.15s, background-color 0.15s; white-space: nowrap; }
+    .sort-header-col:hover { color: var(--color-gray-600); background: var(--color-gray-100); }
+    .sort-header-col.active { color: var(--color-primary); font-weight: 600; }
+    .sort-header-col .sort-arrow { font-size: 10px; margin-left: 1px; }
+    .sort-header-spacer { flex: 1; }
+    .tag-list { flex: 1; overflow-y: auto; padding: 4px 0; }
+    .tag-row { display: flex; align-items: center; gap: 8px; padding: 9px 16px; cursor: pointer; border-left: 3px solid transparent; transition: background-color 0.15s, border-color 0.15s; }
+    .tag-row:hover { background: var(--color-bg-hover); }
+    .tag-row.active { background: var(--color-primary-light); border-left-color: var(--color-primary); }
+    .tag-row .tag-name { flex: 1; font-size: 13px; font-weight: 500; color: var(--color-gray-800); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tag-row .tag-icons { display: flex; gap: 3px; font-size: 10px; }
+    .tag-row .tag-icons i { width: 14px; text-align: center; }
+    .tag-row .tag-icons .ic-book { color: var(--color-primary); }
+    .tag-row .tag-icons .ic-blog { color: var(--color-indigo); }
+    .tag-row .tag-icons .ic-bm { color: var(--color-success); }
+    .tag-row .tag-count { font-size: 11px; color: var(--color-gray-400); background: var(--color-gray-100); padding: 1px 6px; border-radius: 8px; min-width: 22px; text-align: center; }
+    .tag-row .tag-row-ops { display: flex; gap: 1px; opacity: 0; transition: opacity 0.15s; }
+    .tag-row:hover .tag-row-ops { opacity: 1; }
+    .tag-row .tag-row-ops button { background: none; border: none; cursor: pointer; color: var(--color-gray-400); padding: 3px 5px; border-radius: 4px; font-size: 11px; line-height: 1; }
+    .tag-row .tag-row-ops button:hover { color: var(--color-primary); }
+    .tag-row .tag-row-ops button.del:hover { color: var(--color-danger); }
+    .tag-list-empty { text-align: center; padding: 40px 20px; color: var(--color-gray-400); }
+    .tag-list-empty i { font-size: 32px; margin-bottom: 8px; display: block; color: var(--color-gray-300); }
+    .tag-list-empty p { font-size: 13px; }
+
+    /* === Left Footer === */
+    #label-pagination { border-top: 1px solid var(--color-border-light); flex-shrink: 0; }
+    .left-footer { padding: 10px 16px; border-top: 1px solid var(--color-border); display: flex; gap: 8px; }
+    .btn-merge { flex: 1; justify-content: center; padding: 7px 10px; font-size: 13px; border-radius: 6px; border: 1px solid var(--color-border); background: var(--color-bg-card); color: var(--color-gray-600); cursor: pointer; transition: background 0.15s, border-color 0.15s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .btn-merge:hover { border-color: var(--color-primary); color: var(--color-primary); }
+    .merge-bar { display: none; padding: 8px 16px; border-top: 1px solid var(--color-primary-border); background: var(--color-primary-light); align-items: center; justify-content: space-between; }
+    .merge-bar.show { display: flex; }
+    .merge-bar .merge-info { font-size: 12px; color: var(--color-primary); font-weight: 500; }
+    .merge-bar .merge-actions { display: flex; gap: 6px; }
+
+    /* === Right Panel === */
+    .detail-empty { text-align: center; padding: 80px 20px; color: var(--color-gray-400); }
+    .detail-empty i { font-size: 48px; margin-bottom: 16px; display: block; color: var(--color-gray-300); }
+    .detail-empty p { font-size: 14px; }
+
+    .detail-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+    .detail-name { font-size: 20px; font-weight: 700; color: var(--color-gray-800); }
+    .detail-edit-btn { background: none; border: none; cursor: pointer; color: var(--color-gray-400); font-size: 13px; padding: 4px 8px; border-radius: 4px; transition: color 0.15s; }
+    .detail-edit-btn:hover { color: var(--color-primary); }
+
+    .detail-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+    .stat-card { background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 16px; text-align: center; transition: box-shadow 0.15s; }
+    .stat-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    .stat-card .stat-num { font-size: 28px; font-weight: 700; }
+    .stat-card .stat-label { font-size: 12px; color: var(--color-gray-500); margin-top: 2px; }
+    .stat-card .stat-label i { margin-right: 3px; }
+    .stat-card.book .stat-num { color: var(--color-primary); }
+    .stat-card.blog .stat-num { color: var(--color-indigo); }
+    .stat-card.bookmark .stat-num { color: var(--color-success); }
+
+    .section-title { font-size: 14px; font-weight: 600; color: var(--color-gray-700); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .section-title .count { color: var(--color-gray-400); font-weight: 400; font-size: 12px; }
+
+    .tabs { display: flex; gap: 0; margin-bottom: 12px; border-bottom: 1px solid var(--color-border); }
+    .tab { padding: 8px 16px; font-size: 13px; color: var(--color-gray-500); cursor: pointer; border-bottom: 2px solid transparent; transition: color 0.15s, border-color 0.15s; margin-bottom: -1px; }
+    .tab:hover { color: var(--color-gray-700); }
+    .tab.active { color: var(--color-primary); border-bottom-color: var(--color-primary); font-weight: 500; }
+
+    .content-list { background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; }
+    .content-item { padding: 10px 16px; border-bottom: 1px solid var(--color-gray-100); display: flex; align-items: center; gap: 10px; font-size: 13px; transition: background-color 0.15s; }
+    .content-item:last-child { border-bottom: none; }
+    .content-item:hover { background: var(--color-bg-hover); }
+    .content-item i { color: var(--color-gray-400); font-size: 12px; width: 16px; text-align: center; flex-shrink: 0; }
+    .content-item .item-title { flex: 1; color: var(--color-gray-800); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .content-item .item-title a { color: var(--color-gray-800); text-decoration: none; }
+    .content-item .item-title a:hover { color: var(--color-primary); }
+    .content-item .item-type { font-size: 11px; color: var(--color-gray-400); background: var(--color-gray-100); padding: 1px 8px; border-radius: 6px; flex-shrink: 0; }
+    .content-empty { text-align: center; padding: 32px 16px; color: var(--color-gray-400); font-size: 13px; }
+
+    /* === Recommendation Strategy === */
+    .strategy-page { max-width: 1040px; }
+    .strategy-page-top { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 16px; }
+    .strategy-page-title { font-size: 20px; font-weight: 700; color: var(--color-gray-800); line-height: 1.25; }
+    .strategy-page-sub { color: var(--color-gray-500); font-size: 12px; margin-top: 4px; line-height: 1.5; max-width: 720px; }
+    .strategy-page-actions { margin-left: auto; display: flex; justify-content: flex-end; }
+    .strategy-action-group { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+    .strategy-action-btn { min-height: 32px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; border-radius: var(--radius-md); border: 1px solid var(--color-border); padding: 6px 12px; background: var(--color-bg-card); color: var(--color-gray-600); font-size: 12px; font-weight: 500; line-height: 1.2; cursor: pointer; transition: color 0.15s, border-color 0.15s, background-color 0.15s; white-space: nowrap; }
+    .strategy-action-btn:hover { border-color: var(--color-primary); color: var(--color-primary); background: var(--color-primary-light); }
+    .strategy-action-btn.primary { border-color: var(--color-primary); background: var(--color-primary); color: #fff; }
+    .strategy-action-btn.primary:hover { border-color: var(--color-primary-hover); background: var(--color-primary-hover); color: #fff; }
+    .strategy-grid { display: grid; grid-template-columns: minmax(260px, 0.85fr) minmax(420px, 1.5fr); gap: 12px; align-items: start; }
+    .strategy-panel { background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; }
+    .strategy-panel-head { min-height: 46px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--color-border-light); }
+    .strategy-panel-title { font-size: 13px; font-weight: 600; color: var(--color-gray-700); }
+    .strategy-panel-note { color: var(--color-gray-400); font-size: 12px; margin-top: 2px; }
+    .strategy-list { padding: 8px; display: grid; gap: 6px; }
+    .strategy-card { border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 10px; background: var(--color-bg-card); display: grid; grid-template-columns: auto 1fr; gap: 9px; align-items: start; cursor: pointer; transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease; text-align: left; }
+    .strategy-card:hover { border-color: var(--color-primary-border); }
+    .strategy-card.selected { border-color: var(--color-primary); background: var(--color-primary-light); box-shadow: 0 0 0 1px var(--color-primary-border); }
+    .strategy-radio { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--color-gray-300); margin-top: 2px; position: relative; background: var(--color-bg-card); }
+    .strategy-card.selected .strategy-radio { border-color: var(--color-primary); }
+    .strategy-card.selected .strategy-radio::after { content: ''; position: absolute; inset: 3px; border-radius: 50%; background: var(--color-primary); }
+    .strategy-card-name { font-size: 13px; font-weight: 600; color: var(--color-gray-700); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .strategy-card-desc { color: var(--color-gray-500); font-size: 12px; margin-top: 3px; line-height: 1.45; }
+    .strategy-card-meta { margin-top: 7px; display: flex; gap: 6px; flex-wrap: wrap; }
+    .strategy-badge { font-size: 11px; padding: 2px 6px; border-radius: 999px; background: var(--color-gray-100); color: var(--color-gray-500); border: 1px solid var(--color-border-light); }
+    .strategy-badge.active { background: var(--color-success-light); color: var(--color-success); border-color: var(--color-success); }
+    .strategy-body { padding: 12px; display: grid; gap: 12px; }
+    .strategy-section { border: 1px solid var(--color-border-light); border-radius: var(--radius-md); padding: 12px; background: var(--color-bg-card); }
+    .strategy-section-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+    .strategy-section-title { font-size: 13px; font-weight: 600; color: var(--color-gray-700); }
+    .strategy-field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .strategy-field { display: grid; gap: 5px; }
+    .strategy-field label { color: var(--color-gray-500); font-size: 12px; font-weight: 600; }
+    .strategy-field input, .strategy-field select, .strategy-field textarea { width: 100%; border: 1px solid var(--color-gray-300); border-radius: var(--radius-md); padding: 7px 9px; background: var(--color-bg-card); color: var(--color-gray-800); outline: none; font-size: 13px; line-height: 1.5; }
+    .strategy-field input::placeholder, .strategy-field textarea::placeholder { color: var(--color-gray-400); font-size: 13px; opacity: 1; }
+    .strategy-field textarea { min-height: 82px; resize: vertical; line-height: 1.5; }
+    .strategy-readonly { min-height: 35px; display: flex; align-items: center; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 7px 9px; background: var(--color-gray-50); color: var(--color-gray-600); font-size: 13px; line-height: 1.5; }
+    .strategy-preview { border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; background: var(--color-bg-card); font-size: 13px; }
+    .strategy-preview-head { min-height: 34px; display: flex; align-items: center; gap: 8px; padding: 0 12px; border-bottom: 1px solid var(--color-border-light); color: var(--color-gray-500); background: var(--color-gray-50); font-size: 12px; }
+    .strategy-preview-body { padding: 12px; }
+    .strategy-fake-input { min-height: 34px; display: flex; align-items: center; gap: 8px; border: 1px solid var(--color-gray-300); border-radius: var(--radius-md); padding: 6px 9px; color: var(--color-gray-400); font-size: 13px; }
+    .strategy-preview-list { margin-top: 5px; border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; background: var(--color-bg-card); }
+    .strategy-preview-item { min-height: 34px; display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-bottom: 1px solid var(--color-border-light); font-size: 13px; }
+    .strategy-preview-item:last-child { border-bottom: none; }
+    .strategy-preview-name { flex: 1; font-size: 13px; font-weight: 500; color: var(--color-gray-800); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .strategy-preview-reason { color: var(--color-gray-400); font-size: 11px; }
+    .strategy-preview-count { color: var(--color-gray-500); background: var(--color-gray-100); border-radius: 999px; padding: 1px 6px; font-size: 11px; }
+    .mobile-strategy-popover { display: none; }
+
+    .danger-zone { margin-top: 32px; padding: 16px; background: var(--color-danger-light); border: 1px solid #fecaca; border-radius: var(--radius-lg); }
+    [data-theme="dark"] .danger-zone { border-color: #7f1d1d; }
+    .danger-zone h4 { font-size: 13px; font-weight: 600; color: var(--color-danger); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+    .danger-zone p { font-size: 12px; color: var(--color-gray-500); margin-bottom: 12px; line-height: 1.5; }
+
+    /* === Merge Mode === */
+    .tag-row.merge-selectable .tag-check { display: flex; }
+    .tag-row .tag-check { display: none; width: 18px; height: 18px; border: 2px solid var(--color-gray-300); border-radius: 4px; align-items: center; justify-content: center; font-size: 10px; color: #fff; flex-shrink: 0; transition: background-color 0.15s ease, border-color 0.15s ease; cursor: pointer; }
+    .tag-row.merge-selected .tag-check { background: var(--color-primary); border-color: var(--color-primary); }
+    .tag-row.merge-selected { background: var(--color-primary-light); }
+    .merge-mode .tag-row-ops { display: none !important; }
+
+    /* === Drag Merge === */
+    .tag-row.drag-over { outline: 2px solid var(--color-primary); outline-offset: -2px; background: var(--color-primary-light); border-radius: 4px; }
+    .tag-row.dragging { opacity: 0.4; }
+
+    /* === Mobile Accordion === */
+    @media (max-width: 768px) {
+        .labels-body { height: auto; min-height: 100vh; overflow: auto; }
+        .labels-body main { overflow: visible; }
+        .label-layout { flex-direction: column; height: auto; min-height: calc(100vh - 40px); }
+        .label-left { width: 100%; min-width: auto; border-right: none; flex: 1; }
+        .label-right { display: none; }
+
+        /* Accordion expand panel (mobile only) */
+        .tag-expand { display: none; }
+        .tag-row .tag-chevron { display: none !important; color: var(--color-gray-300); font-size: 10px; transition: transform 0.2s ease; }
+        @media (max-width: 768px) {
+            .tag-expand { display: none; background: var(--color-gray-50, #f8fafc); border-bottom: 1px solid var(--color-border); }
+            .tag-expand.show { display: block; }
+            .tag-row.expanded { background: var(--color-primary-light); border-left-color: var(--color-primary); }
+            .tag-row .tag-chevron { display: inline-block !important; }
+            .tag-row.expanded .tag-chevron { transform: rotate(90deg); color: var(--color-primary); }
+        }
+
+        .expand-stats { display: flex; gap: 8px; padding: 12px 16px 8px; }
+        .expand-stat { flex: 1; text-align: center; padding: 8px 4px; background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+        .expand-stat .num { font-size: 18px; font-weight: 700; }
+        .expand-stat .label { font-size: 10px; color: var(--color-gray-500); margin-top: 1px; }
+        .expand-stat.book .num { color: var(--color-primary); }
+        .expand-stat.blog .num { color: var(--color-indigo); }
+        .expand-stat.bookmark .num { color: var(--color-success); }
+
+        .expand-tabs { display: flex; gap: 0; padding: 0 16px; border-bottom: 1px solid var(--color-border); }
+        .expand-tab { padding: 6px 12px; font-size: 12px; color: var(--color-gray-500); cursor: pointer; border-bottom: 2px solid transparent; transition: color 0.15s, border-color 0.15s; }
+        .expand-tab:hover { color: var(--color-gray-700); }
+        .expand-tab.active { color: var(--color-primary); border-bottom-color: var(--color-primary); font-weight: 500; }
+
+        .expand-content { padding: 8px 16px 12px; }
+        .expand-item { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--color-gray-100); font-size: 13px; }
+        .expand-item:last-child { border-bottom: none; }
+        .expand-item i { color: var(--color-gray-400); font-size: 11px; width: 14px; text-align: center; flex-shrink: 0; }
+        .expand-item .item-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-gray-800); }
+        .expand-item .item-title a { color: var(--color-gray-800); text-decoration: none; }
+        .expand-item .item-title a:hover { color: var(--color-primary); }
+        .expand-item .item-type { font-size: 10px; color: var(--color-gray-400); background: var(--color-gray-100); padding: 1px 6px; border-radius: 4px; flex-shrink: 0; }
+
+        .expand-danger { padding: 8px 16px 12px; }
+        .expand-danger button { background: none; border: none; color: var(--color-danger); font-size: 12px; cursor: pointer; padding: 4px 0; transition: color 0.15s; }
+        .expand-danger button:hover { color: #b91c1c; }
+        .expand-danger button i { margin-right: 4px; }
+
+        .detail-stats { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .strategy-page-top { display: block; }
+        .strategy-page-actions { margin-top: 12px; justify-content: flex-start; }
+        .strategy-grid { grid-template-columns: 1fr; }
+        .mobile-strategy-popover { display: block; position: fixed; inset: 0; z-index: 1200; pointer-events: none; }
+        .mobile-strategy-popover.active { pointer-events: auto; }
+        .mobile-strategy-backdrop { position: absolute; inset: 0; border: 0; background: rgba(15, 23, 42, 0.32); opacity: 0; transition: opacity 0.18s ease; }
+        .mobile-strategy-popover.active .mobile-strategy-backdrop { opacity: 1; }
+        .mobile-strategy-sheet { position: absolute; top: 0; left: 0; right: 0; max-height: calc(var(--bs-vvh, 100dvh) - 8px); overflow: hidden; background: var(--color-bg); border-radius: 0 0 12px 12px; box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18); transform: translateY(-105%); transition: transform 0.22s ease; display: flex; flex-direction: column; scrollbar-width: none; -ms-overflow-style: none; }
+        .mobile-strategy-popover.active .mobile-strategy-sheet { transform: translateY(0); }
+        .mobile-strategy-head { min-height: 44px; padding: 8px 12px; border-bottom: 1px solid var(--color-border); background: var(--color-bg-card); display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-shrink: 0; }
+        .mobile-strategy-title { font-size: 14px; font-weight: 700; color: var(--color-gray-800); display: flex; align-items: center; gap: 8px; min-width: 0; }
+        .mobile-strategy-close { width: 32px; height: 32px; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-bg-card); color: var(--color-gray-500); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .mobile-strategy-content { overflow-y: auto; padding: 12px; scrollbar-width: none; -ms-overflow-style: none; }
+        .mobile-strategy-sheet::-webkit-scrollbar,
+        .mobile-strategy-content::-webkit-scrollbar,
+        .mobile-strategy-content *::-webkit-scrollbar { display: none; }
+        .mobile-strategy-content .strategy-page { max-width: none; }
+        .mobile-strategy-content .strategy-page-top { margin-bottom: 12px; }
+        .mobile-strategy-content .strategy-page-title { display: none; }
+        .mobile-strategy-content .strategy-page-sub { font-size: 12px; }
+        .mobile-strategy-content .strategy-action-group { width: 100%; justify-content: flex-start; }
+        .mobile-strategy-content .strategy-action-btn { flex: 1 1 auto; }
+        .mobile-strategy-content .strategy-panel-head,
+        .mobile-strategy-content .strategy-body,
+        .mobile-strategy-content .strategy-section { padding: 10px; }
+        .mobile-strategy-content .strategy-card { padding: 9px; }
+        .stat-card { padding: 12px 8px; }
+        .stat-card .stat-num { font-size: 22px; }
+    }
+    @media (max-width: 640px) {
+        .detail-stats { grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+        .strategy-field-grid { grid-template-columns: 1fr; }
+        .mobile-strategy-sheet { max-height: calc(var(--bs-vvh, 100dvh) - 8px); border-radius: 0 0 10px 10px; }
+        .mobile-strategy-content { padding: 10px; }
+        .mobile-strategy-content .strategy-action-group { flex-direction: column; align-items: stretch; }
+        .mobile-strategy-content .strategy-action-btn { width: 100%; }
+        .stat-card .stat-num { font-size: 20px; }
+        .stat-card .stat-label { font-size: 11px; }
+    }
+    @media (max-width: 768px) {
+        .tag-row .tag-row-ops { opacity: 1; }
+    }
+
+    /* === Skeleton for detail panel === */
+    .detail-skeleton { position: relative; overflow: hidden; }
+    .detail-skeleton::after { content: ''; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.58) 48%, transparent 100%); animation: skeleton-shimmer 1.4s ease-in-out infinite; pointer-events: none; }
+    [data-theme="dark"] .detail-skeleton::after { background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 48%, transparent 100%); }
+    .detail-skeleton .skel-block { background: var(--color-gray-100); border-radius: 6px; }
+    .detail-skeleton .skel-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+    .detail-skeleton .skel-title { width: min(260px, 42%); height: 24px; border-radius: 6px; }
+    .detail-skeleton .skel-icon { width: 26px; height: 24px; border-radius: 5px; }
+    .detail-skeleton .skel-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+    .detail-skeleton .skel-stat { height: 92px; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-bg-card); padding: 17px 16px 14px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .detail-skeleton .skel-stat-num { width: 48px; height: 30px; border-radius: 6px; }
+    .detail-skeleton .skel-stat-label { width: 72px; height: 12px; border-radius: 4px; }
+    .detail-skeleton .skel-section { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .detail-skeleton .skel-section-icon { width: 16px; height: 16px; border-radius: 4px; }
+    .detail-skeleton .skel-section-title { width: 116px; height: 16px; border-radius: 5px; }
+    .detail-skeleton .skel-tabs { display: flex; gap: 22px; height: 35px; border-bottom: 1px solid var(--color-border); margin-bottom: 12px; align-items: center; }
+    .detail-skeleton .skel-tab { width: 44px; height: 13px; border-radius: 4px; }
+    .detail-skeleton .skel-list { background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; }
+    .detail-skeleton .skel-item { height: 41px; display: flex; align-items: center; gap: 10px; padding: 0 16px; border-bottom: 1px solid var(--color-gray-100); }
+    .detail-skeleton .skel-item:last-child { border-bottom: none; }
+    .detail-skeleton .skel-item-icon { width: 16px; height: 16px; border-radius: 4px; flex-shrink: 0; }
+    .detail-skeleton .skel-item-title { width: 54%; height: 13px; border-radius: 4px; }
+    .detail-skeleton .skel-item-type { width: 48px; height: 18px; border-radius: 6px; margin-left: auto; }
+    @media (prefers-reduced-motion: reduce) {
+        .detail-skeleton::after { display: none; }
+        .tag-row, .stat-card, .content-item { transition: none; }
+    }
+    </style>
+{{template "head-assets" .}}
+</head>
+<body class="labels-body bg-slate-50 min-h-screen flex flex-col">
+    {{template "header" .}}
+    <main class="flex-1 min-h-0 overflow-hidden" role="main">
+    <div class="label-layout">
+        <!-- Left Panel -->
+        <div class="label-left">
+            <div class="left-header">
+                <div class="search-wrap">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input id="label-search" type="text" class="search-input" placeholder="{{call .T "label.search.placeholder"}}" aria-label="{{call .T "label.search.aria"}}" value="">
+                </div>
+                <div class="left-actions">
+                    <button class="btn-create" style="background:var(--color-primary);color:#fff" onclick="showCreateModal()" aria-label="{{call .T "label.create"}}"><i class="fa-solid fa-plus nav-icon" style="font-size:12px"></i>{{call .T "label.create"}}</button>
+                </div>
+            </div>
+            <div class="left-stats" id="left-stats">
+                <span><span class="dot" style="background:var(--color-primary)"></span>{{call .T "label.stats.total"}} <strong id="stat-total">0</strong> {{call .T "label.stats.unit"}}</span>
+                <span><span class="dot" style="background:var(--color-success)"></span><strong id="stat-used">0</strong> {{call .T "label.stats.used"}}</span>
+                <span><span class="dot" style="background:var(--color-gray-400)"></span><strong id="stat-unused">0</strong> {{call .T "label.stats.unused"}}</span>
+                {{if .IsAdmin}}<button id="clear-unused-labels" class="btn-clear-unused" type="button" onclick="clearUnusedLabels()" disabled>{{call .T "label.unused.clear"}}</button>{{end}}
+            </div>
+            <div class="sort-header" id="sort-header">
+                <div class="sort-header-col active" data-sort="name" onclick="toggleSort('name')">{{call .T "label.sort.name"}} <span class="sort-arrow"><i class="fa-solid fa-arrow-down-short-wide"></i></span></div>
+                <div class="sort-header-spacer"></div>
+                <div class="sort-header-col" data-sort="book" onclick="toggleSort('book')" title="{{call .T "label.sort.book"}}"><i class="fa-solid fa-book"></i></div>
+                <div class="sort-header-col" data-sort="blog" onclick="toggleSort('blog')" title="{{call .T "label.sort.blog"}}"><i class="fa-solid fa-pen-nib"></i></div>
+                <div class="sort-header-col" data-sort="bookmark" onclick="toggleSort('bookmark')" title="{{call .T "label.sort.bookmark"}}"><i class="fa-solid fa-bookmark"></i></div>
+                <div class="sort-header-col" data-sort="total" onclick="toggleSort('total')" title="{{call .T "label.sort.total"}}">#</div>
+            </div>
+            <div class="tag-list" id="tag-list"></div>
+	            <div id="label-pagination" class="flex justify-center items-center gap-2 py-2 text-sm"></div>
+            <!-- Normal footer -->
+            <div class="left-footer" id="normal-footer">
+                <button class="btn-merge" onclick="enterMergeMode()" aria-label="{{call .T "label.merge"}}"><i class="fa-solid fa-code-merge nav-icon" style="font-size:12px"></i>{{call .T "label.merge"}}</button>
+                <button id="strategy-entry" class="strategy-entry" type="button" onclick="openStrategyManager()" aria-label="{{call .T "label.strategy.title"}}" title="{{call .T "label.strategy.title"}}">
+                    <span class="strategy-entry-icon"><i class="fa-solid fa-wand-magic-sparkles nav-icon" style="font-size:12px"></i></span>
+                    <span class="strategy-entry-main">
+                        <span class="strategy-entry-title">{{call .T "label.strategy.title"}}</span>
+                        <span class="strategy-entry-sub" id="strategy-entry-sub">{{call .T "label.strategy.entry.loading"}}</span>
+                    </span>
+                </button>
+            </div>
+            <!-- Merge bar -->
+            <div class="merge-bar" id="merge-bar">
+                <span class="merge-info">{{call .T "label.merge.bar.selected_prefix"}} <strong id="merge-count">0</strong> {{call .T "label.merge.bar.selected_unit"}}</span>
+                <div class="merge-actions">
+                    <button class="btn btn-outline" onclick="exitMergeMode()" style="font-size:12px;padding:4px 10px">{{call .T "label.merge.bar.cancel"}}</button>
+                    <button class="btn btn-primary" onclick="doMerge()" style="font-size:12px;padding:4px 10px"><i class="fa-solid fa-code-merge nav-icon"></i>{{call .T "label.merge.bar.confirm"}}</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel -->
+        <div class="label-right" id="label-detail">
+            <div class="detail-empty">
+                <i class="fa-solid fa-tags"></i>
+                <p>{{call .T "label.detail.empty"}}</p>
+            </div>
+        </div>
+    </div>
+    <div id="mobile-strategy-popover" class="mobile-strategy-popover" aria-hidden="true">
+        <button class="mobile-strategy-backdrop" type="button" onclick="closeStrategyManager()" aria-label="{{call .T "common.close"}}"></button>
+        <div class="mobile-strategy-sheet" role="dialog" aria-modal="true" aria-labelledby="mobile-strategy-title">
+            <div class="mobile-strategy-head">
+                <div id="mobile-strategy-title" class="mobile-strategy-title"><i class="fa-solid fa-wand-magic-sparkles"></i>{{call .T "label.strategy.title"}}</div>
+                <button class="mobile-strategy-close" type="button" onclick="closeStrategyManager()" aria-label="{{call .T "common.close"}}"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="mobile-strategy-content" class="mobile-strategy-content"></div>
+        </div>
+    </div>
+    </main>
+    {{template "footer" .}}
+
+    <script>
+    var IS_ADMIN = {{if .IsAdmin}}true{{else}}false{{end}};
+    var labels = [];
+    var activeId = null;
+    var activeTab = 'all';
+    var mergeMode = false;
+    var mergeSelected = new Set();
+    var searchTimer = null;
+    var labelPage = 1;
+    var labelTotalPages = 1;
+    var labelSortBy = 'name';
+    var labelSortOrder = 'asc';
+    var activeView = 'detail';
+    var tagRecommendSettings = null;
+    var selectedStrategy = 'recent';
+    var previewTimer = null;
+    var strategyDefs = [
+        { key: 'recent', icon: 'fa-clock-rotate-left', titleKey: 'label.strategy.recent', descKey: 'label.strategy.recent.desc', metaKey: 'label.strategy.meta.builtin' },
+        { key: 'total', icon: 'fa-ranking-star', titleKey: 'label.strategy.total', descKey: 'label.strategy.total.desc', metaKey: 'label.strategy.meta.builtin' },
+        { key: 'book', icon: 'fa-book', titleKey: 'label.strategy.book', descKey: 'label.strategy.book.desc', metaKey: 'label.strategy.meta.builtin' },
+        { key: 'bookmark', icon: 'fa-bookmark', titleKey: 'label.strategy.bookmark', descKey: 'label.strategy.bookmark.desc', metaKey: 'label.strategy.meta.builtin' },
+        { key: 'manual', icon: 'fa-thumbtack', titleKey: 'label.strategy.manual', descKey: 'label.strategy.manual.desc', metaKey: 'label.strategy.meta.manual' }
+    ];
+
+    // === Init ===
+    (async function() {
+        var params = new URLSearchParams(window.location.search);
+        var urlLabelId = params.get('id');
+        var urlTab = window.BookStarkTabURL ? window.BookStarkTabURL.get('tab', ['all', 'book', 'blog', 'bookmark'], '') : '';
+        if (urlTab) activeTab = urlTab;
+        var urlLabelIdNum = urlLabelId ? parseInt(urlLabelId, 10) : null;
+
+        // If URL has id, fetch that label first and add to list
+        if (urlLabelIdNum) {
+            try {
+                var r = await fetch('/api/labels/' + urlLabelIdNum + '/detail');
+                if (r.ok) {
+                    var d = await r.json();
+                    if (d.data && d.data.label_id) {
+                        // Create a minimal label object from detail
+                        var labelFromUrl = {
+                            label_id: d.data.label_id,
+                            label_name: d.data.label_name,
+                            book_count: d.data.book_count || 0,
+                            blog_count: d.data.blog_count || 0,
+                            bookmark_count: d.data.bookmark_count || 0
+                        };
+                        // Will be added to labels array after loadLabels
+                        window.__preselectedLabel = labelFromUrl;
+                    }
+                }
+            } catch(e) {
+                console.error('Failed to fetch label detail from URL', e);
+            }
+        }
+
+        await loadLabels();
+        await loadTagRecommendSettings();
+
+        // If we have a preselected label from URL, ensure it's in the list
+        if (window.__preselectedLabel) {
+            var exists = labels.find(function(l) { return l.label_id === window.__preselectedLabel.label_id; });
+            if (!exists) {
+                // Add to the beginning of the list so it's visible
+                labels.unshift(window.__preselectedLabel);
+                renderList();
+            }
+            activeId = window.__preselectedLabel.label_id;
+            renderList();
+            await renderDetail();
+            // Scroll the active row into view
+            setTimeout(function() {
+                var row = document.querySelector('.tag-row.active');
+                if (row) row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 50);
+            // Clean URL
+            if (window.history.replaceState) {
+                var url = new URL(window.location);
+                url.searchParams.delete('id');
+                window.history.replaceState(null, '', url.toString());
+            }
+            delete window.__preselectedLabel;
+        }
+    })();
+
+    document.getElementById('label-search').addEventListener('input', function() {
+        clearTimeout(searchTimer);
+        labelPage = 1;
+        searchTimer = setTimeout(loadLabels, 250);
+    });
+
+    // === Load Labels ===
+    async function loadLabels() {
+        var keyword = document.getElementById('label-search').value.trim();
+        var params = 'page=' + labelPage;
+        if (keyword) params += '&keyword=' + encodeURIComponent(keyword);
+        if (labelSortBy && labelSortBy !== 'name') params += '&sort_by=' + encodeURIComponent(labelSortBy);
+        if (labelSortOrder && labelSortOrder !== 'asc') params += '&sort_order=' + encodeURIComponent(labelSortOrder);
+        try {
+            var r = await fetch('/api/labels?' + params);
+            var d = await r.json();
+            labels = d.data || [];
+            var total = d.total || 0;
+            var pageSize = d.page_size || 20;
+            labelTotalPages = Math.ceil(total / pageSize) || 1;
+            updateStats(d.total || 0, d.used_count || 0, d.unused_count || 0);
+            renderList();
+            renderPagination('label-pagination', labelPage, labelTotalPages, function(p) {
+                labelPage = p;
+                loadLabels();
+            }, { compact: true, maxVisible: 5 });
+            if (activeId && !labels.find(function(l) { return l.label_id === activeId; })) {
+                activeId = null;
+                if (activeView === 'detail') renderDetail();
+            }
+        } catch(e) {
+            console.error('Failed to load labels', e);
+        }
+    }
+
+    function updateStats(total, used, unused) {
+        document.getElementById('stat-total').textContent = total;
+        document.getElementById('stat-used').textContent = used;
+        document.getElementById('stat-unused').textContent = unused;
+        var clearBtn = document.getElementById('clear-unused-labels');
+        if (clearBtn) clearBtn.disabled = unused <= 0;
+    }
+
+    async function loadTagRecommendSettings() {
+        try {
+            var r = await fetch('/api/labels/recommendation-settings');
+            var d = await r.json();
+            tagRecommendSettings = d.data || { strategy: 'recent', manual_labels: [], page_size: 10 };
+            selectedStrategy = tagRecommendSettings.strategy || 'recent';
+            updateStrategyEntry();
+        } catch(e) {
+            tagRecommendSettings = { strategy: 'recent', manual_labels: [], page_size: 10 };
+            selectedStrategy = 'recent';
+            updateStrategyEntry();
+        }
+    }
+
+    function strategyTitle(key) {
+        var def = strategyDefs.find(function(s) { return s.key === key; });
+        return def ? window.__(def.titleKey) : key;
+    }
+
+    function updateStrategyEntry() {
+        var sub = document.getElementById('strategy-entry-sub');
+        if (!sub) return;
+        var name = strategyTitle((tagRecommendSettings && tagRecommendSettings.strategy) || 'recent');
+        sub.textContent = window.__('label.strategy.entry.current').replace('{name}', name);
+    }
+
+    function openStrategyManager() {
+        activeView = 'strategy';
+        activeId = null;
+        activeTab = 'all';
+        renderList();
+        renderStrategyManager();
+    }
+
+    function isMobileLabelsView() {
+        return window.innerWidth <= 768;
+    }
+
+    function showMobileStrategyPopover() {
+        var popover = document.getElementById('mobile-strategy-popover');
+        if (!popover) return;
+        popover.classList.add('active');
+        popover.setAttribute('aria-hidden', 'false');
+        if (window.BookStarkScrollLock) BookStarkScrollLock.lock('labels-strategy-popover');
+    }
+
+    function closeStrategyManager() {
+        var popover = document.getElementById('mobile-strategy-popover');
+        if (popover) {
+            popover.classList.remove('active');
+            popover.setAttribute('aria-hidden', 'true');
+        }
+        if (window.BookStarkScrollLock) BookStarkScrollLock.unlock('labels-strategy-popover');
+        if (activeView === 'strategy') {
+            activeView = 'detail';
+            renderList();
+        }
+    }
+
+    function strategyRenderTarget() {
+        return isMobileLabelsView() ? document.getElementById('mobile-strategy-content') : document.getElementById('label-detail');
+    }
+
+    // === Render List ===
+    function renderList() {
+        var el = document.getElementById('tag-list');
+        var strategyEntry = document.getElementById('strategy-entry');
+        if (strategyEntry) strategyEntry.classList.toggle('active', activeView === 'strategy');
+        if (!labels.length) {
+            el.innerHTML = '<div class="tag-list-empty"><i class="fa-solid fa-tag"></i><p>' + window.__('label.list.empty') + '</p></div>';
+            return;
+        }
+        el.innerHTML = labels.map(function(l) {
+            var total = l.book_count + l.blog_count + l.bookmark_count;
+            var icons = '';
+            if (l.book_count > 0) icons += '<i class="fa-solid fa-book ic-book"></i>';
+            if (l.blog_count > 0) icons += '<i class="fa-solid fa-pen-nib ic-blog"></i>';
+            if (l.bookmark_count > 0) icons += '<i class="fa-solid fa-bookmark ic-bm"></i>';
+            var isActive = activeId === l.label_id;
+            var isMergeSel = mergeSelected.has(l.label_id);
+            var rowClass = 'tag-row' + (isActive ? ' active' : '') + (mergeMode ? ' merge-selectable' : '') + (isMergeSel ? ' merge-selected' : '');
+            var ops = '';
+            if (IS_ADMIN) {
+                ops = '<span class="tag-row-ops">' +
+                    '<button data-label="' + escAttr(l.label_name) + '" onclick="event.stopPropagation();startRename(' + l.label_id + ',this.dataset.label)" title="' + window.__('label.rename') + '" aria-label="' + window.__('label.rename') + ' ' + escAttr(l.label_name) + '"><i class="fa-solid fa-pen"></i></button>' +
+                    '<button class="del" data-label="' + escAttr(l.label_name) + '" onclick="event.stopPropagation();deleteLabel(' + l.label_id + ',this.dataset.label,' + l.book_count + ',' + l.blog_count + ',' + l.bookmark_count + ')" title="' + window.__('label.row.delete') + '" aria-label="' + window.__('label.row.delete') + ' ' + escAttr(l.label_name) + '"><i class="fa-solid fa-trash-can"></i></button>' +
+                    '</span>';
+            }
+            var check = '<span class="tag-check" onclick="event.stopPropagation();toggleMergeSelect(' + l.label_id + ')">' + (isMergeSel ? '<i class="fa-solid fa-check"></i>' : '') + '</span>';
+            var dragAttrs = mergeMode ? '' : ' draggable="true" ondragstart="onDragStart(event,' + l.label_id + ')" ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event,' + l.label_id + ')"';
+            return '<div class="' + rowClass + '" data-id="' + l.label_id + '" onclick="selectLabel(' + l.label_id + ')"' + dragAttrs + '>' +
+                check +
+                '<span class="tag-name">' + escHtml(l.label_name) + '</span>' +
+                (icons ? '<span class="tag-icons">' + icons + '</span>' : '') +
+                '<span class="tag-count">' + total + '</span>' +
+                ops +
+                (window.innerWidth <= 768 ? '<i class="fa-solid fa-chevron-right tag-chevron"></i>' : '') +
+                '</div>' +
+                '<div class="tag-expand" data-expand-id="' + l.label_id + '"></div>';
+        }).join('');
+    }
+
+    // === Sort ===
+    function toggleSort(field) {
+        if (labelSortBy === field) {
+            labelSortOrder = labelSortOrder === 'asc' ? 'desc' : 'asc';
+        } else {
+            labelSortBy = field;
+            // name defaults asc, count fields default desc
+            labelSortOrder = (field === 'name') ? 'asc' : 'desc';
+        }
+        updateSortHeader();
+        labelPage = 1;
+        loadLabels();
+    }
+
+    function updateSortHeader() {
+        var cols = document.querySelectorAll('#sort-header .sort-header-col');
+        cols.forEach(function(col) {
+            var field = col.getAttribute('data-sort');
+            var isActive = field === labelSortBy;
+            col.classList.toggle('active', isActive);
+            // Remove existing arrow
+            var existing = col.querySelector('.sort-arrow');
+            if (existing) existing.remove();
+            if (isActive) {
+                var arrowIcon = labelSortOrder === 'desc' ? 'fa-arrow-down-short-wide' : 'fa-arrow-up-short-wide';
+                var arrow = document.createElement('span');
+                arrow.className = 'sort-arrow';
+                arrow.innerHTML = '<i class="fa-solid ' + arrowIcon + '"></i>';
+                col.appendChild(arrow);
+            }
+        });
+    }
+
+    // === Select Label ===
+    async function selectLabel(id) {
+        if (mergeMode) {
+            toggleMergeSelect(id);
+            return;
+        }
+        var isMobile = window.innerWidth <= 768;
+        activeView = 'detail';
+        if (isMobile) {
+            // Accordion: toggle expand/collapse
+            if (activeId === id) {
+                // Collapse current
+                activeId = null;
+                activeTab = 'all';
+                renderList();
+                return;
+            }
+            // Close previous, open new
+            activeId = id;
+            activeTab = 'all';
+            renderList();
+            await renderDetail();
+            // Scroll expanded row into view
+            var expandEl = document.querySelector('.tag-expand[data-expand-id="' + id + '"]');
+            if (expandEl && expandEl.classList.contains('show')) {
+                var rowEl = expandEl.previousElementSibling;
+                if (rowEl) {
+                    setTimeout(function() { rowEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 50);
+                }
+            }
+        } else {
+            activeId = id;
+            activeTab = 'all';
+            renderList();
+            await renderDetail();
+        }
+    }
+
+    // === Render Detail ===
+    async function renderDetail(tabSwitch) {
+        activeView = 'detail';
+        var isMobile = window.innerWidth <= 768;
+        var el;
+
+        if (isMobile) {
+            // Mobile: render into accordion expand panel
+            // Only toggle panels when not a tab switch (tab switch just updates content)
+            if (!tabSwitch) {
+                document.querySelectorAll('.tag-expand.show').forEach(function(e) { e.classList.remove('show'); });
+                document.querySelectorAll('.tag-row.expanded').forEach(function(r) { r.classList.remove('expanded'); });
+            }
+
+            if (!activeId) return;
+            var expandEl = document.querySelector('.tag-expand[data-expand-id="' + activeId + '"]');
+            if (!expandEl) return;
+            var rowEl = expandEl.previousElementSibling;
+            if (rowEl && rowEl.classList.contains('tag-row')) rowEl.classList.add('expanded');
+            el = expandEl;
+        } else {
+            el = document.getElementById('label-detail');
+            if (!activeId) {
+                el.innerHTML = '<div class="detail-empty"><i class="fa-solid fa-tags"></i><p>' + window.__('label.detail.empty') + '</p></div>';
+                return;
+            }
+        }
+
+        var l = labels.find(function(x) { return x.label_id === activeId; });
+        if (!l) {
+            if (!isMobile) el.innerHTML = '<div class="detail-empty"><i class="fa-solid fa-tags"></i><p>' + window.__('label.not_found') + '</p></div>';
+            return;
+        }
+
+        // Show skeleton on desktop only
+        if (!isMobile) {
+            el.innerHTML = '<div class="detail-skeleton" aria-hidden="true">' +
+                '<div class="skel-header"><div class="skel-block skel-title"></div><div class="skel-block skel-icon"></div></div>' +
+                '<div class="skel-stats">' +
+                    '<div class="skel-stat"><div class="skel-block skel-stat-num"></div><div class="skel-block skel-stat-label"></div></div>' +
+                    '<div class="skel-stat"><div class="skel-block skel-stat-num"></div><div class="skel-block skel-stat-label"></div></div>' +
+                    '<div class="skel-stat"><div class="skel-block skel-stat-num"></div><div class="skel-block skel-stat-label"></div></div>' +
+                '</div>' +
+                '<div class="skel-section"><div class="skel-block skel-section-icon"></div><div class="skel-block skel-section-title"></div></div>' +
+                '<div class="skel-tabs"><div class="skel-block skel-tab"></div><div class="skel-block skel-tab"></div><div class="skel-block skel-tab"></div><div class="skel-block skel-tab"></div></div>' +
+                '<div class="skel-list">' +
+                    '<div class="skel-item"><div class="skel-block skel-item-icon"></div><div class="skel-block skel-item-title"></div><div class="skel-block skel-item-type"></div></div>' +
+                    '<div class="skel-item"><div class="skel-block skel-item-icon"></div><div class="skel-block skel-item-title" style="width:42%"></div><div class="skel-block skel-item-type"></div></div>' +
+                    '<div class="skel-item"><div class="skel-block skel-item-icon"></div><div class="skel-block skel-item-title" style="width:62%"></div><div class="skel-block skel-item-type"></div></div>' +
+                '</div>' +
+            '</div>';
+        }
+
+        // Fetch detail
+        var items = [];
+        try {
+            var r = await fetch('/api/labels/' + activeId + '/detail');
+            var d = await r.json();
+            if (d.data && d.data.items) items = d.data.items;
+        } catch(e) { /* use empty items */ }
+
+        var filtered = filterItems(items, activeTab);
+
+        if (isMobile) {
+            // Render mobile accordion content
+            var mobileHtml = '';
+            mobileHtml += '<div class="expand-stats">';
+            mobileHtml += '<div class="expand-stat book"><div class="num">' + l.book_count + '</div><div class="label">' + window.__('label.stat.book') + '</div></div>';
+            mobileHtml += '<div class="expand-stat blog"><div class="num">' + l.blog_count + '</div><div class="label">' + window.__('label.stat.blog') + '</div></div>';
+            mobileHtml += '<div class="expand-stat bookmark"><div class="num">' + l.bookmark_count + '</div><div class="label">' + window.__('label.stat.bookmark') + '</div></div>';
+            mobileHtml += '</div>';
+            mobileHtml += '<div class="expand-tabs">';
+            mobileHtml += '<div class="expand-tab' + (activeTab === 'all' ? ' active' : '') + '" onclick="switchTab(\'all\')">' + window.__('label.tab.all') + '</div>';
+            mobileHtml += '<div class="expand-tab' + (activeTab === 'book' ? ' active' : '') + '" onclick="switchTab(\'book\')">' + window.__('label.tab.book') + '</div>';
+            mobileHtml += '<div class="expand-tab' + (activeTab === 'blog' ? ' active' : '') + '" onclick="switchTab(\'blog\')">' + window.__('label.tab.blog') + '</div>';
+            mobileHtml += '<div class="expand-tab' + (activeTab === 'bookmark' ? ' active' : '') + '" onclick="switchTab(\'bookmark\')">' + window.__('label.tab.bookmark') + '</div>';
+            mobileHtml += '</div>';
+            mobileHtml += '<div class="expand-content">';
+            if (filtered.length) {
+                filtered.forEach(function(item) {
+                    var icon = item.relation_type === 'book' ? 'fa-book' : item.relation_type === 'blog' ? 'fa-pen-nib' : 'fa-bookmark';
+                    var typeLabel = item.relation_type === 'book' ? window.__('label.stat.book') : item.relation_type === 'blog' ? window.__('label.stat.blog') : window.__('label.stat.bookmark');
+                    var href = item.relation_type === 'book' ? '/books/' + (item.identify || item.resource_id) : item.relation_type === 'blog' ? '/blogs/' + (item.identify || item.resource_id) : '/bookmarks';
+                    mobileHtml += '<div class="expand-item"><i class="fa-solid ' + icon + '"></i><span class="item-title"><a href="' + escAttr(href) + '">' + escHtml(item.title || window.__('label.item.no_title')) + '</a></span><span class="item-type">' + typeLabel + '</span></div>';
+                });
+            } else {
+                mobileHtml += '<div style="text-align:center;padding:16px;color:var(--color-gray-400);font-size:13px"><i class="fa-solid fa-inbox" style="font-size:20px;margin-bottom:6px;display:block;color:var(--color-gray-300)"></i>' + window.__('label.content.empty') + '</div>';
+            }
+            mobileHtml += '</div>';
+            if (IS_ADMIN) {
+                mobileHtml += '<div class="expand-danger"><button data-label="' + escAttr(l.label_name) + '" onclick="deleteLabel(' + l.label_id + ',this.dataset.label,' + l.book_count + ',' + l.blog_count + ',' + l.bookmark_count + ')"><i class="fa-solid fa-trash-can"></i>' + window.__('label.detail.danger.delete') + '</button></div>';
+            }
+            el.innerHTML = mobileHtml;
+            el.classList.add('show');
+        } else {
+            // Render desktop detail panel
+            var renameBtn = IS_ADMIN ? '<button class="detail-edit-btn" data-label="' + escAttr(l.label_name) + '" onclick="startRename(' + l.label_id + ',this.dataset.label)" title="' + window.__('label.detail.rename') + '" aria-label="' + window.__('label.detail.rename') + '"><i class="fa-solid fa-pen"></i></button>' : '';
+
+            var html = '<div>' +
+                '<div class="detail-header"><span class="detail-name">' + escHtml(l.label_name) + '</span>' + renameBtn + '</div>' +
+                '<div class="detail-stats">' +
+                '<div class="stat-card book"><div class="stat-num">' + l.book_count + '</div><div class="stat-label"><i class="fa-solid fa-book"></i> ' + window.__('label.stat.book') + '</div></div>' +
+                '<div class="stat-card blog"><div class="stat-num">' + l.blog_count + '</div><div class="stat-label"><i class="fa-solid fa-pen-nib"></i> ' + window.__('label.stat.blog') + '</div></div>' +
+                '<div class="stat-card bookmark"><div class="stat-num">' + l.bookmark_count + '</div><div class="stat-label"><i class="fa-solid fa-bookmark"></i> ' + window.__('label.stat.bookmark') + '</div></div>' +
+                '</div>' +
+                '<div class="section-title"><i class="fa-solid fa-link" style="color:var(--color-gray-400)"></i> ' + window.__('label.detail.related') + ' <span class="count">(' + items.length + ')</span></div>' +
+                '<div class="tabs">' +
+                '<div class="tab' + (activeTab === 'all' ? ' active' : '') + '" onclick="switchTab(\'all\')">' + window.__('label.tab.all') + '</div>' +
+                '<div class="tab' + (activeTab === 'book' ? ' active' : '') + '" onclick="switchTab(\'book\')">' + window.__('label.tab.book') + '</div>' +
+                '<div class="tab' + (activeTab === 'blog' ? ' active' : '') + '" onclick="switchTab(\'blog\')">' + window.__('label.tab.blog') + '</div>' +
+                '<div class="tab' + (activeTab === 'bookmark' ? ' active' : '') + '" onclick="switchTab(\'bookmark\')">' + window.__('label.tab.bookmark') + '</div>' +
+                '</div>';
+
+            if (filtered.length) {
+                html += '<div class="content-list">';
+                filtered.forEach(function(item) {
+                    var icon = item.relation_type === 'book' ? 'fa-book' : item.relation_type === 'blog' ? 'fa-pen-nib' : 'fa-bookmark';
+                    var typeLabel = item.relation_type === 'book' ? window.__('label.stat.book') : item.relation_type === 'blog' ? window.__('label.stat.blog') : window.__('label.stat.bookmark');
+                    var href = item.relation_type === 'book' ? '/books/' + (item.identify || item.resource_id) : item.relation_type === 'blog' ? '/blogs/' + (item.identify || item.resource_id) : '/bookmarks';
+                    html += '<div class="content-item"><i class="fa-solid ' + icon + '"></i><span class="item-title"><a href="' + escAttr(href) + '">' + escHtml(item.title || window.__('label.item.no_title')) + '</a></span><span class="item-type">' + typeLabel + '</span></div>';
+                });
+                html += '</div>';
+            } else {
+                html += '<div class="content-list"><div class="content-empty"><i class="fa-solid fa-inbox" style="font-size:24px;margin-bottom:8px;display:block;color:var(--color-gray-300)"></i>' + window.__('label.content.empty') + '</div></div>';
+            }
+
+            if (IS_ADMIN) {
+                html += '<div class="danger-zone"><h4><i class="fa-solid fa-triangle-exclamation"></i> ' + window.__('label.detail.danger.title') + '</h4>' +
+                    '<p>' + window.__('label.detail.danger.desc') + '</p>' +
+                    '<button class="btn" data-label="' + escAttr(l.label_name) + '" style="background:var(--color-danger);color:#fff;font-size:12px;padding:6px 14px" onclick="deleteLabel(' + l.label_id + ',this.dataset.label,' + l.book_count + ',' + l.blog_count + ',' + l.bookmark_count + ')"><i class="fa-solid fa-trash-can nav-icon"></i>' + window.__('label.detail.danger.delete') + '</button></div>';
+            }
+
+            html += '</div>';
+            el.innerHTML = html;
+        }
+    }
+
+    function filterItems(items, tab) {
+        if (tab === 'all') return items;
+        return items.filter(function(i) { return i.relation_type === tab; });
+    }
+
+    function switchTab(tab) {
+        activeTab = tab;
+        if (window.BookStarkTabURL) window.BookStarkTabURL.set('tab', tab);
+        renderDetail(true);
+    }
+
+    function renderStrategyManager() {
+        activeView = 'strategy';
+        var el = strategyRenderTarget();
+        if (!el) return;
+        if (isMobileLabelsView()) showMobileStrategyPopover();
+        renderList();
+        if (!tagRecommendSettings) {
+            el.innerHTML = '<div class="detail-empty"><i class="fa-solid fa-wand-magic-sparkles"></i><p>' + window.__('label.strategy.loading') + '</p></div>';
+            loadTagRecommendSettings().then(renderStrategyManager);
+            return;
+        }
+        var pageSize = tagRecommendSettings.page_size || 10;
+        var manualLabels = tagRecommendSettings.manual_labels || [];
+        var manualText = manualLabels.join(', ');
+        var html = '<div class="strategy-page">' +
+            '<div class="strategy-page-top">' +
+            '<div><div class="strategy-page-title">' + window.__('label.strategy.title') + '</div>' +
+            '<div class="strategy-page-sub">' + window.__('label.strategy.subtitle') + '</div></div>' +
+            '<div class="strategy-page-actions">' +
+            '<div class="strategy-action-group">' +
+            '<button class="strategy-action-btn" type="button" onclick="refreshStrategyPreview()"><i class="fa-solid fa-rotate nav-icon"></i>' + window.__('label.strategy.preview.refresh') + '</button>' +
+            (IS_ADMIN ? '<button id="strategy-save" class="strategy-action-btn primary" type="button" onclick="saveStrategySettings()"><i class="fa-solid fa-floppy-disk nav-icon"></i>' + window.__('label.strategy.save_enable') + '</button>' : '') +
+            '</div>' +
+            '</div></div>' +
+            '<div class="strategy-grid">' +
+            '<div class="strategy-panel"><div class="strategy-panel-head"><div><div class="strategy-panel-title">' + window.__('label.strategy.list.title') + '</div><div class="strategy-panel-note">' + window.__('label.strategy.list.note') + '</div></div></div>' +
+            '<div class="strategy-list">' + strategyDefs.map(function(def) {
+                var selected = selectedStrategy === def.key;
+                var active = tagRecommendSettings.strategy === def.key;
+                return '<button type="button" class="strategy-card' + (selected ? ' selected' : '') + '" onclick="selectStrategy(\'' + def.key + '\')">' +
+                    '<span class="strategy-radio"></span><span>' +
+                    '<span class="strategy-card-name"><i class="fa-solid ' + def.icon + '"></i>' + window.__(def.titleKey) + (active ? '<span class="strategy-badge active">' + window.__('label.strategy.current') + '</span>' : '') + '</span>' +
+                    '<span class="strategy-card-desc">' + window.__(def.descKey) + '</span>' +
+                    '<span class="strategy-card-meta"><span class="strategy-badge">' + window.__(def.metaKey) + '</span></span>' +
+                    '</span></button>';
+            }).join('') + '</div></div>' +
+            '<div class="strategy-panel"><div class="strategy-panel-head"><div><div class="strategy-panel-title">' + window.__('label.strategy.edit').replace('{name}', strategyTitle(selectedStrategy)) + '</div><div class="strategy-panel-note">' + window.__('label.strategy.edit.note') + '</div></div></div>' +
+            '<div class="strategy-body">' +
+            '<div class="strategy-section"><div class="strategy-section-row"><div><div class="strategy-section-title">' + window.__('label.strategy.basic') + '</div><div class="strategy-panel-note">' + window.__('label.strategy.basic.note') + '</div></div></div>' +
+            '<div class="strategy-field-grid"><div class="strategy-field"><label for="strategy-page-size">' + window.__('label.strategy.page_size') + '</label><select id="strategy-page-size"' + (IS_ADMIN ? '' : ' disabled') + '>' +
+            [5,10,15,20,30,50].map(function(n) { return '<option value="' + n + '"' + (pageSize === n ? ' selected' : '') + '>' + n + '</option>'; }).join('') +
+            '</select></div><div class="strategy-field"><label>' + window.__('label.strategy.search_sort') + '</label><div class="strategy-readonly">' + window.__('label.strategy.search_sort.bookmark') + '</div></div></div></div>' +
+            '<div class="strategy-section"><div class="strategy-section-row"><div><div class="strategy-section-title">' + window.__('label.strategy.manual_labels') + '</div><div class="strategy-panel-note">' + window.__('label.strategy.manual_labels.note') + '</div></div></div>' +
+            '<div class="strategy-field"><label for="strategy-manual-labels">' + window.__('label.strategy.manual_labels.input') + '</label><textarea id="strategy-manual-labels"' + (IS_ADMIN ? '' : ' disabled') + ' placeholder="' + escAttr(window.__('label.strategy.manual_labels.placeholder')) + '">' + escHtml(manualText) + '</textarea></div></div>' +
+            '<div class="strategy-section"><div class="strategy-section-row"><div><div class="strategy-section-title">' + window.__('label.strategy.preview.title') + '</div><div class="strategy-panel-note">' + window.__('label.strategy.preview.note') + '</div></div></div>' +
+            '<div class="strategy-preview"><div class="strategy-preview-head">' + window.__('label.strategy.preview.head') + '</div><div class="strategy-preview-body"><div class="strategy-fake-input">' + window.__('tag.placeholder') + '</div><div class="strategy-preview-list" id="strategy-preview-list"></div></div></div></div>' +
+            '</div></div></div></div>';
+        el.innerHTML = html;
+        var pageSizeEl = document.getElementById('strategy-page-size');
+        var manualEl = document.getElementById('strategy-manual-labels');
+        if (pageSizeEl) pageSizeEl.addEventListener('change', scheduleStrategyPreview);
+        if (manualEl) manualEl.addEventListener('input', scheduleStrategyPreview);
+        refreshStrategyPreview();
+    }
+
+    function selectStrategy(strategy) {
+        selectedStrategy = strategy;
+        renderStrategyManager();
+    }
+
+    function parseManualStrategyLabels() {
+        var el = document.getElementById('strategy-manual-labels');
+        var raw = el ? el.value : '';
+        return raw.split(/[,，;\n\r]+/).map(function(s) { return s.trim(); }).filter(function(s) { return !!s; });
+    }
+
+    function scheduleStrategyPreview() {
+        clearTimeout(previewTimer);
+        previewTimer = setTimeout(refreshStrategyPreview, 250);
+    }
+
+    async function refreshStrategyPreview() {
+        var list = document.getElementById('strategy-preview-list');
+        if (!list) return;
+        list.innerHTML = '<div class="strategy-preview-item"><span class="strategy-preview-name">' + window.__('label.strategy.preview.loading') + '</span></div>';
+        var pageSizeEl = document.getElementById('strategy-page-size');
+        var pageSize = pageSizeEl ? parseInt(pageSizeEl.value, 10) || 10 : 10;
+        var params = 'page_size=' + pageSize + '&strategy=' + encodeURIComponent(selectedStrategy);
+        if (selectedStrategy === 'manual') {
+            params += '&manual_labels=' + encodeURIComponent(parseManualStrategyLabels().join(','));
+        }
+        try {
+            var r = await fetch('/api/labels/recommendations?' + params);
+            var d = await r.json();
+            var items = d.data || [];
+            if (!items.length) {
+                list.innerHTML = '<div class="strategy-preview-item"><span class="strategy-preview-name">' + window.__('label.strategy.preview.empty') + '</span></div>';
+                return;
+            }
+            list.innerHTML = items.map(function(l) {
+                var total = (l.book_count || 0) + (l.blog_count || 0) + (l.bookmark_count || 0);
+                return '<div class="strategy-preview-item"><span class="strategy-preview-name">' + escHtml(l.label_name) + '</span><span class="strategy-preview-reason">' + strategyTitle(selectedStrategy) + '</span><span class="strategy-preview-count">' + total + '</span></div>';
+            }).join('');
+        } catch(e) {
+            list.innerHTML = '<div class="strategy-preview-item"><span class="strategy-preview-name">' + window.__('label.strategy.preview.error') + '</span></div>';
+        }
+    }
+
+    async function saveStrategySettings() {
+        if (!IS_ADMIN) return;
+        var pageSizeEl = document.getElementById('strategy-page-size');
+        var payload = {
+            strategy: selectedStrategy,
+            page_size: pageSizeEl ? parseInt(pageSizeEl.value, 10) || 10 : 10,
+            manual_labels: parseManualStrategyLabels()
+        };
+        try {
+            var r = await csrfFetch('/api/labels/recommendation-settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            var d = await r.json();
+            if (!r.ok) { BSDialog.alert2(d.message || window.__('label.strategy.save_error')); return; }
+            tagRecommendSettings = d.data || payload;
+            selectedStrategy = tagRecommendSettings.strategy;
+            updateStrategyEntry();
+            renderStrategyManager();
+            BSDialog.toast(window.__('label.strategy.save_success'), 'success');
+        } catch(e) {
+            BSDialog.alert2(window.__('label.strategy.save_error'));
+        }
+    }
+
+    // === Create Label ===
+    async function showCreateModal() {
+        var name = await BSDialog.prompt2(window.__('label.create.dialog'), '');
+        if (name === null || !name.trim()) return;
+        try {
+            var r = await csrfFetch('/api/labels', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ label_name: name.trim() })
+            });
+            var d = await r.json();
+            if (!r.ok) { BSDialog.alert2(d.message || window.__('label.create.error')); return; }
+            await loadLabels();
+            BSDialog.toast(window.__('label.create.success'), 'success');
+            if (d.data && d.data.label_id) {
+                activeId = d.data.label_id;
+                renderList();
+                renderDetail();
+            }
+        } catch(e) {
+            BSDialog.alert2(window.__('label.create.error'));
+        }
+    }
+
+    // === Rename Label ===
+    async function startRename(id, oldName) {
+        var n = await BSDialog.prompt2(window.__('label.rename.dialog'), oldName);
+        if (n === null || !n.trim() || n.trim() === oldName) return;
+        try {
+            var r = await csrfFetch('/api/labels/' + id, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ label_name: n.trim() })
+            });
+            if (!r.ok) { var d = await r.json(); BSDialog.alert2(d.message || window.__('label.rename.error')); return; }
+            await loadLabels();
+            BSDialog.toast(window.__('label.rename.success'), 'success');
+            if (activeId === id) renderDetail();
+        } catch(e) {
+            BSDialog.alert2(window.__('label.rename.error'));
+        }
+    }
+
+    // === Delete Label ===
+    async function deleteLabel(id, name, bc, blc, bmc) {
+        var t = bc + blc + bmc;
+        var parts = [];
+        if (bc > 0) parts.push(bc + ' ' + window.__('label.delete.assoc.book'));
+        if (blc > 0) parts.push(blc + ' ' + window.__('label.delete.assoc.blog'));
+        if (bmc > 0) parts.push(bmc + ' ' + window.__('label.delete.assoc.bookmark'));
+        var msg = t > 0 ? window.__('label.delete.confirm_with_assoc').replace('{assoc}', parts.join(window.__('label.delete.assoc.separator'))).replace('{name}', name) : window.__('label.delete.confirm_no_assoc').replace('{name}', name);
+        if (!await BSDialog.confirm2(msg)) return;
+        try {
+            var r = await csrfFetch('/api/labels/' + id, { method: 'DELETE' });
+            if (!r.ok) { var d = await r.json(); BSDialog.alert2(d.message || window.__('label.delete.error')); return; }
+            if (activeId === id) { activeId = null; }
+            await loadLabels();
+            renderDetail();
+            BSDialog.toast(window.__('label.delete.success'), 'success');
+        } catch(e) {
+            BSDialog.alert2(window.__('label.delete.error'));
+        }
+    }
+
+    async function clearUnusedLabels() {
+        var unused = parseInt(document.getElementById('stat-unused').textContent, 10) || 0;
+        if (unused <= 0) return;
+        if (!await BSDialog.confirm2(window.__('label.unused.clear_confirm').replace('{count}', unused))) return;
+        try {
+            var r = await csrfFetch('/api/labels/unused', { method: 'DELETE' });
+            var d = await r.json();
+            if (!r.ok) { BSDialog.alert2(d.message || window.__('label.unused.clear_error')); return; }
+            if (activeId) {
+                var active = labels.find(function(l) { return l.label_id === activeId; });
+                if (active && active.book_count + active.blog_count + active.bookmark_count === 0) activeId = null;
+            }
+            await loadLabels();
+            if (activeView === 'strategy') renderStrategyManager();
+            else renderDetail();
+            var deleted = d.data && typeof d.data.deleted !== 'undefined' ? d.data.deleted : unused;
+            BSDialog.toast(window.__('label.unused.clear_success').replace('{count}', deleted), 'success');
+        } catch(e) {
+            BSDialog.alert2(window.__('label.unused.clear_error'));
+        }
+    }
+
+    // === Merge Mode ===
+    function enterMergeMode() {
+        mergeMode = true;
+        mergeSelected.clear();
+        document.getElementById('normal-footer').style.display = 'none';
+        document.getElementById('merge-bar').classList.add('show');
+        updateMergeCount();
+        renderList();
+    }
+
+    function exitMergeMode() {
+        mergeMode = false;
+        mergeSelected.clear();
+        document.getElementById('normal-footer').style.display = '';
+        document.getElementById('merge-bar').classList.remove('show');
+        renderList();
+    }
+
+    function toggleMergeSelect(id) {
+        if (mergeSelected.has(id)) { mergeSelected.delete(id); } else { mergeSelected.add(id); }
+        updateMergeCount();
+        renderList();
+    }
+
+    function updateMergeCount() {
+        document.getElementById('merge-count').textContent = mergeSelected.size;
+    }
+
+    async function doMerge() {
+        if (mergeSelected.size < 2) {
+            BSDialog.alert2(window.__('label.merge.min_error'));
+            return;
+        }
+        var ids = Array.from(mergeSelected);
+        var targetId = ids[0];
+        var sourceIds = ids.slice(1);
+        var names = ids.map(function(id) { var l = labels.find(function(x) { return x.label_id === id; }); return l ? l.label_name : ''; });
+        var msg = window.__('label.merge.confirm_msg').replace('{name}', names[0]).replace('{sources}', names.slice(1).map(function(n) { return window.__('label.merge.source_prefix') + n; }).join('\n'));
+        if (!await BSDialog.confirm2(msg)) return;
+        try {
+            var r = await csrfFetch('/api/labels/merge', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ target_id: targetId, source_ids: sourceIds })
+            });
+            if (!r.ok) { var d = await r.json(); BSDialog.alert2(d.message || window.__('label.merge.error')); return; }
+            exitMergeMode();
+            activeId = targetId;
+            await loadLabels();
+            renderDetail();
+            BSDialog.toast(window.__('label.merge.success'), 'success');
+        } catch(e) {
+            BSDialog.alert2(window.__('label.merge.error'));
+        }
+    }
+
+    // === Drag to Merge ===
+    var dragSourceId = null;
+    function onDragStart(e, id) {
+        dragSourceId = id;
+        e.dataTransfer.effectAllowed = 'move';
+        e.target.classList.add('dragging');
+    }
+    function onDragOver(e) {
+        e.preventDefault();
+        e.currentTarget.classList.add('drag-over');
+    }
+    function onDragLeave(e) {
+        e.currentTarget.classList.remove('drag-over');
+    }
+    async function onDrop(e, targetId) {
+        e.preventDefault();
+        e.currentTarget.classList.remove('drag-over');
+        if (!dragSourceId || dragSourceId === targetId) return;
+        var src = labels.find(function(x) { return x.label_id === dragSourceId; });
+        var tgt = labels.find(function(x) { return x.label_id === targetId; });
+        if (!src || !tgt) return;
+        var msg = window.__('label.drag_merge.confirm_msg').replace('{source}', src.label_name).replace('{target}', tgt.label_name);
+        if (!await BSDialog.confirm2(msg)) return;
+        try {
+            var r = await csrfFetch('/api/labels/merge', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ target_id: targetId, source_ids: [dragSourceId] })
+            });
+            if (!r.ok) { var d = await r.json(); BSDialog.alert2(d.message || window.__('label.merge.error')); return; }
+            activeId = targetId;
+            await loadLabels();
+            renderDetail();
+            BSDialog.toast(window.__('label.merge.success'), 'success');
+        } catch(e) {
+            BSDialog.alert2(window.__('label.merge.error'));
+        }
+        dragSourceId = null;
+    }
+
+    // === Resize ===
+    var prevMobile = window.innerWidth <= 768;
+    window.addEventListener('resize', function() {
+        var nowMobile = window.innerWidth <= 768;
+        if (nowMobile !== prevMobile) {
+            prevMobile = nowMobile;
+            renderList();
+            if (activeView === 'strategy') renderStrategyManager();
+            else renderDetail();
+        }
+    });
+
+    // === Keyboard ===
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && mergeMode) { exitMergeMode(); }
+    });
+    </script>
+</body>
+</html>

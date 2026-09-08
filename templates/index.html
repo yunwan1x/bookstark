@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v={{assetVer "/static/favicon.svg"}}">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{{call .T "meta.description"}}">
+    <title>{{call .T "page.books.title"}} - BookStark</title>
+    <link href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}" rel="stylesheet">
+    <link href="/static/css/books.css?v={{assetVer "/static/css/books.css"}}" rel="stylesheet">
+    <style>
+        /* Book modal business controls; shell layout is shared by asset-modal. */
+        .book-modal-close { width: 32px; height: 32px; border: none; background: var(--color-gray-100, #f1f5f9); border-radius: 8px; cursor: pointer; color: var(--color-gray-500, #64748b); font-size: 16px; display: flex; align-items: center; justify-content: center; }
+        .book-modal-close:hover { background: var(--color-gray-200, #e2e8f0); color: var(--color-gray-700, #334155); }
+        .book-modal-body label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--color-text, #1e293b); }
+        .book-modal-body textarea.dialog-input { min-height: 80px; resize: vertical; font-family: inherit; line-height: 1.5; }
+        .book-modal-error { display: none; margin-bottom: 12px; padding: 8px 12px; background: var(--color-danger-light, #fef2f2); color: var(--color-danger, #dc2626); font-size: 13px; border-radius: 6px; }
+        .book-mobile-fab { display: none; position: fixed; bottom: 20px; right: 20px; width: 52px; height: 52px; border-radius: 50%; background: var(--color-primary, #2563eb); color: #fff; border: none; font-size: 22px; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(37,99,235,0.4); cursor: pointer; z-index: 30; transition: transform 0.15s, box-shadow 0.15s; }
+        .book-mobile-fab:hover { transform: scale(1.05); box-shadow: 0 6px 20px rgba(37,99,235,0.5); }
+        .book-mobile-fab:active { transform: scale(0.95); }
+        @media (max-width: 768px) {
+            .book-create-inline, .book-empty-create-inline { display: none !important; }
+            .book-mobile-fab { display: flex; bottom: 12px; width: 44px; height: 44px; font-size: 18px; }
+        }
+        /* Dialog buttons */
+        .bs-btn { padding: 6px 16px; border-radius: var(--radius-md, 6px); font-size: 13px; cursor: pointer; border: none; transition: background 0.15s; }
+        .bs-btn-cancel { background: var(--color-gray-100, #f1f5f9); color: var(--color-gray-700, #334155); }
+        .bs-btn-cancel:hover { background: var(--color-border, #e2e8f0); }
+        .bs-btn-primary { background: var(--color-primary, #2563eb); color: white; }
+        .bs-btn-primary:hover { background: var(--color-primary-hover, #1d4ed8); }
+
+    </style>
+{{template "head-assets" .}}
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col">
+    {{template "header" .}}
+    <main class="flex-1" role="main">
+        <div class="px-4 sm:px-6 md:px-8 py-6">
+            <div class="book-page-shell mx-auto">
+                <div class="page-sticky-header">
+                    <div class="book-search-row flex gap-2">
+                        <input id="book-search" type="text" class="search-input" placeholder="{{call .T "book.search.placeholder"}}" aria-label="{{call .T "book.search.aria"}}" value="">
+                        <button onclick="doBookSearch()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 whitespace-nowrap" aria-label="{{call .T "book.search.aria"}}"><i class="fa-solid fa-magnifying-glass nav-icon"></i>{{call .T "book.search.aria"}}</button>
+                        <div class="book-view-switch" role="group" aria-label="{{call .T "book.view.aria"}}">
+                            <button type="button" class="book-view-btn active" id="bookViewShelf" data-book-view="shelf" aria-pressed="true" onclick="switchBookView('shelf')"><i class="fa-solid fa-book-open"></i>{{call .T "book.view.shelf"}}</button>
+                            <button type="button" class="book-view-btn" id="bookViewCompact" data-book-view="compact" aria-pressed="false" onclick="switchBookView('compact')"><i class="fa-solid fa-list"></i>{{call .T "book.view.compact"}}</button>
+                        </div>
+                        <button onclick="openBookModal()" class="book-create-inline px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-600 hover:bg-slate-50 whitespace-nowrap"><i class="fa-solid fa-plus nav-icon"></i>{{call .T "book.create"}}</button>
+                    </div>
+                </div>
+                <div id="book-list" class="book-list book-view-shelf">
+                </div>
+                <div id="book-pagination" class="flex justify-center items-center gap-2 mt-6 text-sm"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Book setting modal -->
+    <div class="book-modal-overlay asset-modal-backdrop" id="bookModalOverlay" role="dialog" aria-modal="true" aria-labelledby="bookModalTitle" data-mobile-sheet data-mobile-sheet-panel=".asset-modal" data-mobile-sheet-close="closeBookModal" onclick="if(event.target===this)closeBookModal()">
+        <div class="book-modal asset-modal">
+            <div class="book-modal-header asset-modal-head">
+                <span class="book-modal-title asset-modal-title" id="bookModalTitle">{{call .T "book.modal.new"}}</span>
+                <button class="book-modal-close" onclick="closeBookModal()" aria-label="{{call .T "book.modal.close"}}">&times;</button>
+            </div>
+            <div class="book-modal-body asset-modal-body">
+                <div id="bookModalError" class="book-modal-error"></div>
+                <input type="hidden" id="_bookId" value="">
+                <div style="margin-bottom:16px;">
+                    <label for="bookNameInput">{{call .T "book.field.name"}}</label>
+                    <input type="text" id="bookNameInput" class="dialog-input" placeholder="{{call .T "book.field.name.placeholder"}}">
+                </div>
+                <div style="margin-bottom:16px;">
+                    <label for="bookDescInput">{{call .T "book.field.desc"}}</label>
+                    <textarea id="bookDescInput" class="dialog-input" placeholder="{{call .T "book.field.desc.placeholder"}}"></textarea>
+                </div>
+                <div>
+                    <label>{{call .T "book.field.tags"}}</label>
+                    <div id="bookTagContainer"></div>
+                </div>
+            </div>
+            <div class="book-modal-footer asset-modal-foot">
+                <button class="bs-btn bs-btn-cancel" onclick="closeBookModal()">{{call .T "book.modal.cancel"}}</button>
+                <button class="bs-btn bs-btn-primary" id="bookModalSaveBtn" onclick="saveBookModal()">{{call .T "book.modal.save"}}</button>
+            </div>
+        </div>
+    </div>
+
+    <button class="book-mobile-fab" onclick="openBookModal()" aria-label="{{call .T "book.create"}}"><i class="fa-solid fa-plus"></i></button>
+
+    {{template "footer" .}}
+    <script src="/static/js/tag-input.js?v={{assetVer "/static/js/tag-input.js"}}"></script>
+    <script>
+    var bookPage = {{.Page}};
+    var bookTotalPages = {{if .Total}}{{calcTotalPages .Total .PageSize}}{{else}}0{{end}};
+    var bookKeyword = '';
+    var bookTagInput = null;
+
+    function saveBookListState() {
+        sessionStorage.setItem('book_list_state', JSON.stringify({
+            page: bookPage,
+            keyword: bookKeyword
+        }));
+    }
+    function goBookEdit(identify) {
+        saveBookListState();
+        location.href = '/books/' + identify + '/edit?from=' + encodeURIComponent(location.pathname + location.search);
+    }
+
+    // ── Book modal ──
+    function openBookModal(bookId) {
+        var isNew = !bookId;
+        document.getElementById('_bookId').value = bookId || '';
+        document.getElementById('bookModalTitle').textContent = isNew ? window.__('book.modal.new') : window.__('book.modal.edit');
+        document.getElementById('bookModalError').style.display = 'none';
+        document.getElementById('bookNameInput').value = '';
+        document.getElementById('bookDescInput').value = '';
+        if (bookTagInput) bookTagInput.clear();
+
+        if (!isNew) {
+            csrfFetch('/api/books/' + bookId).then(function(r) { return r.json(); }).then(function(d) {
+                if (d.code !== 0 || !d.data) { BSDialog.toast(window.__('book.fetch_error'), 'error'); return; }
+                document.getElementById('bookNameInput').value = d.data.book_name || '';
+                document.getElementById('bookDescInput').value = d.data.description || '';
+                if (d.data.labels && bookTagInput) {
+                    bookTagInput.setTags(d.data.labels);
+                }
+            }).catch(function() { BSDialog.toast(window.__('book.fetch_error'), 'error'); });
+        }
+        document.getElementById('bookModalOverlay').classList.add('active');
+        if (window.BookStarkScrollLock) BookStarkScrollLock.lock('book-modal');
+        document.getElementById('bookNameInput').focus();
+        _trapBookModal(true);
+    }
+
+    function closeBookModal() {
+        document.getElementById('bookModalOverlay').classList.remove('active');
+        if (window.BookStarkScrollLock) BookStarkScrollLock.unlock('book-modal');
+        if (bookTagInput) bookTagInput.hideDropdown();
+        _trapBookModal(false);
+    }
+
+    var _bookModalPrevFocus = null;
+    var _bookModalTrapHandler = null;
+    function _trapBookModal(on) {
+        if (on) {
+            _bookModalPrevFocus = document.activeElement;
+            _bookModalTrapHandler = function(e) {
+                if (e.key === 'Escape') { e.preventDefault(); closeBookModal(); return; }
+                if (e.key !== 'Tab') return;
+                var box = document.querySelector('#bookModalOverlay .asset-modal');
+                if (!box) return;
+                var focusable = Array.prototype.slice.call(box.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')).filter(function(el) { return el.offsetParent !== null; });
+                if (!focusable.length) return;
+                var first = focusable[0], last = focusable[focusable.length - 1];
+                if (e.shiftKey) { if (document.activeElement === first) { e.preventDefault(); last.focus(); } }
+                else { if (document.activeElement === last) { e.preventDefault(); first.focus(); } }
+            };
+            document.addEventListener('keydown', _bookModalTrapHandler);
+        } else {
+            if (_bookModalTrapHandler) { document.removeEventListener('keydown', _bookModalTrapHandler); _bookModalTrapHandler = null; }
+            if (_bookModalPrevFocus && typeof _bookModalPrevFocus.focus === 'function') { try { _bookModalPrevFocus.focus(); } catch(e) {} _bookModalPrevFocus = null; }
+        }
+    }
+
+    async function saveBookModal() {
+        var errEl = document.getElementById('bookModalError');
+        errEl.style.display = 'none';
+        var name = document.getElementById('bookNameInput').value.trim();
+        if (!name) { errEl.textContent = window.__('book.error.no_name'); errEl.style.display = 'block'; return; }
+        var bookId = document.getElementById('_bookId').value;
+        var labels = bookTagInput ? bookTagInput.getTags() : '';
+        var body = { book_name: name, description: document.getElementById('bookDescInput').value.trim(), labels: labels };
+        var url = bookId ? '/api/books/' + bookId : '/api/books';
+        var method = bookId ? 'PUT' : 'POST';
+        var saveBtn = document.getElementById('bookModalSaveBtn');
+        var request = window.BookStarkRequestLock
+            ? BookStarkRequestLock.run('books:modal:' + method + ':' + (bookId || 'new'), function() {
+                return csrfFetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            }, saveBtn)
+            : csrfFetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        if (!request) return;
+        try {
+            var r = await request;
+            var d = await r.json();
+            if (r.ok) {
+                closeBookModal();
+                if (!bookId && d.data) {
+                    var identify = d.data.Identify || d.data.identify;
+	                    if (identify) { location.href = '/books/' + identify + '/edit?from=' + encodeURIComponent(location.pathname + location.search); return; }
+                }
+                loadBooks();
+                BSDialog.toast(window.__('book.save.success'), 'success');
+            } else {
+                errEl.textContent = d.message || window.__('book.save.failed');
+                errEl.style.display = 'block';
+            }
+        } catch(e) {
+            errEl.textContent = window.__('book.save.failed');
+            errEl.style.display = 'block';
+        }
+    }
+
+    document.getElementById('book-search').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            bookKeyword = e.target.value.trim();
+            bookPage = 1;
+            loadBooks();
+        }
+    });
+
+    var bookShareStatus = {}; // book_id -> share_identify (or true)
+    var bookItems = [];
+    var bookLoading = false;
+    var BOOK_VIEW_STORAGE_KEY = 'bookstark:book-view:v1';
+    var bookViewMode = 'shelf';
+    var bookCoverPalette = [
+        { cover: '#263b4c', ink: '#f2f6f8' },
+        { cover: '#793535', ink: '#faedcf' },
+        { cover: '#c66a3b', ink: '#fff5e6' },
+        { cover: '#315f50', ink: '#eef8f0' },
+        { cover: '#78593f', ink: '#fff4db' },
+        { cover: '#ad4f45', ink: '#fff0e8' },
+        { cover: '#356783', ink: '#f0f8fb' },
+        { cover: '#646244', ink: '#f7f3dc' },
+        { cover: '#4e526d', ink: '#f2f1fa' },
+        { cover: '#75526a', ink: '#faeef6' }
+    ];
+
+    function renderBookSkeleton(mode) {
+        if (mode === 'compact') {
+            var rows = '';
+            for (var row = 0; row < 6; row++) {
+                rows += '<article class="book-compact-row book-skeleton-compact-row" aria-hidden="true">' +
+                    '<div class="book-compact-main book-skeleton-compact-main"><span class="book-skeleton-mini-cover book-skeleton-shimmer"></span><span class="book-skeleton-copy"><span class="book-skeleton-bar book-skeleton-title-bar book-skeleton-shimmer"></span><span class="book-skeleton-bar book-skeleton-desc-bar book-skeleton-shimmer"></span></span></div>' +
+                    '<span class="book-compact-labels book-skeleton-bar book-skeleton-label-bar book-skeleton-shimmer"></span>' +
+                    '<span class="book-compact-docs book-skeleton-bar book-skeleton-doc-bar book-skeleton-shimmer"></span>' +
+                    '<span class="book-compact-time book-skeleton-bar book-skeleton-time-bar book-skeleton-shimmer"></span>' +
+                    '<span class="book-compact-actions book-skeleton-actions"><i></i><i></i><i></i></span>' +
+                    '</article>';
+            }
+            return '<div class="book-compact-head" aria-hidden="true"><span>' + window.__('book.column.book') + '</span><span>' + window.__('book.column.labels') + '</span><span>' + window.__('book.column.documents') + '</span><span>' + window.__('book.column.modified') + '</span><span></span></div>' + rows;
+        }
+        var books = '';
+        for (var index = 0; index < 8; index++) {
+            var titleWidth = 54 + (index % 3) * 13;
+            books += '<div class="book-shelf-item book-skeleton-shelf-item" aria-hidden="true"><span class="book-skeleton-cover book-skeleton-shimmer">' +
+                '<span class="book-skeleton-cover-label"></span><span class="book-skeleton-cover-rule"></span>' +
+                '<span class="book-skeleton-cover-title" style="width:' + titleWidth + '%"></span><span class="book-skeleton-cover-title short"></span>' +
+                '<span class="book-skeleton-cover-foot"><i></i><i></i></span></span></div>';
+        }
+        return books;
+    }
+
+    function showBookSkeleton() {
+        var listEl = document.getElementById('book-list');
+        listEl.className = 'book-list book-view-' + bookViewMode + ' book-list-loading';
+        listEl.setAttribute('aria-busy', 'true');
+        listEl.innerHTML = renderBookSkeleton(bookViewMode);
+        listEl.style.display = '';
+    }
+
+    function bookNameHash(name) {
+        var hash = 2166136261;
+        name = String(name || '');
+        for (var i = 0; i < name.length; i++) {
+            hash ^= name.charCodeAt(i);
+            hash = Math.imul(hash, 16777619);
+        }
+        return hash >>> 0;
+    }
+
+    function getBookCoverTheme(name) {
+        return bookCoverPalette[bookNameHash(name) % bookCoverPalette.length];
+    }
+
+    function isLatinBookTitle(name) {
+        return /^[\x00-\x7f]+$/.test(String(name || ''));
+    }
+
+    function getBookCoverTitleClass(name) {
+        name = String(name || '').trim();
+        if (!isLatinBookTitle(name)) return '';
+        var length = Array.from(name).length;
+        if (length <= 16) return ' latin latin-short';
+        if (length <= 30) return ' latin latin-medium';
+        if (length <= 50) return ' latin latin-long';
+        return ' latin latin-extra-long';
+    }
+
+    function getBookCoverLabel(book) {
+        var labels = String(book.label || '').split(',').map(function(label) { return label.trim(); }).filter(Boolean);
+        return labels.length ? labels[0] : '';
+    }
+
+    function getBookCoverDate(book) {
+        var value = String(book.modify_time || '');
+        if (!value || value.indexOf('0001') >= 0) return '';
+        return value.substring(0, 10).replace(/-/g, '.');
+    }
+
+    function renderBookActions(book, isShared, extraClass, actionID) {
+        var shareIcon = isShared ? 'fa-eye' : 'fa-eye-slash';
+        var shareTitle = isShared ? window.__('book.share.title.unshare') : window.__('book.share.title.share');
+        return '<div class="' + extraClass + '"' + (actionID ? ' id="' + actionID + '"' : '') + '>' +
+            '<button onclick="toggleShareBook(' + book.book_id + ',this)" data-book-share="' + book.book_id + '" data-title="' + escAttr(book.book_name) + '" class="row-action' + (isShared ? ' book-shared' : '') + '" title="' + shareTitle + '" aria-label="' + shareTitle + '"><i class="fa-solid ' + shareIcon + '"></i></button>' +
+            '<button onclick="openBookModal(' + book.book_id + ')" class="row-action" title="' + window.__('book.action.settings') + '" aria-label="' + window.__('book.action.settings') + '"><i class="fa-solid fa-gear"></i></button>' +
+            '<button onclick="deleteBook(' + book.book_id + ',this)" data-title="' + escAttr(book.book_name) + '" class="row-action del" title="' + window.__('book.action.delete') + '" aria-label="' + window.__('book.action.delete') + '"><i class="fa-solid fa-trash-can"></i></button>' +
+            '</div>';
+    }
+
+    function renderShelfBook(book) {
+        var theme = getBookCoverTheme(book.book_name);
+        var isShared = !!bookShareStatus[book.book_id];
+        var titleClass = getBookCoverTitleClass(book.book_name);
+        var titleLang = titleClass ? ' lang="en"' : '';
+        var coverLabel = getBookCoverLabel(book);
+        var coverDate = getBookCoverDate(book);
+        return '<article class="book-shelf-item" style="--book-cover:' + theme.cover + ';--book-ink:' + theme.ink + '">' +
+            '<a href="javascript:void(0)" onclick="goBookEdit(\'' + escAttr(escJs(book.identify)) + '\')" class="book-cover-link" title="' + escAttr(book.book_name) + '" aria-label="' + escAttr(window.__('book.action.open').replace('{name}', book.book_name)) + '">' +
+                '<span class="book-object"><span class="book-pages"></span><span class="book-edge"></span><span class="book-cover"><span class="book-cover-content">' +
+                    '<span class="book-cover-kicker">' + escHtml(coverLabel) + '</span><span class="book-cover-rule"></span>' +
+                    '<span class="book-cover-title' + titleClass + '"' + titleLang + '>' + escHtml(book.book_name) + '</span>' +
+                    '<span class="book-cover-foot"><time>' + escHtml(coverDate) + '</time><span>' + Number(book.doc_count || 0) + ' DOCS</span></span>' +
+                '</span></span></span>' +
+            '</a><button type="button" class="book-shelf-more" aria-expanded="false" aria-controls="bookShelfActions' + book.book_id + '" onclick="toggleBookShelfActions(' + book.book_id + ',this,event)" title="' + window.__('book.action.more') + '" aria-label="' + window.__('book.action.more') + '"><i class="fa-solid fa-ellipsis"></i></button>' +
+            renderBookActions(book, isShared, 'book-shelf-actions', 'bookShelfActions' + book.book_id) +
+            '</article>';
+    }
+
+    function renderCompactBook(book) {
+        var theme = getBookCoverTheme(book.book_name);
+        var isShared = !!bookShareStatus[book.book_id];
+        var labels = String(book.label || '').split(',').map(function(label) { return label.trim(); }).filter(Boolean);
+        var labelHtml = labels.length ? labels.map(function(label) { return '<span class="tag-badge">' + escHtml(label) + '</span>'; }).join('') : '<span class="book-compact-empty">—</span>';
+        var description = book.description ? escHtml(book.description) : '<span style="font-style:italic">' + window.__('book.no_desc') + '</span>';
+        var time = book.modify_time && book.modify_time.indexOf('0001') < 0 ? book.modify_time.substring(0, 10) : '—';
+        return '<article class="book-compact-row" style="--book-cover:' + theme.cover + ';--book-ink:' + theme.ink + '">' +
+            '<a href="javascript:void(0)" onclick="goBookEdit(\'' + escAttr(escJs(book.identify)) + '\')" class="book-compact-main" aria-label="' + escAttr(window.__('book.action.open').replace('{name}', book.book_name)) + '">' +
+                '<span class="book-compact-cover"><span>' + escHtml(book.book_name) + '</span></span>' +
+                '<span class="book-compact-copy"><span class="book-compact-title">' + escHtml(book.book_name) + '</span><span class="book-compact-desc">' + description + '</span></span>' +
+            '</a>' +
+            '<div class="book-compact-labels">' + labelHtml + '</div>' +
+            '<div class="book-compact-docs"><strong>' + Number(book.doc_count || 0) + '</strong> ' + window.__('book.doc_count_unit') + '</div>' +
+            '<time class="book-compact-time">' + time + '</time>' +
+            renderBookActions(book, isShared, 'book-compact-actions') +
+            '</article>';
+    }
+
+    function syncBookViewButtons() {
+        document.querySelectorAll('[data-book-view]').forEach(function(button) {
+            var active = button.getAttribute('data-book-view') === bookViewMode;
+            button.classList.toggle('active', active);
+            button.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+    }
+
+    function renderBookList() {
+        var listEl = document.getElementById('book-list');
+        listEl.setAttribute('aria-busy', 'false');
+        listEl.className = 'book-list book-view-' + bookViewMode;
+        if (!bookItems.length) {
+            listEl.className = 'book-list book-list-empty';
+            listEl.innerHTML = '<div class="text-center py-16 text-slate-500"><p class="text-lg mb-2">' + window.__('book.empty.state') + '</p>' + (bookKeyword ? '' : '<button onclick="openBookModal()" class="book-empty-create-inline text-blue-600 text-sm hover:underline"><i class="fa-solid fa-plus nav-icon"></i>' + window.__('book.empty.create') + '</button>') + '</div>';
+            return;
+        }
+        if (bookViewMode === 'compact') {
+            listEl.innerHTML = '<div class="book-compact-head" aria-hidden="true"><span>' + window.__('book.column.book') + '</span><span>' + window.__('book.column.labels') + '</span><span>' + window.__('book.column.documents') + '</span><span>' + window.__('book.column.modified') + '</span><span></span></div>' + bookItems.map(renderCompactBook).join('');
+            return;
+        }
+        listEl.innerHTML = bookItems.map(renderShelfBook).join('');
+    }
+
+    function switchBookView(mode) {
+        if (mode !== 'shelf' && mode !== 'compact') return;
+        bookViewMode = mode;
+        try { localStorage.setItem(BOOK_VIEW_STORAGE_KEY, mode); } catch(e) {}
+        syncBookViewButtons();
+        if (bookLoading) showBookSkeleton();
+        else if (bookItems.length) renderBookList();
+    }
+    window.switchBookView = switchBookView;
+
+    function closeBookShelfActions(exceptID) {
+        document.querySelectorAll('.book-shelf-actions.open').forEach(function(actions) {
+            if (exceptID && actions.id === exceptID) return;
+            actions.classList.remove('open');
+            var trigger = actions.parentElement ? actions.parentElement.querySelector('.book-shelf-more') : null;
+            if (trigger) trigger.setAttribute('aria-expanded', 'false');
+        });
+    }
+
+    function toggleBookShelfActions(id, trigger, clickEvent) {
+        if (clickEvent) clickEvent.stopPropagation();
+        var actions = document.getElementById('bookShelfActions' + id);
+        if (!actions) return;
+        var willOpen = !actions.classList.contains('open');
+        closeBookShelfActions(actions.id);
+        actions.classList.toggle('open', willOpen);
+        trigger.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+    }
+    window.toggleBookShelfActions = toggleBookShelfActions;
+    document.addEventListener('click', function(event) {
+        if (!event.target.closest('.book-shelf-actions') && !event.target.closest('.book-shelf-more')) closeBookShelfActions();
+    });
+
+    try {
+        var savedBookView = localStorage.getItem(BOOK_VIEW_STORAGE_KEY);
+        if (savedBookView === 'shelf' || savedBookView === 'compact') bookViewMode = savedBookView;
+    } catch(e) {}
+    syncBookViewButtons();
+
+    async function loadBooks() {
+        var listEl = document.getElementById('book-list');
+        bookLoading = true;
+        showBookSkeleton();
+        var params = 'page=' + bookPage + '&page_size=' + {{.PageSize}};
+        if (bookKeyword) params += '&keyword=' + encodeURIComponent(bookKeyword);
+        try {
+        var r = await fetch('/api/books?' + params);
+        if (!r.ok) throw new Error(window.__('book.request_error'));
+        var d = await r.json();
+        var items = d.data || [];
+        if (items.length > 0) {
+            // Fetch share status for all books
+            var ids = items.map(function(b) { return b.book_id; }).join(',');
+            try {
+                var sr = await fetch('/api/shares/status?type=book&ids=' + ids);
+                var sd = await sr.json();
+                bookShareStatus = sd.data || {};
+            } catch(e) { bookShareStatus = {}; }
+        }
+        bookItems = items;
+        bookLoading = false;
+        renderBookList();
+        bookTotalPages = d.total_pages || 0;
+        renderPagination('book-pagination', bookPage, bookTotalPages, function(page) { bookPage = page; loadBooks(); });
+        } catch(e) {
+            bookItems = [];
+            bookLoading = false;
+            listEl.setAttribute('aria-busy', 'false');
+            listEl.className = 'book-list book-list-empty';
+            listEl.innerHTML = '<div class="text-center py-16 text-slate-500"><p class="text-lg mb-2">' + window.__('book.load_error') + '</p><p class="text-sm">' + window.__('book.load_error.hint') + '</p></div>';
+
+        }
+    }
+
+    function doBookSearch() {
+        bookKeyword = document.getElementById('book-search').value.trim();
+        bookPage = 1;
+        loadBooks();
+    }
+
+    function syncBookShareActions(id, isShared) {
+        document.querySelectorAll('[data-book-share="' + id + '"]').forEach(function(button) {
+            var title = isShared ? window.__('book.share.title.unshare') : window.__('book.share.title.share');
+            var icon = button.querySelector('i');
+            button.classList.toggle('book-shared', isShared);
+            button.title = title;
+            button.setAttribute('aria-label', title);
+            if (icon) {
+                icon.classList.toggle('fa-eye', isShared);
+                icon.classList.toggle('fa-eye-slash', !isShared);
+            }
+        });
+    }
+
+    async function toggleShareBook(id, el) {
+        var action = async function() {
+            var name = el ? el.getAttribute('data-title') : '';
+            var isShared = !!bookShareStatus[id];
+            if (isShared) {
+                if (!await BSDialog.confirm2(window.__('book.share.confirm.unshare').replace('{name}', name))) return;
+                var res = await csrfFetch('/api/shares/book/' + id, { method: 'DELETE' });
+                if (res.ok) {
+                    delete bookShareStatus[id];
+                    syncBookShareActions(id, false);
+                    BSDialog.toast(window.__('book.share.toast.unshared'), 'success');
+                } else { var d = await res.json(); BSDialog.alert2(d.message || window.__('book.share.error')); }
+            } else {
+                var res = await csrfFetch('/api/shares', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ share_type: 'book', target_id: id }) });
+                if (res.ok) {
+                    bookShareStatus[id] = true;
+                    syncBookShareActions(id, true);
+                    BSDialog.toast(window.__('book.share.toast.published'), 'success');
+                } else { var d = await res.json(); BSDialog.alert2(d.message || window.__('book.share.publish_error')); }
+            }
+        };
+        if (window.BookStarkRequestLock) {
+            await BookStarkRequestLock.run('books:share:' + id, action, el);
+            return;
+        }
+        if (el && el.disabled) return;
+        await action();
+    }
+    window.toggleShareBook = toggleShareBook;
+
+    async function deleteBook(id, el) {
+        var action = async function() {
+            var name = el ? el.getAttribute('data-title') : '';
+            if (!await BSDialog.confirm2(window.__('book.delete.confirm').replace('{name}', name))) return;
+            var res = await csrfFetch('/api/books/' + id, {method: 'DELETE'});
+            if (res.ok) loadBooks();
+            else { var d = await res.json(); BSDialog.alert2(d.message || window.__('book.delete.failed')); }
+        };
+        if (window.BookStarkRequestLock) {
+            await BookStarkRequestLock.run('books:delete:' + id, action, el);
+            return;
+        }
+        if (el && el.disabled) return;
+        await action();
+    }
+
+    // Init tag input
+    bookTagInput = new TagInput(document.getElementById('bookTagContainer'), { placeholder: window.__('book.tag.placeholder'), useSheet: true });
+
+    renderPagination('book-pagination', bookPage, bookTotalPages, function(page) { bookPage = page; loadBooks(); });
+    // Restore list state from sessionStorage
+    var _savedBookState = sessionStorage.getItem('book_list_state');
+    if (_savedBookState) {
+        try {
+            var _s = JSON.parse(_savedBookState);
+            bookPage = _s.page || 1;
+            bookKeyword = _s.keyword || '';
+            if (bookKeyword) document.getElementById('book-search').value = bookKeyword;
+            sessionStorage.removeItem('book_list_state');
+        } catch(e) {}
+    }
+    loadBooks();
+    try {
+        var _bookParams = new URLSearchParams(window.location.search);
+        if (_bookParams.get('command') === 'new-book') {
+            history.replaceState(null, '', '/books');
+            setTimeout(function() { openBookModal(); }, 120);
+        }
+    } catch(e) {}
+    </script>
+</body>
+</html>
