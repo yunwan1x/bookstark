@@ -2,6 +2,17 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Deployment
+
+Use `./deploy.sh [version]` for remote deployments. Do not bypass it with manual
+binary uploads: the script also updates `/root/bookstark.tgz` on the remote host.
+It serializes deployments and builds Go with systemd limits (850 MiB maximum,
+700 MiB pressure threshold, one CPU), `-p=1`, and `GOMEMLIMIT=300MiB` before
+building/pushing the runtime image. Run from a host with Go, Python, Docker and
+permission to create system systemd units. Build limits can be overridden using
+`BUILD_MEMORY_MAX`, `BUILD_MEMORY_HIGH`, `BUILD_CPU_QUOTA`, `BUILD_GO_MEMORY`.
+Do not run tests or another build concurrently with deployment on this host.
+
 ## Build & Run
 
 ```bash

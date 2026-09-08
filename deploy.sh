@@ -2,12 +2,32 @@
 set -euo pipefail
 
 
+# Always operate on this checkout, even when invoked from another directory.
+cd "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+# Serialize deployments on this small build host.
+exec 9>"/tmp/bookstark-deploy-${UID}.lock"
+flock -n 9 || { echo "Another BookStark deployment is running." >&2; exit 1; }
+
+BUILD_MEMORY_MAX="${BUILD_MEMORY_MAX:-850M}"
+BUILD_MEMORY_HIGH="${BUILD_MEMORY_HIGH:-700M}"
+BUILD_CPU_QUOTA="${BUILD_CPU_QUOTA:-100%}"
+BUILD_GO_MEMORY="${BUILD_GO_MEMORY:-300MiB}"
+# systemd enforces the hard limit on the compiler and all its children.
+for tool in systemd-run docker git python3 ssh scp; do
+    command -v "$tool" >/dev/null || { echo "Missing tool: $tool" >&2; exit 1; }
+done
+if ! command -v go >/dev/null && [ -x /usr/local/go/bin/go ]; then
+    export PATH="/usr/local/go/bin:$PATH"
+fi
+command -v go >/dev/null || { echo "Go is required for the limited local build." >&2; exit 1; }
+
 IMAGE="changhui/bookstark"
 REMOTE="root@www.vs2010wy.top"
 REMOTE_PORT=28246
 COMPOSE_FILE="bookstark.yml"
-SOURCE_ARCHIVE="$(mktemp -t bookstark-source.XXXXXX.tgz)"
-trap 'rm -f "${SOURCE_ARCHIVE}"' EXIT
+BUILD_DIR="$(mktemp -d -t bookstark-release.XXXXXX)"
+SOURCE_ARCHIVE="${BUILD_DIR}/bookstark.tgz"
+trap 'rm -rf -- "${BUILD_DIR}"' EXIT
 
 # Version from argument, fallback to latest git tag
 VERSION="${1:-}"
@@ -24,7 +44,29 @@ echo "Image: ${FULL_IMAGE}"
 echo ""
 echo "[1/4] Building image..."
 COMMIT="${COMMIT:-$(git rev-parse HEAD)}"
-docker build --build-arg COMMIT="${COMMIT}" -t "${FULL_IMAGE}" .
+# Do not compile in docker build: BuildKit does not inherit this shell's cgroup.
+# --wait propagates build/OOM failure, so no upload or deployment follows failure.
+systemd-run --quiet --wait --pipe --collect \
+    --unit="bookstark-deploy-build" \
+    --working-directory="$PWD" \
+    --property="MemoryMax=${BUILD_MEMORY_MAX}" \
+    --property="MemoryHigh=${BUILD_MEMORY_HIGH}" \
+    --property="MemorySwapMax=0" \
+    --property="CPUQuota=${BUILD_CPU_QUOTA}" \
+    --setenv="PATH=$PATH" \
+    --setenv="GOPATH=$(go env GOPATH)" \
+    --setenv="GOCACHE=$(go env GOCACHE)" \
+    --setenv="GOPROXY=$(go env GOPROXY)" \
+    --setenv="GOFLAGS=-p=1" \
+    --setenv="GOMAXPROCS=1" \
+    --setenv="GOMEMLIMIT=${BUILD_GO_MEMORY}" \
+    --setenv="CGO_ENABLED=0" \
+    --setenv="COMMIT=${COMMIT}" \
+    python3 -u build.py --build --tags timetzdata --output "${BUILD_DIR}/bookstark"
+
+# The Docker stage only copies the finished binary; no second compilation.
+cp /etc/ssl/certs/ca-certificates.crt "${BUILD_DIR}/ca-certificates.crt"
+docker build -f Dockerfile.release -t "${FULL_IMAGE}" "${BUILD_DIR}"
 
 echo ""
 echo "[2/4] Pushing image..."
@@ -37,7 +79,11 @@ tar \
     --exclude='.git' \
     --exclude='bookstark/bookstark' \
     --exclude='bookstark/bookstark-dev' \
+    --exclude='bookstark/dist/bookstark' \
     --exclude='*.db' \
+    --exclude='*.db-*' \
+    --exclude='*.sqlite-*' \
+    --exclude='*.sqlite3-*' \
     --exclude='*.sqlite' \
     --exclude='*.sqlite3' \
     --exclude='bookstark.db*' \
@@ -112,8 +158,8 @@ sed -i "s|image: changhui/bookstark:.*|image: ${IMAGE}|" "${COMPOSE_FILE}"
 echo "Updated ${COMPOSE_FILE} -> image: ${IMAGE}"
 
 # Restart service
-docker compose -f "${COMPOSE_FILE}" pull
-docker compose -f "${COMPOSE_FILE}" up -d
+docker compose -f "${COMPOSE_FILE}" pull bookstark
+docker compose -f "${COMPOSE_FILE}" up -d --no-deps bookstark
 
 
 echo "=== Deploy complete: ${IMAGE} ==="
