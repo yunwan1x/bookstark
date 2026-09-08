@@ -25,7 +25,7 @@ var EmbedFS struct {
 var templateFuncs = template.FuncMap{
 	"buildTime": func() string {
 		if t, err := time.Parse("20060102150405", conf.App.BuildTime); err == nil {
-			return t.Format("2006-01-02 15:04:05") + " UTC+8"
+			return t.Format("01-02 15:04")
 		}
 		return "—"
 	},
