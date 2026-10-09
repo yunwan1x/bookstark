@@ -46,8 +46,15 @@
             var list = el('ul', 'home-list'); list.id = 'home-list-' + s.key;
             s.items.forEach(function (item) {
                 var li = el('li'); var a = el('a', 'home-row');
-                // Only server-generated local routes are accepted, never raw resource URLs.
-                if (typeof item.url !== 'string' || !item.url.startsWith('/') || item.url.startsWith('//')) return;
+                if (typeof item.url !== 'string') return;
+                if (s.key === 'bookmarks') {
+                    // Bookmark destinations are external; reject executable URL schemes.
+                    try {
+                        var destination = new URL(item.url);
+                        if (destination.protocol !== 'http:' && destination.protocol !== 'https:') return;
+                    } catch (_) { return; }
+                    a.target = '_blank'; a.rel = 'noopener noreferrer';
+                } else if (!item.url.startsWith('/') || item.url.startsWith('//')) return;
                 a.href = item.url; a.title = item.title || lt('未命名','Untitled'); a.append(el('span','home-row-title',a.title));
                 if (item.badge) a.append(el('span','home-badge',({markdown:'MD',html:'HTML',blog:lt('文章 / 笔记','Article / Note'),book:lt('书籍','Book'),online:lt('在线','Online'),offline:lt('离线','Offline'),ssh:lt('SSH 主机','SSH host'),webdav:'WebDAV','加密':lt('加密','Protected'),'已完成':lt('已完成','Completed'),'待处理':lt('待处理','Pending')})[item.badge] || item.badge));
                 var date = el('time','',item.date ? item.date.slice(5) : ''); date.dateTime = item.date; date.title = item.date; a.append(date); li.append(a); list.append(li);
