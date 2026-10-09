@@ -119,11 +119,11 @@ func ListBookmarkLabelsWithCount(c *gin.Context) {
 var metaClient = &http.Client{
 	Timeout: 8 * time.Second,
 	Transport: &http.Transport{
-		MaxIdleConns:        10,
-		MaxConnsPerHost:     5,
-		IdleConnTimeout:     30 * time.Second,
-		DisableKeepAlives:   false,
-		DisableCompression:  true,
+		MaxIdleConns:       10,
+		MaxConnsPerHost:    5,
+		IdleConnTimeout:    30 * time.Second,
+		DisableKeepAlives:  false,
+		DisableCompression: true,
 	},
 }
 
@@ -255,9 +255,9 @@ func extractFaviconURL(html, baseURL string) string {
 	}
 
 	type linkMatch struct {
-		href string
-		typ  string
-		rel  string
+		href  string
+		typ   string
+		rel   string
 		sizes string
 	}
 
@@ -618,7 +618,8 @@ func CreateBookmark(c *gin.Context) {
 			MemberID:    memberID,
 		}
 		if err := bookmark.Insert(); err != nil {
-			apiError(c, http.StatusBadRequest, "创建书签失败")
+			log.Printf("CreateBookmark: insert_new member_id=%d err=%v", memberID, err)
+			bookmarkInsertError(c, err)
 			return
 		}
 	}
@@ -1530,7 +1531,7 @@ func CreateBookmarkCompat(c *gin.Context) {
 		}
 		if err := bookmark.Insert(); err != nil {
 			logBookmarkCompatFailure(c, memberID, "insert_new", req.URL, err)
-			apiError(c, http.StatusBadRequest, "创建书签失败")
+			bookmarkInsertError(c, err)
 			return
 		}
 	}
@@ -1580,6 +1581,15 @@ func logBookmarkCompatFailure(c *gin.Context, memberID int64, stage, rawURL stri
 		c.Request.URL.Query().Has("disable_scraping"),
 		err,
 	)
+}
+
+func bookmarkInsertError(c *gin.Context, err error) {
+	if models.IsBookmarkBusyError(err) {
+		c.Header("Retry-After", "1")
+		apiError(c, http.StatusServiceUnavailable, "创建书签失败")
+		return
+	}
+	apiError(c, http.StatusInternalServerError, "创建书签失败")
 }
 
 // CheckBookmarkCompat linkding 兼容：检查 URL 是否已收藏

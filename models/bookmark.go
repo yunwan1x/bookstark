@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"net/url"
@@ -313,65 +314,12 @@ func generateFaviconURL(rawURL string) string {
 
 // Insert 创建书签
 func (b *Bookmark) Insert() error {
-	if b.Favicon == "" {
-		b.Favicon = generateFaviconURL(b.URL)
-	}
-	isPublic := 0
-	if b.IsPublic {
-		isPublic = 1
-	}
-	navVisible := 0
-	if b.NavVisible {
-		navVisible = 1
-	}
 	now := time.Now()
-
-	// 使用事务保证 order_sort 的原子性（避免并发创建时排序值冲突）
-	tx, err := DB.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	// 事务内原子计算 order_sort：如果调用者已设置 > 0 则使用，否则从数据库取 MAX+1
-	orderSort := b.OrderSort
-	if orderSort <= 0 {
-		var maxSort int
-		if err := tx.QueryRow("SELECT COALESCE(MAX(order_sort), 0) FROM md_bookmark WHERE member_id = ?", b.MemberID).Scan(&maxSort); err != nil {
-			return err
-		}
-		orderSort = maxSort + 1
-	}
-
-	result, err := tx.Exec(
-		"INSERT INTO md_bookmark (title, url, description, favicon, order_sort, label, member_id, is_public, nav_visible, create_time, modify_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-		b.Title, b.URL, b.Description, b.Favicon, orderSort, b.Label, b.MemberID, isPublic, navVisible, now, now,
-	)
-	if err != nil {
-		return err
-	}
-	b.BookmarkID, _ = result.LastInsertId()
-	if b.BookmarkID == 0 {
-		log.Printf("Bookmark.Insert: LastInsertId returned 0")
-	}
-	b.OrderSort = orderSort
-
-	return tx.Commit()
+	return b.insertAt(now, now)
 }
 
 // InsertWithTime 插入书签并使用 Bookmark 自身的 CreateTime/ModifyTime（而非 time.Now）
 func (b *Bookmark) InsertWithTime() error {
-	if b.Favicon == "" {
-		b.Favicon = generateFaviconURL(b.URL)
-	}
-	isPublic := 0
-	if b.IsPublic {
-		isPublic = 1
-	}
-	navVisible := 0
-	if b.NavVisible {
-		navVisible = 1
-	}
 	ct := b.CreateTime
 	mt := b.ModifyTime
 	if ct.IsZero() {
@@ -381,35 +329,45 @@ func (b *Bookmark) InsertWithTime() error {
 		mt = ct
 	}
 
-	tx, err := DB.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
+	return b.insertAt(ct, mt)
+}
 
-	orderSort := b.OrderSort
-	if orderSort <= 0 {
-		var maxSort int
-		if err := tx.QueryRow("SELECT COALESCE(MAX(order_sort), 0) FROM md_bookmark WHERE member_id = ?", b.MemberID).Scan(&maxSort); err != nil {
+// IsBookmarkBusyError includes SQLite's extended BUSY codes (e.g. 517).
+func IsBookmarkBusyError(err error) bool {
+	var coded interface{ Code() int }
+	return errors.As(err, &coded) && coded.Code()&0xff == 5
+}
+
+func (b *Bookmark) insertAt(ct, mt time.Time) error {
+	if b.Favicon == "" {
+		b.Favicon = generateFaviconURL(b.URL)
+	}
+	// Compute the next sort value inside the write statement, avoiding a
+	// deferred read transaction upgrading to a writer with a stale snapshot.
+	const query = `INSERT INTO md_bookmark
+		(title, url, description, favicon, order_sort, label, member_id, is_public, nav_visible, create_time, modify_time)
+		SELECT ?, ?, ?, ?, CASE WHEN ? > 0 THEN ? ELSE
+			(SELECT COALESCE(MAX(order_sort), 0) + 1 FROM md_bookmark WHERE member_id = ?) END,
+			?, ?, ?, ?, ?, ?
+		RETURNING bookmark_id, order_sort`
+	for attempt := 0; ; attempt++ {
+		var id int64
+		var order int
+		err := DB.QueryRow(query, b.Title, b.URL, b.Description, b.Favicon,
+			b.OrderSort, b.OrderSort, b.MemberID, b.Label, b.MemberID,
+			b.IsPublic, b.NavVisible, ct, mt).Scan(&id, &order)
+		if err == nil {
+			b.BookmarkID, b.OrderSort = id, order
+			return nil
+		}
+		// Each attempt is a fresh, atomic statement. Never retry constraints
+		// or other permanent errors. SQLite also applies its busy_timeout.
+		if !IsBookmarkBusyError(err) || attempt >= 2 {
 			return err
 		}
-		orderSort = maxSort + 1
+		log.Printf("Bookmark.Insert: database busy member_id=%d retry=%d err=%v", b.MemberID, attempt+1, err)
+		time.Sleep(time.Duration(attempt+1) * 50 * time.Millisecond)
 	}
-
-	result, err := tx.Exec(
-		"INSERT INTO md_bookmark (title, url, description, favicon, order_sort, label, member_id, is_public, nav_visible, create_time, modify_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-		b.Title, b.URL, b.Description, b.Favicon, orderSort, b.Label, b.MemberID, isPublic, navVisible, ct, mt,
-	)
-	if err != nil {
-		return err
-	}
-	b.BookmarkID, _ = result.LastInsertId()
-	if b.BookmarkID == 0 {
-		log.Printf("Bookmark.InsertWithTime: LastInsertId returned 0")
-	}
-	b.OrderSort = orderSort
-
-	return tx.Commit()
 }
 
 // Update 更新书签
