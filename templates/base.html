@@ -134,7 +134,7 @@ button:active:not(:disabled), .page-btn:active:not(:disabled) {
 <header class="h-10 flex items-center px-3 sm:px-4 text-sm shrink-0" data-swipe-nav data-swipe-item="[data-nav-idx][href]" data-swipe-index="data-nav-idx" data-swipe-mode="href" data-swipe-ignore="input,textarea,select,#user-menu-trigger,#searchTrigger,#themeToggle,#langToggle,#headerCloseSearch,#headerCreateTrigger,[data-header-menu-trigger]" style="position:sticky;top:0;z-index:20;background:var(--color-bg-card);border-bottom:1px solid var(--color-border)">
     <a href="/" class="logo-text py-2 sm:mr-6 hidden sm:inline">BookStark</a>
     <nav class="flex gap-1" id="main-nav">
-        {{if .Account}}<a href="/home" class="nav-link header-home-link px-2 py-2.5 font-semibold {{if eq .Nav "home"}}active{{end}}">{{call .T "home.nav"}}</a>{{end}}
+        {{if .Account}}<a href="/home" class="nav-link header-home-link px-2 py-2.5 font-semibold {{if eq .Nav "home"}}active{{end}}"><i class="fa-solid fa-house nav-icon" aria-hidden="true"></i><span class="nav-text">{{call .T "home.nav"}}</span></a>{{end}}
         <div class="header-nav-group">
             <a href="{{if .Account}}/notes{{else}}/bookmarks{{end}}" class="nav-link header-nav-trigger px-2 py-2.5 font-semibold {{if or (eq .Nav "notes") (eq .Nav "tasks") (eq .Nav "books") (eq .Nav "bookmarks")}}active{{end}}" data-nav-idx="0" data-header-menu-trigger data-header-menu-id="header-knowledge-menu" aria-haspopup="menu" aria-expanded="false">
                 <i class="fa-solid fa-layer-group nav-icon"></i><span class="nav-text">{{call .T "nav.knowledge"}}</span><i class="fa-solid fa-chevron-down"></i>
