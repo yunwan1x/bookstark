@@ -17854,7 +17854,7 @@ function qm(e, t) {
   var n = tF(e), a = (t || "image/png").split("/")[1] || "png";
   a === "svg+xml" && (a = "svg");
   var i = "drawing-" + Date.now() + "." + a, r = new FormData();
-  return r.append("file", n, i), r.append("category", "drawing"), fetch("/api/uploads", {
+  return r.append("file", n, i), r.append("category", "drawing"), window.fetchWithCurrentCSRF("/api/uploads", {
     method: "POST",
     headers: { "X-CSRF-Token": eF() },
     body: r

@@ -52,6 +52,7 @@
     if (isAuthed()) {
       commands.unshift(
         command('搜索全站', '输入关键词后回车搜索全部内容', '搜索', 'fa-magnifying-glass', '', runGlobalSearch, 'search'),
+        command('个人首页', '/home', '页面', 'fa-house', '/home', null, 'home dashboard'),
         command('笔记', '/notes', '页面', 'fa-note-sticky', '/notes', null, 'note'),
         command('待办', '/notes?tab=tasks', '页面', 'fa-list-check', '/notes?tab=tasks', null, 'todo task'),
         command('文章', '/notes?tab=articles', '页面', 'fa-pen-nib', '/notes?tab=articles', null, 'article'),

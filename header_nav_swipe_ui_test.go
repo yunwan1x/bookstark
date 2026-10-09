@@ -19,8 +19,11 @@ func TestMobileHeaderNavSwipeSwitchesPagesByNavIndex(t *testing.T) {
 	if !strings.Contains(string(zh), `"nav.shares":          "分享",`) {
 		t.Fatalf("Chinese shares nav label should be 分享")
 	}
-	if !strings.Contains(string(zh), `"nav.collections":     "专题",`) {
-		t.Fatalf("Chinese collections nav label should be 专题")
+	if !strings.Contains(string(zh), `"nav.collections":     "合集",`) {
+		t.Fatalf("Chinese collections nav label should be 合集")
+	}
+	if !strings.Contains(string(zh), `"nav.assets":          "资源",`) {
+		t.Fatalf("Chinese resources nav label should be 资源")
 	}
 	for _, required := range []string{
 		`data-swipe-nav`,

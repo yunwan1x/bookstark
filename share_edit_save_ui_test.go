@@ -74,7 +74,7 @@ func TestContentSaveRejectsOfflineReplayAndDocumentSwitchRaces(t *testing.T) {
 	utils := string(utilsBytes)
 	for _, required := range []string{
 		`var offlinePolicy = options.offlinePolicy || 'queue';`,
-		`options.headers['X-BookStark-Offline-Policy'] = 'reject';`,
+		`options.headers.set('X-BookStark-Offline-Policy', 'reject');`,
 		`offlinePolicy !== 'reject' && window.BSOfflineQueue`,
 	} {
 		if !strings.Contains(utils, required) {

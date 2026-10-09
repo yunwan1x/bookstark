@@ -38,7 +38,7 @@
     var ctrl = new AbortController();
     var fullText = '';
 
-    fetch('/api/ai/complete', {
+    fetchWithCurrentCSRF('/api/ai/complete', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

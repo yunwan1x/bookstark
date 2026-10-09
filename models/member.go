@@ -25,6 +25,7 @@ type Member struct {
 const DefaultHomeNotes = "notes"
 
 var defaultHomeRoutes = map[string]string{
+	"home":      "/home",
 	"notes":     "/notes",
 	"tasks":     "/notes?tab=tasks",
 	"articles":  "/notes?tab=articles",
@@ -38,7 +39,7 @@ func NormalizeDefaultHome(home string) string {
 	if _, ok := defaultHomeRoutes[home]; ok {
 		return home
 	}
-	return DefaultHomeNotes
+	return "home"
 }
 
 func IsValidDefaultHome(home string) bool {

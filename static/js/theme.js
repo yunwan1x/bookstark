@@ -469,6 +469,17 @@
         var tex = element.dataset.tex;
         if (!tex) return;
 
+        // Decoration must not fetch a 2 MB typesetting engine on app startup.
+        // Keep the existing readable fallback; document editors independently
+        // load MathJax when actual content needs it.
+        var lightweight = (document.body && document.body.classList.contains('home-body')) ||
+            window.matchMedia('(max-width: 768px)').matches ||
+            (navigator.connection && navigator.connection.saveData);
+        if (lightweight && !(window.MathJax && typeof window.MathJax.tex2svgPromise === 'function')) {
+            element.classList.add('is-fallback');
+            return;
+        }
+
         loadScienceMathJax().then(function(mathJax) {
             if (!element.parentNode || document.documentElement.getAttribute('data-science-background') !== 'on') {
                 return;

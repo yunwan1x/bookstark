@@ -77,7 +77,7 @@ func createTables() error {
 			email VARCHAR(100) NOT NULL DEFAULT '' UNIQUE,
 			role INTEGER NOT NULL DEFAULT 1,
 			status INTEGER NOT NULL DEFAULT 0,
-			default_home VARCHAR(30) NOT NULL DEFAULT 'notes',
+			default_home VARCHAR(30) NOT NULL DEFAULT 'home',
 			create_time DATETIME NOT NULL,
 			create_at INTEGER NOT NULL DEFAULT 0,
 			last_login_time DATETIME

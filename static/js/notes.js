@@ -59,7 +59,7 @@ function NotesApp(opts) {
                     '<div class="code-block-header">' +
                     '<span class="code-block-dots"><i></i><i></i><i></i></span>' +
                     '<span class="code-block-lang">' + (typeof escHtml === 'function' ? escHtml(lang) : lang) + '</span>' +
-                    '<button class="code-copy-btn" title="' + window.__('note.code_copy_title') + '" aria-label="' + window.__('note.code_copy_aria') + '"><i class="fa-regular fa-copy"></i></button>' +
+                    '<button type="button" class="code-copy-btn" title="' + window.__('note.code_copy_title') + '" aria-label="' + window.__('note.code_copy_aria') + '"><i class="fa-regular fa-copy"></i></button>' +
                     '</div>' +
                     '<pre><code>' + escaped + '</code></pre>' +
                     '</div>';
@@ -930,7 +930,7 @@ NotesApp.prototype.loadNotes = function(callback) {
             onAction: function() { self.loadNotes(callback); }
         });
     }
-    fetch('/api/blogs?' + params.toString(), {
+    fetchWithCurrentCSRF('/api/blogs?' + params.toString(), {
         headers: { 'X-CSRF-Token': this.csrf }
     }).then(function(r) { return r.json(); }).then(function(data) {
         if (window.BookStarkState) BookStarkState.clear('notes:list');
@@ -1001,7 +1001,7 @@ NotesApp.prototype.loadArticles = function(callback) {
             onAction: function() { self.loadArticles(callback); }
         });
     }
-    fetch('/api/blogs?' + params.toString(), {
+    fetchWithCurrentCSRF('/api/blogs?' + params.toString(), {
         headers: { 'X-CSRF-Token': this.csrf }
     }).then(function(r) { return r.json(); }).then(function(data) {
         if (window.BookStarkState) BookStarkState.clear('notes:articles');
@@ -1049,7 +1049,7 @@ NotesApp.prototype.loadArticleShareStatus = function(items) {
     var ids = items.map(function(b) { return b.blog_id; });
     if (!ids.length) { this.articleShareStatus = {}; return Promise.resolve(); }
     var self = this;
-    return fetch('/api/shares/status?type=blog&ids=' + ids.join(',')).then(function(r) { return r.json(); }).then(function(d) {
+    return fetchWithCurrentCSRF('/api/shares/status?type=blog&ids=' + ids.join(',')).then(function(r) { return r.json(); }).then(function(d) {
         self.articleShareStatus = d.data || {};
     }).catch(function() { self.articleShareStatus = {}; });
 };
@@ -1386,7 +1386,7 @@ NotesApp.prototype.submitCompose = function() {
     };
     this._appendLocationPayload(body);
     var request = this._runSubmitRequest('notes:compose:create', document.querySelector('#composeCard .compose-submit'), function() {
-        return fetch('/api/blogs', {
+        return fetchWithCurrentCSRF('/api/blogs', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': self.csrf },
             body: JSON.stringify(body)
@@ -2005,7 +2005,7 @@ NotesApp.prototype.submitFullEditor = function() {
     var body = { blog_title: title, blog_type: 'note', blog_content: text, visibility: this.composeVisibility, labels: labels };
     this._appendLocationPayload(body);
     var request = this._runSubmitRequest('notes:editor:create', document.querySelector('#editorOverlay .editor-toolbar-submit'), function() {
-        return fetch('/api/blogs', {
+        return fetchWithCurrentCSRF('/api/blogs', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': self.csrf },
             body: JSON.stringify(body)
@@ -2038,7 +2038,7 @@ NotesApp.prototype.saveEditNoteFromModal = function() {
     var labels = this.editorTagInput ? this.editorTagInput.getTags() : '';
     var self = this;
     var request = this._runSubmitRequest('notes:editor:update:' + id, document.querySelector('#editorOverlay .editor-toolbar-submit'), function() {
-        return fetch('/api/blogs/' + id, {
+        return fetchWithCurrentCSRF('/api/blogs/' + id, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': self.csrf },
             body: JSON.stringify({ blog_content: text, labels: labels })
@@ -2197,7 +2197,7 @@ NotesApp.prototype.saveArticleSetting = function() {
         body.editor_type = this._selectedEditorType || 'markdown';
         if (newPwd) body.new_password = newPwd;
         var createRequest = this._runSubmitRequest('notes:article:create', document.getElementById('articleSettingSaveBtn'), function() {
-            return fetch('/api/blogs', {
+            return fetchWithCurrentCSRF('/api/blogs', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': self.csrf },
                 body: JSON.stringify(body)
@@ -2216,7 +2216,7 @@ NotesApp.prototype.saveArticleSetting = function() {
     } else {
         // Update existing article
         var updateRequest = this._runSubmitRequest('notes:article:update:' + id, document.getElementById('articleSettingSaveBtn'), function() {
-            return fetch('/api/blogs/' + id, {
+            return fetchWithCurrentCSRF('/api/blogs/' + id, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': self.csrf },
                 body: JSON.stringify(body)
@@ -2301,7 +2301,7 @@ NotesApp.prototype._hideArticleTagDropdown = function() {
 NotesApp.prototype.togglePin = function(id) {
     var self = this;
     var request = this._runSubmitRequest('notes:note:pin:' + id, this._getCardActionButton('.note-card[data-id="' + id + '"]', '.note-pin-action'), function() {
-        return fetch('/api/blogs/' + id + '/pin', {
+        return fetchWithCurrentCSRF('/api/blogs/' + id + '/pin', {
         method: 'PATCH',
         headers: { 'X-CSRF-Token': self.csrf }
         });
@@ -2332,7 +2332,7 @@ NotesApp.prototype.togglePin = function(id) {
 NotesApp.prototype.toggleVisibility = function(id) {
     var self = this;
     var request = this._runSubmitRequest('notes:note:visibility:' + id, this._getCardActionButton('.note-card[data-id="' + id + '"]', '.vis-toggle'), function() {
-        return fetch('/api/blogs/' + id + '/visibility', {
+        return fetchWithCurrentCSRF('/api/blogs/' + id + '/visibility', {
         method: 'PATCH',
         headers: { 'X-CSRF-Token': self.csrf }
         });
@@ -2372,7 +2372,7 @@ NotesApp.prototype.removeBlogLabel = function(blogId, labelName) {
                 if (name && name !== labelName) remaining.push(name);
             });
         }
-        fetch('/api/labels/resource/blog/' + blogId, {
+        fetchWithCurrentCSRF('/api/labels/resource/blog/' + blogId, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': self.csrf },
             body: JSON.stringify({ labels: remaining.join(',') })
@@ -2481,7 +2481,7 @@ NotesApp.prototype.deleteNote = function(id) {
     var request = this._runSubmitRequest('notes:note:delete:' + id, this._getCardActionButton('.note-card[data-id="' + id + '"]', '.del'), function() {
         return BSDialog.confirm2(window.__('note.confirm.delete')).then(function(ok) {
             if (!ok) return null;
-            return fetch('/api/blogs/' + id, {
+            return fetchWithCurrentCSRF('/api/blogs/' + id, {
             method: 'DELETE',
             headers: { 'X-CSRF-Token': self.csrf }
             });
@@ -2508,7 +2508,7 @@ NotesApp.prototype.editNote = function(id) {
     if (!card) return;
     var self = this;
     // Fetch full content
-    fetch('/api/blogs/' + id, {
+    fetchWithCurrentCSRF('/api/blogs/' + id, {
         headers: { 'X-CSRF-Token': this.csrf }
     }).then(function(r) { return r.json(); }).then(function(data) {
         if (data.code !== 0 || !data.data) { BSDialog.toast(window.__('note.toast.get_content_failed'), 'error'); return; }
@@ -2609,7 +2609,7 @@ NotesApp.prototype.closeImageLightbox = function() {
 
 NotesApp.prototype.copyNoteContent = function(id) {
     var btn = document.querySelector('.note-copy-btn');
-    fetch('/api/blogs/' + id, {
+    fetchWithCurrentCSRF('/api/blogs/' + id, {
         headers: { 'X-CSRF-Token': this.csrf }
     }).then(function(r) { return r.json(); }).then(function(data) {
         if (data.code !== 0 || !data.data) { BSDialog.toast(window.__('note.toast.get_content_failed'), 'error'); return; }
@@ -2692,7 +2692,7 @@ NotesApp.prototype.openNoteViewer = function(id, options) {
     overlay.classList.add('active');
     if (window.BookStarkScrollLock) BookStarkScrollLock.lock('notes-viewer-modal');
     this._trapNoteViewer(true);
-    fetch('/api/blogs/' + id, {
+    fetchWithCurrentCSRF('/api/blogs/' + id, {
         headers: { 'X-CSRF-Token': this.csrf }
     }).then(function(r) { return r.json(); }).then(function(data) {
         if (token !== self._noteViewerRequestToken) return;
@@ -2831,7 +2831,7 @@ NotesApp.prototype.goArticleEdit = function(identify, id) {
 NotesApp.prototype.publishArticle = function(id) {
     var self = this;
     var request = this._runSubmitRequest('notes:article:publish:' + id, this._getCardActionButton('.article-card[data-id="' + id + '"]', '.article-share-action'), function() {
-        return fetch('/api/shares', {
+        return fetchWithCurrentCSRF('/api/shares', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -2898,7 +2898,7 @@ NotesApp.prototype.unpublishArticle = function(id) {
     var request = this._runSubmitRequest('notes:article:unpublish:' + id, this._getCardActionButton('.article-card[data-id="' + id + '"]', '.article-share-action'), function() {
         return BSDialog.confirm2(window.__('note.confirm.unpublish')).then(function(ok) {
             if (!ok) return null;
-            return fetch('/api/shares/blog/' + id, {
+            return fetchWithCurrentCSRF('/api/shares/blog/' + id, {
             method: 'DELETE',
             headers: { 'X-CSRF-Token': self.csrf }
             });
@@ -2921,7 +2921,7 @@ NotesApp.prototype.deleteArticle = function(id) {
     var request = this._runSubmitRequest('notes:article:delete:' + id, this._getCardActionButton('.article-card[data-id="' + id + '"]', '.del'), function() {
         return BSDialog.confirm2(window.__('note.confirm.delete_article')).then(function(ok) {
             if (!ok) return null;
-            return fetch('/api/blogs/' + id, {
+            return fetchWithCurrentCSRF('/api/blogs/' + id, {
             method: 'DELETE',
             headers: { 'X-CSRF-Token': self.csrf }
             });
@@ -2938,7 +2938,7 @@ NotesApp.prototype.deleteArticle = function(id) {
 NotesApp.prototype.toggleArticlePin = function(id) {
     var self = this;
     var request = this._runSubmitRequest('notes:article:pin:' + id, this._getCardActionButton('.article-card[data-id="' + id + '"]', '.article-pin-action'), function() {
-        return fetch('/api/blogs/' + id + '/pin', {
+        return fetchWithCurrentCSRF('/api/blogs/' + id + '/pin', {
         method: 'PATCH',
         headers: { 'X-CSRF-Token': self.csrf }
         });
@@ -2968,7 +2968,7 @@ NotesApp.prototype.toggleArticlePin = function(id) {
 NotesApp.prototype.toggleArticleVisibility = function(id) {
     var self = this;
     var request = this._runSubmitRequest('notes:article:visibility:' + id, this._getCardActionButton('.article-card[data-id="' + id + '"]', '.vis-toggle'), function() {
-        return fetch('/api/blogs/' + id + '/visibility', {
+        return fetchWithCurrentCSRF('/api/blogs/' + id + '/visibility', {
         method: 'PATCH',
         headers: { 'X-CSRF-Token': self.csrf }
         });
@@ -3131,10 +3131,10 @@ NotesApp.prototype.nextMonth = function() {
 NotesApp.prototype.loadCalendarData = function() {
     var self = this;
     var headers = { 'X-CSRF-Token': this.csrf };
-    var blogCounts = fetch('/api/blogs/daily-counts?year=' + this.calYear + '&month=' + this.calMonth, {
+    var blogCounts = fetchWithCurrentCSRF('/api/blogs/daily-counts?year=' + this.calYear + '&month=' + this.calMonth, {
         headers: headers
     }).then(function(r) { return r.json(); });
-    var taskCounts = fetch('/api/tasks/daily-counts?year=' + this.calYear + '&month=' + this.calMonth, {
+    var taskCounts = fetchWithCurrentCSRF('/api/tasks/daily-counts?year=' + this.calYear + '&month=' + this.calMonth, {
         headers: { 'X-CSRF-Token': this.csrf }
     }).then(function(r) { return r.json(); });
     return Promise.all([blogCounts, taskCounts]).then(function(results) {
@@ -3564,7 +3564,7 @@ NotesApp.prototype._handleUrlId = function() {
         });
     } else {
         // No tab param — fetch blog to determine type (backward compat)
-        fetch('/api/blogs/' + id, { headers: { 'X-CSRF-Token': self.csrf } }).then(function(r) { return r.json(); }).then(function(data) {
+        fetchWithCurrentCSRF('/api/blogs/' + id, { headers: { 'X-CSRF-Token': self.csrf } }).then(function(r) { return r.json(); }).then(function(data) {
             if (data.code !== 0 || !data.data) {
                 self.loadNotes();
                 return;
@@ -3602,7 +3602,7 @@ NotesApp.prototype._ensureHighlight = function(className, id, listType) {
     if (this._highlightItem(className, id)) return;
     // Not found on current page — fetch the blog and insert it at the top
     var self = this;
-    fetch('/api/blogs/' + id, { headers: { 'X-CSRF-Token': self.csrf } }).then(function(r) { return r.json(); }).then(function(data) {
+    fetchWithCurrentCSRF('/api/blogs/' + id, { headers: { 'X-CSRF-Token': self.csrf } }).then(function(r) { return r.json(); }).then(function(data) {
         if (data.code !== 0 || !data.data) return;
         var blog = data.data;
         var container = listType === 'article' ? document.getElementById('articlesList') : document.getElementById('notesList');
@@ -3712,7 +3712,7 @@ window.toggleShareEdit = function() {
     var action = toggle.checked ? 'enable' : 'disable';
 
     var request = app._runSubmitRequest('notes:share:edit-token:' + app.shareDialogType + ':' + app.shareDialogTargetId, toggle, function() {
-        return fetch('/api/shares/' + app.shareDialogType + '/' + app.shareDialogTargetId + '/edit-token', {
+        return fetchWithCurrentCSRF('/api/shares/' + app.shareDialogType + '/' + app.shareDialogTargetId + '/edit-token', {
         method: 'PATCH',
         headers: {
             'Content-Type': 'application/json',
@@ -3747,7 +3747,7 @@ window.resetEditToken = function() {
     var request = app._runSubmitRequest('notes:share:reset-token:' + app.shareDialogType + ':' + app.shareDialogTargetId, null, function() {
         return BSDialog.confirm2(window.__('share.toast.reset_confirm')).then(function(ok) {
             if (!ok) return null;
-            return fetch('/api/shares/' + app.shareDialogType + '/' + app.shareDialogTargetId + '/edit-token', {
+            return fetchWithCurrentCSRF('/api/shares/' + app.shareDialogType + '/' + app.shareDialogTargetId + '/edit-token', {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
@@ -3788,7 +3788,7 @@ window.unpublishFromDialog = function() {
     var request = app._runSubmitRequest('notes:share:unpublish:' + app.shareDialogType + ':' + app.shareDialogTargetId, document.querySelector('#shareSettingOverlay .editor-modal-cancel'), function() {
         return BSDialog.confirm2(window.__('share.toast.unpublish_confirm')).then(function(ok) {
             if (!ok) return null;
-            return fetch('/api/shares/' + app.shareDialogType + '/' + app.shareDialogTargetId, {
+            return fetchWithCurrentCSRF('/api/shares/' + app.shareDialogType + '/' + app.shareDialogTargetId, {
             method: 'DELETE',
             headers: { 'X-CSRF-Token': app.csrf },
             });

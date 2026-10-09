@@ -29,20 +29,14 @@ def sw_logic_md5(filepath):
 
 def should_precache(rel):
     """Return whether an asset belongs in the install-time cache."""
-    # Univer is loaded only for spreadsheet documents and its browser bundle is
-    # large. Let the runtime cache it after first use instead of delaying every
-    # service-worker installation.
-    if rel.startswith('static/js/univer/'):
-        return False
-    # PPTist is a full presentation application with optional CJK fonts. It is
-    # loaded only for presentation documents and must not block PWA installs.
-    if rel.startswith('static/pptist/'):
-        return False
-    # Three.js is loaded only when a WebRTC host explicitly enters the optional
-    # 3D meeting-room scene. Runtime-cache it instead of delaying every install.
-    if rel.startswith('static/vendor/three/'):
-        return False
-    return True
+    # Install only the public offline fallback and app icons. Page assets are
+    # cached on demand by the fetch handler; editors/fonts must not compete
+    # with the first paint or dashboard API on a mobile connection.
+    return rel in {
+        'static/offline.html',
+        'static/icon-192.png',
+        'static/icon-512.png',
+    }
 
 
 def scan_static_assets(static_dir):
@@ -105,7 +99,8 @@ def scan_static_assets(static_dir):
     combined_hash = hash_feed.hexdigest()[:12]
 
     assets = []
-    for a in icons + css + js + html:
+    # The offline document must be fetched before optional app icons.
+    for a in html + icons + css + js:
         h = file_hashes[a][:8]
         assets.append(f"  '/{a}?v={h}'")
     # sw.js uses combined_hash as its version (since it's generated from all other files)

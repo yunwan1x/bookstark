@@ -104,7 +104,7 @@ function sanitizeRenderedHTML(html) {
     };
     var allowedAttributes = {
         A: { href: true, target: true, title: true },
-        BUTTON: { type: true, title: true, 'aria-label': true },
+        BUTTON: { class: true, type: true, title: true, 'aria-label': true },
         CODE: { class: true },
         DETAILS: { open: true },
         DIV: { class: true, 'data-lang': true },
@@ -142,6 +142,16 @@ function sanitizeRenderedHTML(html) {
                 }
             }
         });
+        if (tag === 'BUTTON') {
+            // Preserve only the renderer's copy control, never arbitrary app
+            // action classes supplied by Markdown authors.
+            if (element.classList.contains('code-copy-btn')) {
+                element.setAttribute('class', 'code-copy-btn');
+            } else {
+                element.removeAttribute('class');
+            }
+            element.setAttribute('type', 'button');
+        }
         if (tag === 'A' && element.hasAttribute('href')) {
             element.setAttribute('rel', 'noopener noreferrer');
         }
@@ -154,11 +164,49 @@ function sanitizeRenderedHTML(html) {
 
 window.sanitizeRenderedHTML = sanitizeRenderedHTML;
 
-/**
- * CSRF 保护的 fetch 封装
- * 自动从 meta 标签读取 CSRF token 并添加到请求头
- * 对于 POST/PUT/PATCH/DELETE 请求添加 X-CSRF-Token 头
- */
+// Read the live cookie, not the token embedded in a possibly cached HTML page.
+var csrfRefreshPromise = null;
+function readCSRFCookie() {
+    var match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/);
+    return match ? decodeURIComponent(match[1]) : '';
+}
+
+function refreshCSRFCookie() {
+    if (!csrfRefreshPromise) {
+        csrfRefreshPromise = fetch('/api/csrf-token?_=' + Date.now(), {
+            credentials: 'same-origin', cache: 'no-store'
+        }).then(function(response) {
+            if (!response.ok || !readCSRFCookie()) throw new Error('无法刷新 CSRF token，请重试');
+        }).finally(function() { csrfRefreshPromise = null; });
+    }
+    return csrfRefreshPromise;
+}
+
+function fetchWithCurrentCSRF(url, options) {
+    options = options || {};
+    var method = (options.method || 'GET').toUpperCase();
+    var headers = new Headers(options.headers || {});
+    if (!/^(POST|PUT|PATCH|DELETE)$/.test(method) ||
+        new URL(url, location.href).origin !== location.origin ||
+        /^Token /i.test(headers.get('Authorization') || '') || options.credentials === 'omit') {
+        return fetch(url, options);
+    }
+    function send() {
+        headers.set('X-CSRF-Token', readCSRFCookie());
+        return fetch(url, Object.assign({}, options, { headers: headers }));
+    }
+    return (readCSRFCookie() ? Promise.resolve() : refreshCSRFCookie()).then(send).then(function(response) {
+        if (response.status !== 403) return response;
+        // Only replay a request explicitly rejected by CSRF middleware, before
+        // its handler ran. Never replay general authorization or network errors.
+        return response.clone().json().catch(function() { return {}; }).then(function(body) {
+            if (body.csrf_error !== true) return response;
+            return refreshCSRFCookie().then(send);
+        });
+    });
+}
+
+/** CSRF-protected fetch with request locking and offline queue support. */
 function csrfFetch(url, options) {
     options = options || {};
     var method = (options.method || 'GET').toUpperCase();
@@ -207,14 +255,9 @@ function csrfFetch(url, options) {
     }
     if (method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE') {
         options.headers = options.headers || {};
-        if (!options.headers['X-CSRF-Token']) {
-            var token = document.querySelector('meta[name="csrf-token"]');
-            if (token) {
-                options.headers['X-CSRF-Token'] = token.getAttribute('content');
-            }
-        }
         if (offlinePolicy === 'reject') {
-            options.headers['X-BookStark-Offline-Policy'] = 'reject';
+            options.headers = new Headers(options.headers);
+            options.headers.set('X-BookStark-Offline-Policy', 'reject');
         }
     }
     var fetchOptions = {};
@@ -223,17 +266,11 @@ function csrfFetch(url, options) {
             fetchOptions[fetchKey] = options[fetchKey];
         }
     }
-    return fetch(url, fetchOptions).catch(function(err) {
+    return fetchWithCurrentCSRF(url, fetchOptions).catch(function(err) {
         // Network error (offline) — queue mutation requests for later
         if (method !== 'GET' && offlinePolicy !== 'reject' && window.BSOfflineQueue) {
           var headers = {};
-          if (options.headers) {
-            for (var k in options.headers) {
-              if (options.headers.hasOwnProperty(k)) {
-                headers[k] = options.headers[k];
-              }
-            }
-          }
+          new Headers(options.headers || {}).forEach(function(value, key) { headers[key] = value; });
           return window.BSOfflineQueue.addToQueue(url, method, headers, options.body || null).then(function() {
             window.BSOfflineQueue.showOfflineToast('网络不可用，操作已保存，恢复后将自动提交');
             window.BSOfflineQueue.registerSync();
@@ -328,7 +365,24 @@ window.BookStarkErrors = (function() {
         });
     }
 
+    // Save endpoints return JSON. Never mark an offline queue acknowledgement,
+    // an application error, or an unexpected response as a successful save.
+    async function requireSaveSuccess(res) {
+        var fallback = '保存失败（HTTP ' + res.status + '）';
+        if (res.headers.get('X-Offline-Queued') === 'true') {
+            throw new Error('尚未保存到服务器，请联网后重试');
+        }
+        var data = await res.json().catch(function() { return null; });
+        if (!res.ok || !data || data.code !== 0) {
+            var error = new Error(messageFrom(data, res.ok ? '保存响应异常，请重试' : fallback));
+            error.status = res.status;
+            throw error;
+        }
+        return res;
+    }
+
     return {
+        requireSaveSuccess: requireSaveSuccess,
         message: messageFrom,
         toast: toast,
         field: field,

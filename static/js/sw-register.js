@@ -161,12 +161,9 @@
 
   if (!('serviceWorker' in navigator)) return;
 
+  function registerAfterLoad() {
   navigator.serviceWorker.register('/sw.js').then(function(reg) {
-    // Check for updates on load
-    reg.update().catch(function(err) {
-      console.warn('SW update check failed:', err);
-    });
-
+    // register already performs an update check; do not immediately repeat it.
     reg.addEventListener('updatefound', function() {
       var newWorker = reg.installing;
       newWorker.addEventListener('statechange', function() {
@@ -178,6 +175,18 @@
   }).catch(function(err) {
     console.warn('SW registration failed:', err);
   });
+  }
+  function scheduleRegistration() {
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(registerAfterLoad, { timeout: 2000 });
+    } else {
+      window.setTimeout(registerAfterLoad, 1000);
+    }
+  }
+  // Do not wait for window.load: a stalled decorative image/media request can
+  // otherwise prevent registration indefinitely even after the UI is usable.
+  if (document.readyState !== 'loading') scheduleRegistration();
+  else document.addEventListener('DOMContentLoaded', scheduleRegistration, { once: true });
 
   // Also detect controller change (e.g. after skipWaiting)
   var refreshing = false;

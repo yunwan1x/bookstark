@@ -293,12 +293,13 @@
 .note-content pre { position: relative; background: #fafbfc; color: #24292e; padding: 10px 12px; border-radius: 8px; font-size: 12px; margin: 8px 0; overflow-x: auto; overflow-y: hidden; max-width: 100%; line-height: 1.5; font-family: "SF Mono", "Fira Code", monospace; white-space: pre; border: 1px solid #d1d9e0; overscroll-behavior-x: contain; }
 .code-block { position: relative; margin: 8px 0; border-radius: 8px; overflow: hidden; border: 1px solid #d1d9e0; }
 .code-block-header { display: flex; align-items: center; height: 32px; padding: 0 12px; background: #f6f8fa; border-bottom: 1px solid #d1d9e0; }
-.code-block-dots { display: flex; gap: 6px; margin-right: 8px; }
+.code-block-dots { display: flex; flex-shrink: 0; gap: 6px; margin-right: 8px; }
 .code-block-dots i { width: 10px; height: 10px; border-radius: 50%; display: block; }
 .code-block-dots i:nth-child(1) { background: #ff5f56; }
 .code-block-dots i:nth-child(2) { background: #ffbd2e; }
 .code-block-dots i:nth-child(3) { background: #27c93f; }
-.code-block-lang { font-size: 12px; color: #656d76; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; letter-spacing: 0.3px; }
+.code-block-lang { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: #656d76; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; letter-spacing: 0.3px; }
+.code-block-header > .code-copy-btn { flex-shrink: 0; }
 .code-copy-btn { margin-left: auto; background: none; border: none; cursor: pointer; color: #656d76; font-size: 12px; padding: 4px 8px; border-radius: 4px; display: flex; align-items: center; gap: 4px; transition: color 0.15s, background 0.15s; }
 .code-copy-btn:hover { color: #24292e; background: rgba(0,0,0,0.05); }
 .note-content .code-block pre { margin: 0; border: none; border-radius: 0;max-height: 500px; overflow-y: auto; }
@@ -760,6 +761,7 @@
 
 /* Mobile: editor modals become sheet */
 @media (max-width: 640px) {
+    .code-block-header { height: 44px; }
     .share-comments-fields { grid-template-columns: 1fr; }
     .share-comments-actions { align-items: stretch; flex-direction: column; }
     .share-comments-submit { justify-content: center; }

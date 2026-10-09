@@ -61,7 +61,7 @@ func AuthRequired() gin.HandlerFunc {
 
 		if tokenStr == "" {
 			if strings.HasPrefix(c.Request.URL.Path, "/api/") {
-				c.JSON(http.StatusUnauthorized, gin.H{"error": "未登录"})
+				c.JSON(http.StatusUnauthorized, gin.H{"code": http.StatusUnauthorized, "message": "未登录", "error": "未登录"})
 				c.Abort()
 				return
 			}
@@ -77,7 +77,7 @@ func AuthRequired() gin.HandlerFunc {
 			apiToken, member, err2 := models.GetApiTokenCached(tokenStr)
 			if err2 != nil || apiToken == nil || member == nil {
 				if strings.HasPrefix(c.Request.URL.Path, "/api/") {
-					c.JSON(http.StatusUnauthorized, gin.H{"error": "登录已过期"})
+					c.JSON(http.StatusUnauthorized, gin.H{"code": http.StatusUnauthorized, "message": "登录已过期", "error": "登录已过期"})
 					c.Abort()
 					return
 				}
@@ -94,7 +94,7 @@ func AuthRequired() gin.HandlerFunc {
 		current, versionErr := models.IsMemberAuthVersionCurrent(claims.MemberID, claims.AuthVersion)
 		if versionErr != nil || !current {
 			if strings.HasPrefix(c.Request.URL.Path, "/api/") {
-				c.JSON(http.StatusUnauthorized, gin.H{"error": "登录已过期"})
+				c.JSON(http.StatusUnauthorized, gin.H{"code": http.StatusUnauthorized, "message": "登录已过期", "error": "登录已过期"})
 				c.Abort()
 				return
 			}
@@ -116,7 +116,7 @@ func AdminRequired() gin.HandlerFunc {
 		role, _ := c.Get("role")
 		if r, ok := role.(int); !ok || r != RoleAdmin {
 			if strings.HasPrefix(c.Request.URL.Path, "/api/") {
-				c.JSON(http.StatusForbidden, gin.H{"error": "需要管理员权限"})
+				c.JSON(http.StatusForbidden, gin.H{"code": http.StatusForbidden, "message": "需要管理员权限", "error": "需要管理员权限"})
 				c.Abort()
 				return
 			}

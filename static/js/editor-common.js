@@ -779,6 +779,7 @@ const BookStarkEditor = (function() {
     let saveTimer = null;
     let lastSaved = '';
     let status = 'saved';
+    let lastSaveError = null;
     let inFlight = null;
     let draftWrite = Promise.resolve();
     let disposed = false;
@@ -799,9 +800,13 @@ const BookStarkEditor = (function() {
       return draftWrite;
     }
 
-    function setSaveStatus(s) {
+    function setSaveStatus(s, error) {
       status = s;
-      if (opts.onStatusChange) opts.onStatusChange(s);
+      if (error) lastSaveError = error;
+      if (s === 'saved') lastSaveError = null;
+      // Editor change callbacks can arrive after a failed save. Keep its reason
+      // visible until saving succeeds instead of replacing it with "unsaved".
+      if (opts.onStatusChange) opts.onStatusChange(s, s === 'unsaved' ? lastSaveError || undefined : undefined);
     }
 
     function getSaveStatus() { return status; }
@@ -881,7 +886,7 @@ const BookStarkEditor = (function() {
           });
         });
       }).catch(function(error) {
-        setSaveStatus('unsaved');
+        setSaveStatus('unsaved', error);
         scheduleRetry();
         throw error;
       }).then(function(result) {
@@ -958,12 +963,15 @@ const BookStarkEditor = (function() {
   }
 
   // Update save status UI
-  function updateSaveStatus(status) {
+  function updateSaveStatus(status, error) {
     const el = document.getElementById('save-status');
     if (!el) return;
     const labels = { saving: '● 保存中…', unsaved: '● 未保存', saved: '● 已保存' };
     const colors = { saving: 'text-blue-600', unsaved: 'text-amber-600', saved: 'text-green-600' };
     el.textContent = labels[status] || '';
+    var reason = error ? BookStarkErrors.message(error, '保存失败，请重试') : '';
+    if (reason) el.textContent += '：' + reason;
+    el.title = reason;
     el.className = 'ml-auto ' + (colors[status] || '');
     const saveBtn = document.getElementById('save-btn');
     if (saveBtn) {

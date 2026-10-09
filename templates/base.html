@@ -8,14 +8,14 @@
 <link rel="icon" type="image/x-icon" href="/static/favicon.ico?v={{assetVer "/static/favicon.ico"}}">
 <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v={{assetVer "/static/apple-touch-icon.png"}}">
 <script>(function(){var k='bookstark-theme',s={light:'light',dark:'dark','notion-pro':'light','scholar-paper':'light','linear-saas':'dark','apple-minimal':'light'},t=localStorage.getItem(k);if(!s[t])t=window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';document.documentElement.setAttribute('data-theme',s[t]);document.documentElement.setAttribute('data-theme-style',t);})();</script>
-<link rel="preload" href="/static/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/static/webfonts/fa-regular-400.woff2" as="font" type="font/woff2" crossorigin><link href="/static/css/font-awesome.min.css?v={{assetVer "/static/css/font-awesome.min.css"}}" rel="stylesheet">
+{{if ne .Nav "home"}}<link rel="preload" href="/static/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/static/webfonts/fa-regular-400.woff2" as="font" type="font/woff2" crossorigin>{{end}}<link href="/static/css/font-awesome.min.css?v={{assetVer "/static/css/font-awesome.min.css"}}" rel="stylesheet" {{if eq .Nav "home"}}media="print" onload="this.media='all'"{{end}}>
 <link rel="stylesheet" href="/static/css/variables.css?v={{assetVer "/static/css/variables.css"}}">
 <link rel="stylesheet" href="/static/css/components.css?v={{assetVer "/static/css/components.css"}}">
 <link rel="stylesheet" href="/static/css/command-palette.css?v={{assetVer "/static/css/command-palette.css"}}">
 <link rel="stylesheet" href="/static/css/offline-status.css?v={{assetVer "/static/css/offline-status.css"}}">
-<script src="/static/js/utils.js?v={{assetVer "/static/js/utils.js"}}"></script>
-<script src="/static/js/theme.js?v={{assetVer "/static/js/theme.js"}}"></script>
-<script src="/static/js/tab-url.js?v={{assetVer "/static/js/tab-url.js"}}"></script>
+<script {{if eq .Nav "home"}}defer{{end}} src="/static/js/utils.js?v={{assetVer "/static/js/utils.js"}}"></script>
+<script {{if eq .Nav "home"}}defer{{end}} src="/static/js/theme.js?v={{assetVer "/static/js/theme.js"}}"></script>
+<script {{if eq .Nav "home"}}defer{{end}} src="/static/js/tab-url.js?v={{assetVer "/static/js/tab-url.js"}}"></script>
 <style>
 .role-admin, .bg-role-admin { background: var(--color-danger); }
 .role-user, .bg-role-user { background: var(--color-indigo); }
@@ -29,6 +29,8 @@
 .nav-link { border-bottom: 2px solid transparent; color: var(--color-text-muted); transition: color 0.15s ease; }
 .nav-link:hover { color: var(--color-text); }
 .nav-link.active { border-bottom-color: var(--color-primary); color: var(--color-primary); }
+.header-home-link { display: none; }
+@media (min-width: 640px) { .header-home-link { display: inline-block; } }
 .header-nav-group { position: relative; display: inline-flex; align-items: center; }
 .header-nav-trigger { display: inline-flex; align-items: center; gap: 4px; border: 0; background: transparent; cursor: pointer; white-space: nowrap; }
 .header-nav-trigger .fa-chevron-down { font-size: 10px; margin-left: 1px; transition: transform 0.15s ease; }
@@ -132,6 +134,7 @@ button:active:not(:disabled), .page-btn:active:not(:disabled) {
 <header class="h-10 flex items-center px-3 sm:px-4 text-sm shrink-0" data-swipe-nav data-swipe-item="[data-nav-idx][href]" data-swipe-index="data-nav-idx" data-swipe-mode="href" data-swipe-ignore="input,textarea,select,#user-menu-trigger,#searchTrigger,#themeToggle,#langToggle,#headerCloseSearch,#headerCreateTrigger,[data-header-menu-trigger]" style="position:sticky;top:0;z-index:20;background:var(--color-bg-card);border-bottom:1px solid var(--color-border)">
     <a href="/" class="logo-text py-2 sm:mr-6 hidden sm:inline">BookStark</a>
     <nav class="flex gap-1" id="main-nav">
+        {{if .Account}}<a href="/home" class="nav-link header-home-link px-2 py-2.5 font-semibold {{if eq .Nav "home"}}active{{end}}">首页</a>{{end}}
         <div class="header-nav-group">
             <a href="{{if .Account}}/notes{{else}}/bookmarks{{end}}" class="nav-link header-nav-trigger px-2 py-2.5 font-semibold {{if or (eq .Nav "notes") (eq .Nav "tasks") (eq .Nav "books") (eq .Nav "bookmarks")}}active{{end}}" data-nav-idx="0" data-header-menu-trigger data-header-menu-id="header-knowledge-menu" aria-haspopup="menu" aria-expanded="false">
                 <i class="fa-solid fa-layer-group nav-icon"></i><span class="nav-text">{{call .T "nav.knowledge"}}</span><i class="fa-solid fa-chevron-down"></i>
@@ -218,6 +221,7 @@ button:active:not(:disabled), .page-btn:active:not(:disabled) {
         </button>
         <div id="user-menu-dropdown" class="hidden absolute right-0 top-full pt-1 z-50" role="menu">
             <div style="background:var(--color-bg-card);border:1px solid var(--color-border);border-radius:var(--radius-lg);box-shadow:0 4px 12px rgba(0,0,0,0.15)" class="py-1 w-32">
+                <a href="/home" class="header-menu-item" role="menuitem"><i class="fa-solid fa-house menu-icon"></i>个人首页</a>
                 {{if .IsAdmin}}<a href="/admin/system" class="header-menu-item" role="menuitem"><i class="fa-solid fa-gear menu-icon"></i>{{call .T "user.menu.system"}}</a>{{end}}
                 {{if .IsAdmin}}<a href="/admin/dashboard" class="header-menu-item" role="menuitem"><i class="fa-solid fa-chart-line menu-icon"></i>{{call .T "user.menu.dashboard"}}</a>{{end}}
                 <a href="/profile" class="header-menu-item" role="menuitem"><i class="fa-solid fa-id-card menu-icon"></i>{{call .T "user.menu.profile"}}</a>
@@ -566,21 +570,21 @@ window.addEventListener('pageshow', closeHeaderDropdowns);
 @keyframes bs-dialog-slide-down { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes bs-dialog-slide-up { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
 </style>
-<script src="/static/js/bs-dialog.js?v={{assetVer "/static/js/bs-dialog.js"}}"></script>
-<script src="/static/js/offline-queue.js?v={{assetVer "/static/js/offline-queue.js"}}"></script>
-<script src="/static/js/mobile-ui.js?v={{assetVer "/static/js/mobile-ui.js"}}"></script>
-<script src="/static/js/sticky-bg.js?v={{assetVer "/static/js/sticky-bg.js"}}"></script>
-<script src="/static/js/pagination.js?v={{assetVer "/static/js/pagination.js"}}"></script>
-<script>if(window.BookStarkTheme){window.BookStarkTheme.apply(window.BookStarkTheme.get());}</script>
+<script {{if eq .Nav "home"}}defer{{end}} src="/static/js/bs-dialog.js?v={{assetVer "/static/js/bs-dialog.js"}}"></script>
+<script {{if eq .Nav "home"}}defer{{end}} src="/static/js/offline-queue.js?v={{assetVer "/static/js/offline-queue.js"}}"></script>
+<script {{if eq .Nav "home"}}defer{{end}} src="/static/js/mobile-ui.js?v={{assetVer "/static/js/mobile-ui.js"}}"></script>
+<script {{if eq .Nav "home"}}defer{{end}} src="/static/js/sticky-bg.js?v={{assetVer "/static/js/sticky-bg.js"}}"></script>
+<script {{if eq .Nav "home"}}defer{{end}} src="/static/js/pagination.js?v={{assetVer "/static/js/pagination.js"}}"></script>
+<script>{{if eq .Nav "home"}}document.addEventListener('DOMContentLoaded',function(){ {{end}}if(window.BookStarkTheme){window.BookStarkTheme.apply(window.BookStarkTheme.get());}{{if eq .Nav "home"}} });{{end}}</script>
 <script>window.BS_VERSION = '{{assetVer "/static/sw.js"}}';</script>
-<script src="/static/js/sw-register.js?v={{assetVer "/static/js/sw-register.js"}}"></script>
-<script src="/static/js/i18n.js?v={{assetVer "/static/js/i18n.js"}}"></script>
+<script {{if eq .Nav "home"}}defer{{end}} src="/static/js/sw-register.js?v={{assetVer "/static/js/sw-register.js"}}"></script>
+<script {{if eq .Nav "home"}}defer{{end}} src="/static/js/i18n.js?v={{assetVer "/static/js/i18n.js"}}"></script>
 <script>
 window.__I18N_MESSAGES = {{.JSBundle}};
 window.__currentLang = "{{.Lang}}";
 </script>
-<script src="/static/js/offline-status.js?v={{assetVer "/static/js/offline-status.js"}}"></script>
-<script src="/static/js/command-palette.js?v={{assetVer "/static/js/command-palette.js"}}"></script>
+<script {{if eq .Nav "home"}}defer{{end}} src="/static/js/offline-status.js?v={{assetVer "/static/js/offline-status.js"}}"></script>
+<script {{if eq .Nav "home"}}defer{{end}} src="/static/js/command-palette.js?v={{assetVer "/static/js/command-palette.js"}}"></script>
 <script>
 (function() {
     var langBtn = document.getElementById('langToggle');

@@ -37,7 +37,7 @@
     options.headers = options.headers || {};
     if (options.body && !options.headers['Content-Type']) options.headers['Content-Type'] = 'application/json';
     if (options.method && options.method !== 'GET') options.headers['X-CSRF-Token'] = readCSRFToken();
-    return fetch(url, options).then(function(res) {
+    return fetchWithCurrentCSRF(url, options).then(function(res) {
       return res.json().catch(function() { return {}; }).then(function(data) {
         if (!res.ok || (data && data.code && data.code !== 0)) {
           var err = new Error((data && data.message) || t('share_comments.error'));

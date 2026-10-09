@@ -51,7 +51,7 @@
     if (!url) return Promise.resolve('');
     options = options || {};
     if (!options.cache) options.cache = 'no-store';
-    return fetch(url, options).then(function(r) {
+    return fetchWithCurrentCSRF(url, options).then(function(r) {
       return r.text().then(function(text) {
         if (r.ok) return text;
         var message = text || 'HTML 内容加载失败';
@@ -2180,7 +2180,9 @@
     if (currentDocType === 'presentation' && window.BookStarkPPTist) {
       currentMarkdown = BookStarkPPTist.getContent() || currentMarkdown;
     }
-    if (saveMgr) saveMgr.manualSave();
+    if (saveMgr) return saveMgr.manualSave().catch(function(error) {
+      BookStarkEditor.toast(BookStarkErrors.message(error, '保存失败，请重试'), 'error');
+    });
   }
   window.manualSave = manualSave;
 
@@ -4237,7 +4239,7 @@
         try {
           await saveMgr.manualSave();
         } catch (error) {
-          BookStarkEditor.toast('当前文档保存失败，请检查网络后重试', 'error');
+          BookStarkEditor.toast(BookStarkErrors.message(error, '当前文档保存失败，请重试'), 'error');
           finishDocLoad();
           return;
         }
@@ -4465,8 +4467,7 @@
             offlinePolicy: 'reject',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ markdown: content })
-          }).then(function(r) {
-            if (!r.ok || r.headers.get('X-Offline-Queued') === 'true') throw new Error('save failed');
+          }).then(BookStarkErrors.requireSaveSuccess).then(function() {
             var now = new Date();
             var mm = String(now.getMonth() + 1).padStart(2, '0');
             var dd = String(now.getDate()).padStart(2, '0');
@@ -5112,7 +5113,7 @@
         });
       }
 
-      return fetch('/api/blogs/' + blogId + '/verify-password', {
+      return fetchWithCurrentCSRF('/api/blogs/' + blogId + '/verify-password', {
         method: 'POST',
         headers: headers,
         body: JSON.stringify({ password: pwd })
@@ -5177,8 +5178,7 @@
           offlinePolicy: 'reject',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body)
-        }).then(function(r) {
-          if (!r.ok || r.headers.get('X-Offline-Queued') === 'true') throw new Error('save failed');
+        }).then(BookStarkErrors.requireSaveSuccess).then(function() {
           if (blogPassword) OfflineBlogVault.save(blogId, blogPassword, content);
           // Update modify time in status bar
           var now = new Date();

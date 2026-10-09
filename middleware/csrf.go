@@ -48,7 +48,7 @@ func CSRFMiddleware(skipPaths ...string) gin.HandlerFunc {
 			token, _ := c.Cookie("csrf_token")
 			if token == "" {
 				token = GenerateCSRFToken()
-				c.SetCookie("csrf_token", token, 86400, "/", "", false, false)
+				c.SetCookie("csrf_token", token, 7*24*60*60, "/", "", false, false)
 			}
 			c.Set("CSRFToken", token)
 			c.Next()
@@ -58,7 +58,7 @@ func CSRFMiddleware(skipPaths ...string) gin.HandlerFunc {
 		// POST/PUT/PATCH/DELETE 等变更方法：验证 CSRF token
 		cookieToken, err := c.Cookie("csrf_token")
 		if err != nil || cookieToken == "" {
-			c.JSON(http.StatusForbidden, gin.H{"error": "缺少 CSRF token"})
+			c.JSON(http.StatusForbidden, gin.H{"code": http.StatusForbidden, "message": "缺少 CSRF token", "error": "缺少 CSRF token", "csrf_error": true})
 			c.Abort()
 			return
 		}
@@ -75,7 +75,7 @@ func CSRFMiddleware(skipPaths ...string) gin.HandlerFunc {
 		}
 
 		if requestToken == "" || requestToken != cookieToken {
-			c.JSON(http.StatusForbidden, gin.H{"error": "CSRF 验证失败"})
+			c.JSON(http.StatusForbidden, gin.H{"code": http.StatusForbidden, "message": "CSRF 验证失败", "error": "CSRF 验证失败", "csrf_error": true})
 			c.Abort()
 			return
 		}

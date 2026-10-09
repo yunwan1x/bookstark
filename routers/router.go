@@ -217,6 +217,11 @@ func Setup() *gin.Engine {
 	r.GET("/notes/public", middleware.OptionalAuth(), middleware.CSRFMiddleware(), middleware.VisitLog(), controllers.NotesPublicPage)
 
 	// Public APIs
+	r.GET("/api/csrf-token", middleware.CSRFMiddleware(), func(c *gin.Context) {
+		c.Header("Cache-Control", "no-store")
+		// Background workers cannot read document.cookie.
+		c.JSON(http.StatusOK, gin.H{"code": 0, "csrf_token": middleware.GetCSRFToken(c)})
+	})
 	r.POST("/api/login", controllers.Login)
 	r.POST("/api/register", controllers.Register)
 	r.POST("/api/password/forgot", controllers.RequestPasswordReset)
@@ -263,6 +268,8 @@ func Setup() *gin.Engine {
 	auth.Use(middleware.VisitLog())
 	{
 		// Pages
+		auth.GET("/home", controllers.PersonalHomePage)
+		auth.GET("/api/home", controllers.HomeSummary)
 		auth.GET("/books", controllers.IndexPage)
 		auth.GET("/books/:identify/edit", controllers.EditorPage)
 		auth.GET("/blogs", func(c *gin.Context) { c.Redirect(http.StatusMovedPermanently, "/notes") })

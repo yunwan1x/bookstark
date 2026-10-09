@@ -364,6 +364,7 @@ func ProfilePage(c *gin.Context) {
 }
 
 func HomePage(c *gin.Context) {
+	c.Header("Cache-Control", "private, no-store")
 	memberID := middleware.GetMemberID(c)
 	if memberID <= 0 {
 		NavPage(c)
@@ -376,6 +377,10 @@ func HomePage(c *gin.Context) {
 		return
 	}
 	target := models.DefaultHomeRoute(member.DefaultHome)
+	if target == "/home" {
+		PersonalHomePage(c)
+		return
+	}
 	if target == "/" {
 		NavPage(c)
 		return

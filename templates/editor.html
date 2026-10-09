@@ -5,10 +5,10 @@
     <title>{{if eq .EditorType "blog"}}{{.Blog.BlogTitle}}{{else}}{{.Book.BookName}}{{end}} - BookStark</title>
 </head>
 <body class="bg-slate-50 flex flex-col overflow-hidden editor-full-height">
-    <!-- Drawer overlay (mobile) -->
-    <div class="drawer-overlay" id="drawerOverlay"></div>
-
     <div class="flex flex-1 overflow-hidden editor-shell">
+        <!-- Keep the mobile backdrop and sidebar in the same stacking context.
+             The optional science background makes editor-shell a stacking context. -->
+        <div class="drawer-overlay" id="drawerOverlay"></div>
         <!-- Sidebar -->
         <div id="sidebar" class="bg-white border-r border-slate-200 flex flex-col shrink-0{{if eq .EditorType "blog"}} collapsed{{end}}">
             <!-- Tab bar -->

@@ -98,11 +98,12 @@ func TestPPTistAssetsArePinnedAndExcludedFromPrecache(t *testing.T) {
 			t.Fatalf("PPTist integration asset missing or empty: %s", path)
 		}
 	}
-	buildData, err := os.ReadFile("build.py")
+	buildData, err := os.ReadFile("static/sw.js")
 	if err != nil {
-		t.Fatalf("ReadFile(build.py) error = %v", err)
+		t.Fatalf("ReadFile(static/sw.js) error = %v", err)
 	}
-	if !strings.Contains(string(buildData), "rel.startswith('static/pptist/')") {
+	precache := regexp.MustCompile(`const STATIC_ASSETS = \[[\s\S]*?\];`).Find(buildData)
+	if len(precache) == 0 || strings.Contains(string(precache), "/static/pptist/") {
 		t.Fatal("PPTist bundle must be excluded from install-time PWA precache")
 	}
 	notice, _ := os.ReadFile("static/pptist/BOOKSTARK-INTEGRATION.md")

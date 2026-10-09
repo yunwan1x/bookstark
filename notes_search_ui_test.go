@@ -191,7 +191,7 @@ func TestNoteItemFullscreenViewerUI(t *testing.T) {
 		`class="note-fullscreen-btn"`,
 		`notesApp.openNoteViewer(`,
 		`NotesApp.prototype.openNoteViewer = function(id, options)`,
-		`fetch('/api/blogs/' + id`,
+		`fetchWithCurrentCSRF('/api/blogs/' + id`,
 		`marked.parse(text)`,
 		`BookStarkScrollLock.lock('notes-viewer-modal')`,
 		`NotesApp.prototype.closeNoteViewer = function()`,

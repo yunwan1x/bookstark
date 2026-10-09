@@ -16,8 +16,8 @@ func TestDefaultHomeRedirectsByProfileSetting(t *testing.T) {
 	}
 
 	w := adminAssetRequest(router, token, http.MethodGet, "/", nil)
-	if w.Code != http.StatusFound || w.Header().Get("Location") != "/notes" {
-		t.Fatalf("default home status=%d location=%q, want 302 /notes", w.Code, w.Header().Get("Location"))
+	if w.Code != http.StatusOK {
+		t.Fatalf("default home status=%d, want 200", w.Code)
 	}
 
 	for home, location := range map[string]string{

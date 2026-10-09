@@ -98,6 +98,15 @@
   }
 
   function replayQueue() {
+    // Share this lock with the service worker so a queued write is not sent twice.
+    if (navigator.locks) return navigator.locks.request('bookstark-offline-replay', replayQueueUnlocked);
+    if (!replayQueue.pending) {
+      replayQueue.pending = replayQueueUnlocked().finally(function() { replayQueue.pending = null; });
+    }
+    return replayQueue.pending;
+  }
+
+  function replayQueueUnlocked() {
     emit('bs:offline-queue-sync-start');
     return getAllFromQueue().then(function(records) {
       if (!records || records.length === 0) return { success: 0, failed: 0 };
@@ -107,13 +116,16 @@
         return chain.then(function() {
           var opts = {
             method: record.method,
-            headers: record.headers || {},
+            headers: new Headers(record.headers || {}),
             credentials: 'same-origin'
           };
           if (record.body) {
             opts.body = record.body;
           }
-          return fetch(record.url, opts).then(function(res) {
+          // The original record already exists. Do not enqueue another copy if
+          // the service worker encounters a network failure during this replay.
+          opts.headers.set('X-BookStark-Offline-Policy', 'reject');
+          return fetchWithCurrentCSRF(record.url, opts).then(function(res) {
             if (res.ok) {
               return removeFromQueue(record.id).then(function() {
                 success++;
@@ -123,6 +135,13 @@
               // Retry transient server/rate-limit failures later.
               return;
             } else {
+              if (res.status === 401) return;
+              if (res.status === 403) {
+                return res.clone().json().catch(function() { return {}; }).then(function(body) {
+                  if (body.csrf_error === true) return;
+                  return removeFromQueue(record.id).then(function() { failed++; });
+                });
+              }
               // Permanent client error — remove from queue to avoid infinite retry.
               return removeFromQueue(record.id).then(function() { failed++; });
             }
