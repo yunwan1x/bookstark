@@ -145,6 +145,16 @@ func TestHomeAssetsIncludeSSHAndWebDAV(t *testing.T) {
 
 func TestPersonalHomeEnglishTemplate(t *testing.T) {
 	router, token := initAssetControllerTest(t)
+	for _, path := range []string{"/books", "/notes", "/topics", "/labels", "/bookmarks", "/nav", "/shares", "/profile"} {
+		req := httptest.NewRequest("GET", path, nil)
+		req.Header.Set("Authorization", "Token "+token)
+		req.AddCookie(&http.Cookie{Name: "lang", Value: "en"})
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+		if w.Code != 200 || !strings.Contains(w.Body.String(), `<html lang="en">`) {
+			t.Errorf("wrong language on %s (status %d)", path, w.Code)
+		}
+	}
 	req := httptest.NewRequest("GET", "/home", nil)
 	req.Header.Set("Authorization", "Token "+token)
 	req.AddCookie(&http.Cookie{Name: "lang", Value: "en"})
