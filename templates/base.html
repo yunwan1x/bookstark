@@ -680,7 +680,7 @@ window.addEventListener('pageshow', function(event) {
     if (!event.persisted) return;
     var cookie = document.cookie.match(/(?:^|;\s*)lang=(zh|en)(?:;|$)/);
     var lang = cookie ? cookie[1] : 'zh';
-    if (document.documentElement.lang !== lang) window.location.reload();
+    if ((window.__currentLang || document.documentElement.lang.split('-')[0]) !== lang) window.location.reload();
 });
 </script>
 {{end}}
