@@ -1416,6 +1416,7 @@ func ToggleBookmarkNavVisible(c *gin.Context) {
 // POST /api/bookmarks/ （注意尾部斜杠，兼容 linkding 插件）
 // Authorization: Token <api_token>
 func CreateBookmarkCompat(c *gin.Context) {
+	memberID := middleware.GetMemberID(c)
 	var req struct {
 		URL         string   `json:"url" binding:"required"`
 		Title       string   `json:"title"`
@@ -1424,31 +1425,37 @@ func CreateBookmarkCompat(c *gin.Context) {
 		Unread      *bool    `json:"unread"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logBookmarkCompatFailure(c, memberID, "bind_json", req.URL, err)
 		apiError(c, http.StatusBadRequest, "请输入URL")
 		return
 	}
 
 	if len(req.URL) > 2048 {
+		logBookmarkCompatFailure(c, memberID, "url_too_long", req.URL, nil)
 		apiError(c, http.StatusBadRequest, "URL不能超过2048个字符")
 		return
 	}
 	if !isValidURL(req.URL) {
+		logBookmarkCompatFailure(c, memberID, "invalid_url", req.URL, nil)
 		apiError(c, http.StatusBadRequest, "URL格式不正确")
 		return
 	}
 	if len(req.Title) > 500 {
+		logBookmarkCompatFailure(c, memberID, "title_too_long", req.URL, nil)
 		apiError(c, http.StatusBadRequest, "标题不能超过500个字符")
 		return
 	}
 	if len(req.Description) > 2000 {
+		logBookmarkCompatFailure(c, memberID, "description_too_long", req.URL, nil)
 		apiError(c, http.StatusBadRequest, "描述不能超过2000个字符")
 		return
 	}
 
-	memberID := middleware.GetMemberID(c)
-
 	// 以 url + member_id 查重，有则更新，无则新建
-	existing, _ := models.GetBookmarkByURLAndMember(req.URL, memberID)
+	existing, lookupErr := models.GetBookmarkByURLAndMember(req.URL, memberID)
+	if lookupErr != nil {
+		logBookmarkCompatFailure(c, memberID, "lookup_existing", req.URL, lookupErr)
+	}
 
 	// Auto-fetch title if empty
 	title := req.Title
@@ -1457,6 +1464,7 @@ func CreateBookmarkCompat(c *gin.Context) {
 	if r := isSafeURL(req.URL); r.Safe {
 		httpReq, err := http.NewRequest("GET", req.URL, nil)
 		if err != nil {
+			logBookmarkCompatFailure(c, memberID, "build_scrape_request", req.URL, err)
 			apiError(c, http.StatusBadRequest, "URL格式错误")
 			return
 		}
@@ -1503,6 +1511,7 @@ func CreateBookmarkCompat(c *gin.Context) {
 			NavVisible:  existing.NavVisible,
 		}
 		if err := bookmark.Update(); err != nil {
+			logBookmarkCompatFailure(c, memberID, "update_existing", req.URL, err)
 			apiError(c, http.StatusInternalServerError, "更新书签失败")
 			return
 		}
@@ -1520,6 +1529,7 @@ func CreateBookmarkCompat(c *gin.Context) {
 			NavVisible:  false,
 		}
 		if err := bookmark.Insert(); err != nil {
+			logBookmarkCompatFailure(c, memberID, "insert_new", req.URL, err)
 			apiError(c, http.StatusBadRequest, "创建书签失败")
 			return
 		}
@@ -1551,6 +1561,25 @@ func CreateBookmarkCompat(c *gin.Context) {
 		"shared":      bookmark.IsPublic,
 		"date_added":  bookmark.CreateTime.Format(time.RFC3339),
 	})
+}
+
+// logBookmarkCompatFailure keeps enough context to diagnose extension saves
+// without exposing API tokens, full URLs, titles, descriptions, or labels.
+// The standard logger is configured to stdout in main.
+func logBookmarkCompatFailure(c *gin.Context, memberID int64, stage, rawURL string, err error) {
+	host := ""
+	if parsed, parseErr := url.Parse(rawURL); parseErr == nil {
+		host = parsed.Hostname()
+	}
+	log.Printf(
+		"CreateBookmarkCompat: stage=%s member_id=%d host=%q url_len=%d disable_scraping=%t err=%v",
+		stage,
+		memberID,
+		host,
+		len(rawURL),
+		c.Request.URL.Query().Has("disable_scraping"),
+		err,
+	)
 }
 
 // CheckBookmarkCompat linkding 兼容：检查 URL 是否已收藏

@@ -21,6 +21,9 @@ var (
 )
 
 func main() {
+	// Containers and process supervisors collect application logs from stdout.
+	log.SetOutput(os.Stdout)
+
 	// In embed mode, wire up embedded FS and load config from it
 	if EmbedFS.ConfFS != nil {
 		routers.EmbedFS.StaticFS = EmbedFS.StaticFS
