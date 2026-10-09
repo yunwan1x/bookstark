@@ -19,7 +19,6 @@
     try { var saved = JSON.parse(localStorage.getItem(key)); if (Array.isArray(saved)) hidden = saved; } catch (_) {}
     var now = new Date();
     document.getElementById('homeToday').textContent = now.toLocaleDateString('zh-CN', {year:'numeric', month:'long', day:'numeric', weekday:'long'});
-    document.getElementById('homeGreeting').textContent = now.getHours() < 12 ? '上午好' : now.getHours() < 18 ? '下午好' : '晚上好';
     function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; }
     function render() {
         grid.replaceChildren();

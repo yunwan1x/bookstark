@@ -5,8 +5,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"sort"
 	"strings"
@@ -175,6 +177,10 @@ func sshAuth(authType string, credential string) (ssh.AuthMethod, error) {
 	if authType == models.AssetAuthKey {
 		signer, err := ssh.ParsePrivateKey([]byte(credential))
 		if err != nil {
+			var missing *ssh.PassphraseMissingError
+			if errors.As(err, &missing) {
+				return nil, fmt.Errorf("私钥需要密码")
+			}
 			return nil, fmt.Errorf("私钥解析失败")
 		}
 		return ssh.PublicKeys(signer), nil
@@ -183,14 +189,16 @@ func sshAuth(authType string, credential string) (ssh.AuthMethod, error) {
 }
 
 func sanitizeSSHError(err error) error {
+	log.Printf("asset SSH connection failed: %v", err)
 	msg := err.Error()
+	var netErr net.Error
 	switch {
 	case strings.Contains(msg, "unable to authenticate"):
 		return fmt.Errorf("认证失败")
-	case strings.Contains(msg, "i/o timeout"):
+	case errors.Is(err, context.DeadlineExceeded), errors.As(err, &netErr) && netErr.Timeout(), strings.Contains(msg, "i/o timeout"):
 		return fmt.Errorf("连接超时")
 	default:
-		return fmt.Errorf("SSH 连接失败: %w", err)
+		return fmt.Errorf("SSH 连接失败")
 	}
 }
 

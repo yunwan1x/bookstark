@@ -265,10 +265,38 @@
   };
 
   function apiJSON(url, options) {
+    function responseError(res) {
+      var keys = {401: 'asset.error.session', 403: 'asset.error.forbidden', 504: 'asset.error.timeout'};
+      return new Error(t(keys[res.status] || 'asset.error.response'));
+    }
+    function serverMessage(data) {
+      var message = data.message || data.error;
+      if (typeof message !== 'string') return t('asset.error.request');
+      var sshKeys = {
+        '认证失败': 'asset.error.ssh_auth',
+        '私钥解析失败': 'asset.error.ssh_key',
+        '私钥需要密码': 'asset.error.ssh_key_password',
+        '连接超时': 'asset.error.timeout',
+        'SSH 连接失败': 'asset.error.ssh_connect'
+      };
+      return sshKeys[message] ? t(sshKeys[message]) : message;
+    }
     return csrfFetch(url, options || {}).then(function(res) {
-      return res.json().then(function(data) {
-        if (!res.ok) {
-          throw new Error(data.message || data.error || t('asset.error.request'));
+      return res.json().catch(function(err) {
+        console.warn('Asset API returned invalid JSON:', res.status, err);
+        throw responseError(res);
+      }).then(function(data) {
+        if (!data || typeof data !== 'object' || Array.isArray(data)) {
+          throw responseError(res);
+        }
+        if (typeof data.code !== 'number' && typeof data.message !== 'string' && typeof data.error !== 'string') {
+          throw responseError(res);
+        }
+        if (!res.ok || (typeof data.code === 'number' && data.code !== 0)) {
+          throw new Error(serverMessage(data));
+        }
+        if (typeof data.code !== 'number') {
+          throw responseError(res);
         }
         if (typeof handleApiResponse === 'function') {
           data = handleApiResponse(data);
@@ -277,6 +305,10 @@
         }
         return data.data;
       });
+    }, function(err) {
+      if (err && err.name === 'AbortError') throw err;
+      console.warn('Asset API request failed:', err);
+      throw new Error(t('asset.error.network'));
     });
   }
 

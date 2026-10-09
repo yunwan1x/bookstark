@@ -14,14 +14,13 @@
 {{template "header" .}}
 <main class="home-page">
   <section class="home-welcome">
-    <div><div class="home-eyebrow">YOUR PERSONAL WORKSPACE</div><h1>个人首页</h1><p><span id="homeGreeting">你好</span>，{{.Account}}。最近的记录，都在这里。</p></div>
+    <div><div class="home-eyebrow">YOUR PERSONAL WORKSPACE</div><h1>个人首页</h1></div>
     <div class="home-actions"><time id="homeToday"></time><div><button class="home-button home-primary" data-home-dialog="homeCreate"><i class="fa-solid fa-plus" aria-hidden="true"></i> 新建</button><button class="home-button" data-home-dialog="homeCustomize"><i class="fa-solid fa-sliders" aria-hidden="true"></i> 自定义板块</button></div></div>
   </section>
-  <div class="home-toolbar"><div role="group" aria-label="记录排序"><button data-home-sort="updated" aria-pressed="true">最近更新</button><button data-home-sort="created" aria-pressed="false">最近创建</button></div><span class="home-desktop-hint">各板块显示最新 10 条 · 点击记录直达详情</span><span class="home-mobile-hint">默认 3 条 · 可展开至 10 条</span></div>
+  <div class="home-toolbar"><div role="group" aria-label="记录排序"><button data-home-sort="updated" aria-pressed="true">最近更新</button><button data-home-sort="created" aria-pressed="false">最近创建</button></div></div>
   <p id="homeStatus" role="status" aria-live="polite">正在加载最近的记录…</p>
   <button id="homeRetry" class="home-button" hidden>重新加载</button>
   <div class="home-grid" id="homeGrid" aria-busy="true"></div>
-  <div class="home-footnote"><span><i class="fa-solid fa-lock" aria-hidden="true"></i> 仅展示你有权限访问的内容</span><span>BookStark · 个人工作台</span></div>
   <noscript>请启用 JavaScript 以加载首页。你仍可通过顶部菜单访问各模块。</noscript>
 </main>
 <nav class="home-bottom-nav" aria-label="手机快捷导航"><a href="/home" aria-current="page"><i class="fa-solid fa-house" aria-hidden="true"></i><span>首页</span></a><a href="/notes"><i class="fa-regular fa-note-sticky" aria-hidden="true"></i><span>笔记</span></a><button data-home-dialog="homeCreate"><i class="fa-solid fa-plus home-new-icon" aria-hidden="true"></i><span>新建</span></button><a href="/notes?tab=tasks"><i class="fa-solid fa-list-check" aria-hidden="true"></i><span>待办</span></a><button data-home-dialog="homeMore"><i class="fa-solid fa-bars" aria-hidden="true"></i><span>更多</span></button></nav>
