@@ -143,6 +143,28 @@ func TestHomeAssetsIncludeSSHAndWebDAV(t *testing.T) {
 	}
 }
 
+func TestPersonalHomeEnglishTemplate(t *testing.T) {
+	router, token := initAssetControllerTest(t)
+	req := httptest.NewRequest("GET", "/home", nil)
+	req.Header.Set("Authorization", "Token "+token)
+	req.AddCookie(&http.Cookie{Name: "lang", Value: "en"})
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+	if w.Code != 200 {
+		t.Fatalf("home response: %d", w.Code)
+	}
+	for _, expected := range []string{`<html lang="en">`, `<h1>Personal Home</h1>`, `Recently updated`, `Customize sections`, `New Note`, `Mobile navigation`, `All sections`, `Capture an idea`} {
+		if !strings.Contains(w.Body.String(), expected) {
+			t.Errorf("missing translation: %s", expected)
+		}
+	}
+	for _, old := range []string{`>个人首页<`, `>最近更新<`, `>新建笔记<`, `>全部模块<`, `>记录新想法<`} {
+		if strings.Contains(w.Body.String(), old) {
+			t.Errorf("untranslated text: %s", old)
+		}
+	}
+}
+
 func TestHomeLayoutPersistenceValidationAndIsolation(t *testing.T) {
 	router, token := initAssetControllerTest(t)
 	other := &models.Member{Account: "layout-other", Password: "test-only", Role: 1}

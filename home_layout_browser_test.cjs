@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const keys = ['notes','articles','tasks','books','bookmarks','topics','nav','shares','assets'];
 const sections = keys.map(key => ({key,total:1,items:[{title:key,url:'/notes',date:'2026-10-09'}]}));
 let saved = null, fail = false, saves = 0;
+let language = 'zh';
 (async () => {
   const browser = await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH,args:['--no-sandbox']});
   try {
@@ -20,9 +21,9 @@ let saved = null, fail = false, saves = 0;
       }
       if (url.pathname === '/api/home') return route.fulfill({json:{code:0,sections,layout:saved}});
       if (url.pathname.startsWith('/static/')) return route.fulfill({path:'.'+url.pathname});
-      const translations = Object.fromEntries([...fs.readFileSync('i18n/zh.go','utf8').matchAll(/"(home\.layout\.[^"]+)":\s*"([^"]*)"/g)].map(match=>[match[1],match[2]]));
+      const translations = Object.fromEntries([...fs.readFileSync('i18n/'+language+'.go','utf8').matchAll(/"([\w.]+)":\s*"([^"]*)"/g)].map(match=>[match[1],match[2]]));
       let html = fs.readFileSync('templates/home.html','utf8').replace(/\{\{call \.T "([^"]+)"\}\}/g,(_,key)=>translations[key]||key).replace(/\{\{[^}]*\}\}/g,'');
-      html = html.replace('<head>','<head><script>window.csrfFetch=window.fetch; document.documentElement.lang="zh";</script><link rel="stylesheet" href="/static/css/variables.css">');
+      html = html.replace('<head>','<head><script>window.csrfFetch=window.fetch; document.documentElement.lang="'+language+'";</script><link rel="stylesheet" href="/static/css/variables.css">');
       return route.fulfill({contentType:'text/html',body:html});
     });
     await page.goto('http://layout.test/home');
@@ -82,5 +83,20 @@ let saved = null, fail = false, saves = 0;
     assert.deepEqual(saved.map(item=>item.key),keys);
     assert.deepEqual(errors,[]);
     console.log('PASS tablet/phone layout, no overflow, restore defaults and no JS errors');
+    language = 'en';
+    sections[0].items = Array.from({length:4},(_,i)=>({title:'Example '+i,url:'/notes',date:'2026-10-09',badge:'加密'}));
+    sections[1].items = [];
+    await page.reload(); await page.waitForSelector('.home-card');
+    assert.equal(await page.locator('h1').innerText(),'Personal Home');
+    assert(!/[\u3400-\u9fff]/.test(await page.locator('main').innerText()),'English dashboard has no Chinese UI text');
+    await page.locator('.home-expand').first().click();
+    assert.equal(await page.locator('.home-expand').first().innerText(),'Collapse ↑');
+    for (const id of ['homeCustomize','homeCreate','homeMore']) {
+      await page.locator('[data-home-dialog="'+id+'"]').last().click();
+      assert(!/[\u3400-\u9fff]/.test(await page.locator('#'+id).innerText()), 'English dialog '+id);
+      await page.keyboard.press('Escape');
+    }
+    assert.deepEqual(errors,[]);
+    console.log('PASS English dashboard, dates, empty/status labels, expansion and all dialogs');
   } finally {await browser.close();}
 })().catch(error => {console.error(error);process.exitCode=1;});

@@ -1,6 +1,22 @@
 package i18n
 
 var zhMessages = map[string]string{
+	"home.title":          "个人首页",
+	"home.nav":            "首页",
+	"home.eyebrow":        "个人工作台",
+	"home.new":            "新建",
+	"home.sort":           "记录排序",
+	"home.updated":        "最近更新",
+	"home.created":        "最近创建",
+	"home.loading":        "正在加载最近的记录…",
+	"home.retry":          "重新加载",
+	"home.noscript":       "请启用 JavaScript 以加载首页。你仍可通过顶部菜单访问各模块。",
+	"home.mobile_nav":     "手机快捷导航",
+	"home.more":           "更多",
+	"home.modules":        "全部模块",
+	"home.create_title":   "记录新想法",
+	"home.create_hint":    "选择要创建的内容",
+	"home.done":           "完成",
 	"home.layout.title":   "自定义板块",
 	"home.layout.hint":    "勾选板块，拖动或点箭头排序。选择宽度，保存后同步到账号。",
 	"home.layout.preview": "桌面布局预览 · 平板两列，手机单列",

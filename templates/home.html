@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#2563eb">
-<title>个人首页 · BookStark</title>
+<title>{{call .T "home.title"}} · BookStark</title>
 <link rel="manifest" href="/manifest.json">
 <link rel="stylesheet" href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}">
 {{template "head-assets" .}}
@@ -14,18 +14,18 @@
 {{template "header" .}}
 <main class="home-page">
   <section class="home-welcome">
-    <div><div class="home-eyebrow">YOUR PERSONAL WORKSPACE</div><h1>个人首页</h1></div>
-    <div class="home-actions"><time id="homeToday"></time><div><button class="home-button home-primary" data-home-dialog="homeCreate"><i class="fa-solid fa-plus" aria-hidden="true"></i> 新建</button><button class="home-button" data-home-dialog="homeCustomize"><i class="fa-solid fa-sliders" aria-hidden="true"></i> 自定义板块</button></div></div>
+    <div><div class="home-eyebrow">{{call .T "home.eyebrow"}}</div><h1>{{call .T "home.title"}}</h1></div>
+    <div class="home-actions"><time id="homeToday"></time><div><button class="home-button home-primary" data-home-dialog="homeCreate"><i class="fa-solid fa-plus" aria-hidden="true"></i> {{call .T "home.new"}}</button><button class="home-button" data-home-dialog="homeCustomize"><i class="fa-solid fa-sliders" aria-hidden="true"></i> {{call .T "home.layout.title"}}</button></div></div>
   </section>
-  <div class="home-toolbar"><div role="group" aria-label="记录排序"><button data-home-sort="updated" aria-pressed="true">最近更新</button><button data-home-sort="created" aria-pressed="false">最近创建</button></div></div>
-  <p id="homeStatus" role="status" aria-live="polite">正在加载最近的记录…</p>
-  <button id="homeRetry" class="home-button" hidden>重新加载</button>
+  <div class="home-toolbar"><div role="group" aria-label="{{call .T "home.sort"}}"><button data-home-sort="updated" aria-pressed="true">{{call .T "home.updated"}}</button><button data-home-sort="created" aria-pressed="false">{{call .T "home.created"}}</button></div></div>
+  <p id="homeStatus" role="status" aria-live="polite">{{call .T "home.loading"}}</p>
+  <button id="homeRetry" class="home-button" hidden>{{call .T "home.retry"}}</button>
   <div class="home-grid" id="homeGrid" aria-busy="true"></div>
-  <noscript>请启用 JavaScript 以加载首页。你仍可通过顶部菜单访问各模块。</noscript>
+  <noscript>{{call .T "home.noscript"}}</noscript>
 </main>
-<nav class="home-bottom-nav" aria-label="手机快捷导航"><a href="/home" aria-current="page"><i class="fa-solid fa-house" aria-hidden="true"></i><span>首页</span></a><a href="/notes"><i class="fa-regular fa-note-sticky" aria-hidden="true"></i><span>笔记</span></a><button data-home-dialog="homeCreate"><i class="fa-solid fa-plus home-new-icon" aria-hidden="true"></i><span>新建</span></button><a href="/notes?tab=tasks"><i class="fa-solid fa-list-check" aria-hidden="true"></i><span>待办</span></a><button data-home-dialog="homeMore"><i class="fa-solid fa-bars" aria-hidden="true"></i><span>更多</span></button></nav>
-<dialog class="home-dialog" id="homeMore" aria-labelledby="homeMoreTitle"><div class="home-dialog-head"><h2 id="homeMoreTitle">全部模块</h2><button data-home-close aria-label="关闭">×</button></div><h3>知识</h3><div class="home-menu-grid"><a href="/notes">笔记</a><a href="/notes?tab=articles">文章</a><a href="/notes?tab=tasks">待办</a><a href="/books">书籍</a><a href="/bookmarks">书签</a></div><h3>合集</h3><div class="home-menu-grid"><a href="/topics">专题</a>{{if .IsAdmin}}<a href="/labels">标签</a>{{end}}</div><h3>资源</h3><div class="home-menu-grid"><a href="/nav">导航</a><a href="/shares">分享</a>{{if .IsAdmin}}<a href="/admin/assets">资产</a>{{end}}<a href="/images">图片</a></div></dialog>
-<dialog class="home-dialog" id="homeCreate" aria-labelledby="homeCreateTitle"><div class="home-dialog-head"><h2 id="homeCreateTitle">记录新想法</h2><button data-home-close aria-label="关闭">×</button></div><p>选择要创建的内容</p><div class="home-menu-grid"><a href="/notes?command=new-note">新建笔记</a><a href="/notes?command=new-article">新建文章</a><a href="/notes?tab=tasks&command=new-task">新建待办</a><a href="/books?command=new-book">新建书籍</a><a href="/bookmarks?command=new-bookmark">新建书签</a><a href="/topics?command=new-topic">新建专题</a></div></dialog>
+<nav class="home-bottom-nav" aria-label="{{call .T "home.mobile_nav"}}"><a href="/home" aria-current="page"><i class="fa-solid fa-house" aria-hidden="true"></i><span>{{call .T "home.nav"}}</span></a><a href="/notes"><i class="fa-regular fa-note-sticky" aria-hidden="true"></i><span>{{call .T "nav.notes"}}</span></a><button data-home-dialog="homeCreate"><i class="fa-solid fa-plus home-new-icon" aria-hidden="true"></i><span>{{call .T "home.new"}}</span></button><a href="/notes?tab=tasks"><i class="fa-solid fa-list-check" aria-hidden="true"></i><span>{{call .T "nav.todos"}}</span></a><button data-home-dialog="homeMore"><i class="fa-solid fa-bars" aria-hidden="true"></i><span>{{call .T "home.more"}}</span></button></nav>
+<dialog class="home-dialog" id="homeMore" aria-labelledby="homeMoreTitle"><div class="home-dialog-head"><h2 id="homeMoreTitle">{{call .T "home.modules"}}</h2><button data-home-close aria-label="{{call .T "common.close"}}">×</button></div><h3>{{call .T "nav.knowledge"}}</h3><div class="home-menu-grid"><a href="/notes">{{call .T "nav.notes"}}</a><a href="/notes?tab=articles">{{call .T "note.tab.articles"}}</a><a href="/notes?tab=tasks">{{call .T "nav.todos"}}</a><a href="/books">{{call .T "nav.books"}}</a><a href="/bookmarks">{{call .T "nav.bookmarks"}}</a></div><h3>{{call .T "nav.collections"}}</h3><div class="home-menu-grid"><a href="/topics">{{call .T "nav.topics"}}</a>{{if .IsAdmin}}<a href="/labels">{{call .T "user.menu.labels"}}</a>{{end}}</div><h3>{{call .T "nav.assets"}}</h3><div class="home-menu-grid"><a href="/nav">{{call .T "nav.home"}}</a><a href="/shares">{{call .T "nav.shares"}}</a>{{if .IsAdmin}}<a href="/admin/assets">{{call .T "page.assets.title"}}</a>{{end}}<a href="/images">{{call .T "user.menu.images"}}</a></div></dialog>
+<dialog class="home-dialog" id="homeCreate" aria-labelledby="homeCreateTitle"><div class="home-dialog-head"><h2 id="homeCreateTitle">{{call .T "home.create_title"}}</h2><button data-home-close aria-label="{{call .T "common.close"}}">×</button></div><p>{{call .T "home.create_hint"}}</p><div class="home-menu-grid"><a href="/notes?command=new-note">{{call .T "nav.create_note"}}</a><a href="/notes?command=new-article">{{call .T "nav.create_article"}}</a><a href="/notes?tab=tasks&command=new-task">{{call .T "nav.create_task"}}</a><a href="/books?command=new-book">{{call .T "nav.create_book"}}</a><a href="/bookmarks?command=new-bookmark">{{call .T "nav.create_bookmark"}}</a><a href="/topics?command=new-topic">{{call .T "nav.create_topic"}}</a></div></dialog>
 <dialog class="home-dialog home-layout-dialog" id="homeCustomize" aria-labelledby="homeCustomizeTitle">
   <div class="home-dialog-head"><h2 id="homeCustomizeTitle">{{call .T "home.layout.title"}}</h2><button data-home-close aria-label="{{call .T "common.close"}}">×</button></div>
   <p>{{call .T "home.layout.hint"}}</p>

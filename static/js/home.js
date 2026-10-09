@@ -27,7 +27,7 @@
     function available(item) { return sections.some(function(s) {return s.key === item.key;}); }
     try { var saved = JSON.parse(localStorage.getItem(key)); if (Array.isArray(saved)) hidden = saved; } catch (_) {}
     var now = new Date();
-    document.getElementById('homeToday').textContent = now.toLocaleDateString('zh-CN', {year:'numeric', month:'long', day:'numeric', weekday:'long'});
+    document.getElementById('homeToday').textContent = now.toLocaleDateString(english ? 'en-US' : 'zh-CN', {year:'numeric', month:'long', day:'numeric', weekday:'long'});
     function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; }
     function render() {
         grid.replaceChildren();
@@ -41,28 +41,29 @@
             var head = el('div', 'home-card-head');
             var icon = el('span', 'home-card-icon'); var glyph = el('i', 'fa-solid fa-' + m[1]); glyph.setAttribute('aria-hidden','true'); icon.append(glyph);
             var label = el('div'); var title = el('h2', '', moduleName(s.key)); title.id = 'home-title-' + s.key; card.setAttribute('aria-labelledby', title.id);
-            label.append(title, el('div', 'home-card-subtitle', '最新 ' + s.items.length + ' 条 / 共 ' + s.total + ' 条'));
-            var all = el('a', 'home-card-all', '查看全部 →'); all.href = m[3]; all.setAttribute('aria-label','查看全部' + m[0]); head.append(icon,label,all); card.append(head);
+            label.append(title, el('div', 'home-card-subtitle', lt('最新 ' + s.items.length + ' 条 / 共 ' + s.total + ' 条', 'Latest ' + s.items.length + ' / ' + s.total + ' total')));
+            var all = el('a', 'home-card-all', lt('查看全部 →','View all →')); all.href = m[3]; all.setAttribute('aria-label',lt('查看全部','View all ') + moduleName(s.key)); head.append(icon,label,all); card.append(head);
             var list = el('ul', 'home-list'); list.id = 'home-list-' + s.key;
             s.items.forEach(function (item) {
                 var li = el('li'); var a = el('a', 'home-row');
                 // Only server-generated local routes are accepted, never raw resource URLs.
                 if (typeof item.url !== 'string' || !item.url.startsWith('/') || item.url.startsWith('//')) return;
-                a.href = item.url; a.title = item.title || '未命名'; a.append(el('span','home-row-title',item.title || '未命名'));
-                if (item.badge) a.append(el('span','home-badge',({markdown:'MD',html:'HTML',blog:'文章 / 笔记',book:'书籍',online:'在线',offline:'离线',ssh:lt('SSH 主机','SSH host'),webdav:'WebDAV'})[item.badge] || item.badge));
+                a.href = item.url; a.title = item.title || lt('未命名','Untitled'); a.append(el('span','home-row-title',a.title));
+                if (item.badge) a.append(el('span','home-badge',({markdown:'MD',html:'HTML',blog:lt('文章 / 笔记','Article / Note'),book:lt('书籍','Book'),online:lt('在线','Online'),offline:lt('离线','Offline'),ssh:lt('SSH 主机','SSH host'),webdav:'WebDAV','加密':lt('加密','Protected'),'已完成':lt('已完成','Completed'),'待处理':lt('待处理','Pending')})[item.badge] || item.badge));
                 var date = el('time','',item.date ? item.date.slice(5) : ''); date.dateTime = item.date; date.title = item.date; a.append(date); li.append(a); list.append(li);
             });
             card.append(list);
-            if (!s.items.length) card.append(el('p','home-empty','还没有' + m[0] + '记录'));
+            if (!s.items.length) card.append(el('p','home-empty',lt('还没有' + m[0] + '记录','No records yet')));
             if (s.items.length > 3) {
-                var expand = el('button','home-expand','展开最近 ' + s.items.length + ' 条 ↓'); expand.setAttribute('aria-expanded','false'); expand.setAttribute('aria-controls',list.id);
-                expand.onclick = function () { var open = list.classList.toggle('expanded'); expand.setAttribute('aria-expanded',String(open)); expand.textContent = open ? '收起 ↑' : '展开最近 ' + s.items.length + ' 条 ↓'; };
+                var expandText = lt('展开最近 ' + s.items.length + ' 条 ↓','Show latest ' + s.items.length + ' ↓');
+                var expand = el('button','home-expand',expandText); expand.setAttribute('aria-expanded','false'); expand.setAttribute('aria-controls',list.id);
+                expand.onclick = function () { var open = list.classList.toggle('expanded'); expand.setAttribute('aria-expanded',String(open)); expand.textContent = open ? lt('收起 ↑','Collapse ↑') : expandText; };
                 card.append(expand);
             }
             grid.append(card);
         });
         status.hidden = grid.childElementCount > 0;
-        if (!grid.childElementCount) status.textContent = '所有板块已隐藏，可在“自定义板块”中重新开启。';
+        if (!grid.childElementCount) status.textContent = lt('所有板块已隐藏，可在“自定义板块”中重新开启。','All sections are hidden. Enable them in Customize sections.');
     }
     function preferences() {
         var box = document.getElementById('homePreferences'); box.replaceChildren();
@@ -159,14 +160,14 @@
             } catch (err) {
                 // Only retry this read-only GET, once; never retry HTTP/business errors.
                 if (ticket !== sequence || attempt || (err.name !== 'AbortError' && err.name !== 'TypeError')) throw err;
-                status.textContent = '网络较慢，正在重试加载…';
+                status.textContent = lt('网络较慢，正在重试加载…','Slow connection. Retrying…');
             } finally { clearTimeout(timeout); }
         }
     }
     async function load() {
         var ticket = ++sequence;
         if (activeRequest) activeRequest.abort();
-        status.hidden = false; status.textContent = '正在加载最近的记录…'; retry.hidden = true; grid.setAttribute('aria-busy','true');
+        status.hidden = false; status.textContent = lt('正在加载最近的记录…','Loading recent records…'); retry.hidden = true; grid.setAttribute('aria-busy','true');
         // Remove previous user's/stale records if authentication or loading fails.
         grid.replaceChildren();
         try {
@@ -174,14 +175,15 @@
             var response = result.response, data = result.data;
             if (ticket !== sequence) return;
             if (response.status === 401) { window.location.replace('/login'); return; }
-            if (!response.ok || data.code !== 0 || !Array.isArray(data.sections)) throw new Error(data.message || data.error || '首页加载失败');
+            if (!response.ok || data.code !== 0 || !Array.isArray(data.sections)) throw new Error('home request failed');
             sections = data.sections;
             layout = Array.isArray(data.layout) ? data.layout : defaultLayout().map(function(item) {item.hidden = hidden.includes(item.key); return item;});
             render();
             if (!layoutDialog.open) {draft = layout.map(function(i) {return Object.assign({},i);}); preferences();}
         } catch (err) {
             if (ticket !== sequence) return;
-            sections = []; preferences(); status.hidden = false; status.textContent = '加载失败：' + (err.name === 'AbortError' ? '请求超时，请重试' : err.message || '请检查网络'); retry.hidden = false;
+            console.warn('Home load failed:',err);
+            sections = []; preferences(); status.hidden = false; status.textContent = err.name === 'AbortError' ? lt('请求超时，请重试','Request timed out. Please retry.') : lt('首页加载失败，请检查网络后重试。','Could not load your home page. Check your connection and retry.'); retry.hidden = false;
         } finally { if (ticket === sequence) grid.setAttribute('aria-busy','false'); }
     }
     document.querySelectorAll('[data-home-sort]').forEach(function (button) { button.onclick = function () {

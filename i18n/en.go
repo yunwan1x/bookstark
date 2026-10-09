@@ -1,6 +1,22 @@
 package i18n
 
 var enMessages = map[string]string{
+	"home.title":          "Personal Home",
+	"home.nav":            "Home",
+	"home.eyebrow":        "YOUR PERSONAL WORKSPACE",
+	"home.new":            "New",
+	"home.sort":           "Record order",
+	"home.updated":        "Recently updated",
+	"home.created":        "Recently created",
+	"home.loading":        "Loading recent records…",
+	"home.retry":          "Retry",
+	"home.noscript":       "Enable JavaScript to load your home page. You can still access sections through the navigation menu.",
+	"home.mobile_nav":     "Mobile navigation",
+	"home.more":           "More",
+	"home.modules":        "All sections",
+	"home.create_title":   "Capture an idea",
+	"home.create_hint":    "Choose what to create",
+	"home.done":           "Done",
 	"home.layout.title":   "Customize sections",
 	"home.layout.hint":    "Select sections, drag or use arrows to reorder, then choose widths. Save to sync with your account.",
 	"home.layout.preview": "Desktop preview · Two columns on tablets, one on phones",
