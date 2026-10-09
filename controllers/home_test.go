@@ -82,3 +82,125 @@ func TestHomeSummaryIsolationOrderAndLinks(t *testing.T) {
 		}
 	}
 }
+
+func TestHomeAssetsIncludeSSHAndWebDAV(t *testing.T) {
+	router, token := initAssetControllerTest(t)
+	for i := 1; i <= 6; i++ {
+		created := fmt.Sprintf("2026-01-%02d", i)
+		modified := fmt.Sprintf("2026-02-%02d", 7-i)
+		if _, err := models.DB.Exec("INSERT INTO md_asset_ssh_hosts(name,host,credential_cipher,create_time,modify_time) VALUES(?,?,?,?,?)", fmt.Sprintf("SSH-%d", i), "PRIVATE_HOST", "PRIVATE_KEY", created, modified); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := models.DB.Exec("INSERT INTO md_asset_webdav_servers(name,url,create_time,modify_time) VALUES(?,?,?,?)", fmt.Sprintf("DAV-%d", i), "https://PRIVATE_DAV", created, modified); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, order := range []string{"created", "updated"} {
+		w := adminAssetRequest(router, token, "GET", "/api/home?order="+order, nil)
+		if w.Code != 200 {
+			t.Fatalf("summary failed: %s", w.Body.String())
+		}
+		if strings.Contains(w.Body.String(), "PRIVATE_") {
+			t.Fatal("asset connection details leaked")
+		}
+		var data struct {
+			Sections []models.HomeSection `json:"sections"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &data); err != nil {
+			t.Fatal(err)
+		}
+		assets := data.Sections[len(data.Sections)-1]
+		if assets.Key != "assets" || assets.Total != 12 || len(assets.Items) != 10 {
+			t.Fatalf("wrong combined count: %+v", assets)
+		}
+		want := "SSH-6"
+		if order == "updated" {
+			want = "SSH-1"
+		}
+		if assets.Items[0].Title != want {
+			t.Fatalf("wrong sort: %+v", assets.Items[0])
+		}
+		sshCount, davCount := 0, 0
+		for _, item := range assets.Items {
+			switch item.Badge {
+			case "ssh":
+				sshCount++
+				if item.URL != fmt.Sprintf("/admin/assets/ssh-hosts/%d/files", item.ID) {
+					t.Fatal(item.URL)
+				}
+			case "webdav":
+				davCount++
+				if item.URL != fmt.Sprintf("/admin/assets/webdav-servers/%d/files", item.ID) {
+					t.Fatal(item.URL)
+				}
+			default:
+				t.Fatal(item.Badge)
+			}
+		}
+		if sshCount != 5 || davCount != 5 {
+			t.Fatalf("missing asset type: ssh=%d dav=%d", sshCount, davCount)
+		}
+	}
+}
+
+func TestHomeLayoutPersistenceValidationAndIsolation(t *testing.T) {
+	router, token := initAssetControllerTest(t)
+	other := &models.Member{Account: "layout-other", Password: "test-only", Role: 1}
+	if err := other.Insert(); err != nil {
+		t.Fatal(err)
+	}
+	otherToken, err := models.CreateApiToken(other.MemberID, "layout-test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	readLayout := func(token string) []models.HomeLayoutItem {
+		t.Helper()
+		w := adminAssetRequest(router, token, "GET", "/api/home", nil)
+		if w.Code != 200 {
+			t.Fatalf("read failed: %s", w.Body.String())
+		}
+		var result struct {
+			Layout []models.HomeLayoutItem `json:"layout"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
+			t.Fatal(err)
+		}
+		return result.Layout
+	}
+	if readLayout(token) != nil {
+		t.Fatal("new account should have no saved layout")
+	}
+	w := adminAssetRequest(router, token, "PUT", "/api/home/layout", map[string]any{"layout": []models.HomeLayoutItem{
+		{Key: "articles", Width: 2}, {Key: "notes", Width: 3}, {Key: "tasks", Width: 1, Hidden: true},
+	}})
+	if w.Code != 200 {
+		t.Fatalf("save failed: %s", w.Body.String())
+	}
+	saved := readLayout(token)
+	if len(saved) != 9 || saved[0].Key != "articles" || saved[0].Width != 2 || saved[1].Width != 3 || !saved[2].Hidden {
+		t.Fatalf("incorrect layout: %+v", saved)
+	}
+	if readLayout(otherToken.Token) != nil {
+		t.Fatal("layout leaked to another account")
+	}
+	for _, input := range []any{
+		nil,
+		[]models.HomeLayoutItem{{Key: "unknown", Width: 1}},
+		[]models.HomeLayoutItem{{Key: "notes", Width: 4}},
+		[]models.HomeLayoutItem{{Key: "notes", Width: 0}},
+		[]models.HomeLayoutItem{{Key: "notes", Width: 1}, {Key: "notes", Width: 2}},
+	} {
+		w = adminAssetRequest(router, token, "PUT", "/api/home/layout", map[string]any{"layout": input})
+		if w.Code != 400 {
+			t.Fatalf("invalid layout accepted: %v", input)
+		}
+	}
+	if readLayout(token)[0].Key != "articles" {
+		t.Fatal("invalid save overwrote preferences")
+	}
+	w = httptest.NewRecorder()
+	router.ServeHTTP(w, httptest.NewRequest("PUT", "/api/home/layout", strings.NewReader(`{"layout":[]}`)))
+	if w.Code != 401 {
+		t.Fatalf("anonymous save: %d", w.Code)
+	}
+}

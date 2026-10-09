@@ -26,5 +26,34 @@ func HomeSummary(c *gin.Context) {
 		apiError(c, http.StatusInternalServerError, "首页加载失败，请重试")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"code": 0, "sections": sections})
+	layout, err := models.GetHomeLayout(middleware.GetMemberID(c))
+	if err != nil {
+		log.Printf("home layout: %v", err)
+		apiError(c, http.StatusInternalServerError, "首页加载失败，请重试")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": 0, "sections": sections, "layout": layout})
+}
+
+func SaveHomeLayout(c *gin.Context) {
+	c.Header("Cache-Control", "private, no-store")
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 8192)
+	var req struct {
+		Layout []models.HomeLayoutItem `json:"layout"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil || req.Layout == nil {
+		apiError(c, http.StatusBadRequest, "Invalid home layout")
+		return
+	}
+	layout, err := models.NormalizeHomeLayout(req.Layout)
+	if err != nil {
+		apiError(c, http.StatusBadRequest, "Invalid home layout")
+		return
+	}
+	if err = models.SaveHomeLayout(middleware.GetMemberID(c), layout); err != nil {
+		log.Printf("save home layout: %v", err)
+		apiError(c, http.StatusInternalServerError, "Could not save home layout")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": 0, "layout": layout})
 }

@@ -264,6 +264,10 @@ func createTables() error {
 			description VARCHAR(200) NOT NULL DEFAULT '',
 			update_time DATETIME
 		)`,
+		`CREATE TABLE IF NOT EXISTS md_home_layouts (
+			member_id INTEGER PRIMARY KEY,
+			layout TEXT NOT NULL
+		)`,
 		`CREATE TABLE IF NOT EXISTS md_task_reminder_preferences (
 			member_id INTEGER PRIMARY KEY,
 			enabled INTEGER NOT NULL DEFAULT 0,

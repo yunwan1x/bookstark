@@ -1,6 +1,11 @@
 package i18n
 
 var enMessages = map[string]string{
+	"home.layout.title":   "Customize sections",
+	"home.layout.hint":    "Select sections, drag or use arrows to reorder, then choose widths. Save to sync with your account.",
+	"home.layout.preview": "Desktop preview · Two columns on tablets, one on phones",
+	"home.layout.reset":   "Restore defaults",
+	"home.layout.save":    "Save layout",
 	// --- nav (top navigation bar) ---
 	"nav.home":            "Navigation",
 	"nav.books":           "Books",

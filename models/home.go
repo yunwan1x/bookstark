@@ -44,7 +44,7 @@ func ListHomeSections(memberID int64, admin bool, order string) ([]HomeSection, 
 		{"shares", `SELECT s.share_id id, COALESCE(b.blog_title,k.book_name) title, s.share_identify target, s.share_type badge, s.share_time created, COALESCE(b.modify_time,k.modify_time,s.share_time) modified FROM md_shares s LEFT JOIN md_blogs b ON s.share_type='blog' AND s.target_id=b.blog_id AND b.member_id=s.member_id LEFT JOIN md_books k ON s.share_type='book' AND s.target_id=k.book_id AND k.member_id=s.member_id WHERE s.member_id=? AND ((b.blog_id IS NOT NULL AND b.visibility=1) OR k.book_id IS NOT NULL)`, owned},
 	}
 	if admin {
-		sources = append(sources, source{"assets", `SELECT host_id id, name title, '' target, status badge, create_time created, modify_time modified FROM md_asset_ssh_hosts`, nil})
+		sources = append(sources, source{"assets", `SELECT host_id id, name title, 'ssh' target, 'ssh' badge, create_time created, modify_time modified FROM md_asset_ssh_hosts UNION ALL SELECT server_id id, name title, 'webdav' target, 'webdav' badge, create_time created, modify_time modified FROM md_asset_webdav_servers`, nil})
 	}
 	sections := make([]HomeSection, 0, len(sources))
 	for _, s := range sources {
@@ -53,7 +53,7 @@ func ListHomeSections(memberID int64, admin bool, order string) ([]HomeSection, 
 			return nil, fmt.Errorf("home %s count: %w", s.key, err)
 		}
 		// The sort column is selected from constants above, never from raw input.
-		rows, err := DB.Query("SELECT id, COALESCE(title,''), COALESCE(target,''), COALESCE(badge,''), COALESCE(substr(CAST(COALESCE("+column+",created) AS TEXT),1,10), '') FROM ("+s.query+") ORDER BY COALESCE("+column+",created) DESC, id DESC LIMIT 10", s.args...)
+		rows, err := DB.Query("SELECT id, COALESCE(title,''), COALESCE(target,''), COALESCE(badge,''), COALESCE(substr(CAST(COALESCE("+column+",created) AS TEXT),1,10), '') FROM ("+s.query+") ORDER BY COALESCE("+column+",created) DESC, id DESC, target ASC LIMIT 10", s.args...)
 		if err != nil {
 			return nil, fmt.Errorf("home %s: %w", s.key, err)
 		}
@@ -81,7 +81,11 @@ func ListHomeSections(memberID int64, admin bool, order string) ([]HomeSection, 
 			case "shares":
 				item.URL = "/shares/" + url.PathEscape(target)
 			case "assets":
-				item.URL = "/admin/assets/ssh-hosts/" + id + "/docker"
+				if target == "webdav" {
+					item.URL = "/admin/assets/webdav-servers/" + id + "/files"
+				} else {
+					item.URL = "/admin/assets/ssh-hosts/" + id + "/files"
+				}
 			}
 			section.Items = append(section.Items, item)
 		}

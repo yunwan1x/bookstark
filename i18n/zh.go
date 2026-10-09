@@ -1,6 +1,11 @@
 package i18n
 
 var zhMessages = map[string]string{
+	"home.layout.title":   "自定义板块",
+	"home.layout.hint":    "勾选板块，拖动或点箭头排序。选择宽度，保存后同步到账号。",
+	"home.layout.preview": "桌面布局预览 · 平板两列，手机单列",
+	"home.layout.reset":   "恢复默认",
+	"home.layout.save":    "保存布局",
 	// --- nav (top navigation bar) ---
 	"nav.home":            "导航",
 	"nav.books":           "书籍",
