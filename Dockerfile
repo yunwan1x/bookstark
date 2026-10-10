@@ -1,16 +1,17 @@
 # Stage 1: Build (production mode embeds static/templates/conf into binary)
-FROM golang:1.25-alpine AS builder
+FROM --platform=$BUILDPLATFORM golang:1.25-alpine AS builder
 WORKDIR /src
 RUN apk add --no-cache python3
-ENV GOPROXY=https://goproxy.cn,direct \
-    GOSUMDB=sum.golang.google.cn
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 ARG COMMIT
+ARG TARGETOS
+ARG TARGETARCH
 # Inject version for cache busting (git commit, fallback to build timestamp)
 # timetzdata tag embeds timezone database into the binary
-RUN python build.py --build --tags timetzdata
+RUN python3 build.py --build --tags timetzdata \
+    --goos "$TARGETOS" --goarch "$TARGETARCH" --output bookstark
 
 # Stage 2: Runtime
 FROM alpine:latest

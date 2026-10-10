@@ -26,6 +26,9 @@ data
 key
 *.tgz
 node_modules
+# Local secrets must not be embedded in distributable images.
+conf/app.conf
+mihomo/config.yaml
 package.json
 package-lock.json
 pnpm-lock.yaml

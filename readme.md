@@ -73,6 +73,17 @@ python3 build.py --build --tags timetzdata \
 
 ## Docker 部署
 
+GitHub Release 工作流会将 Linux amd64/arm64 多架构镜像发布到 `ghcr.io/yunwan1x/bookstark`：
+
+```bash
+docker pull ghcr.io/yunwan1x/bookstark:latest
+# 生产部署也可以固定到具体版本，例如 :v0.1.1。
+```
+
+推送 `v*` 版本标签，或在 GitHub Actions 的 `release` 工作流中手动填写版本号即可触发。版本格式为 `v主版本.次版本.修订号`，也支持 `-rc.1` 等预发布后缀。正式版本提供带 `v`、不带 `v` 和 `latest` 标签；预发布版本不更新 `latest`。手动发布已有标签时，所选分支/引用必须与标签指向相同提交。
+
+镜像发布使用 `GITHUB_TOKEN` 和工作流的 `packages: write` 权限，无需维护额外仓库密码。GHCR 新包的可见性需在 GitHub Packages 设置中确认：私有包拉取需要登录，设为 Public 后可匿名拉取。
+
 仓库根目录现有的 [docker-compose.yml](docker-compose.yml) 只包含 Mihomo 服务，**不是 BookStark 的启动配置**。可在仓库根目录另建 `compose.bookstark.yml`，使用下面的独立示例：
 
 ```yaml
@@ -116,7 +127,7 @@ docker compose -f compose.bookstark.yml logs --tail=100 bookstark
 
 示例端口仅绑定本机；对外使用时应配置 HTTPS 反向代理，并支持 WebSocket 与 SSE。不要直接向公网暴露未经保护的管理入口。手机安装 PWA 通常需要 HTTPS（本机 `localhost` 开发环境除外）。
 
-上面的 Docker 构建不具备 `deploy.sh` 的 systemd 硬资源限制。小内存机器建议在构建机生成镜像，再传输到运行服务器。
+上面的源码镜像构建需要启用 BuildKit（工作流已配置 Buildx），不具备 `deploy.sh` 的 systemd 硬资源限制。小内存机器可直接拉取 GHCR 镜像，或在构建机生成镜像再传输到运行服务器。
 
 ## 配置说明
 
