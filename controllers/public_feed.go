@@ -3,14 +3,22 @@ package controllers
 import (
 	"bookstark/models"
 	"github.com/gin-gonic/gin"
+	"hash/fnv"
 	"net/http"
 	"net/url"
 	"strconv"
 )
 
 type publicNavItem struct {
-	Name, URL string
-	Active    bool
+	Name, URL, Icon string
+	Active          bool
+}
+
+func publicLabelIcon(name string) string {
+	icons := []string{"fa-leaf", "fa-lightbulb", "fa-compass", "fa-code", "fa-flask", "fa-book", "fa-globe", "fa-puzzle-piece", "fa-palette", "fa-music", "fa-camera", "fa-bolt", "fa-seedling", "fa-shapes", "fa-cube", "fa-star"}
+	h := fnv.New32a()
+	_, _ = h.Write([]byte(name))
+	return icons[int(h.Sum32())%len(icons)]
 }
 
 func PublicFeedPage(c *gin.Context) {
@@ -18,7 +26,7 @@ func PublicFeedPage(c *gin.Context) {
 	data := commonData(c, "public")
 	kind, order, label, keyword := c.Query("type"), c.Query("sort"), c.Query("label"), c.Query("keyword")
 	if kind != "article" && kind != "note" && kind != "book" {
-		kind = ""
+		kind = "article"
 	}
 	if order != "updated" {
 		order = "latest"
@@ -45,14 +53,14 @@ func PublicFeedPage(c *gin.Context) {
 		c.String(http.StatusInternalServerError, "Unable to load public content")
 		return
 	}
-	labels, err := models.PublicFeedLabels()
+	labels, err := models.PublicFeedLabels(kind)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Unable to load public categories")
 		return
 	}
-	categories := []publicNavItem{{Name: "", URL: link(kind, order, "", 1), Active: label == ""}}
+	categories := []publicNavItem{{Name: "", URL: link(kind, order, "", 1), Icon: "fa-border-all", Active: label == ""}}
 	for _, l := range labels {
-		categories = append(categories, publicNavItem{Name: l, URL: link(kind, order, l, 1), Active: label == l})
+		categories = append(categories, publicNavItem{Name: l, URL: link(kind, order, l, 1), Icon: publicLabelIcon(l), Active: label == l})
 	}
 	books, _, _ := models.ListSharesPaged(1, 4, "", "book", models.PublicFeedOptions{Sort: "updated"})
 	data["Items"], data["Categories"], data["PublicBooks"] = items, categories, books

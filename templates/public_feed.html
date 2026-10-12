@@ -11,7 +11,6 @@
 <header class="public-header"><div class="public-header-inner">
  <a class="public-brand" href="/"><i class="fa-solid fa-book-open" aria-hidden="true"></i> BookStark</a>
  <nav class="public-nav" aria-label="{{call .T "public.navigation"}}">
-  <a href="/" {{if eq .Type ""}}aria-current="page"{{end}}>{{call .T "public.home"}}</a>
   <a href="/?type=article" {{if eq .Type "article"}}aria-current="page"{{end}}>{{call .T "public.articles"}}</a>
   <a href="/?type=note" {{if eq .Type "note"}}aria-current="page"{{end}}>{{call .T "public.notes"}}</a>
   <a href="/?type=book" {{if eq .Type "book"}}aria-current="page"{{end}}>{{call .T "public.books"}}</a>
@@ -28,19 +27,30 @@
 <main class="public-layout" role="main">
  <aside class="public-categories" aria-label="{{call .T "public.categories"}}">
   <details open id="publicCategories"><summary>{{call .T "public.categories"}}</summary><nav>
-   {{range .Categories}}<a href="{{.URL}}" {{if .Active}}aria-current="page"{{end}}><i class="fa-solid {{if .Name}}fa-tag{{else}}fa-border-all{{end}}" aria-hidden="true"></i><span>{{if .Name}}{{.Name}}{{else}}{{call $.T "public.all"}}{{end}}</span></a>{{end}}
+   {{range .Categories}}<a href="{{.URL}}" {{if .Active}}aria-current="page"{{end}}><i class="fa-solid {{.Icon}}" aria-hidden="true"></i><span>{{if .Name}}{{.Name}}{{else}}{{call $.T "public.all"}}{{end}}</span></a>{{end}}
   </nav></details>
  </aside>
  <section class="public-feed" aria-label="{{call .T "public.title"}}">
   <h1 class="page-title public-page-title">{{call .T "public.title"}}</h1>
   <div class="public-feed-tabs"><a href="{{.LatestURL}}" {{if eq .Sort "latest"}}aria-current="page"{{end}}>{{call .T "public.latest"}}</a><a href="{{.UpdatedURL}}" {{if eq .Sort "updated"}}aria-current="page"{{end}}>{{call .T "public.updated"}}</a></div>
-  {{range .Items}}<article class="public-entry">
-   {{if eq .BlogType "note"}}<span class="tag-badge">{{call $.T "public.notes"}}</span>{{end}}
+  <div class="public-items public-items-{{.Type}}">
+  {{range .Items}}<article class="public-entry{{if eq .ShareType "book"}} public-book-card{{else if eq .BlogType "note"}} public-note-card{{end}}">
+   {{if eq .ShareType "book"}}
+   <a class="public-book-cover" href="/shares/{{.ShareIdentify}}" aria-label="{{.Title}}"><i class="fa-solid fa-book-open" aria-hidden="true"></i><span>{{.Title}}</span></a>
+   {{end}}
+   {{if eq .BlogType "note"}}
+   <div class="public-note-author"><i class="fa-regular fa-user" aria-hidden="true"></i><span>{{.Author}}</span><time datetime="{{.ShareTime.Format "2006-01-02"}}">{{.ShareTime.Format "2006-01-02"}}</time></div>
+   {{else}}
    <h2><a href="/shares/{{.ShareIdentify}}">{{.Title}}{{if .HasPassword}} <i class="fa-solid fa-lock" aria-label="{{call $.T "public.locked"}}"></i>{{end}}</a></h2>
+   {{if ne .ShareType "book"}}<span class="tag-badge public-content-type">{{if eq .DocType "html"}}HTML{{else if eq .DocType "drawing"}}{{call $.T "public.drawing"}}{{else if eq .DocType "markdown"}}Markdown{{else if .DocType}}{{.DocType}}{{else}}Markdown{{end}}</span>{{end}}
+   {{end}}
    {{if .HasPassword}}<p class="public-excerpt">{{call $.T "public.locked"}}</p>{{else}}
    {{if eq .ShareType "book"}}<p class="public-excerpt">{{.Description}}</p>{{else}}<p class="public-excerpt{{if eq .BlogType "note"}} public-note{{end}}">{{.Content}}</p>{{end}}{{end}}
-   <div class="public-meta"><span>{{.Author}}</span><time datetime="{{.ShareTime.Format "2006-01-02"}}">{{.ShareTime.Format "2006-01-02"}}</time>{{if not .HasPassword}}{{range .Labels}}<span class="tag-badge">{{.}}</span>{{end}}{{end}}</div>
+   <div class="public-meta">{{if ne .BlogType "note"}}<span>{{.Author}}</span><time datetime="{{.ShareTime.Format "2006-01-02"}}">{{.ShareTime.Format "2006-01-02"}}</time>{{end}}{{if not .HasPassword}}{{range .Labels}}<span class="tag-badge">{{.}}</span>{{end}}{{end}}</div>
+   {{if eq .BlogType "note"}}<a class="public-read-link" href="/shares/{{.ShareIdentify}}">{{call $.T "public.read_note"}} <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>{{end}}
+   {{if eq .ShareType "book"}}<a class="public-read-link" href="/shares/{{.ShareIdentify}}">{{call $.T "public.read_book"}} <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>{{end}}
   </article>{{else}}<div class="public-empty">{{call .T "public.empty"}}</div>{{end}}
+  </div>
   <nav class="public-pagination" aria-label="{{call .T "public.pagination"}}">{{if .PrevURL}}<a class="page-btn" href="{{.PrevURL}}">{{call .T "public.prev"}}</a>{{end}}<span>{{.Page}}</span>{{if .NextURL}}<a class="page-btn" href="{{.NextURL}}">{{call .T "public.next"}}</a>{{end}}</nav>
  </section>
  <aside class="public-info">
