@@ -56,21 +56,22 @@ type BookmarkWithLabels struct {
 
 // BookmarkQuery 书签查询参数
 type BookmarkQuery struct {
-	Labels      []string   // 标签名列表（AND 逻辑）
-	LabelsOr    []string   // 标签名列表（OR 逻辑）
-	Keyword     string     // 关键词
-	Site        string     // 站点域名，按 URL 前缀筛选
-	MemberID    int64      // 用户ID，0=全部
-	IsPublic    *bool      // 公开状态，nil=全部
-	IsPinned    *bool      // 置顶状态，nil=全部
-	NavVisible  *bool      // 导航页可见，nil=全部
-	NoLabel     bool       // 仅无标签书签
-	WithAccount bool       // 是否关联用户账号
-	StartTime   *time.Time // 时间起始
-	EndTime     *time.Time // 时间截止
-	TimeField   string     // 时间字段: "create"(默认) 或 "modify"
-	Page        int        // 页码，从1开始
-	PageSize    int        // 每页条数
+	Labels         []string   // 标签名列表（AND 逻辑）
+	LabelsOr       []string   // 标签名列表（OR 逻辑）
+	Keyword        string     // 关键词
+	Site           string     // 站点域名，按 URL 前缀筛选
+	MemberID       int64      // 用户ID，0=全部
+	IsPublic       *bool      // 公开状态，nil=全部
+	IsPinned       *bool      // 置顶状态，nil=全部
+	NavVisible     *bool      // 导航页可见，nil=全部
+	NoLabel        bool       // 仅无标签书签
+	WithAccount    bool       // 是否关联用户账号
+	StartTime      *time.Time // 时间起始
+	EndTime        *time.Time // 时间截止
+	TimeField      string     // 时间字段: "create"(默认) 或 "modify"
+	PublicFeedSort string     // Optional public feed ordering: latest or updated.
+	Page           int        // 页码，从1开始
+	PageSize       int        // 每页条数
 }
 
 // BookmarkQueryResult 书签查询结果
@@ -187,8 +188,15 @@ func QueryBookmarks(q BookmarkQuery) (*BookmarkQueryResult, error) {
 
 	// 分页查询
 	offset := (q.Page - 1) * q.PageSize
+	orderSQL := "b.is_pinned DESC, b.modify_time DESC"
+	if q.PublicFeedSort == "latest" {
+		orderSQL = "b.create_time DESC, b.bookmark_id DESC"
+	}
+	if q.PublicFeedSort == "updated" {
+		orderSQL = "b.modify_time DESC, b.bookmark_id DESC"
+	}
 	dataSQL := "SELECT " + selectFields + " " + fromClause + " " + whereClause +
-		" ORDER BY b.is_pinned DESC, b.modify_time DESC" +
+		" ORDER BY " + orderSQL +
 		" LIMIT ? OFFSET ?"
 	dataArgs := append(args, q.PageSize, offset)
 

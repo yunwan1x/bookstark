@@ -1,8 +1,8 @@
 package i18n
 
 var enMessages = map[string]string{
+	"public.bookmarks":                   "Bookmarks",
 	"public.drawing":                     "Drawing",
-	"public.read_note":                   "Read full note",
 	"public.read_book":                   "Start reading",
 	"public.title":                       "Public reading",
 	"public.navigation":                  "Content navigation",

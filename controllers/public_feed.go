@@ -25,7 +25,7 @@ func PublicFeedPage(c *gin.Context) {
 	c.Header("Cache-Control", "private, no-store")
 	data := commonData(c, "public")
 	kind, order, label, keyword := c.Query("type"), c.Query("sort"), c.Query("label"), c.Query("keyword")
-	if kind != "article" && kind != "note" && kind != "book" {
+	if kind != "article" && kind != "note" && kind != "book" && kind != "bookmark" {
 		kind = "article"
 	}
 	if order != "updated" {
@@ -48,7 +48,24 @@ func PublicFeedPage(c *gin.Context) {
 		}
 		return "/?" + v.Encode()
 	}
-	items, total, err := models.ListSharesPaged(page, 15, keyword, kind, models.PublicFeedOptions{Label: label, Sort: order})
+	var items []models.ShareItem
+	var total int64
+	var err error
+	if kind == "bookmark" {
+		public := true
+		query := models.BookmarkQuery{IsPublic: &public, WithAccount: true, Keyword: keyword, Page: page, PageSize: 15, PublicFeedSort: order}
+		if label != "" {
+			query.Labels = []string{label}
+		}
+		var result *models.BookmarkQueryResult
+		result, err = models.QueryBookmarks(query)
+		if err == nil {
+			data["Bookmarks"] = result.Data
+			total = int64(result.Total)
+		}
+	} else {
+		items, total, err = models.ListSharesPaged(page, 15, keyword, kind, models.PublicFeedOptions{Label: label, Sort: order})
+	}
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Unable to load public content")
 		return

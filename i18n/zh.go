@@ -1,8 +1,8 @@
 package i18n
 
 var zhMessages = map[string]string{
+	"public.bookmarks":                   "书签",
 	"public.drawing":                     "画板",
-	"public.read_note":                   "查看完整速记",
 	"public.read_book":                   "开始阅读",
 	"public.title":                       "公开内容",
 	"public.navigation":                  "内容导航",

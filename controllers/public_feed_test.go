@@ -43,12 +43,31 @@ func TestPublicFeedPrivacyFiltersAndRendering(t *testing.T) {
 	if _, err := models.CreateShare("book", book.BookID, 1, ""); err != nil {
 		t.Fatal(err)
 	}
-	for _, path := range []string{"/", "/shares", "/?sort=updated", "/?label=教育", "/?type=note", "/?type=book", "/?keyword=不存在", "/?page=2", "/?label=%27%20OR%201=1--"} {
+	for _, pub := range []bool{true, false} {
+		name := "PUBLIC_BOOKMARK"
+		if !pub {
+			name = "PRIVATE_BOOKMARK"
+		}
+		b := &models.Bookmark{Title: name, URL: "https://example.com/" + name, MemberID: 1, IsPublic: pub}
+		if err := b.Insert(); err != nil {
+			t.Fatal(err)
+		}
+		if err := models.BindLabelsFromNames(b.BookmarkID, "bookmark", name+"_LABEL"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, path := range []string{"/", "/shares", "/?sort=updated", "/?label=教育", "/?type=note", "/?type=book", "/?type=bookmark", "/?type=bookmark&sort=updated", "/?type=bookmark&keyword=nomatch", "/?type=bookmark&label=PRIVATE_BOOKMARK_LABEL", "/?keyword=不存在", "/?page=2", "/?label=%27%20OR%201=1--"} {
 		w := adminAssetRequest(router, "", "GET", path, nil)
 		if w.Code != 200 {
 			t.Fatalf("%s: %d %s", path, w.Code, w.Body.String())
 		}
 		html := w.Body.String()
+		if strings.Contains(html, `>PRIVATE_BOOKMARK<`) || strings.Contains(html, `>PRIVATE_BOOKMARK_LABEL<`) {
+			t.Fatal("private bookmark leaked")
+		}
+		if path == "/?type=bookmark" && (!strings.Contains(html, `class="bm-row"`) || !strings.Contains(html, `target="_blank"`)) {
+			t.Fatal("missing public bookmark row")
+		}
 		for _, private := range []string{"PRIVATE_SENTINEL", "PRIVATE_LABEL", "PROTECTED_SENTINEL", "PROTECTED_LABEL"} {
 			if strings.Contains(html, private) {
 				t.Fatalf("%s leaked %s", path, private)
@@ -75,13 +94,16 @@ func TestPublicFeedPrivacyFiltersAndRendering(t *testing.T) {
 		if path == "/?type=note" && (!strings.Contains(html, `public-note-card`) || strings.Contains(html, `<h2><a href="/shares/public-test-b"`)) {
 			t.Fatal("notes should be body-first")
 		}
+		if path == "/?type=note" && strings.Contains(html, `public-read-link`) {
+			t.Fatal("note list should not show redundant detail link")
+		}
 		if path == "/?type=book" && !strings.Contains(html, `public-book-cover`) {
 			t.Fatal("missing bookshelf")
 		}
 	}
 	if dir := os.Getenv("PUBLIC_FEED_SNAPSHOT_DIR"); dir != "" {
 		for _, lang := range []string{"zh", "en"} {
-			for _, kind := range []string{"article", "note", "book"} {
+			for _, kind := range []string{"article", "note", "book", "bookmark"} {
 				req := httptest.NewRequest("GET", "/?type="+kind, nil)
 				req.AddCookie(&http.Cookie{Name: "lang", Value: lang})
 				w := httptest.NewRecorder()
