@@ -23,9 +23,10 @@ var ErrAssistantDraft = errors.New("draft unavailable")
 var ErrAssistantInput = errors.New("invalid assistant input")
 
 type AssistantMessage struct {
-	Role    string              `json:"role"`
-	Content string              `json:"content"`
-	Sources []AssistantResource `json:"sources,omitempty"`
+	CreatedAt int64               `json:"created_at,omitempty"`
+	Role      string              `json:"role"`
+	Content   string              `json:"content"`
+	Sources   []AssistantResource `json:"sources,omitempty"`
 }
 type AssistantPayload struct {
 	Kind    string `json:"kind"`

@@ -24,13 +24,32 @@
         if (typeof url !== 'string' || !/^\/(notes\?|books\/|bookmarks\?|topics\?)/.test(url) || /[\\\r\n]/.test(url)) return null;
         var a = node('a', title); a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer'; return a;
     }
+    function messageHeader(role, timestamp, label) {
+        var head = node('div', '', 'home-assistant-message-head');
+        var avatar = node('span', '', 'home-assistant-avatar');
+        var icon = node('i', '', role === 'user' ? 'fa-solid fa-user' : 'fa-solid fa-robot');
+        avatar.setAttribute('aria-hidden', 'true'); avatar.appendChild(icon);
+        head.append(avatar, label || node('strong', role === 'user' ? lt('你', 'You') : lt('AI 助手', 'AI assistant')));
+        // Older messages have no stored timestamp. Do not invent historical times.
+        var date = typeof timestamp === 'number' && timestamp > 0 ? new Date(timestamp * 1000) : null;
+        if (date && Number.isFinite(date.getTime())) {
+            var locale = english ? 'en-GB' : 'zh-CN';
+            var options = {hour:'2-digit', minute:'2-digit', hour12:false};
+            if (date.toDateString() !== new Date().toDateString()) { options.month = '2-digit'; options.day = '2-digit'; }
+            if (date.getFullYear() !== new Date().getFullYear()) options.year = 'numeric';
+            var time = node('time', date.toLocaleString(locale, options));
+            time.dateTime = date.toISOString(); time.title = date.toLocaleString(locale, {hour12:false});
+            head.appendChild(time);
+        }
+        return head;
+    }
     function render() {
         messages.replaceChildren(); drafts.replaceChildren();
         if (!session) { setBusy(); return; }
         if (!session.messages.length) messages.appendChild(node('p', lt('可以问：最近有哪些待办？帮我总结学习相关的笔记。', 'Try: What are my recent tasks? Summarize my notes about learning.')));
         session.messages.forEach(function (m) {
             var box = node('article', '', 'home-assistant-message'); box.dataset.role = m.role;
-            box.appendChild(node('strong', m.role === 'user' ? lt('你', 'You') : lt('AI 助手', 'AI assistant')));
+            box.appendChild(messageHeader(m.role, m.created_at));
             box.appendChild(node('div', m.content, 'home-assistant-text'));
             if (m.sources && m.sources.length) {
                 var links = node('div', '', 'home-assistant-sources');
@@ -189,9 +208,9 @@
         run(async function () {
             render();
             var question = node('article', '', 'home-assistant-message'); question.dataset.role = 'user';
-            question.appendChild(node('strong', lt('你', 'You'))); question.appendChild(node('div', text, 'home-assistant-text')); messages.appendChild(question);
+            question.appendChild(messageHeader('user', Date.now() / 1000)); question.appendChild(node('div', text, 'home-assistant-text')); messages.appendChild(question);
             var partial = node('article', '', 'home-assistant-message'), label = node('strong', lt('AI 助手 · 生成中，尚未完成', 'AI assistant · Generating, not complete'));
-            partial.dataset.streaming = 'true'; var output = node('div', '', 'home-assistant-text'); partial.append(label, output); messages.appendChild(partial);
+            partial.dataset.role = 'assistant'; partial.dataset.streaming = 'true'; var output = node('div', '', 'home-assistant-text'); partial.append(messageHeader('assistant', Date.now() / 1000, label), output); messages.appendChild(partial);
             try {
                 var data = await request('/chat', { session_id: session.id, message: text }, function (event, data) {
                     var scroll = el('Scroll'), follow = scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight < 100;

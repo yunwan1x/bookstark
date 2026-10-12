@@ -122,6 +122,9 @@ func TestAssistantEndToEndProviders(t *testing.T) {
 				t.Fatalf("wrong chat results: %+v", state)
 			}
 			var count int
+			if state.Session.Messages[0].CreatedAt <= 0 || state.Session.Messages[1].CreatedAt < state.Session.Messages[0].CreatedAt {
+				t.Fatal("message timestamps missing or out of order")
+			}
 			if err = models.DB.QueryRow(`SELECT count(*) FROM md_blogs`).Scan(&count); err != nil || count != 2 {
 				t.Fatal("draft unexpectedly created resource", err, count)
 			}

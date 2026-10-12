@@ -151,6 +151,7 @@ func AssistantChatAPI(c *gin.Context) {
 	if n, e := strconv.Atoi(models.GetSettingWithDefault("ai_max_tokens", "2048")); e == nil && n > 0 {
 		p.MaxTokens = min(n, 4096)
 	}
+	receivedAt := time.Now().Unix()
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 150*time.Second)
 	defer cancel()
 	member := middleware.GetMemberID(c)
@@ -228,7 +229,7 @@ func AssistantChatAPI(c *gin.Context) {
 		assistantError(c, 422, "任务步骤过多，请缩小范围。本次未创建任何资源。", "Too many steps. Narrow the request. No resources were created.")
 		return
 	}
-	s.Messages = append(s.Messages, models.AssistantMessage{Role: "user", Content: req.Message}, models.AssistantMessage{Role: "assistant", Content: answer, Sources: sources})
+	s.Messages = append(s.Messages, models.AssistantMessage{Role: "user", Content: req.Message, CreatedAt: receivedAt}, models.AssistantMessage{Role: "assistant", Content: answer, Sources: sources, CreatedAt: time.Now().Unix()})
 	if err = models.SaveAssistantTurn(ctx, member, s.ID, lease, s.Messages, drafts); err != nil {
 		assistantDBError(c, err)
 		return
