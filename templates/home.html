@@ -14,11 +14,13 @@
 {{template "header" .}}
 {{template "assistant-widget" .}}
 <main class="home-page">
+  <div class="home-heading-card">
   <section class="home-welcome">
     <div><div class="home-eyebrow">{{call .T "home.eyebrow"}}</div><h1>{{call .T "home.title"}}</h1></div>
     <div class="home-actions"><time id="homeToday"></time><div><button class="home-button home-primary" data-home-dialog="homeCreate"><i class="fa-solid fa-plus" aria-hidden="true"></i> {{call .T "home.new"}}</button><button class="home-button" data-home-dialog="homeCustomize"><i class="fa-solid fa-sliders" aria-hidden="true"></i> {{call .T "home.layout.title"}}</button></div></div>
   </section>
   <div class="home-toolbar"><div role="group" aria-label="{{call .T "home.sort"}}"><button data-home-sort="updated" aria-pressed="true">{{call .T "home.updated"}}</button><button data-home-sort="created" aria-pressed="false">{{call .T "home.created"}}</button></div></div>
+  </div>
   <p id="homeStatus" role="status" aria-live="polite">{{call .T "home.loading"}}</p>
   <button id="homeRetry" class="home-button" hidden>{{call .T "home.retry"}}</button>
   <div class="home-grid" id="homeGrid" aria-busy="true"></div>

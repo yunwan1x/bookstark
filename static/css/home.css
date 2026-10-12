@@ -1,4 +1,11 @@
 .home-body{background:var(--color-bg);color:var(--color-text)}
+.home-heading-card{background:var(--color-bg-card);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--spacing-lg) var(--spacing-lg) 0;margin-bottom:var(--spacing-lg);min-width:0}
+.home-heading-card .home-welcome{margin:0 0 var(--spacing-lg);flex-wrap:wrap}
+.home-heading-card .home-toolbar{margin:0;border-bottom:0}
+@media(max-width:640px){
+  .home-heading-card{padding:var(--spacing-md) var(--spacing-sm) 0;margin-bottom:var(--spacing-md)}
+  .home-heading-card .home-welcome{gap:var(--spacing-sm);margin-bottom:var(--spacing-md)}
+}
 
 /* Stable row flow: never move later cards backwards to fill gaps. */
 .home-page .home-grid { grid-template-columns: minmax(0,1fr); }
