@@ -12,6 +12,7 @@
 </head>
 <body class="home-body min-h-screen flex flex-col" data-home-member="{{.MemberID}}">
 {{template "header" .}}
+{{template "assistant-widget" .}}
 <main class="home-page">
   <section class="home-welcome">
     <div><div class="home-eyebrow">{{call .T "home.eyebrow"}}</div><h1>{{call .T "home.title"}}</h1></div>

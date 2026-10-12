@@ -131,7 +131,6 @@ button:active:not(:disabled), .page-btn:active:not(:disabled) {
 {{end}}
 
 {{define "header"}}
-{{template "assistant-widget" .}}
 <header class="h-10 flex items-center px-3 sm:px-4 text-sm shrink-0" data-swipe-nav data-swipe-item="[data-nav-idx][href]" data-swipe-index="data-nav-idx" data-swipe-mode="href" data-swipe-ignore="input,textarea,select,#user-menu-trigger,#searchTrigger,#themeToggle,#langToggle,#headerCloseSearch,#headerCreateTrigger,[data-header-menu-trigger]" style="position:sticky;top:0;z-index:20;background:var(--color-bg-card);border-bottom:1px solid var(--color-border)">
     <a href="/" class="logo-text py-2 sm:mr-6 hidden sm:inline">BookStark</a>
     <nav class="flex gap-1" id="main-nav">

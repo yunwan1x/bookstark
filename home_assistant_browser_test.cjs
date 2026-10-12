@@ -54,7 +54,7 @@ async function serviceWorkerChecks() {
         if(url.pathname==='/api/ai/assistant/reset'){session={id:'session-2',messages:[],drafts:[],busy:false};return route.fulfill({json:{code:0,session}});}
         if(url.pathname.startsWith('/static/'))return route.fulfill({path:'.'+url.pathname});
         const translations=Object.fromEntries([...fs.readFileSync('i18n/'+lang+'.go','utf8').matchAll(/"([\w.]+)":\s*"([^"]*)"/g)].map(m=>[m[1],m[2]]));
-        let html=fs.readFileSync('templates/home.html','utf8').replace('{{template "header" .}}',fs.readFileSync('templates/assistant.html','utf8')).replace(/\{\{call \.T "([^"]+)"\}\}/g,(_,k)=>translations[k]||k).replace(/\{\{[^}]*\}\}/g,'');
+        let html=fs.readFileSync('templates/home.html','utf8').replace('{{template "assistant-widget" .}}',fs.readFileSync('templates/assistant.html','utf8')).replace(/\{\{call \.T "([^"]+)"\}\}/g,(_,k)=>translations[k]||k).replace(/\{\{[^}]*\}\}/g,'');
         html=html.replace('<head>','<head><script>window.csrfFetch=window.fetch; window.__currentLang="'+lang+'";document.documentElement.lang="'+lang+'";</script><link rel="stylesheet" href="/static/css/variables.css"><link rel="stylesheet" href="/static/css/components.css">');
         return route.fulfill({contentType:'text/html',body:html});
       });
