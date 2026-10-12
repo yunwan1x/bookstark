@@ -9,7 +9,6 @@
 <link rel="stylesheet" href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}">
 {{template "head-assets" .}}
 <link rel="stylesheet" href="/static/css/home.css?v={{assetVer "/static/css/home.css"}}">
-{{if .AIEnabled}}<link rel="stylesheet" href="/static/css/home-assistant.css?v={{assetVer "/static/css/home-assistant.css"}}">{{end}}
 </head>
 <body class="home-body min-h-screen flex flex-col" data-home-member="{{.MemberID}}">
 {{template "header" .}}
@@ -19,7 +18,6 @@
     <div class="home-actions"><time id="homeToday"></time><div><button class="home-button home-primary" data-home-dialog="homeCreate"><i class="fa-solid fa-plus" aria-hidden="true"></i> {{call .T "home.new"}}</button><button class="home-button" data-home-dialog="homeCustomize"><i class="fa-solid fa-sliders" aria-hidden="true"></i> {{call .T "home.layout.title"}}</button></div></div>
   </section>
   <div class="home-toolbar"><div role="group" aria-label="{{call .T "home.sort"}}"><button data-home-sort="updated" aria-pressed="true">{{call .T "home.updated"}}</button><button data-home-sort="created" aria-pressed="false">{{call .T "home.created"}}</button></div></div>
-  {{if .AIEnabled}}<div class="home-assistant-entry"><button id="homeAssistantOpen" class="home-button" aria-haspopup="dialog"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i> {{call .T "home.assistant.title"}}</button></div>{{end}}
   <p id="homeStatus" role="status" aria-live="polite">{{call .T "home.loading"}}</p>
   <button id="homeRetry" class="home-button" hidden>{{call .T "home.retry"}}</button>
   <div class="home-grid" id="homeGrid" aria-busy="true"></div>
@@ -38,18 +36,6 @@
   <div class="home-layout-actions"><button id="homeLayoutReset" class="home-button">{{call .T "home.layout.reset"}}</button><button id="homeLayoutSave" class="home-button home-primary">{{call .T "home.layout.save"}}</button></div>
 </dialog>
 <script async src="/static/js/home.js?v={{assetVer "/static/js/home.js"}}"></script>
-{{if .AIEnabled}}
-<dialog class="home-dialog home-assistant-dialog" id="homeAssistant" aria-labelledby="homeAssistantTitle">
-  <div class="home-dialog-head"><h2 id="homeAssistantTitle">{{call .T "home.assistant.title"}}</h2><button id="homeAssistantClose" aria-label="{{call .T "common.close"}}">×</button></div>
-  <details class="home-assistant-disclosure"><summary>{{call .T "home.assistant.privacy"}}</summary><p>{{call .T "home.assistant.disclosure"}}</p></details>
-  <div class="home-assistant-controls"><button id="homeAssistantRefresh" class="home-button">{{call .T "home.assistant.refresh"}}</button><button id="homeAssistantReset" class="home-button">{{call .T "home.assistant.reset"}}</button></div>
-  <div id="homeAssistantResetCheck" hidden><p>{{call .T "home.assistant.reset_hint"}}</p><button id="homeAssistantResetConfirm" class="home-button">{{call .T "common.confirm"}}</button><button id="homeAssistantResetCancel" class="home-button">{{call .T "common.cancel"}}</button></div>
-  <div class="home-assistant-scroll" id="homeAssistantScroll"><div id="homeAssistantMessages" role="log" aria-label="{{call .T "home.assistant.conversation"}}"></div><section id="homeAssistantDrafts" aria-label="{{call .T "home.assistant.drafts"}}"></section></div>
-  <p id="homeAssistantStatus" role="status" aria-live="polite"></p>
-  <form id="homeAssistantForm"><label for="homeAssistantInput">{{call .T "home.assistant.input"}}</label><textarea id="homeAssistantInput" class="dialog-input" rows="3" maxlength="8000" required placeholder="{{call .T "home.assistant.placeholder"}}"></textarea><div class="home-assistant-controls"><span>{{call .T "home.assistant.shortcut"}}</span><button id="homeAssistantStop" type="button" class="home-button" hidden>{{call .T "home.assistant.stop"}}</button><button id="homeAssistantSend" class="home-button home-primary" type="submit">{{call .T "home.assistant.send"}}</button></div></form>
-</dialog>
-<script defer src="/static/js/home-assistant.js?v={{assetVer "/static/js/home-assistant.js"}}"></script>
-{{end}}
 {{template "footer" .}}
 </body>
 </html>

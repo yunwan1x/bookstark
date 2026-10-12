@@ -6,9 +6,12 @@
     function lt(zh, en) { return english ? en : zh; }
     function el(id) { return document.getElementById('homeAssistant' + id); }
     var session = null, active = null, poll = null;
+    var launcher = el('Open'), indicator = launcher.querySelector('.assistant-indicator'), unread = false;
     var status = el('Status'), input = el('Input'), messages = el('Messages'), drafts = el('Drafts');
     function node(tag, text, cls) { var n = document.createElement(tag); n.textContent = text; if (cls) n.className = cls; return n; }
     function setBusy() {
+        launcher.dataset.busy = active ? 'true' : 'false';
+        indicator.hidden = !active && !unread;
         var busy = !!active || !session || session.busy;
         el('Send').disabled = busy; el('Reset').disabled = busy; el('Refresh').disabled = !!active;
         el('Stop').hidden = !active;
@@ -46,7 +49,7 @@
                 box.appendChild(node('p', lt('尚未创建 · 草稿 24 小时内有效', 'Not created · draft expires after 24 hours')));
                 var actions = node('div', '', 'home-assistant-controls');
                 [['confirm', lt('确认创建', 'Confirm create')], ['cancel', lt('取消草稿', 'Cancel draft')]].forEach(function (action) {
-                    var b = node('button', action[1], 'home-button' + (action[0] === 'confirm' ? ' home-primary' : ''));
+                    var b = node('button', action[1], 'ai-dlg-btn ' + (action[0] === 'confirm' ? 'ai-dlg-btn-go' : 'ai-dlg-btn-cancel'));
                     b.type = 'button'; b.onclick = function () { resolve(d.id, action[0]); }; actions.appendChild(b);
                 });
                 box.appendChild(actions);
@@ -123,7 +126,7 @@
         var timeout = setTimeout(function () { if (active) active.abort(); }, 160000);
         try { await work(); }
         catch (err) { status.textContent = err.name === 'AbortError' ? lt('已停止等待。请刷新查看最终结果，避免重复操作。', 'Stopped waiting. Refresh to check the final result before retrying.') : err.message; }
-        finally { clearTimeout(timeout); active = null; setBusy(); if (session && session.busy && dialog.open) poll = setTimeout(sync, 3000); }
+        finally { clearTimeout(timeout); active = null; if (!dialog.open) unread = true; setBusy(); if (session && session.busy && dialog.open) poll = setTimeout(sync, 3000); }
     }
     async function sync() {
         return run(async function () {
@@ -140,9 +143,38 @@
             if (data.draft.status === 'done') window.dispatchEvent(new Event('bookstark:assistant-created'));
         }, lt('正在处理…', 'Processing…'));
     }
-    el('Open').onclick = function () { session = null; render(); dialog.showModal(); sync(); };
+    el('Open').onclick = function () {
+        if (dragged) { dragged = false; return; }
+        if (dialog.open) { dialog.close(); return; }
+        unread = false; if (innerWidth <= 640) dialog.showModal(); else dialog.show(); launcher.setAttribute('aria-expanded', 'true'); setBusy();
+        if (!active) sync();
+        input.focus();
+    };
     el('Close').onclick = function () { dialog.close(); };
-    dialog.addEventListener('close', function () { clearTimeout(poll); if (active) active.abort(); el('ResetCheck').hidden = true; el('Open').focus(); });
+    dialog.addEventListener('close', function () { clearTimeout(poll); launcher.setAttribute('aria-expanded', 'false'); el('ResetCheck').hidden = true; el('Open').focus(); });
+    dialog.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); dialog.close(); } });
+    // Drag the launcher to either edge; persist geometry only, never conversation data.
+    var dragged = false, pointer = null, position = null;
+    try { position = JSON.parse(localStorage.getItem('bookstark-assistant-position')); } catch (_) {}
+    function place() {
+        if (!position || !Number.isFinite(position.y)) return;
+        var y = Math.max(12, Math.min(innerHeight - 72, position.y * innerHeight));
+        launcher.style.top = y + 'px'; launcher.style.bottom = 'auto';
+        launcher.style.left = position.side === 'left' ? '12px' : 'auto';
+        launcher.style.right = position.side === 'left' ? 'auto' : '12px';
+    }
+    place(); window.addEventListener('resize', place);
+    launcher.addEventListener('pointerdown', function (e) {
+        if (e.button !== 0) return;
+        dragged = false; pointer = {id:e.pointerId,x:e.clientX,y:e.clientY}; launcher.setPointerCapture(e.pointerId);
+    });
+    launcher.addEventListener('pointermove', function (e) {
+        if (!pointer || e.pointerId !== pointer.id) return;
+        if (Math.hypot(e.clientX-pointer.x,e.clientY-pointer.y)>8) dragged = true;
+        if (dragged) { position = {side:e.clientX<innerWidth/2?'left':'right',y:(e.clientY-26)/innerHeight}; place(); }
+    });
+    function endDrag() { if (pointer && dragged) { try { localStorage.setItem('bookstark-assistant-position',JSON.stringify(position)); } catch (_) {} } pointer = null; }
+    launcher.addEventListener('pointerup', endDrag); launcher.addEventListener('pointercancel', endDrag);
     el('Refresh').onclick = sync;
     el('Stop').onclick = function () { if (active) active.abort(); };
     el('Reset').onclick = function () { el('ResetCheck').hidden = false; };
@@ -180,10 +212,10 @@
                 partial.dataset.streaming = 'incomplete'; throw err;
             }
             if (input.value.trim() === text) input.value = '';
-            status.textContent = ''; el('Scroll').scrollTop = el('Scroll').scrollHeight; input.focus();
+            status.textContent = ''; el('Scroll').scrollTop = el('Scroll').scrollHeight; if (dialog.open) input.focus();
         }, lt('正在检索和思考，复杂问题可能需要一两分钟…', 'Searching and thinking. Complex requests may take a minute or two…'));
     };
     input.addEventListener('keydown', function (e) { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !e.isComposing) { e.preventDefault(); el('Form').requestSubmit(); } });
-    window.addEventListener('pagehide', function () { if (dialog.open) dialog.close(); session = null; input.value = ''; render(); });
+    window.addEventListener('pagehide', function () { if (active) active.abort(); clearTimeout(poll); if (dialog.open) dialog.close(); session = null; input.value = ''; render(); });
     setBusy();
 })();

@@ -1,7 +1,13 @@
-.home-assistant-entry { margin-bottom: var(--spacing-lg); }
-.home-assistant-dialog { width: min(800px, 96vw); max-width: 96vw; height: min(840px, 90dvh); max-height: 90dvh; padding: var(--spacing-lg); border-radius: var(--radius-xl); }
+.assistant-launcher { position: fixed; right: 24px; bottom: calc(88px + env(safe-area-inset-bottom)); width: 52px; height: 52px; border: 0; border-radius: 50%; z-index: 1000; cursor: pointer; touch-action: none; box-shadow: var(--surface-shadow-hover); }
+.assistant-launcher:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 3px; }
+.assistant-indicator { position: absolute; right: 0; top: 0; width: 12px; height: 12px; border-radius: 50%; background: var(--color-success); border: 2px solid var(--color-bg-card); }
+.assistant-launcher[data-busy="true"] .assistant-indicator { animation: assistant-pulse 1s ease-in-out infinite; }
+@keyframes assistant-pulse { 50% { opacity: .35; } }
+.home-assistant-dialog { position: fixed; inset: 0 0 0 auto; margin: 0; width: min(420px, 100vw); max-width: 100vw; height: 100dvh; max-height: 100dvh; padding: var(--spacing-lg); border: 1px solid var(--color-border); border-radius: 0; background: var(--color-bg-card); color: var(--color-text); z-index: 1001; box-shadow: var(--surface-shadow-hover); overflow: hidden; }
 .home-assistant-dialog[open] { display: flex; flex-direction: column; gap: var(--spacing-sm); }
-.home-assistant-dialog .home-dialog-head { margin-bottom: 0; flex-shrink: 0; }
+.assistant-panel-head { display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.assistant-panel-head h2 { font-size: 18px; font-weight: 600; }
+.assistant-panel-head button { width: 36px; height: 36px; font-size: 26px; background: transparent; border: 0; color: var(--color-text-secondary); cursor: pointer; }
 .home-assistant-dialog p { margin: 0; color: var(--color-text-secondary); }
 .home-assistant-disclosure { font-size: 12px; line-height: 1.6; color: var(--color-text-secondary); flex-shrink: 0; }
 .home-assistant-disclosure summary { cursor: pointer; }
@@ -25,5 +31,6 @@
 .home-assistant-dialog :focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 @media (max-width: 640px) {
   .home-assistant-dialog { inset: 0; margin: auto; width: 100%; max-width: 100%; height: 100dvh; max-height: 100dvh; padding: var(--spacing-md); padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom)); border-radius: 0; }
-  .home-assistant-dialog .home-button { min-height: 40px; }
+  .home-assistant-dialog .ai-dlg-btn { min-height: 40px; }
 }
+@media (prefers-reduced-motion: reduce) { .assistant-launcher[data-busy="true"] .assistant-indicator { animation: none; } }

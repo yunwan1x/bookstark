@@ -54,7 +54,7 @@ async function serviceWorkerChecks() {
         if(url.pathname==='/api/ai/assistant/reset'){session={id:'session-2',messages:[],drafts:[],busy:false};return route.fulfill({json:{code:0,session}});}
         if(url.pathname.startsWith('/static/'))return route.fulfill({path:'.'+url.pathname});
         const translations=Object.fromEntries([...fs.readFileSync('i18n/'+lang+'.go','utf8').matchAll(/"([\w.]+)":\s*"([^"]*)"/g)].map(m=>[m[1],m[2]]));
-        let html=fs.readFileSync('templates/home.html','utf8').replace(/\{\{call \.T "([^"]+)"\}\}/g,(_,k)=>translations[k]||k).replace(/\{\{[^}]*\}\}/g,'');
+        let html=fs.readFileSync('templates/home.html','utf8').replace('{{template "header" .}}',fs.readFileSync('templates/assistant.html','utf8')).replace(/\{\{call \.T "([^"]+)"\}\}/g,(_,k)=>translations[k]||k).replace(/\{\{[^}]*\}\}/g,'');
         html=html.replace('<head>','<head><script>window.csrfFetch=window.fetch; window.__currentLang="'+lang+'";document.documentElement.lang="'+lang+'";</script><link rel="stylesheet" href="/static/css/variables.css"><link rel="stylesheet" href="/static/css/components.css">');
         return route.fulfill({contentType:'text/html',body:html});
       });
@@ -70,6 +70,8 @@ async function serviceWorkerChecks() {
       assert.equal(await page.locator('.home-assistant-sources a').count(),1);
       assert.equal(await page.locator('.home-assistant-sources a').getAttribute('rel'),'noopener noreferrer');
       const bounds=await page.locator('#homeAssistant').boundingBox();assert(bounds.x>=-1&&bounds.x+bounds.width<=width+1);
+      assert(Math.abs(bounds.width-(width>640?420:width))<2);
+      assert.equal(await page.locator('#homeAssistant').evaluate(n=>n.matches(':modal')),width<=640);
       assert.equal(await page.locator('#homeAssistant').evaluate(n=>n.scrollWidth<=n.clientWidth+1),true);
       await page.locator('[data-draft-id="draft-1"] button').first().evaluate(b=>{b.click();b.click();});
       await page.waitForSelector('[data-draft-id="draft-1"] a');assert.equal(saves,1);assert(homeLoads>=2);
@@ -121,9 +123,18 @@ async function serviceWorkerChecks() {
         await page.waitForFunction(()=>document.querySelector('[data-streaming="true"] .home-assistant-text')?.textContent==='你好');
         assert.equal(await page.locator('#homeAssistantSend').isEnabled(),false);
         assert.equal(await page.locator('#homeAssistantDrafts button').count(),0);
+        if(mode==='done') {
+          await page.locator('#homeAssistantClose').click();
+          await page.waitForFunction(()=>!document.querySelector('#homeAssistant').open);
+          assert.equal(await page.locator('#homeAssistantOpen').getAttribute('data-busy'),'true');
+        }
         if(mode==='abort')await page.locator('#homeAssistantStop').click();else await page.evaluate(m=>window.finishAssistantStream(m),mode);
         await page.waitForFunction(()=>!document.querySelector('#homeAssistantSend').disabled);
         if(mode==='done'){
+          assert.equal(await page.locator('.assistant-indicator').isVisible(),true);
+          await page.locator('#homeAssistantOpen').click();
+          await page.waitForFunction(()=>!document.querySelector('#homeAssistantSend').disabled);
+          assert.equal(await page.locator('.assistant-indicator').isVisible(),false);
           assert.equal(await page.locator('[data-streaming]').count(),0);
           assert.equal(await page.locator('#homeAssistantInput').inputValue(),'');
           assert((await page.locator('#homeAssistantMessages').innerText()).includes('你好，完成'));
@@ -135,6 +146,12 @@ async function serviceWorkerChecks() {
         }
       }
       console.log('PASS '+lang+' '+width+'px: live SSE, split UTF-8, truncation, stream error, malformed data, cancellation');
+      await page.locator('#homeAssistantClose').click();
+      const launcher=await page.locator('#homeAssistantOpen').boundingBox();
+      await page.mouse.move(launcher.x+26,launcher.y+26);await page.mouse.down();await page.mouse.move(28,200,{steps:8});await page.mouse.up();
+      assert.equal(await page.locator('#homeAssistant').evaluate(n=>n.open),false);
+      assert((await page.locator('#homeAssistantOpen').boundingBox()).x<20);
+      assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('bookstark-assistant-position')).side),'left');
       assert.deepEqual(errors,[]);await page.close();console.log('PASS '+lang+' '+width+'px: drafts, confirmation, XSS, reopen, reset, errors, responsive bounds');
     }
   }finally{await browser.close();}
