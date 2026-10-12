@@ -105,7 +105,7 @@
         .note-comment-btn:hover,
         .note-comment-btn[aria-expanded="true"],
         .note-fullscreen-btn:hover { color: var(--color-primary, #2563eb); background: var(--color-gray-100, #f1f5f9); }
-        .sh-note-text { font-size: 13px; color: var(--color-text-secondary); line-height: 1.75; word-break: break-word; }
+        .sh-note-text { font-size: 13px; color: var(--color-text); line-height: 1.75; word-break: break-word; }
         .sh-note-text img.note-image-lightbox-trigger { display: block; max-width: 100%; height: auto; border-radius: 8px; cursor: zoom-in; }
         .sh-note-text img.note-image-lightbox-trigger:focus-visible { outline: 2px solid var(--color-focus, #2563eb); outline-offset: 3px; }
         .sh-note-text p { margin: 0 0 6px; }
@@ -133,7 +133,7 @@
         .sh-note-text ol { list-style: decimal; }
         .sh-note-text li { margin-bottom: 2px; line-height: 1.7; }
         .sh-note-text li::marker { color: var(--color-text-muted); }
-        .sh-note-text blockquote { border-left: 3px solid var(--color-primary-border); padding-left: 10px; margin: 6px 0; color: var(--color-text-muted); }
+        .sh-note-text blockquote { border-left: 3px solid var(--color-primary-border); padding-left: 10px; margin: 6px 0; color: var(--color-text); }
         .sh-note-text h1,.sh-note-text h2,.sh-note-text h3,.sh-note-text h4 { font-size: 13px; font-weight: 700; color: var(--color-text); margin: 8px 0 4px; }
         .sh-note-text table { border-collapse: collapse; width: 100%; margin: 6px 0; font-size: 12px; overflow-x: auto; display: block; }
         .sh-note-text table thead { background: var(--color-gray-100); }
@@ -223,7 +223,7 @@
         .note-viewer-prev { left: max(18px, env(safe-area-inset-left)); }
         .note-viewer-next { right: max(18px, env(safe-area-inset-right)); }
         .note-viewer-nav:disabled { opacity: 0.35; cursor: default; transform: none; pointer-events: none; }
-        .note-viewer-content { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 22px 24px 28px; color: var(--color-text-primary, #0f172a); font-size: 16px; line-height: 1.86; scrollbar-width: thin; }
+        .note-viewer-content { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 22px 24px 28px; color: var(--color-text); font-size: 16px; line-height: 1.86; scrollbar-width: thin; }
         #shareNoteImageLightboxOverlay.note-image-lightbox-overlay { background: rgba(2, 6, 23, 0.92); backdrop-filter: blur(14px); }
         .note-image-lightbox-shell { position: relative; width: 100vw; height: 100vh; height: 100dvh; display: flex; align-items: center; justify-content: center; overflow: hidden; color: #f8fafc; }
         .note-image-lightbox-figure { margin: 0; width: min(1180px, calc(100vw - 176px)); height: calc(100vh - 112px); height: calc(100dvh - 112px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }

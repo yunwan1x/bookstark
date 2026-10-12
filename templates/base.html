@@ -252,17 +252,23 @@ button:active:not(:disabled), .page-btn:active:not(:disabled) {
 {{end}}
 
 {{define "footer"}}
-<footer class="flex flex-col items-center justify-center text-xs shrink-0 px-4 py-2 gap-1 min-h-8" style="border-top:1px solid var(--color-border);color:var(--color-text-muted);background:var(--color-bg-card)">
-    <div>BookStark · {{call .T "footer.tagline"}} · {{buildTime}}</div>
-    {{if .FriendLinks}}
-    <div class="flex flex-wrap items-center justify-center gap-2 text-xs">
-        <span style="color:var(--color-text-muted)">{{call .T "footer.friendlinks"}}</span>
-        {{range $index, $item := .FriendLinks}}
-            {{if gt $index 0}}<span style="color:var(--color-gray-300)">|</span>{{end}}
-            <a href="{{$item.LinkURL}}" target="_blank" rel="noopener noreferrer" style="color:var(--color-primary)">{{$item.LinkName}}</a>
+<link rel="stylesheet" href="/static/css/footer.css?v={{assetVer "/static/css/footer.css"}}">
+<footer class="site-footer">
+    {{if .FriendLinks}}<div class="site-footer-groups">
+        {{range footerGroups .FriendLinks}}
+        <section class="site-footer-group{{if .HasQR}} site-footer-social{{end}}">
+            <h2>{{if .Name}}{{.Name}}{{else}}{{call $.T "footer.friendlinks"}}{{end}}</h2>
+            <ul>{{range .Links}}<li>
+                {{if .QRCode}}
+                  <div class="site-footer-qr"><img src="{{.QRCode}}" alt="{{.LinkName}}" width="112" height="112" loading="lazy">
+                  {{if .LinkURL}}<a href="{{.LinkURL}}" target="_blank" rel="noopener noreferrer">{{.LinkName}}</a>{{else}}<span>{{.LinkName}}</span>{{end}}</div>
+                {{else}}<a href="{{.LinkURL}}" target="_blank" rel="noopener noreferrer">{{.LinkName}}</a>{{end}}
+                {{if .Description}}<p>{{.Description}}</p>{{end}}
+            </li>{{end}}</ul>
+        </section>
         {{end}}
-    </div>
-    {{end}}
+    </div>{{end}}
+    <div class="site-footer-bottom">BookStark · {{call .T "footer.tagline"}} · {{buildTime}}</div>
 </footer>
 <script>
 function logout(e) {

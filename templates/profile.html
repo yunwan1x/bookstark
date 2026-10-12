@@ -201,18 +201,19 @@
 
             {{if .IsAdmin}}
             <div id="panel-friend-links" role="tabpanel" aria-labelledby="tab-friend-links" class="profile-panel bg-white rounded-b-lg shadow-sm p-4 sm:p-7 hidden">
-                <div class="flex items-center justify-between gap-4 mb-4">
+                <div class="footer-editor-heading flex items-center justify-between gap-4 mb-4">
                     <div>
                         <h2 class="text-base font-semibold">{{call .T "profile.friend_links.title"}}</h2>
                         <p class="text-xs text-slate-500 mt-0.5">{{call .T "profile.friend_links.desc"}}</p>
                     </div>
-                    <button type="button" onclick="addFriendLink()" class="shrink-0 px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700">{{call .T "profile.friend_links.add"}}</button>
+                    <button type="button" onclick="FooterEditor.addGroup()" class="shrink-0 px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700">{{call .T "footer.manage.add_group"}}</button>
                 </div>
                 <div id="friend-links-error" class="hidden mb-4 p-3 bg-red-50 text-red-600 text-sm rounded"></div>
-                <div id="friend-links-list" class="overflow-x-auto mb-5"></div>
+                <div id="friend-links-list" class="mb-5"></div>
+                <button id="footer-retry" type="button" class="ai-dlg-btn ai-dlg-btn-cancel" onclick="FooterEditor.load()" hidden>{{call .T "home.assistant.refresh"}}</button>
                 <div id="friend-links-empty" class="hidden border border-dashed border-slate-300 rounded-lg px-4 py-6 text-sm text-slate-500 text-center mb-5">{{call .T "profile.friend_links.empty"}}</div>
                 <div class="flex justify-end">
-                    <button type="button" onclick="saveFriendLinks(this)" class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700">{{call .T "profile.friend_links.save"}}</button>
+                    <button id="footer-save" disabled type="button" onclick="FooterEditor.save()" class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700">{{call .T "profile.friend_links.save"}}</button>
                 </div>
             </div>
             {{end}}
@@ -363,29 +364,6 @@
       finally{btn.disabled=false;}
     }
 
-    function ensureTable(){
-      const list=document.getElementById('friend-links-list');
-      if(list.querySelector('table')) return list.querySelector('table');
-      list.innerHTML='<table class="fl-table"><thead><tr><th style="width:28%">' + window.__('profile.friend_links.col.name') + '</th><th>' + window.__('profile.friend_links.col.url') + '</th><th style="width:64px">' + window.__('profile.friend_links.col.sort') + '</th><th style="width:48px">' + window.__('profile.friend_links.col.enabled') + '</th><th style="width:36px"></th></tr></thead><tbody></tbody></table>';
-      return list.querySelector('table');
-    }
-    function friendLinkRow(item){
-      const tr=document.createElement('tr');
-      tr.innerHTML=`
-        <td><input data-field="link_name" type="text" value="${escAttr(item.link_name||'')}" placeholder="${window.__('profile.friend_links.col.name')}"></td>
-        <td><input data-field="link_url" type="text" value="${escAttr(item.link_url||'')}" placeholder="https://example.com"></td>
-        <td><input data-field="sort_weight" type="number" value="${Number.isFinite(Number(item.sort_weight))?Number(item.sort_weight):0}" style="width:56px"></td>
-        <td style="text-align:center"><label class="fl-toggle"><input data-field="is_enabled" type="checkbox" ${item.is_enabled?'checked':''}><span class="slider"></span></label></td>
-        <td style="text-align:center"><button type="button" class="fl-del" data-action="delete" title="${window.__('profile.friend_links.delete')}" aria-label="${window.__('profile.friend_links.delete')}">×</button></td>`;
-      tr.querySelector('[data-action="delete"]').addEventListener('click',()=>{tr.remove();updateFriendLinksEmpty();});
-      return tr;
-    }
-        function updateFriendLinksEmpty(){const list=document.getElementById('friend-links-list');const empty=document.getElementById('friend-links-empty');if(!list||!empty)return;const tbody=list.querySelector('tbody');const hasRows=tbody&&tbody.children.length>0;empty.classList.toggle('hidden',hasRows);if(list.querySelector('table'))list.querySelector('table').style.display=hasRows?'':'none';}
-    function addFriendLink(item={link_name:'',link_url:'',sort_weight:0,is_enabled:1}){const table=ensureTable();table.querySelector('tbody').appendChild(friendLinkRow(item));updateFriendLinksEmpty();}
-    function collectFriendLinks(){const list=document.getElementById('friend-links-list');if(!list)return[];const tbody=list.querySelector('tbody');if(!tbody)return[];return Array.from(tbody.children).map(row=>({link_name:row.querySelector('[data-field="link_name"]').value.trim(),link_url:row.querySelector('[data-field="link_url"]').value.trim(),sort_weight:parseInt(row.querySelector('[data-field="sort_weight"]').value||'0',10)||0,is_enabled:row.querySelector('[data-field="is_enabled"]').checked?1:0}));}
-    async function loadFriendLinks(){if(!isAdmin)return;BookStarkErrors.clearField('friend-links-error');const res=await csrfFetch('/api/admin/friend-links');if(!res.ok){const d=await res.json().catch(()=>({}));BookStarkErrors.field('friend-links-error', d, window.__('profile.friend_links.load_error'));updateFriendLinksEmpty();return;}const data=await res.json();const list=document.getElementById('friend-links-list');list.innerHTML='';((data.data&&data.data.items)||[]).forEach(addFriendLink);updateFriendLinksEmpty();}
-    async function saveFriendLinks(btn){BookStarkErrors.clearField('friend-links-error');const items=collectFriendLinks();try{const res=await csrfFetch('/api/admin/friend-links',{method:'PUT',lockKey:'profile:friend-links',lockControl:btn,headers:{'Content-Type':'application/json'},body:JSON.stringify({items})});if(res.ok){BSDialog.alert2(window.__('profile.friend_links.save_success'));await loadFriendLinks();}else{const d=await res.json().catch(()=>({}));BookStarkErrors.field('friend-links-error', d, window.__('profile.friend_links.save_error'));}}catch(err){BookStarkErrors.field('friend-links-error', err, window.__('profile.friend_links.save_error'));}}
-    if(isAdmin){loadFriendLinks();}
     // API Token management
     function renderTokenRow(t){
       const div=document.createElement('div');
@@ -440,5 +418,6 @@
     }
     loadApiTokens();
     </script>
+{{if .IsAdmin}}<link rel="stylesheet" href="/static/css/footer-editor.css?v={{assetVer "/static/css/footer-editor.css"}}"><script defer src="/static/js/footer-editor.js?v={{assetVer "/static/js/footer-editor.js"}}"></script>{{end}}
 </body>
 </html>

@@ -19,6 +19,7 @@ func ListFriendLinks(c *gin.Context) {
 }
 
 func ReplaceFriendLinks(c *gin.Context) {
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 1024*1024)
 	var req struct {
 		Items []models.FriendLink `json:"items"`
 	}

@@ -13,6 +13,7 @@ import (
 	"bookstark/conf"
 	"bookstark/controllers"
 	"bookstark/middleware"
+	"bookstark/models"
 )
 
 // EmbedFS is set by main package in embed mode; nil in dev mode
@@ -23,6 +24,7 @@ var EmbedFS struct {
 }
 
 var templateFuncs = template.FuncMap{
+	"footerGroups": models.GroupFriendLinks,
 	"buildTime": func() string {
 		if t, err := time.Parse("20060102150405", conf.App.BuildTime); err == nil {
 			return t.Format("01-02 15:04")

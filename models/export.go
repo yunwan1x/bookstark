@@ -179,12 +179,16 @@ type ExportLabelRel struct {
 }
 
 type ExportFriendLink struct {
-	LinkName   string `json:"link_name"`
-	LinkURL    string `json:"link_url"`
-	SortWeight int    `json:"sort_weight"`
-	IsEnabled  int    `json:"is_enabled"`
-	CreateTime string `json:"create_time"`
-	ModifyTime string `json:"modify_time"`
+	GroupName   string `json:"group_name,omitempty"`
+	GroupOrder  int    `json:"group_order,omitempty"`
+	QRCode      string `json:"qr_code,omitempty"`
+	Description string `json:"description,omitempty"`
+	LinkName    string `json:"link_name"`
+	LinkURL     string `json:"link_url"`
+	SortWeight  int    `json:"sort_weight"`
+	IsEnabled   int    `json:"is_enabled"`
+	CreateTime  string `json:"create_time"`
+	ModifyTime  string `json:"modify_time"`
 }
 
 type ExportData struct {
@@ -825,7 +829,7 @@ func getResourceIdentify(relationType string, resourceID int64) (string, error) 
 }
 
 func exportFriendLinks() ([]ExportFriendLink, error) {
-	rows, err := DB.Query("SELECT link_name, link_url, sort_weight, is_enabled, create_time, COALESCE(modify_time,'') FROM md_friend_links ORDER BY sort_weight, link_id")
+	rows, err := DB.Query(`SELECT f.link_name, f.link_url, f.sort_weight, f.is_enabled, f.create_time, COALESCE(f.modify_time,''), COALESCE(d.group_name,''), COALESCE(d.group_order,0), COALESCE(d.qr_code,''), COALESCE(d.description,'') FROM md_friend_links f LEFT JOIN md_friend_link_details d ON f.link_id=d.link_id ORDER BY f.sort_weight, f.link_id`)
 	if err != nil {
 		return nil, err
 	}
@@ -834,7 +838,7 @@ func exportFriendLinks() ([]ExportFriendLink, error) {
 	var links []ExportFriendLink
 	for rows.Next() {
 		var l ExportFriendLink
-		if err := rows.Scan(&l.LinkName, &l.LinkURL, &l.SortWeight, &l.IsEnabled, &l.CreateTime, &l.ModifyTime); err != nil {
+		if err := rows.Scan(&l.LinkName, &l.LinkURL, &l.SortWeight, &l.IsEnabled, &l.CreateTime, &l.ModifyTime, &l.GroupName, &l.GroupOrder, &l.QRCode, &l.Description); err != nil {
 			return nil, err
 		}
 		links = append(links, l)
@@ -1420,13 +1424,24 @@ func importFriendLinks(data *ExportData, adminID int64, result *ImportResult) er
 	defer tx.Rollback()
 
 	for _, fl := range data.FriendLinks {
-		_, err := tx.Exec(
+		item := FriendLink{LinkName: fl.LinkName, LinkURL: fl.LinkURL, GroupName: fl.GroupName, GroupOrder: fl.GroupOrder, QRCode: fl.QRCode, Description: fl.Description}
+		if err := item.Validate(); err != nil {
+			return err
+		}
+		inserted, err := tx.Exec(
 			"INSERT INTO md_friend_links (link_name, link_url, sort_weight, is_enabled, create_time, modify_time, created_by, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
 			fl.LinkName, fl.LinkURL, fl.SortWeight, fl.IsEnabled, fl.CreateTime, fl.ModifyTime, adminID, adminID,
 		)
 		if err != nil {
 			log.Printf("importFriendLinks: 插入友链失败: %v", err)
 			continue
+		}
+		id, err := inserted.LastInsertId()
+		if err != nil {
+			return err
+		}
+		if _, err = tx.Exec(`INSERT INTO md_friend_link_details(link_id,group_name,group_order,qr_code,description) VALUES(?,?,?,?,?)`, id, fl.GroupName, fl.GroupOrder, fl.QRCode, fl.Description); err != nil {
+			return err
 		}
 		result.FriendLinksImported++
 	}

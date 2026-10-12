@@ -224,6 +224,13 @@ func createTables() error {
 			created_by INTEGER NOT NULL DEFAULT 0,
 			updated_by INTEGER NOT NULL DEFAULT 0
 		)`,
+		`CREATE TABLE IF NOT EXISTS md_friend_link_details (
+			link_id INTEGER PRIMARY KEY REFERENCES md_friend_links(link_id) ON DELETE CASCADE,
+			group_name TEXT NOT NULL DEFAULT '',
+			group_order INTEGER NOT NULL DEFAULT 0,
+			qr_code TEXT NOT NULL DEFAULT '',
+			description TEXT NOT NULL DEFAULT ''
+		)`,
 		`CREATE TABLE IF NOT EXISTS md_shares (
 			share_id INTEGER PRIMARY KEY AUTOINCREMENT,
 			share_type VARCHAR(10) NOT NULL DEFAULT '',

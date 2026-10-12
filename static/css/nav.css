@@ -193,11 +193,10 @@
     padding: 14px;
     position: relative;
     overflow: hidden;
-    transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    transition: background-color 0.1s ease;
 }
 .nav-card:hover {
-    border-color: var(--color-primary);
-    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08);
+    background: var(--color-bg-hover);
 }
 .nav-card-pinned {
     border-left: 3px solid var(--color-primary);
@@ -209,6 +208,10 @@
 .nav-card-content {
     background: var(--color-bg-card);
     border-radius: inherit;
+    transition: background-color 0.1s ease;
+}
+.nav-card:hover .nav-card-content {
+    background: var(--color-bg-hover);
 }
 .nav-card-swipe-actions {
     display: none;
@@ -273,7 +276,7 @@
     flex: 1;
     min-width: 0;
 }
-.nav-card:hover .nav-card-title {
+.nav-card-title:hover {
     color: var(--color-primary);
 }
 .nav-card-desc {
@@ -420,9 +423,6 @@
 .nav-container.view-compact .nav-card {
     padding: 10px;
     border-radius: var(--radius-lg);
-}
-.nav-container.view-compact .nav-card:hover {
-    border-left: 2px solid var(--color-primary);
 }
 .nav-container.view-compact .nav-card-pinned {
     border-left: 2px solid var(--color-primary);
@@ -577,6 +577,7 @@
     .nav-section-chevron,
     .nav-section-body,
     .nav-card,
+    .nav-card-content,
     .nav-group-tag,
     .nav-view-btn,
     .nav-view-option {
