@@ -1,6 +1,7 @@
 .footer-editor-heading > div { min-width: 0; overflow-wrap: anywhere; }
 .footer-editor-group { padding: var(--spacing-md); border: 1px solid var(--color-border); border-radius: var(--radius-lg); margin-bottom: var(--spacing-lg); }
 .footer-editor-group-head { display: grid; grid-template-columns: minmax(0,1fr) auto auto; gap: var(--spacing-sm); align-items: end; padding-bottom: var(--spacing-sm); }
+.footer-editor-group-meta { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,2fr); gap: var(--spacing-sm); padding: var(--spacing-sm) 0; border-top: 1px solid var(--color-border); }
 .footer-editor-field { display: flex; flex-direction: column; gap: var(--spacing-xs); min-width: 0; }
 .footer-editor-field label { font-size: 12px; color: var(--color-text-secondary); overflow-wrap: anywhere; }
 .footer-editor-field input { min-width: 0; width: 100%; }
@@ -12,11 +13,9 @@
 .footer-editor-mode { display: flex; gap: var(--spacing-sm); align-items: center; color: var(--color-text); }
 .footer-editor-mode input { accent-color: var(--color-primary); }
 .footer-editor-mode-hint { font-size: 12px; color: var(--color-text-secondary); margin: var(--spacing-xs) 0 var(--spacing-md); }
-.footer-editor-item.is-qr .footer-editor-fields { grid-template-columns: minmax(0,1fr) minmax(0,2fr); }
-.footer-editor-item.is-qr .footer-editor-field:last-child { grid-column: 1 / -1; }
 .footer-editor-item.is-qr > .footer-editor-media { grid-column: 1 / -1; }
 .is-simple .footer-editor-group, .is-simple .footer-editor-items { display: contents; }
-.is-simple .footer-editor-group-head, .is-simple .footer-editor-group > .footer-editor-actions, .is-simple .is-qr { display: none; }
+.is-simple .footer-editor-group-head, .is-simple .footer-editor-group-meta, .is-simple .footer-editor-group > .footer-editor-actions, .is-simple .is-qr { display: none; }
 .footer-editor-actions { display: flex; align-items: center; justify-content: flex-end; gap: var(--spacing-sm); margin-top: var(--spacing-sm); }
 .footer-editor-actions .footer-editor-field { margin-right: auto; flex-direction: row; align-items: center; }
 .footer-editor-media { display: flex; flex-wrap: wrap; gap: var(--spacing-sm); align-items: center; margin-bottom: var(--spacing-sm); }
@@ -31,5 +30,6 @@
   .footer-editor-item { grid-template-columns: minmax(0,1fr); }
   .footer-editor-item > .footer-editor-actions { justify-self: end; padding: 0; }
   .footer-editor-group-head { grid-template-columns: minmax(0,1fr) auto auto; }
+  .footer-editor-group-meta { grid-template-columns: minmax(0,1fr); }
   .footer-editor-group-head .row-action { max-width: 64px; height: auto; white-space: normal; overflow-wrap: anywhere; }
 }

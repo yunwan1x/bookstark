@@ -16,7 +16,8 @@ func TestFooterGroupsPersistenceAndLegacy(t *testing.T) {
 	}
 	items := []FriendLink{
 		{LinkName: "Docs", LinkURL: "https://example.com/docs", GroupName: "Resources", GroupOrder: 2, IsEnabled: 1},
-		{LinkName: "WeChat", QRCode: "/upload-files/editor/code.png", GroupName: "Follow", GroupOrder: 1, Description: "Scan to follow", IsEnabled: 1},
+		{LinkName: "Follow our channels", QRCode: "/upload-files/editor/code.png", GroupName: "Follow", GroupOrder: 1, Description: "Scan to follow", IsEnabled: 1},
+		{LinkName: "Follow our channels", QRCode: "/upload-files/editor/code-2.png", GroupName: "Follow", GroupOrder: 1, Description: "Scan to follow", IsEnabled: 1},
 		{LinkName: "Hidden", LinkURL: "https://example.com/private", GroupName: "Hidden", IsEnabled: 0},
 	}
 	simple := true
@@ -31,7 +32,7 @@ func TestFooterGroupsPersistenceAndLegacy(t *testing.T) {
 		t.Fatal(err)
 	}
 	groups := GroupFriendLinks(enabled)
-	if len(groups) != 2 || groups[0].Name != "Follow" || !groups[0].HasQR || groups[0].Links[0].Description != "Scan to follow" {
+	if len(groups) != 2 || groups[0].Name != "Follow" || !groups[0].HasQR || groups[0].Title != "Follow our channels" || groups[0].Description != "Scan to follow" || len(groups[0].QRCodes) != 2 || len(groups[0].Links) != 0 {
 		t.Fatalf("groups: %+v", groups)
 	}
 	exported, err := exportFriendLinks()
@@ -46,7 +47,7 @@ func TestFooterGroupsPersistenceAndLegacy(t *testing.T) {
 		t.Fatal(err)
 	}
 	restored, err := ListEnabledFriendLinks()
-	if err != nil || len(restored) != 2 || restored[0].QRCode != "/upload-files/editor/code.png" {
+	if err != nil || len(restored) != 3 || restored[0].QRCode != "/upload-files/editor/code.png" {
 		t.Fatal(restored, err)
 	}
 	// Invalid input must not clear the existing configuration.
@@ -56,7 +57,7 @@ func TestFooterGroupsPersistenceAndLegacy(t *testing.T) {
 		t.Fatal("accepted traversal")
 	}
 	restored, _ = ListEnabledFriendLinks()
-	if len(restored) != 2 {
+	if len(restored) != 3 {
 		t.Fatal("invalid save changed configuration")
 	}
 	// A failure after replacing rows must roll back both tables.
@@ -71,7 +72,7 @@ func TestFooterGroupsPersistenceAndLegacy(t *testing.T) {
 		t.Fatal("failed save changed mode")
 	}
 	restored, _ = ListEnabledFriendLinks()
-	if len(restored) != 2 || restored[0].QRCode == "" {
+	if len(restored) != 3 || restored[0].QRCode == "" {
 		t.Fatal("failed write was not rolled back")
 	}
 }

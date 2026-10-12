@@ -106,10 +106,18 @@ func ReplaceFriendLinks(items []FriendLink, operatorID int64, simpleMode ...*boo
 	if len(items) > 200 {
 		return fmt.Errorf("页脚最多支持200个条目")
 	}
+	qrGroups := make(map[string][2]string)
 	for i := range items {
 		items[i].Normalize()
 		if err := items[i].Validate(); err != nil {
 			return err
+		}
+		if items[i].QRCode != "" {
+			meta := [2]string{items[i].LinkName, items[i].Description}
+			if previous, exists := qrGroups[items[i].GroupName]; exists && previous != meta {
+				return fmt.Errorf("同一二维码分组必须使用统一的标题和说明")
+			}
+			qrGroups[items[i].GroupName] = meta
 		}
 	}
 
@@ -158,10 +166,13 @@ func ReplaceFriendLinks(items []FriendLink, operatorID int64, simpleMode ...*boo
 }
 
 type FooterGroup struct {
-	HasQR bool
-	Name  string
-	Order int
-	Links []FriendLink
+	HasQR       bool
+	Name        string
+	Title       string
+	Description string
+	Order       int
+	Links       []FriendLink
+	QRCodes     []FriendLink
 }
 
 // Group already-filtered links without additional database queries.
@@ -178,8 +189,18 @@ func GroupFriendLinks(items []FriendLink) []FooterGroup {
 			indexes[item.GroupName] = index
 			groups = append(groups, FooterGroup{Name: item.GroupName, Order: item.GroupOrder})
 		}
+		if item.QRCode != "" {
+			groups[index].HasQR = true
+			groups[index].QRCodes = append(groups[index].QRCodes, item)
+			if groups[index].Title == "" {
+				groups[index].Title = item.LinkName
+			}
+			if groups[index].Description == "" {
+				groups[index].Description = item.Description
+			}
+			continue
+		}
 		groups[index].Links = append(groups[index].Links, item)
-		groups[index].HasQR = groups[index].HasQR || item.QRCode != ""
 	}
 	sort.SliceStable(groups, func(i, j int) bool { return groups[i].Order < groups[j].Order })
 	return groups

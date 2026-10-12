@@ -76,7 +76,8 @@ func TestFooterAdminSaveAndPublicRendering(t *testing.T) {
 	router, token := initAssetControllerTest(t)
 	body := map[string]any{"items": []models.FriendLink{
 		{LinkName: "Documentation", LinkURL: "https://example.com/docs", GroupName: "Resources", GroupOrder: 1, IsEnabled: 1},
-		{LinkName: "Public QR", QRCode: "/upload-files/editor/test.png", GroupName: "Follow us", GroupOrder: 2, IsEnabled: 1, Description: "<script>alert(1)</script>"},
+		{LinkName: "Follow our channels", QRCode: "/upload-files/editor/test.png", GroupName: "Follow us", GroupOrder: 2, IsEnabled: 1, Description: "<script>alert(1)</script>"},
+		{LinkName: "Follow our channels", QRCode: "/upload-files/editor/test-2.png", GroupName: "Follow us", GroupOrder: 2, IsEnabled: 1, Description: "<script>alert(1)</script>"},
 		{LinkName: "Disabled footer entry", LinkURL: "https://example.com/hidden", IsEnabled: 0},
 	}}
 	if w := adminAssetRequest(router, "", http.MethodPut, "/api/admin/friend-links", body); w.Code != 401 {
@@ -91,7 +92,7 @@ func TestFooterAdminSaveAndPublicRendering(t *testing.T) {
 			t.Fatalf("%s: %d", page, w.Code)
 		}
 		html := w.Body.String()
-		for _, want := range []string{`class="site-footer"`, `Resources`, `Follow us`, `/upload-files/editor/test.png`, `&lt;script&gt;alert(1)&lt;/script&gt;`} {
+		for _, want := range []string{`class="site-footer"`, `Resources`, `Follow us`, `Follow our channels`, `/upload-files/editor/test.png`, `/upload-files/editor/test-2.png`, `&lt;script&gt;alert(1)&lt;/script&gt;`} {
 			if !strings.Contains(html, want) {
 				t.Errorf("%s missing %s", page, want)
 			}

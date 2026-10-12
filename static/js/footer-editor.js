@@ -50,13 +50,11 @@
     function addItem(group, item, qr) {
         const row = node('div', 'footer-editor-item' + (qr ? ' is-qr' : ''));
         const fields = node('div', 'footer-editor-fields');
-        const name = field(fields, 'profile.friend_links.col.name', item.link_name, 'text', true);
-        const url = field(fields, qr ? 'footer.manage.optional_url' : 'profile.friend_links.col.url', item.link_url, 'url', !qr);
-        const description = qr ? field(fields, 'footer.manage.description', item.description) : null;
-        if (description) description.maxLength = 1000;
+        const name = qr ? null : field(fields, 'profile.friend_links.col.name', item.link_name, 'text', true);
+        const url = qr ? null : field(fields, 'profile.friend_links.col.url', item.link_url, 'url', true);
         const options = node('div', 'footer-editor-actions');
         options.append(moves(row));
-        const remove = button(t('profile.friend_links.delete'), () => row.remove(), 'row-action del');
+        const remove = button(t('profile.friend_links.delete'), () => { row.remove(); syncGroup(group); }, 'row-action del');
         remove.setAttribute('aria-label', t('profile.friend_links.delete')); options.append(remove);
         let qrCode = item.qr_code || '';
         if (qr) {
@@ -81,13 +79,22 @@
             });
             row.append(media);
         }
-        row.append(fields, options);
+        if (!qr) row.append(fields);
+        row.append(options);
         row.collect = () => {
             if (qr && !qrCode) throw new Error(t('footer.manage.qr_required'));
-            for (const input of [name,url,description].filter(Boolean)) if (!input.reportValidity()) throw new Error(t('footer.manage.invalid'));
-            return {link_name:name.value.trim(),link_url:url.value.trim(),description:description ? description.value.trim() : '',is_enabled:1,qr_code:qrCode};
+            for (const input of [name,url].filter(Boolean)) if (!input.reportValidity()) throw new Error(t('footer.manage.invalid'));
+            if (qr) {
+                if (!group.qrTitle.reportValidity()) throw new Error(t('footer.manage.invalid'));
+                return {link_name:group.qrTitle.value.trim(),link_url:'',description:group.qrDescription.value.trim(),is_enabled:1,qr_code:qrCode};
+            }
+            return {link_name:name.value.trim(),link_url:url.value.trim(),description:'',is_enabled:1,qr_code:''};
         };
-        group.querySelector('.footer-editor-items').append(row); return row;
+        group.querySelector('.footer-editor-items').append(row); syncGroup(group); return row;
+    }
+    function syncGroup(group) {
+        if (!group.qrMeta) return;
+        group.qrMeta.hidden = !group.querySelector('.footer-editor-item.is-qr');
     }
     function addGroup(data) {
         if (saving) return;
@@ -98,9 +105,14 @@
         head.append(button(t('footer.manage.remove_group'), async () => {
             if (!group.querySelector('.footer-editor-item') || await BSDialog.confirm2(t('footer.manage.remove_group_confirm'))) { group.remove(); empty(); }
         }, 'row-action del'));
+        const meta = node('div', 'footer-editor-group-meta');
+        const firstQR = (data.items || []).find(item => !!item.qr_code) || {};
+        const title = field(meta, 'footer.manage.qr_title', firstQR.link_name || '', 'text', true);
+        const description = field(meta, 'footer.manage.qr_description', firstQR.description || '');
+        description.maxLength = 1000;
         const items = node('div', 'footer-editor-items'), actions = node('div', 'footer-editor-actions');
         actions.append(button(t('footer.manage.add_link'),()=>addItem(group,{},false)),button(t('footer.manage.add_qr'),()=>addItem(group,{},true)));
-        group.append(head,items,actions); group.groupName = name; list.append(group);
+        group.append(head,meta,items,actions); group.groupName = name; group.qrMeta = meta; group.qrTitle = title; group.qrDescription = description; list.append(group);
         (data.items || []).forEach(item=>addItem(group,item,!!item.qr_code)); empty(); return group;
     }
     async function load() {
