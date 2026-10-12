@@ -227,7 +227,7 @@ button:active:not(:disabled), .page-btn:active:not(:disabled) {
                 <a href="/profile" class="header-menu-item" role="menuitem"><i class="fa-solid fa-id-card menu-icon"></i>{{call .T "user.menu.profile"}}</a>
                 <a href="/images" class="header-menu-item" role="menuitem"><i class="fa-solid fa-images menu-icon"></i>{{call .T "user.menu.images"}}</a>
                 <a href="/trash" class="header-menu-item" role="menuitem"><i class="fa-solid fa-trash-can menu-icon"></i>{{call .T "user.menu.trash"}}</a>
-                <a href="/login" onclick="logout(event); return false;" class="header-menu-item" role="menuitem"><i class="fa-solid fa-right-from-bracket menu-icon"></i>{{call .T "user.menu.logout"}}</a>
+                <a href="/shares" onclick="logout(event); return false;" class="header-menu-item" role="menuitem"><i class="fa-solid fa-right-from-bracket menu-icon"></i>{{call .T "user.menu.logout"}}</a>
             </div>
         </div>
     </div>
@@ -290,7 +290,7 @@ function logout(e) {
             : Promise.resolve();
         Promise.resolve(clearPages).catch(function() {}).then(function() {
             // 用 replace 避免返回键回到已登出页
-            window.location.replace('/login');
+            window.location.replace('/shares');
         });
     }
     csrfFetch('/api/logout', {method: 'POST'}).then(done).catch(done);

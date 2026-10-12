@@ -1,6 +1,17 @@
 package i18n
 
 var zhMessages = map[string]string{
+	"public.tags.settings":               "分享页标签",
+	"public.tags.hint":                   "自动按公开内容数量取前 10 个标签；手动可选择并排序，留空时仅显示“全部”。保存设置后生效。",
+	"public.tags.auto":                   "自动 · 数量前十",
+	"public.tags.manual":                 "手动选择",
+	"public.tags.search":                 "搜索并添加标签",
+	"public.tags.selected":               "已选标签（按展示顺序）",
+	"public.tags.remove":                 "移除标签",
+	"public.tags.article":                "文章",
+	"public.tags.note":                   "速记",
+	"public.tags.book":                   "书籍",
+	"public.tags.bookmark":               "书签",
 	"public.bookmarks":                   "书签",
 	"public.drawing":                     "画板",
 	"public.read_book":                   "开始阅读",

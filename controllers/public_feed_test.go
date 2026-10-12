@@ -115,3 +115,33 @@ func TestPublicFeedPrivacyFiltersAndRendering(t *testing.T) {
 		}
 	}
 }
+
+func TestPublicTagsAdminSettings(t *testing.T) {
+	router, token := initAssetControllerTest(t)
+	values := map[string]string{"public_feed_tags_article": `{"mode":"manual","labels":[]}`}
+	if w := adminAssetRequest(router, "", "PUT", "/api/admin/settings", values); w.Code != 401 {
+		t.Fatal("anonymous update allowed", w.Code)
+	}
+	if w := adminAssetRequest(router, token, "PUT", "/api/admin/settings", values); w.Code != 200 {
+		t.Fatal(w.Code, w.Body.String())
+	}
+	if models.GetPublicTagConfig("article").Mode != "manual" {
+		t.Fatal("not persisted")
+	}
+	values["public_feed_tags_article"] = `{"mode":"bad"}`
+	if w := adminAssetRequest(router, token, "PUT", "/api/admin/settings", values); w.Code != 400 {
+		t.Fatal("invalid settings accepted", w.Code)
+	}
+	if models.GetPublicTagConfig("article").Mode != "manual" {
+		t.Fatal("invalid save changed state")
+	}
+	w := adminAssetRequest(router, token, "GET", "/admin/system", nil)
+	if w.Code != 200 || strings.Count(w.Body.String(), `class="public-tag-editor"`) != 4 {
+		t.Fatal("settings panel missing", w.Code)
+	}
+	if dir := os.Getenv("PUBLIC_FEED_SNAPSHOT_DIR"); dir != "" {
+		if err := os.WriteFile(filepath.Join(dir, "public-tag-settings.html"), w.Body.Bytes(), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+}

@@ -330,6 +330,26 @@
                                 {{end}}
                                 </div>
                             </details>
+                            <details class="ai-action-section" id="public-tag-settings">
+                                <summary class="ai-action-summary"><span class="ai-action-summary-title"><i class="fa-solid fa-chevron-right"></i>{{call .T "public.tags.settings"}}</span></summary>
+                                <div class="ai-action-body">
+                                <p class="text-xs text-slate-500">{{call .T "public.tags.hint"}}</p>
+                                {{range .PublicTagSections}}
+                                <section class="public-tag-editor" data-kind="{{.Kind}}">
+                                    <label for="public-tags-mode-{{.Kind}}">{{call $.T (printf "public.tags.%s" .Kind)}}</label>
+                                    <select class="dialog-input public-tags-mode" id="public-tags-mode-{{.Kind}}"><option value="auto" {{if eq .Config.Mode "auto"}}selected{{end}}>{{call $.T "public.tags.auto"}}</option><option value="manual" {{if eq .Config.Mode "manual"}}selected{{end}}>{{call $.T "public.tags.manual"}}</option></select>
+                                    <input class="public-tags-value" type="hidden" name="public_feed_tags_{{.Kind}}" value="{{.Value}}">
+                                    <div class="public-tags-auto text-xs text-slate-500">{{range $i,$o := .Options}}{{if lt $i 10}}<span class="tag-badge">{{$o.Name}} · {{$o.Count}}</span> {{end}}{{end}}</div>
+                                    <div class="public-tags-manual">
+                                        <label class="text-xs" for="public-tags-search-{{.Kind}}">{{call $.T "public.tags.search"}}</label>
+                                        <input id="public-tags-search-{{.Kind}}" class="dialog-input public-tags-search" type="search" autocomplete="off">
+                                        <div class="public-tags-options">{{range .Options}}<button type="button" class="ai-dlg-btn ai-dlg-btn-cancel" data-tag="{{.Name}}">{{.Name}} · {{.Count}}</button>{{end}}</div>
+                                        <ol class="public-tags-selected" aria-label="{{call $.T "public.tags.selected"}}"></ol>
+                                    </div>
+                                </section>
+                                {{end}}
+                                </div>
+                            </details>
                             <!-- 导航页设置 -->
                             <details class="ai-action-section">
                                 <summary class="ai-action-summary">
@@ -2172,5 +2192,7 @@
     })();
 
 </script>
+<link rel="stylesheet" href="/static/css/public-tag-settings.css?v={{assetVer "/static/css/public-tag-settings.css"}}">
+<script src="/static/js/public-tag-settings.js?v={{assetVer "/static/js/public-tag-settings.js"}}"></script>
 </body>
 </html>

@@ -1,6 +1,17 @@
 package i18n
 
 var enMessages = map[string]string{
+	"public.tags.settings":               "Share-page tags",
+	"public.tags.hint":                   "Auto selects the 10 most-used public tags. In manual mode, select and reorder tags; an empty selection shows only All. Save settings to apply.",
+	"public.tags.auto":                   "Auto · Top 10",
+	"public.tags.manual":                 "Manual",
+	"public.tags.search":                 "Search and add tags",
+	"public.tags.selected":               "Selected tags (display order)",
+	"public.tags.remove":                 "Remove tag",
+	"public.tags.article":                "Articles",
+	"public.tags.note":                   "Notes",
+	"public.tags.book":                   "Books",
+	"public.tags.bookmark":               "Bookmarks",
 	"public.bookmarks":                   "Bookmarks",
 	"public.drawing":                     "Drawing",
 	"public.read_book":                   "Start reading",

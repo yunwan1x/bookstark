@@ -23,6 +23,11 @@ func AdminSystemPage(c *gin.Context) {
 	data := commonData(c, "admin")
 	data["SMTPPasswordConfigured"] = models.GetSetting("smtp_password") != ""
 	data["Settings"] = redactAdminSettings(settings)
+	sections, tagsErr := models.PublicTagSections()
+	if tagsErr != nil {
+		log.Printf("PublicTagSections: %v", tagsErr)
+	}
+	data["PublicTagSections"] = sections
 	c.HTML(http.StatusOK, "admin_system.html", data)
 }
 
@@ -177,6 +182,13 @@ func UpdateSettings(c *gin.Context) {
 
 	// Validate numeric settings
 	for k, v := range req {
+		if strings.HasPrefix(k, "public_feed_tags_") {
+			kind := strings.TrimPrefix(k, "public_feed_tags_")
+			if (kind != "article" && kind != "note" && kind != "book" && kind != "bookmark") || models.ValidatePublicTagConfig(v) != nil {
+				apiError(c, http.StatusBadRequest, "Invalid share-page tag configuration")
+				return
+			}
+		}
 		if strings.HasPrefix(k, "page_size_") {
 			n, err := strconv.Atoi(v)
 			if err != nil || n < 1 || n > 200 {
