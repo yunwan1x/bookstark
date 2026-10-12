@@ -268,6 +268,16 @@ func createTables() error {
 			member_id INTEGER PRIMARY KEY,
 			layout TEXT NOT NULL
 		)`,
+		`CREATE TABLE IF NOT EXISTS md_assistant_sessions (
+			member_id INTEGER PRIMARY KEY, session_id TEXT NOT NULL,
+			messages TEXT NOT NULL DEFAULT '[]', lease TEXT NOT NULL DEFAULT '', busy_until INTEGER NOT NULL DEFAULT 0
+		)`,
+		`CREATE TABLE IF NOT EXISTS md_assistant_drafts (
+			id TEXT PRIMARY KEY, member_id INTEGER NOT NULL, session_id TEXT NOT NULL,
+			payload TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', result_url TEXT NOT NULL DEFAULT '',
+			created_at INTEGER NOT NULL, finished_at INTEGER NOT NULL DEFAULT 0
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_assistant_drafts_owner ON md_assistant_drafts(member_id, session_id)`,
 		`CREATE TABLE IF NOT EXISTS md_task_reminder_preferences (
 			member_id INTEGER PRIMARY KEY,
 			enabled INTEGER NOT NULL DEFAULT 0,

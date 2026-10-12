@@ -1,0 +1,29 @@
+.home-assistant-entry { margin-bottom: var(--spacing-lg); }
+.home-assistant-dialog { width: min(800px, 96vw); max-width: 96vw; height: min(840px, 90dvh); max-height: 90dvh; padding: var(--spacing-lg); border-radius: var(--radius-xl); }
+.home-assistant-dialog[open] { display: flex; flex-direction: column; gap: var(--spacing-sm); }
+.home-assistant-dialog .home-dialog-head { margin-bottom: 0; flex-shrink: 0; }
+.home-assistant-dialog p { margin: 0; color: var(--color-text-secondary); }
+.home-assistant-disclosure { font-size: 12px; line-height: 1.6; color: var(--color-text-secondary); flex-shrink: 0; }
+.home-assistant-disclosure summary { cursor: pointer; }
+.home-assistant-disclosure p { margin-top: var(--spacing-sm); max-height: 20dvh; overflow-y: auto; }
+.home-assistant-controls { display: flex; flex-wrap: wrap; align-items: center; gap: var(--spacing-sm); }
+.home-assistant-controls span { margin-right: auto; font-size: 12px; color: var(--color-text-secondary); }
+.home-assistant-scroll { flex: 1; min-height: 80px; overflow-y: auto; overscroll-behavior: contain; padding: var(--spacing-sm); border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
+.home-assistant-message, .home-assistant-draft { padding: var(--spacing-md); margin-bottom: var(--spacing-md); border-radius: var(--radius-lg); background: var(--color-bg-hover); overflow-wrap: anywhere; }
+.home-assistant-message[data-role="user"] { border-left: 3px solid var(--color-primary); }
+.home-assistant-text { white-space: pre-wrap; font-size: 14px; line-height: 1.7; }
+.home-assistant-draft { border: 1px solid var(--color-border); }
+.home-assistant-draft h3 { font-size: 14px; margin: 0 0 var(--spacing-sm); color: var(--color-text); }
+.home-assistant-draft .home-assistant-text { max-height: 220px; overflow: auto; margin-bottom: var(--spacing-md); }
+.home-assistant-sources { display: flex; flex-wrap: wrap; gap: var(--spacing-sm); margin-top: var(--spacing-sm); }
+.home-assistant-sources a { color: var(--color-primary); text-decoration: underline; font-size: 12px; }
+.home-assistant-dialog form { display: grid; gap: var(--spacing-sm); flex-shrink: 0; }
+.home-assistant-dialog textarea { width: 100%; min-height: 70px; max-height: 180px; resize: vertical; }
+.home-assistant-dialog label, #homeAssistantStatus { font-size: 12px; }
+.home-assistant-dialog button:disabled { opacity: .55; cursor: wait; }
+.home-assistant-dialog [hidden] { display: none !important; }
+.home-assistant-dialog :focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+@media (max-width: 640px) {
+  .home-assistant-dialog { inset: 0; margin: auto; width: 100%; max-width: 100%; height: 100dvh; max-height: 100dvh; padding: var(--spacing-md); padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom)); border-radius: 0; }
+  .home-assistant-dialog .home-button { min-height: 40px; }
+}

@@ -451,6 +451,10 @@ func Setup() *gin.Engine {
 
 		// AI assistant (streaming SSE)
 		auth.POST("/api/ai/complete", controllers.AIComplete)
+		auth.GET("/api/ai/assistant", controllers.AssistantSessionAPI)
+		auth.POST("/api/ai/assistant/chat", controllers.AssistantChatAPI)
+		auth.POST("/api/ai/assistant/reset", controllers.AssistantResetAPI)
+		auth.POST("/api/ai/assistant/drafts/:id", controllers.AssistantResolveAPI)
 
 		// Admin APIs
 		admin := auth.Group("/api/admin")

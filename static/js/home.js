@@ -205,5 +205,6 @@
     document.querySelectorAll('.home-dialog').forEach(function (d) { d.addEventListener('click',function(e) { if (!saving && e.target === d) { var r=d.getBoundingClientRect(); if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)d.close(); } }); });
     retry.onclick = load;
     window.addEventListener('pageshow',function(e) { if(e.persisted) load(); });
+    window.addEventListener('bookstark:assistant-created',load);
     load();
 })();

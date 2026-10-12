@@ -338,6 +338,12 @@ func BlogTitleExists(title string, memberID int64, excludeID int64) (bool, error
 }
 
 func (b *Blog) Insert() error {
+	return b.insertWith(DB)
+}
+
+// insertWith also lets confirmed assistant drafts share the normal creation logic
+// in the same transaction as their idempotency receipt.
+func (b *Blog) insertWith(db sqlExecutor) error {
 	if b.BlogType == "" {
 		b.BlogType = "article"
 	}
@@ -377,7 +383,7 @@ func (b *Blog) Insert() error {
 		return err
 	}
 	now := time.Now().Format("2006-01-02 15:04:05")
-	result, err := DB.Exec(
+	result, err := db.Exec(
 		"INSERT INTO md_blogs (blog_title, blog_identify, member_id, blog_content, blog_desc, password, modify_time, create_time, version, blog_type, editor_type, visibility, is_pinned, pin_order, location_name, latitude, longitude, location_accuracy) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		b.BlogTitle, b.BlogIdentify, b.MemberID, b.BlogContent, b.BlogDesc, b.Password, now, now, b.BlogType, b.EditorType, b.Visibility, b.IsPinned, b.PinOrder, b.LocationName, b.Latitude, b.Longitude, b.LocationAccuracy,
 	)

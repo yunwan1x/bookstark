@@ -215,6 +215,10 @@ func IsTaskDescendant(taskID, candidateID, memberID int64) (bool, error) {
 }
 
 func CreateTask(t *Task) error {
+	return createTaskWith(DB, t)
+}
+
+func createTaskWith(db sqlExecutor, t *Task) error {
 	now := time.Now()
 	t.CreateTime = now
 	t.ModifyTime = now
@@ -224,7 +228,7 @@ func CreateTask(t *Task) error {
 	if !t.Done {
 		t.CompleteTime = nil
 	}
-	res, err := DB.Exec(`
+	res, err := db.Exec(`
 		INSERT INTO md_tasks (content, due_date, done, parent_id, topic_id, member_id, complete_time, create_time, modify_time)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		t.Content, t.DueDate, boolToInt(t.Done), t.ParentID, t.TopicID, t.MemberID, t.CompleteTime, t.CreateTime, t.ModifyTime)
