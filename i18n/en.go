@@ -4,7 +4,7 @@ var enMessages = map[string]string{
 	"home.assistant.title":        "AI assistant",
 	"home.assistant.privacy":      "Questions and retrieved content are sent to your configured AI service.",
 	"home.assistant.disclosure":   "Search and summarize your text records, or draft notes and tasks. Your questions and retrieved content are sent to the configured AI service. Review drafts before confirming; AI may make mistakes. Protected content and server credentials are excluded.",
-	"home.assistant.refresh":      "Refresh",
+	"home.assistant.refresh":      "Reload",
 	"home.assistant.reset":        "New conversation",
 	"home.assistant.reset_hint":   "Clear this conversation and cancel its unconfirmed drafts? Created records will remain.",
 	"home.assistant.conversation": "Conversation",

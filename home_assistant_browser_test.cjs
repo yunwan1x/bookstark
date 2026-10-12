@@ -61,6 +61,11 @@ async function serviceWorkerChecks() {
       await page.goto('http://assistant.test/home');
       await page.locator('#homeAssistantOpen').click();
       await page.waitForFunction(()=>!document.querySelector('#homeAssistantSend').disabled);
+      assert.equal(await page.locator('#homeAssistantRefresh').isVisible(),false);
+      assert.equal(await page.locator('#homeAssistantDisclosure').isVisible(),false);
+      await page.locator('#homeAssistantInfo').click();assert.equal(await page.locator('#homeAssistantDisclosure').isVisible(),true);
+      await page.locator('#homeAssistantInfo').click();
+      assert.equal(await page.locator('#homeAssistantForm #homeAssistantReset').count(),1);
       assert.equal(await page.locator('#homeAssistantTitle').innerText(),lang==='en'?'AI assistant':'AI 助手');
       await page.locator('#homeAssistantInput').fill('Draft a note');
       await page.locator('#homeAssistantSend').click();
@@ -68,6 +73,11 @@ async function serviceWorkerChecks() {
       assert.equal(await page.locator('.home-assistant-avatar .fa-user').count(),1);
       assert.equal(await page.locator('.home-assistant-avatar .fa-robot').count(),1);
       assert.equal(await page.locator('.home-assistant-message-head time[datetime]').count(),2);
+      await page.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>{window.copiedAssistantText=text;}}}));
+      await page.locator('.home-assistant-copy').first().click();
+      assert.equal(await page.evaluate(()=>window.copiedAssistantText),'Draft a note');
+      await page.locator('.home-assistant-copy').nth(1).click();
+      assert.equal(await page.evaluate(()=>window.copiedAssistantText),'<img src=x onerror="window.xss=1"> Please review.');
       assert.equal(await page.locator('#homeAssistantMessages img, #homeAssistantDrafts script').count(),0);
       assert.equal(await page.evaluate(()=>window.xss),undefined);
       assert.equal(await page.locator('.home-assistant-sources a').count(),1);
@@ -90,6 +100,7 @@ async function serviceWorkerChecks() {
       await page.waitForFunction(()=>document.querySelector('#homeAssistantDrafts').children.length===0);
       fail=true;await page.locator('#homeAssistantInput').fill('Draft a note');await page.locator('#homeAssistantSend').click();
       await page.waitForFunction(()=>document.querySelector('#homeAssistantStatus').textContent==='AI unavailable');
+      assert.equal(await page.locator('#homeAssistantRefresh').isVisible(),true);
       assert.equal(await page.locator('#homeAssistantInput').inputValue(),'Draft a note');assert.equal(chats,2);
       assert.equal(await page.locator('#homeAssistantSend').isEnabled(),true);
       // Delayed ReadableStream: assert that text paints BEFORE the done event,

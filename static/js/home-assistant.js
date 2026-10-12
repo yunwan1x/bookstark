@@ -41,6 +41,18 @@
             time.dateTime = date.toISOString(); time.title = date.toLocaleString(locale, {hour12:false});
             head.appendChild(time);
         }
+        var copy = node('button', '', 'row-action home-assistant-copy');
+        copy.type = 'button'; copy.title = lt('复制消息', 'Copy message'); copy.setAttribute('aria-label', copy.title);
+        var glyph = node('i', '', 'fa-regular fa-copy'); glyph.setAttribute('aria-hidden', 'true'); copy.appendChild(glyph);
+        copy.onclick = async function () {
+            var body = copy.closest('.home-assistant-message').querySelector('.home-assistant-text');
+            try {
+                await navigator.clipboard.writeText(body.textContent);
+                glyph.className = 'fa-solid fa-check'; copy.setAttribute('aria-label', lt('已复制', 'Copied'));
+                setTimeout(function () { glyph.className = 'fa-regular fa-copy'; copy.setAttribute('aria-label', copy.title); }, 1500);
+            } catch (_) { BSDialog.toast(lt('复制失败，请手动选择文字复制', 'Copy failed. Select the text and copy manually.'), 'error'); }
+        };
+        head.appendChild(copy);
         return head;
     }
     function render() {
@@ -140,11 +152,11 @@
     }
     async function run(work, progress) {
         if (active) return;
-        clearTimeout(poll); active = new AbortController(); setBusy(); status.textContent = progress;
+        clearTimeout(poll); active = new AbortController(); setBusy(); status.textContent = progress; el('Refresh').hidden = true;
         // Also bound the browser wait if a proxy never returns a response.
         var timeout = setTimeout(function () { if (active) active.abort(); }, 160000);
         try { await work(); }
-        catch (err) { status.textContent = err.name === 'AbortError' ? lt('已停止等待。请刷新查看最终结果，避免重复操作。', 'Stopped waiting. Refresh to check the final result before retrying.') : err.message; }
+        catch (err) { el('Refresh').hidden = false; status.textContent = err.name === 'AbortError' ? lt('已停止等待。请重新加载查看最终结果，避免重复操作。', 'Stopped waiting. Reload to check the final result before retrying.') : err.message; }
         finally { clearTimeout(timeout); active = null; if (!dialog.open) unread = true; setBusy(); if (session && session.busy && dialog.open) poll = setTimeout(sync, 3000); }
     }
     async function sync() {
@@ -195,6 +207,7 @@
     function endDrag() { if (pointer && dragged) { try { localStorage.setItem('bookstark-assistant-position',JSON.stringify(position)); } catch (_) {} } pointer = null; }
     launcher.addEventListener('pointerup', endDrag); launcher.addEventListener('pointercancel', endDrag);
     el('Refresh').onclick = sync;
+    el('Info').onclick = function () { var info = el('Disclosure'); info.hidden = !info.hidden; el('Info').setAttribute('aria-expanded', String(!info.hidden)); };
     el('Stop').onclick = function () { if (active) active.abort(); };
     el('Reset').onclick = function () { el('ResetCheck').hidden = false; };
     el('ResetCancel').onclick = function () { el('ResetCheck').hidden = true; };

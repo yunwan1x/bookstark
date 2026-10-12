@@ -4,7 +4,7 @@ var zhMessages = map[string]string{
 	"home.assistant.title":        "AI 助手",
 	"home.assistant.privacy":      "提问和检索内容将发送给已配置的 AI 服务",
 	"home.assistant.disclosure":   "搜索、总结你的文字资料，或起草笔记和待办。提问及检索到的内容会发送给已配置的 AI 服务。AI 可能出错，请核对草稿后确认；加密内容和服务器凭据不会提供给模型。",
-	"home.assistant.refresh":      "刷新",
+	"home.assistant.refresh":      "重新加载",
 	"home.assistant.reset":        "新会话",
 	"home.assistant.reset_hint":   "清空本次对话并取消未确认的草稿？已创建的记录不受影响。",
 	"home.assistant.conversation": "对话",
