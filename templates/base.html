@@ -254,7 +254,9 @@ button:active:not(:disabled), .page-btn:active:not(:disabled) {
 {{define "footer"}}
 <link rel="stylesheet" href="/static/css/footer.css?v={{assetVer "/static/css/footer.css"}}">
 <footer class="site-footer">
-    {{if .FriendLinks}}<div class="site-footer-groups">
+    {{if .FriendLinks}}{{if footerSimple}}<div class="site-footer-simple">
+        {{range .FriendLinks}}{{if not .QRCode}}<a href="{{.LinkURL}}" target="_blank" rel="noopener noreferrer">{{.LinkName}}</a>{{end}}{{end}}
+    </div>{{else}}<div class="site-footer-groups">
         {{range footerGroups .FriendLinks}}
         <section class="site-footer-group{{if .HasQR}} site-footer-social{{end}}">
             <h2>{{if .Name}}{{.Name}}{{else}}{{call $.T "footer.friendlinks"}}{{end}}</h2>
@@ -263,11 +265,11 @@ button:active:not(:disabled), .page-btn:active:not(:disabled) {
                   <div class="site-footer-qr"><img src="{{.QRCode}}" alt="{{.LinkName}}" width="112" height="112" loading="lazy">
                   {{if .LinkURL}}<a href="{{.LinkURL}}" target="_blank" rel="noopener noreferrer">{{.LinkName}}</a>{{else}}<span>{{.LinkName}}</span>{{end}}</div>
                 {{else}}<a href="{{.LinkURL}}" target="_blank" rel="noopener noreferrer">{{.LinkName}}</a>{{end}}
-                {{if .Description}}<p>{{.Description}}</p>{{end}}
+                {{if and .QRCode .Description}}<p>{{.Description}}</p>{{end}}
             </li>{{end}}</ul>
         </section>
         {{end}}
-    </div>{{end}}
+    </div>{{end}}{{end}}
     <div class="site-footer-bottom">BookStark · {{call .T "footer.tagline"}} · {{buildTime}}</div>
 </footer>
 <script>

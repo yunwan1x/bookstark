@@ -367,7 +367,7 @@ func HomePage(c *gin.Context) {
 	c.Header("Cache-Control", "private, no-store")
 	memberID := middleware.GetMemberID(c)
 	if memberID <= 0 {
-		NavPage(c)
+		PublicFeedPage(c)
 		return
 	}
 

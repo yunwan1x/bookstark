@@ -206,10 +206,13 @@
                         <h2 class="text-base font-semibold">{{call .T "profile.friend_links.title"}}</h2>
                         <p class="text-xs text-slate-500 mt-0.5">{{call .T "profile.friend_links.desc"}}</p>
                     </div>
-                    <button type="button" onclick="FooterEditor.addGroup()" class="shrink-0 px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700">{{call .T "footer.manage.add_group"}}</button>
+                    <button id="footer-add-group" type="button" onclick="FooterEditor.addGroup()" class="shrink-0 px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700">{{call .T "footer.manage.add_group"}}</button>
                 </div>
+                <label class="footer-editor-mode" for="footer-simple"><input id="footer-simple" type="checkbox"> {{call .T "footer.manage.simple"}}</label>
+                <p class="footer-editor-mode-hint">{{call .T "footer.manage.simple_hint"}}</p>
                 <div id="friend-links-error" class="hidden mb-4 p-3 bg-red-50 text-red-600 text-sm rounded"></div>
                 <div id="friend-links-list" class="mb-5"></div>
+                <button id="footer-simple-add" hidden type="button" onclick="FooterEditor.addSimpleLink()" class="ai-dlg-btn ai-dlg-btn-cancel">{{call .T "footer.manage.add_link"}}</button>
                 <button id="footer-retry" type="button" class="ai-dlg-btn ai-dlg-btn-cancel" onclick="FooterEditor.load()" hidden>{{call .T "home.assistant.refresh"}}</button>
                 <div id="friend-links-empty" class="hidden border border-dashed border-slate-300 rounded-lg px-4 py-6 text-sm text-slate-500 text-center mb-5">{{call .T "profile.friend_links.empty"}}</div>
                 <div class="flex justify-end">

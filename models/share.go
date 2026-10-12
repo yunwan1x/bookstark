@@ -136,7 +136,12 @@ func GetShareStatus(shareType string, ids []int64) (map[int64]bool, error) {
 }
 
 // ListSharesPaged returns paginated shares. filter: "article", "note", "book", or "" (all).
-func ListSharesPaged(page, pageSize int, keyword, filter string) ([]ShareItem, int64, error) {
+type PublicFeedOptions struct {
+	Label string
+	Sort  string
+}
+
+func ListSharesPaged(page, pageSize int, keyword, filter string, options ...PublicFeedOptions) ([]ShareItem, int64, error) {
 	blogSharePart := `SELECT s.share_id, s.share_type, s.share_identify, s.target_id, s.share_time,
 			b.blog_title AS title, m.account AS author, '' AS book_name,
 			CASE WHEN b.password != '' THEN 1 ELSE 0 END AS has_password,
@@ -169,6 +174,11 @@ func ListSharesPaged(page, pageSize int, keyword, filter string) ([]ShareItem, i
 		WHERE COALESCE(b.visibility, 0) = 1
 			AND b.blog_id NOT IN (SELECT target_id FROM md_shares WHERE share_type='blog')`
 
+	if len(options) > 0 {
+		blogSharePart = strings.Replace(blogSharePart, "s.share_time,", "s.share_time, COALESCE(b.modify_time,s.share_time) AS updated_time,", 1)
+		bookSharePart = strings.Replace(bookSharePart, "s.share_time,", "s.share_time, COALESCE(bk.modify_time,s.share_time) AS updated_time,", 1)
+		publicBlogPart = strings.Replace(publicBlogPart, "b.modify_time,", "b.create_time, COALESCE(b.modify_time,b.create_time) AS updated_time,", 1)
+	}
 	var parts []string
 	switch filter {
 	case "article":
@@ -189,6 +199,9 @@ func ListSharesPaged(page, pageSize int, keyword, filter string) ([]ShareItem, i
 
 	baseQuery := `SELECT share_id, share_type, share_identify, target_id, share_time, title, author, book_name, has_password, is_pinned, blog_type, doc_type, content, doc_count, description FROM (` +
 		strings.Join(parts, " UNION ALL ") + `)`
+	if len(options) > 0 {
+		baseQuery = strings.Replace(baseQuery, "SELECT share_id,", "SELECT updated_time, share_id,", 1)
+	}
 
 	countQuery := `SELECT COUNT(*) FROM (` + baseQuery + `)`
 
@@ -212,6 +225,15 @@ func ListSharesPaged(page, pageSize int, keyword, filter string) ([]ShareItem, i
 		}
 	}
 
+	if len(options) > 0 && options[0].Label != "" {
+		if where == "" {
+			where = " WHERE "
+		} else {
+			where += " AND "
+		}
+		where += `EXISTS (SELECT 1 FROM md_label_relation r JOIN md_label l ON l.label_id=r.label_id WHERE r.resource_id=target_id AND r.relation_type=share_type AND l.label_name=?)`
+		args = append(args, options[0].Label)
+	}
 	var total int64
 	if err := DB.QueryRow(countQuery+where, args...).Scan(&total); err != nil {
 		return nil, 0, err
@@ -219,6 +241,13 @@ func ListSharesPaged(page, pageSize int, keyword, filter string) ([]ShareItem, i
 
 	offset := (page - 1) * pageSize
 	query := baseQuery + where + " ORDER BY is_pinned DESC, share_time DESC LIMIT ? OFFSET ?"
+	if len(options) > 0 {
+		order := "share_time"
+		if options[0].Sort == "updated" {
+			order = "updated_time"
+		}
+		query = "SELECT share_id, share_type, share_identify, target_id, share_time, title, author, book_name, has_password, is_pinned, blog_type, doc_type, content, doc_count, description FROM (" + baseQuery + where + ") ORDER BY " + order + " DESC, share_id DESC LIMIT ? OFFSET ?"
+	}
 	args = append(args, pageSize, offset)
 
 	rows, err := DB.Query(query, args...)

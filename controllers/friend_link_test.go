@@ -103,4 +103,21 @@ func TestFooterAdminSaveAndPublicRendering(t *testing.T) {
 	if w := adminAssetRequest(router, token, http.MethodGet, "/api/admin/friend-links", nil); w.Code != 200 || !strings.Contains(w.Body.String(), `"qr_code":"/upload-files/editor/test.png"`) {
 		t.Fatal("metadata missing")
 	}
+	body["simple_mode"] = true
+	if w := adminAssetRequest(router, token, "PUT", "/api/admin/friend-links", body); w.Code != 200 {
+		t.Fatal(w.Code)
+	}
+	w := adminAssetRequest(router, token, "GET", "/shares", nil)
+	html := w.Body.String()
+	if !strings.Contains(html, `class="site-footer-simple"`) || !strings.Contains(html, "https://example.com/docs") || strings.Contains(html, "/upload-files/editor/test.png") || strings.Contains(html, `class="site-footer-groups"`) {
+		t.Fatal("simple rendering incorrect")
+	}
+	body["simple_mode"] = false
+	if w := adminAssetRequest(router, token, "PUT", "/api/admin/friend-links", body); w.Code != 200 {
+		t.Fatal(w.Code)
+	}
+	w = adminAssetRequest(router, token, "GET", "/shares", nil)
+	if !strings.Contains(w.Body.String(), "/upload-files/editor/test.png") {
+		t.Fatal("QR lost switching back")
+	}
 }

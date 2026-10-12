@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="{{.Lang}}">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BookStark · {{call .T "public.title"}}</title>
+<link rel="stylesheet" href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}">
+{{template "head-assets" .}}
+<link rel="stylesheet" href="/static/css/public-feed.css?v={{assetVer "/static/css/public-feed.css"}}">
+</head>
+<body class="public-feed-body">
+<header class="public-header"><div class="public-header-inner">
+ <a class="public-brand" href="/"><i class="fa-solid fa-book-open" aria-hidden="true"></i> BookStark</a>
+ <nav class="public-nav" aria-label="{{call .T "public.navigation"}}">
+  <a href="/" {{if eq .Type ""}}aria-current="page"{{end}}>{{call .T "public.home"}}</a>
+  <a href="/?type=article" {{if eq .Type "article"}}aria-current="page"{{end}}>{{call .T "public.articles"}}</a>
+  <a href="/?type=note" {{if eq .Type "note"}}aria-current="page"{{end}}>{{call .T "public.notes"}}</a>
+  <a href="/?type=book" {{if eq .Type "book"}}aria-current="page"{{end}}>{{call .T "public.books"}}</a>
+ </nav>
+ <button class="row-action public-search-toggle" type="button" aria-label="{{call .T "public.search"}}" aria-controls="publicSearch" aria-expanded="false"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></button>
+ <form id="publicSearch" class="public-search" action="/" role="search">
+  <input type="hidden" name="type" value="{{.Type}}"><input type="hidden" name="sort" value="{{.Sort}}"><input type="hidden" name="label" value="{{.Label}}">
+  <input class="dialog-input" name="keyword" value="{{.Keyword}}" placeholder="{{call .T "public.search"}}" aria-label="{{call .T "public.search"}}" maxlength="200">
+  <button class="row-action" type="submit" aria-label="{{call .T "public.search"}}"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></button>
+ </form>
+ <button class="row-action" type="button" onclick="switchLang('{{if eq .Lang "zh"}}en{{else}}zh{{end}}')" aria-label="{{if eq .Lang "zh"}}Switch to English{{else}}切换为中文{{end}}">{{if eq .Lang "zh"}}EN{{else}}中文{{end}}</button>
+ <a class="ai-dlg-btn ai-dlg-btn-cancel public-login" href="/login">{{call .T "public.login"}}</a>
+</div></header>
+<main class="public-layout" role="main">
+ <aside class="public-categories" aria-label="{{call .T "public.categories"}}">
+  <details open id="publicCategories"><summary>{{call .T "public.categories"}}</summary><nav>
+   {{range .Categories}}<a href="{{.URL}}" {{if .Active}}aria-current="page"{{end}}><i class="fa-solid {{if .Name}}fa-tag{{else}}fa-border-all{{end}}" aria-hidden="true"></i><span>{{if .Name}}{{.Name}}{{else}}{{call $.T "public.all"}}{{end}}</span></a>{{end}}
+  </nav></details>
+ </aside>
+ <section class="public-feed" aria-label="{{call .T "public.title"}}">
+  <h1 class="page-title public-page-title">{{call .T "public.title"}}</h1>
+  <div class="public-feed-tabs"><a href="{{.LatestURL}}" {{if eq .Sort "latest"}}aria-current="page"{{end}}>{{call .T "public.latest"}}</a><a href="{{.UpdatedURL}}" {{if eq .Sort "updated"}}aria-current="page"{{end}}>{{call .T "public.updated"}}</a></div>
+  {{range .Items}}<article class="public-entry">
+   {{if eq .BlogType "note"}}<span class="tag-badge">{{call $.T "public.notes"}}</span>{{end}}
+   <h2><a href="/shares/{{.ShareIdentify}}">{{.Title}}{{if .HasPassword}} <i class="fa-solid fa-lock" aria-label="{{call $.T "public.locked"}}"></i>{{end}}</a></h2>
+   {{if .HasPassword}}<p class="public-excerpt">{{call $.T "public.locked"}}</p>{{else}}
+   {{if eq .ShareType "book"}}<p class="public-excerpt">{{.Description}}</p>{{else}}<p class="public-excerpt{{if eq .BlogType "note"}} public-note{{end}}">{{.Content}}</p>{{end}}{{end}}
+   <div class="public-meta"><span>{{.Author}}</span><time datetime="{{.ShareTime.Format "2006-01-02"}}">{{.ShareTime.Format "2006-01-02"}}</time>{{if not .HasPassword}}{{range .Labels}}<span class="tag-badge">{{.}}</span>{{end}}{{end}}</div>
+  </article>{{else}}<div class="public-empty">{{call .T "public.empty"}}</div>{{end}}
+  <nav class="public-pagination" aria-label="{{call .T "public.pagination"}}">{{if .PrevURL}}<a class="page-btn" href="{{.PrevURL}}">{{call .T "public.prev"}}</a>{{end}}<span>{{.Page}}</span>{{if .NextURL}}<a class="page-btn" href="{{.NextURL}}">{{call .T "public.next"}}</a>{{end}}</nav>
+ </section>
+ <aside class="public-info">
+  <section><h2>{{call .T "public.about"}}</h2><div class="public-brand"><i class="fa-solid fa-book-open" aria-hidden="true"></i> BookStark</div><p>{{call .T "public.intro"}}</p></section>
+  {{if .PublicBooks}}<section><h2>{{call .T "public.recent_books"}}</h2>{{range .PublicBooks}}<a class="public-book" href="/shares/{{.ShareIdentify}}"><i class="fa-solid fa-book" aria-hidden="true"></i><span>{{.Title}}</span></a>{{end}}</section>{{end}}
+ </aside>
+</main>
+{{template "footer" .}}
+<script>
+const categories=document.getElementById('publicCategories');const narrow=matchMedia('(max-width: 1024px)');
+function adaptCategories(){categories.open=!narrow.matches;}adaptCategories();narrow.addEventListener('change',adaptCategories);
+const searchToggle=document.querySelector('.public-search-toggle'), searchForm=document.getElementById('publicSearch');
+function toggleSearch(open){searchToggle.setAttribute('aria-expanded',String(open));searchForm.classList.toggle('is-open',open);if(open)searchForm.querySelector('[name="keyword"]').focus();}
+searchToggle.addEventListener('click',()=>toggleSearch(searchToggle.getAttribute('aria-expanded')!=='true'));
+searchForm.addEventListener('keydown',e=>{if(e.key==='Escape'){toggleSearch(false);searchToggle.focus();}});
+if(searchForm.querySelector('[name="keyword"]').value) searchForm.classList.add('is-open');
+</script>
+</body></html>

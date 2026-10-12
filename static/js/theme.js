@@ -773,7 +773,7 @@
     }
 
     function applyScienceBackground(enabled) {
-        var next = !!enabled;
+        var next = !!enabled && !(document.body && document.body.classList.contains('public-feed-body'));
         document.documentElement.setAttribute('data-science-background', next ? 'on' : 'off');
         if (next) {
             startScienceFunctionGraphs(ensureScienceBackground());

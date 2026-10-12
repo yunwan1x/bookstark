@@ -15,13 +15,14 @@ func ListFriendLinks(c *gin.Context) {
 		apiError(c, http.StatusInternalServerError, "获取友情链接失败")
 		return
 	}
-	apiSuccess(c, gin.H{"items": items})
+	apiSuccess(c, gin.H{"items": items, "simple_mode": models.FooterSimpleMode()})
 }
 
 func ReplaceFriendLinks(c *gin.Context) {
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 1024*1024)
 	var req struct {
-		Items []models.FriendLink `json:"items"`
+		Items      []models.FriendLink `json:"items"`
+		SimpleMode *bool               `json:"simple_mode"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		apiError(c, http.StatusBadRequest, "请求格式不正确")
@@ -40,7 +41,7 @@ func ReplaceFriendLinks(c *gin.Context) {
 	}
 
 	memberID := middleware.GetMemberID(c)
-	if err := models.ReplaceFriendLinks(req.Items, memberID); err != nil {
+	if err := models.ReplaceFriendLinks(req.Items, memberID, req.SimpleMode); err != nil {
 		apiError(c, http.StatusBadRequest, err.Error())
 		return
 	}

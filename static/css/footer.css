@@ -19,3 +19,7 @@
   .site-footer { padding: var(--spacing-lg) var(--spacing-md); }
   .site-footer-groups { grid-template-columns: repeat(2,minmax(0,1fr)); gap: var(--spacing-lg); }
 }
+.site-footer-simple { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--spacing-sm) var(--spacing-lg); padding: var(--spacing-md); }
+.site-footer-simple a { color: var(--color-text-secondary); font-size: 13px; text-decoration: none; }
+.site-footer-simple a:hover { color: var(--color-primary); }
+.site-footer-simple a:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }

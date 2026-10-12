@@ -18,6 +18,10 @@ import (
 
 // SharesPage renders the public shares list page
 func SharesPage(c *gin.Context) {
+	if middleware.GetMemberID(c) <= 0 {
+		PublicFeedPage(c)
+		return
+	}
 	friendLinks, err := models.ListEnabledFriendLinks()
 	if err != nil {
 		log.Printf("SharesPage: ListEnabledFriendLinks failed: %v", err)

@@ -19,8 +19,12 @@ func TestFooterGroupsPersistenceAndLegacy(t *testing.T) {
 		{LinkName: "WeChat", QRCode: "/upload-files/editor/code.png", GroupName: "Follow", GroupOrder: 1, Description: "Scan to follow", IsEnabled: 1},
 		{LinkName: "Hidden", LinkURL: "https://example.com/private", GroupName: "Hidden", IsEnabled: 0},
 	}
-	if err = ReplaceFriendLinks(items, 1); err != nil {
+	simple := true
+	if err = ReplaceFriendLinks(items, 1, &simple); err != nil {
 		t.Fatal(err)
+	}
+	if !FooterSimpleMode() {
+		t.Fatal("simple mode not persisted")
 	}
 	enabled, err := ListEnabledFriendLinks()
 	if err != nil {
@@ -59,8 +63,12 @@ func TestFooterGroupsPersistenceAndLegacy(t *testing.T) {
 	if _, err = DB.Exec(`CREATE TRIGGER fail_footer BEFORE INSERT ON md_friend_link_details BEGIN SELECT RAISE(ABORT,'test'); END`); err != nil {
 		t.Fatal(err)
 	}
-	if ReplaceFriendLinks(items, 1) == nil {
+	simple = false
+	if ReplaceFriendLinks(items, 1, &simple) == nil {
 		t.Fatal("expected transaction failure")
+	}
+	if !FooterSimpleMode() {
+		t.Fatal("failed save changed mode")
 	}
 	restored, _ = ListEnabledFriendLinks()
 	if len(restored) != 2 || restored[0].QRCode == "" {

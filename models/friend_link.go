@@ -100,7 +100,9 @@ func listFriendLinks(enabled bool) ([]FriendLink, error) {
 
 func ListEnabledFriendLinks() ([]FriendLink, error) { return listFriendLinks(true) }
 
-func ReplaceFriendLinks(items []FriendLink, operatorID int64) error {
+func FooterSimpleMode() bool { return DB != nil && GetSetting("footer_simple_mode") == "1" }
+
+func ReplaceFriendLinks(items []FriendLink, operatorID int64, simpleMode ...*bool) error {
 	if len(items) > 200 {
 		return fmt.Errorf("页脚最多支持200个条目")
 	}
@@ -129,6 +131,15 @@ func ReplaceFriendLinks(items []FriendLink, operatorID int64) error {
 	}
 
 	now := time.Now()
+	if len(simpleMode) > 0 && simpleMode[0] != nil {
+		value := "0"
+		if *simpleMode[0] {
+			value = "1"
+		}
+		if _, err := tx.Exec(`INSERT INTO md_settings(key,value,description,update_time) VALUES('footer_simple_mode',?,'',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value,update_time=excluded.update_time`, value, now); err != nil {
+			return err
+		}
+	}
 	for _, item := range items {
 		result, err := tx.Exec(`INSERT INTO md_friend_links (link_name, link_url, sort_weight, is_enabled, create_time, modify_time, created_by, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, item.LinkName, item.LinkURL, item.SortWeight, item.IsEnabled, now, now, operatorID, operatorID)
 		if err != nil {
