@@ -100,16 +100,20 @@
                         <option value="apple-minimal">{{call .T "profile.theme.apple_minimal"}}</option>
                     </select>
                 </div>
-                <div class="mb-4 flex items-center justify-between gap-4 rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5">
-                    <label for="science-background-toggle" class="min-w-0">
-                        <span class="block text-sm font-medium">{{call .T "profile.field.background_animation"}}</span>
-                        <span class="block text-xs text-slate-500 mt-0.5">{{call .T "profile.field.background_animation_hint"}}</span>
-                    </label>
-                    <label class="fl-toggle" aria-label="{{call .T "profile.field.background_animation"}}">
-                        <input id="science-background-toggle" type="checkbox" onchange="toggleProfileScienceBackground(this.checked)">
-                        <span class="slider"></span>
-                    </label>
-                </div>
+                <section class="profile-background" id="profile-background">
+                    <label for="background-mode">{{call .T "background.title"}}</label>
+                    <select id="background-mode" class="dialog-input"><option value="solid">{{call .T "background.solid"}}</option><option value="dynamic">{{call .T "background.dynamic"}}</option><option value="image">{{call .T "background.image"}}</option></select>
+                    <p>{{call .T "background.hint"}}</p>
+                    <div id="background-motion"><label for="background-animated"><input id="background-animated" type="checkbox"> {{call .T "background.animate"}}</label></div>
+                    <div id="background-image-options" hidden>
+                        <label for="background-file">{{call .T "background.upload"}}</label><input id="background-file" type="file" accept="image/png,image/jpeg,image/webp">
+                        <p>{{call .T "background.upload_hint"}}</p>
+                        <label for="background-fade">{{call .T "background.fade"}} <output id="background-fade-value" for="background-fade"></output></label><input id="background-fade" type="range" min="0" max="100" value="65">
+                    </div>
+                    <p id="background-status" role="status" aria-live="polite"></p>
+                    <div class="profile-background-actions"><button type="button" id="background-reset" class="ai-dlg-btn ai-dlg-btn-cancel">{{call .T "background.reset"}}</button><button type="button" id="background-save" class="ai-dlg-btn ai-dlg-btn-confirm">{{call .T "background.save"}}</button></div>
+                </section>
+                <script defer src="/static/js/profile-background.js?v={{assetVer "/static/js/profile-background.js"}}"></script>
                 <div class="mb-4 flex items-center justify-between gap-4 rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5">
                     <label for="background-music-toggle" class="min-w-0">
                         <span class="block text-sm font-medium">{{call .T "profile.field.background_music"}}</span>

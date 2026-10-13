@@ -290,6 +290,9 @@ func Setup() *gin.Engine {
 		// Account APIs
 		auth.POST("/api/logout", controllers.Logout)
 		auth.GET("/api/profile", controllers.GetProfile)
+		auth.GET("/api/profile/background", controllers.GetBackground)
+		auth.PUT("/api/profile/background", controllers.UpdateBackground)
+		auth.GET("/api/profile/background/image", controllers.BackgroundImage)
 		auth.PUT("/api/profile", controllers.UpdateProfile)
 		auth.GET("/api/profile/task-reminder", controllers.GetTaskReminderPreference)
 		auth.PUT("/api/profile/task-reminder", controllers.UpdateTaskReminderPreference)

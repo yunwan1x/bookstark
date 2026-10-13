@@ -70,6 +70,11 @@ func sqliteDSN(dbPath string) string {
 
 func createTables() error {
 	statements := []string{
+		`CREATE TABLE IF NOT EXISTS md_member_backgrounds (
+            member_id INTEGER PRIMARY KEY REFERENCES md_members(member_id) ON DELETE CASCADE,
+            mode TEXT NOT NULL, animated INTEGER NOT NULL, fade INTEGER NOT NULL,
+            image BLOB, image_hash TEXT NOT NULL DEFAULT ''
+        )`,
 		`CREATE TABLE IF NOT EXISTS md_members (
 			member_id INTEGER PRIMARY KEY AUTOINCREMENT,
 			account VARCHAR(100) NOT NULL DEFAULT '' UNIQUE,

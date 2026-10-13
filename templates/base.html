@@ -1,5 +1,7 @@
 {{define "head-assets"}}
 <meta name="csrf-token" content="{{.CSRFToken}}">
+<script>window.BookStarkAppearance = {{.Background}};</script>
+<link rel="stylesheet" href="/static/css/background.css?v={{assetVer "/static/css/background.css"}}">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">

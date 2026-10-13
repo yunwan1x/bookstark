@@ -710,7 +710,7 @@
         functionGraphState = {
             canvas: canvas,
             ctx: canvas.getContext('2d'),
-            reduceMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+            reduceMotion: window.matchMedia('(prefers-reduced-motion: reduce)').matches || !!(window.BookStarkAppearance && !window.BookStarkAppearance.animated),
             width: 0,
             height: 0,
             dpr: 0,
@@ -1035,9 +1035,26 @@
     }
 
     function initScienceBackground() {
+        if (window.BookStarkAppearance) { applyAppearance(window.BookStarkAppearance); return; }
         applyScienceBackground(getBackgroundEnabled());
         syncBackgroundControl();
     }
+
+    function applyAppearance(pref, previewURL) {
+        window.BookStarkAppearance = Object.assign({}, pref);
+        stopScienceFunctionGraphs();
+        applyScienceBackground(pref.mode === 'dynamic');
+        document.documentElement.setAttribute('data-background-static', pref.animated ? 'off' : 'on');
+        var old = document.getElementById('personal-background');
+        if (old) old.remove();
+        document.documentElement.setAttribute('data-personal-background', pref.mode === 'image' ? 'on' : 'off');
+        if (pref.mode === 'image' && (previewURL || pref.image_hash)) {
+            var bg = document.createElement('div'); bg.id = 'personal-background'; bg.setAttribute('aria-hidden','true');
+            var img = document.createElement('img'); img.alt = ''; img.src = previewURL || '/api/profile/background/image?v=' + encodeURIComponent(pref.image_hash);
+            img.style.opacity = String(1 - pref.fade / 100); bg.appendChild(img); document.body.prepend(bg);
+        }
+    }
+    window.BookStarkApplyAppearance = applyAppearance;
 
     function initBackgroundMusic() {
         syncMusicControl();

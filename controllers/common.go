@@ -39,9 +39,17 @@ func commonData(c *gin.Context, nav string) gin.H {
 	lang := middleware.GetLang(c)
 	t := i18n.MakeT(lang)
 	bundleJSON, _ := json.Marshal(i18n.JSBundle(lang))
+	var background *models.BackgroundPreference
+	if memberID > 0 {
+		p, e := models.GetBackgroundPreference(memberID)
+		if e == nil {
+			background = &p
+		}
+	}
 
 	return gin.H{
 		"Account":     account,
+		"Background":  background,
 		"MemberID":    memberID,
 		"IsAdmin":     isAdmin,
 		"Nav":         nav,
