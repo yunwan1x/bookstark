@@ -35,25 +35,7 @@
     }
 
     function faviconFallback(title, url) {
-        var ch = '?';
-        var bg = '';
-        var hostname = '';
-        if (url) {
-            try { hostname = new URL(url).hostname; } catch(e) {}
-        }
-        if (hostname) {
-            ch = domainChar(hostname);
-            bg = domainColor(hostname);
-        } else {
-            var t = title || '';
-            if (t) {
-                var first = t.charAt(0);
-                var code = first.charCodeAt(0);
-                ch = (code >= 0x4E00 && code <= 0x9FFF) ? first : first.toUpperCase();
-            }
-            bg = charColor(t || ch);
-        }
-        return '<span class="bm-row-favicon bm-favicon-fallback" style="background:' + bg + '">' + esc(ch) + '</span>';
+        return bookmarkFaviconFallback(title, url);
     }
 
     function replaceFaviconWithFallback(img) {
@@ -63,6 +45,7 @@
         var title = img.getAttribute('data-title') || '';
         tmp.innerHTML = faviconFallback(title, url);
         var span = tmp.firstElementChild;
+        span.removeAttribute('aria-hidden');
         // Preserve site-search attributes from the original img
         if (url) span.setAttribute('data-url', url);
         span.setAttribute('data-id', img.getAttribute('data-id') || '');

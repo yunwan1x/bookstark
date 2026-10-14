@@ -567,8 +567,18 @@ function domainColor(domain) {
 }
 
 /**
- * 基于 domain 的显示字符（去掉 www. 前缀，取首字母大写）
+ * 书签页与广场共用的字母图标回退。
  */
+function bookmarkFaviconFallback(title, url) {
+    var hostname = '';
+    try { hostname = new URL(url).hostname; } catch (_) {}
+    var text = title || '';
+    var ch = hostname ? domainChar(hostname) : (text.charAt(0) || '?').toUpperCase();
+    var color = hostname ? domainColor(hostname) : charColor(text || ch);
+    return '<span class="bm-row-favicon bm-favicon-fallback" style="background:' + color + '" aria-hidden="true">' + escHtml(ch) + '</span>';
+}
+
+/** 基于 domain 的显示字符（去掉 www. 前缀，取首字母大写） */
 function domainChar(hostname) {
     if (!hostname) return '?';
     var h = hostname.replace(/^www\./, '');

@@ -13,7 +13,12 @@ const assert=require('node:assert/strict');
    await page.route('http://public.test/**',route=>{
     const url=new URL(route.request().url());
     if(url.pathname.startsWith('/static/'))return route.fulfill({path:'.'+url.pathname});
-    if(url.pathname==='/shares')return route.fulfill({contentType:'text/html; charset=utf-8',body:fs.readFileSync('/tmp/public-feed-'+lang+'-'+kind+(signedIn?'-auth':'')+'.html','utf8')});
+    if(url.pathname==='/shares'){
+     let body=fs.readFileSync('/tmp/public-feed-'+lang+'-'+kind+(signedIn?'-auth':'')+'.html','utf8');
+     // Exercise absent icons for guests and image loading failures for accounts.
+     if(kind==='bookmark'&&signedIn)body=body.replace(/<span class="bm-row-favicon" data-favicon-missing([^>]+)><\/span>/g,'<img class="bm-row-favicon" src="/broken-favicon.png" alt="" $1>');
+     return route.fulfill({contentType:'text/html; charset=utf-8',body});
+    }
     if(url.pathname==='/api/csrf-token')return route.fulfill({json:{code:0},headers:{'Set-Cookie':'csrf_token=test; Path=/; SameSite=Lax'}});
     if(url.pathname.startsWith('/api/shares/')&&url.pathname.endsWith('/comments')){
      if(route.request().method()==='POST'){
@@ -48,6 +53,12 @@ const assert=require('node:assert/strict');
    if(kind==='note'){assert.equal(await page.locator('.public-note-card .public-entry-heading h2').count(),0);assert.equal(await page.locator('.public-read-link').count(),0);assert(await page.locator('.public-note-author').isVisible());}
    if(kind==='book')assert(await page.locator('.public-book-cover').isVisible());
    if(kind==='bookmark'){
+    await page.locator('.bm-favicon-fallback').first().waitFor();
+    const fallback=await page.locator('.bm-row-title').first().evaluate(title=>{
+     const icon=title.querySelector('.bm-favicon-fallback');
+     return {text:icon.textContent,expected:domainChar(new URL(title.href).hostname),width:icon.getBoundingClientRect().width,height:icon.getBoundingClientRect().height};
+    });
+    assert.equal(fallback.text,fallback.expected);assert(fallback.width>0&&fallback.height>0,'visible letter fallback');
     assert.equal(await page.locator('.bm-row > .row-action').count(),0,'no separate bookmark action column');
     const action=page.locator('.public-bookmark-author .row-action');
     assert.equal(await action.count(),signedIn?1:0);

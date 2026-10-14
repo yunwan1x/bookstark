@@ -51,7 +51,7 @@
   <div class="public-items public-items-{{.Type}}">
   {{if eq .Type "bookmark"}}
   {{range .Bookmarks}}<article class="bm-row"><div class="bm-row-content"><div class="bm-row-body">
-   <div class="bm-row-top"><a href="{{.URL}}" target="_blank" rel="noopener noreferrer" class="bm-row-title">{{if .Favicon}}<img src="/api/favicon?url={{.Favicon}}" class="bm-row-favicon" loading="lazy" alt="" onerror="this.hidden=true">{{else}}<i class="fa-solid fa-globe bm-row-favicon" aria-hidden="true"></i>{{end}}{{.Title}}</a></div>
+   <div class="bm-row-top"><a href="{{.URL}}" target="_blank" rel="noopener noreferrer" class="bm-row-title">{{if .Favicon}}<img src="/api/favicon?url={{.Favicon}}" class="bm-row-favicon" loading="lazy" alt="" data-title="{{.Title}}" data-url="{{.URL}}">{{else}}<span class="bm-row-favicon" data-favicon-missing data-title="{{.Title}}" data-url="{{.URL}}" aria-hidden="true"></span>{{end}}{{.Title}}</a></div>
    <div class="bm-row-second">{{if .Description}}<span class="bm-row-desc">{{.Description}}</span>{{end}}
     <div class="bm-row-label-line"><span class="bm-row-labels">{{range .Labels}}<a class="bm-label-badge" href="/shares?type=bookmark&amp;label={{.}}">{{.}}</a>{{end}}</span><span class="public-bookmark-author"><span class="bm-row-account">{{.Account}}</span>{{if and $.MemberID (or $.IsAdmin (eq $.MemberID .MemberID))}}<a class="row-action" href="/bookmarks?id={{.BookmarkID}}" aria-label="{{call $.T "public.manage"}}"><i class="fa-solid fa-ellipsis" aria-hidden="true"></i></a>{{end}}</span></div>
    </div>

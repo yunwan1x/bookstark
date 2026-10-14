@@ -1,6 +1,20 @@
 /* One public reading surface for guests and signed-in readers. */
 (function () {
   'use strict';
+  document.querySelectorAll('.public-items-bookmark .bm-row-favicon').forEach(icon => {
+    let timer;
+    function fallback() {
+      clearTimeout(timer);
+      if (!icon.isConnected) return;
+      icon.insertAdjacentHTML('beforebegin', bookmarkFaviconFallback(icon.dataset.title, icon.dataset.url));
+      icon.remove();
+    }
+    if (icon.hasAttribute('data-favicon-missing') || (icon.complete && !icon.naturalWidth)) { fallback(); return; }
+    if (icon.complete && icon.naturalWidth) return;
+    icon.addEventListener('error', fallback, {once: true});
+    icon.addEventListener('load', () => clearTimeout(timer), {once: true});
+    timer = setTimeout(fallback, 5000);
+  });
   const searchToggle = document.querySelector('.public-search-toggle');
   const searchForm = document.getElementById('publicSearch');
   function toggleSearch(open) {
