@@ -208,6 +208,28 @@ func TestUnifiedFeedManagementPrivacyAndLoginReturn(t *testing.T) {
 	}
 }
 
+func TestPublicCommentGuestNicknameIsRequestScoped(t *testing.T) {
+	router, token := initAssetControllerTest(t)
+	for _, signedIn := range []bool{false, true} {
+		req := httptest.NewRequest("GET", "/shares?type=note", nil)
+		req.RemoteAddr = "203.0.113.24:1234"
+		if signedIn {
+			req.Header.Set("Authorization", "Token "+token)
+		}
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+		if w.Code != 200 || w.Header().Get("Cache-Control") != "private, no-store" {
+			t.Fatal("personalized comment nickname must not be cached", w.Code)
+		}
+		if strings.Contains(w.Body.String(), `window.__SHARE_COMMENT_GUEST_NAME__="203.0.113.24"`) == signedIn {
+			t.Fatal("IP nickname must be populated only for this anonymous request")
+		}
+		if signedIn && !strings.Contains(w.Body.String(), `window.__SHARE_COMMENT_GUEST_NAME__="";`) {
+			t.Fatal("signed-in guest nickname must remain a valid JavaScript string")
+		}
+	}
+}
+
 func TestPublicTagsAdminSettings(t *testing.T) {
 	router, token := initAssetControllerTest(t)
 	values := map[string]string{"public_feed_tags_article": `{"mode":"manual","labels":[]}`}

@@ -23,6 +23,8 @@
 .public-manage > .header-dropdown-panel { position: absolute; right: 0; top: 100%; min-width: 160px; }
 .public-manage .header-menu-item { width: 100%; text-decoration: none; border: 0; text-align: left; background: transparent; cursor: pointer; }
 .public-note-actions { display: flex; align-items: center; flex-shrink: 0; gap: var(--spacing-xs); }
+.public-bookmark-author { display: inline-flex; align-items: center; flex-shrink: 0; gap: var(--spacing-xs); margin-left: auto; }
+.public-items-bookmark .bm-row-label-line { align-items: center; }
 .public-entry-heading { display: flex; flex-wrap: wrap; align-items: center; gap: var(--spacing-sm); }
 .public-entry .public-entry-heading h2 { min-width: 0; margin: 0; }
 .public-pinned { display: inline-flex; align-items: center; gap: var(--spacing-xs); flex-shrink: 0; }
@@ -52,11 +54,41 @@
 .sh-note-text .code-copy-btn { margin-left: auto; }
 .sh-note-text table { display: block; overflow-x: auto; max-width: 100%; }
 .sh-note-text :is(th,td) { padding: var(--spacing-sm); border: 1px solid var(--color-border); }
-.sh-note-comments { padding-top: var(--spacing-md); }
-.sh-note-comments .share-comments-fields { display: grid; gap: var(--spacing-sm); grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.sh-note-comments input, .sh-note-comments textarea { width: 100%; box-sizing: border-box; padding: var(--spacing-sm); color: var(--color-text); background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
-.sh-note-comments textarea { min-height: 80px; margin-top: var(--spacing-sm); }
-.sh-note-comments .share-comments-submit { padding: var(--spacing-sm) var(--spacing-md); background: var(--color-primary); color: var(--color-white); border: 0; border-radius: var(--radius-md); cursor: pointer; }
+.public-feed .sh-note-comments { margin-top: var(--spacing-md); padding: var(--spacing-md); border: 1px solid var(--color-border-light); border-radius: var(--radius-lg); background: var(--color-bg); font-size: 13px; }
+.sh-note-comments .share-comments-head { display: flex; align-items: center; justify-content: space-between; gap: var(--spacing-sm); padding-bottom: var(--spacing-sm); border-bottom: 1px solid var(--color-border-light); }
+.sh-note-comments .share-comments-title { display: flex; align-items: center; gap: var(--spacing-sm); margin: 0; font-size: 13px; font-weight: 500; color: var(--color-text-secondary); }
+.sh-note-comments .share-comments-title i { font-size: 13px; }
+.sh-note-comments .share-comments-count { font-size: 12px; font-weight: 400; }
+.sh-note-comments .public-comments-collapse { display: inline-flex; align-items: center; gap: var(--spacing-xs); width: auto; padding: var(--spacing-xs); font-size: 12px; color: var(--color-text-secondary); }
+.sh-note-comments .public-comments-collapse i { font-size: 10px; }
+.sh-note-comments .share-comments-list { display: flex; flex-direction: column; gap: var(--spacing-sm); margin: var(--spacing-md) 0; }
+.sh-note-comments .share-comments-list>.share-comments-state { text-align: center; }
+.sh-note-comments .share-comments-state,.sh-note-comments .share-comments-identity { color: var(--color-text-secondary); font-size: 12px; overflow-wrap: anywhere; }
+.sh-note-comments .public-comment-composer { display: grid; grid-template-columns: minmax(0,1fr); gap: var(--spacing-sm); }
+.sh-note-comments .public-comment-composer.is-account { grid-template-columns: 32px minmax(0,1fr); }
+.sh-note-comments .public-comment-avatar { display: grid; place-items: center; width: 32px; height: 32px; border-radius: var(--radius-full); color: var(--color-primary); background: var(--color-primary-light); }
+.sh-note-comments .is-account>textarea,.sh-note-comments .is-account>.share-comments-actions { grid-column: 2; }
+.sh-note-comments .public-comment-nickname { display: flex; align-items: center; flex-wrap: wrap; gap: var(--spacing-sm); color: var(--color-text-secondary); font-size: 12px; }
+.sh-note-comments .public-comment-nickname input { width: min(220px,100%); min-width: 0; font-size: 13px; }
+.sh-note-comments .share-comment-textarea { width: 100%; min-width: 0; min-height: 64px; resize: vertical; font-size: 14px; line-height: 1.6; }
+.sh-note-comments .share-comments-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--spacing-sm); }
+.sh-note-comments .share-comments-actions .share-comments-state { flex: 1; }
+.sh-note-comments .share-comments-submit { margin-left: auto; min-height: 32px; flex-shrink: 0; color: var(--color-on-primary); }
+.sh-note-comments .share-comments-submit:disabled { opacity: .6; cursor: not-allowed; }
+.sh-note-comments .share-comment-item { padding: var(--spacing-sm) 0; border-bottom: 1px solid var(--color-border-light); }
+.sh-note-comments .share-comment-meta { display: flex; align-items: center; justify-content: space-between; gap: var(--spacing-sm); margin-bottom: var(--spacing-xs); }
+.sh-note-comments .share-comment-author { color: var(--color-text-secondary); font-size: 13px; font-weight: 500; }
+.sh-note-comments .share-comment-time { color: var(--color-text-secondary); font-size: 11px; }
+.sh-note-comments .share-comment-content { color: var(--color-text); font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.7; }
+.sh-note-comments .share-comment-content.is-deleted { color: var(--color-text-secondary); }
+.sh-note-comments .share-comment-tools { display: flex; flex-shrink: 0; gap: var(--spacing-xs); }
+.sh-note-comments :is(.share-comment-reply,.share-comment-delete,.share-comment-replies-toggle) { border: 0; background: transparent; color: var(--color-text-secondary); padding: var(--spacing-xs); font-size: 12px; cursor: pointer; border-radius: var(--radius-sm); }
+.sh-note-comments :is(.share-comment-reply,.share-comment-delete,.share-comment-replies-toggle):hover { background: var(--color-bg-hover); color: var(--color-primary); }
+.sh-note-comments .share-comment-delete:hover { color: var(--color-danger); }
+.sh-note-comments .share-comment-replies { margin-left: var(--spacing-md); padding-left: var(--spacing-sm); border-left: 1px solid var(--color-border); }
+.sh-note-comments .share-comment-reply-context { color: var(--color-text-secondary); font-size: 12px; grid-column: 1 / -1; }
+.sh-note-comments .share-comment-reply-form { margin: var(--spacing-sm) 0; }
+.sh-note-comments :is(button,input,textarea):focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 .public-feed-body a:focus-visible, .public-feed-body summary:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 .public-layout { flex: 1; width: 100%; max-width: 1280px; margin: 0 auto; padding: var(--spacing-lg) var(--spacing-md); display: grid; grid-template-columns: 180px minmax(0,1fr) 240px; gap: var(--spacing-lg); align-items: start; }
 .public-categories { min-width: 0; background: var(--color-bg-card); border: 1px solid var(--color-border-light); border-radius: var(--radius-lg); padding: var(--spacing-sm); }
@@ -131,7 +163,6 @@
  .public-entry h2 { font-size: 17px; }
  .public-info { display: none; }
  .public-account .header-dropdown { position: absolute; top: 100%; left: auto; right: 0; min-width: 180px; }
- .sh-note-comments .share-comments-fields { grid-template-columns: minmax(0, 1fr); }
  .note-viewer-panel { width: 100%; height: calc(100dvh - 20px); }
  .note-viewer-stage { padding: var(--spacing-sm); }
  .note-viewer-topbar { padding: var(--spacing-md); }

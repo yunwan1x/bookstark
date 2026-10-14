@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"sort"
 	"strconv"
+	"strings"
 )
 
 type publicNavItem struct {
@@ -76,6 +77,10 @@ func PublicFeedPage(c *gin.Context) {
 	data["Background"] = nil
 	data["ShareCommentsEnabled"] = models.ShareCommentsEnabled()
 	data["ShareCommentMaxLength"] = models.ShareCommentMaxLength()
+	data["ShareCommentGuestName"] = ""
+	if middleware.GetMemberID(c) == 0 {
+		data["ShareCommentGuestName"] = strings.TrimSpace(c.ClientIP())
+	}
 	returnURL := "/shares"
 	if c.Request.URL.RawQuery != "" {
 		returnURL += "?" + c.Request.URL.RawQuery

@@ -13,17 +13,7 @@
     return match ? decodeURIComponent(match[1]) : '';
   }
 
-  function esc(value) {
-    return String(value || '').replace(/[&<>"']/g, function(ch) {
-      return {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;'
-      }[ch];
-    });
-  }
+  var esc = window.escAttr;
 
   function formatTime(value) {
     if (!value) return '';
@@ -70,6 +60,28 @@
     return n >= 100 && n <= 5000 ? n : 2000;
   }
 
+  var publicFormSequence = 0;
+  function isPublicComments(root) { return !!(root && root.closest('.public-feed-body')); }
+  function publicForm(parentID, replyToID, context) {
+    var account = window.__SHARE_COMMENT_ACCOUNT__ || '';
+    var id = 'public-comment-' + (++publicFormSequence);
+    return '<form class="share-comments-form public-comment-composer' + (parentID ? ' share-comment-reply-form' : '') + (account ? ' is-account' : '') + '">' +
+      (context ? '<div class="share-comment-reply-context">' + esc(context) + '</div>' : '') +
+      '<input type="hidden" class="share-comment-parent-id" value="' + esc(parentID || 0) + '"><input type="hidden" class="share-comment-reply-to-id" value="' + esc(replyToID || 0) + '">' +
+      (account ? '<span class="public-comment-avatar" aria-hidden="true"><i class="fa-regular fa-user"></i></span>' :
+        '<div class="public-comment-nickname"><label for="' + id + '-name">' + esc(t('share_comments.nickname')) + '</label>' +
+        '<input id="' + id + '-name" class="dialog-input share-comment-author" type="text" maxlength="40" autocomplete="name" value="' + esc(window.__SHARE_COMMENT_GUEST_NAME__ || '') + '" placeholder="' + esc(t('share_comments.name_placeholder')) + '"><span>' + esc(t('share_comments.name_editable')) + '</span></div>') +
+      '<textarea id="' + id + '-content" class="dialog-input share-comment-textarea share-comment-content-input" maxlength="' + esc(commentMaxLength()) + '" placeholder="' + esc(t('share_comments.content_placeholder')) + '" aria-label="' + esc(t('share_comments.content_placeholder')) + '"></textarea>' +
+      '<div class="share-comments-actions">' + (account ? '<span class="share-comments-identity">' + esc(account) + '</span>' : '') +
+      '<div class="share-comments-state" role="status" aria-live="polite"></div><button class="ai-dlg-btn ai-dlg-btn-go share-comments-submit" type="submit">' + esc(t('share_comments.submit')) + '</button></div></form>';
+  }
+
+  function publicCommentsMarkup() {
+    return '<div class="share-comments-head"><h3 class="share-comments-title"><i class="fa-regular fa-comment" aria-hidden="true"></i>' + esc(t('share_comments.title')) + ' <span class="share-comments-count">0</span></h3>' +
+      '<button class="row-action public-comments-collapse" type="button">' + esc(t('share_comments.collapse')) + '<i class="fa-solid fa-chevron-up" aria-hidden="true"></i></button></div>' +
+      '<div class="share-comments-list" aria-live="polite"><div class="share-comments-state">' + esc(t('share_comments.loading')) + '</div></div>' + publicForm();
+  }
+
   function commentsMarkup() {
     var account = window.__SHARE_COMMENT_ACCOUNT__ || '';
     var identity = account
@@ -96,13 +108,13 @@
 
   function hydrate(root) {
     if (!root || root.getAttribute('data-comments-hydrated') === '1') return root;
-    if (!root.querySelector('.share-comments-list')) root.innerHTML = commentsMarkup();
+    if (!root.querySelector('.share-comments-list')) root.innerHTML = isPublicComments(root) ? publicCommentsMarkup() : commentsMarkup();
     root.setAttribute('data-comments-hydrated', '1');
     return root;
   }
 
-  function stateText(root, text) {
-    var el = findInRoot(root, '.share-comments-state', 'share-comments-state');
+  function stateText(root, text, form) {
+    var el = form ? form.querySelector('.share-comments-actions .share-comments-state') : findInRoot(root, '.share-comments-actions .share-comments-state', 'share-comments-state');
     if (el) el.textContent = text || '';
   }
 
@@ -113,16 +125,16 @@
     btn.disabled = !!active;
     btn.innerHTML = active
       ? '<i class="fa-solid fa-spinner fa-spin"></i>' + esc(t('share_comments.submitting'))
-      : '<i class="fa-solid fa-paper-plane"></i>' + esc(t('share_comments.submit'));
+      : (isPublicComments(root) ? '' : '<i class="fa-solid fa-paper-plane"></i>') + esc(t('share_comments.submit'));
   }
 
   function renderComments(root, items, total) {
     var list = findInRoot(root, '.share-comments-list', 'share-comments-list');
     var count = findInRoot(root, '.share-comments-count', 'share-comments-count');
     if (!list) return;
-    if (count) count.textContent = total > 0 ? t('share_comments.count').replace('{count}', String(total)) : '';
+    if (count) count.textContent = isPublicComments(root) ? String(total || 0) : (total > 0 ? t('share_comments.count').replace('{count}', String(total)) : '');
     if (!items || !items.length) {
-      list.innerHTML = '<div class="share-comments-state">' + esc(t('share_comments.empty')) + '</div>';
+      list.innerHTML = '<div class="share-comments-state">' + esc(t(isPublicComments(root) ? 'share_comments.empty_prompt' : 'share_comments.empty')) + '</div>';
       return;
     }
     list.innerHTML = items.map(function(item) { return renderCommentItem(item); }).join('');
@@ -180,6 +192,7 @@
   }
 
   function renderReplyForm(root, parentID, replyToID, replyToAuthor) {
+    if (isPublicComments(root)) return publicForm(parentID, replyToID, replyToAuthor ? t('share_comments.reply_to_user').replace('{name}', replyToAuthor) : t('share_comments.reply_to_comment'));
     var account = window.__SHARE_COMMENT_ACCOUNT__ || '';
     var identity = account
       ? '<div class="share-comments-identity">' + esc(t('share_comments.identity_prefix')) + ' ' + esc(account) + '</div>'
@@ -261,15 +274,15 @@
     var authorName = fieldValue(authorEl);
     var email = fieldValue(emailEl);
     if (!content) {
-      stateText(root, t('share_comments.content_required'));
+      stateText(root, t('share_comments.content_required'), form);
       return;
     }
     if (content.length > commentMaxLength()) {
-      stateText(root, t('share_comments.max_length').replace('{count}', String(commentMaxLength())));
+      stateText(root, t('share_comments.max_length').replace('{count}', String(commentMaxLength())), form);
       return;
     }
     setSubmitting(root, true, form);
-    stateText(root, '');
+    stateText(root, '', form);
     apiJSON('/api/shares/' + encodeURIComponent(identify) + '/comments', {
       method: 'POST',
       body: JSON.stringify({
@@ -283,7 +296,7 @@
       if (contentEl) contentEl.value = '';
       loadComments(root);
     }).catch(function(err) {
-      stateText(root, err.message || t('share_comments.error'));
+      stateText(root, err.message || t('share_comments.error'), form);
     }).finally(function() {
       setSubmitting(root, false, form);
     });
@@ -321,6 +334,13 @@
         if (event.target.closest('.share-comments-form')) submitComment(event);
       });
       root.addEventListener('click', function(event) {
+        if (event.target.closest('.public-comments-collapse')) {
+          var row = root.closest('.public-note-card');
+          var trigger = row && row.querySelector('[data-note-action="comments"]');
+          toggle(root, trigger);
+          if (trigger) trigger.focus();
+          return;
+        }
         var btn = event.target.closest('.share-comment-delete');
         if (btn) {
           deleteComment(root, btn.getAttribute('data-comment-id'));
