@@ -8,7 +8,7 @@
         bookmarks: ['书签', 'link', '#168ef0', '/bookmarks'],
         topics: ['专题', 'layer-group', '#198ae8', '/topics'],
         nav: ['导航', 'compass', '#3468e8', '/nav'],
-        shares: ['分享', 'share-nodes', '#10a880', '/shares'],
+        shares: ['广场', 'users', '#10a880', '/shares'],
         assets: ['资产', 'server', '#d99b19', '/admin/assets']
     };
     var grid = document.getElementById('homeGrid');
@@ -21,7 +21,7 @@
     var layoutStatus = document.getElementById('homeLayoutStatus');
     var english = document.documentElement.lang.indexOf('en') === 0;
     function lt(zh, en) { return english ? en : zh; }
-    var moduleEnglish = {notes:'Notes',articles:'Articles',tasks:'Tasks',books:'Books',bookmarks:'Bookmarks',topics:'Topics',nav:'Navigation',shares:'Shares',assets:'Assets'};
+    var moduleEnglish = {notes:'Notes',articles:'Articles',tasks:'Tasks',books:'Books',bookmarks:'Bookmarks',topics:'Topics',nav:'Navigation',shares:'Community',assets:'Assets'};
     function moduleName(key) { return english ? moduleEnglish[key] : modules[key][0]; }
     function defaultLayout() { return Object.keys(modules).map(function(k) {return {key:k,width:1,hidden:false};}); }
     function available(item) { return sections.some(function(s) {return s.key === item.key;}); }
@@ -36,6 +36,23 @@
             n.textContent = Number.isSafeInteger(value) && value >= 0 ? String(value) : '—';
         });
         box.setAttribute('aria-busy', 'false');
+    }
+    function renderSkeleton() {
+        grid.replaceChildren();
+        var pending = layout;
+        if (!pending.length) {
+            try { pending = JSON.parse(localStorage.getItem(key + ':layout')) || []; } catch (_) {}
+        }
+        if (!Array.isArray(pending) || !pending.length) pending = defaultLayout().filter(function(item) { return !hidden.includes(item.key); });
+        pending.forEach(function(item) {
+            if (!item || !modules[item.key] || item.hidden) return;
+            var card = el('section','home-card skeleton-card home-loading-card');
+            card.setAttribute('aria-hidden','true');
+            card.dataset.width = [1,2,3].includes(item.width) ? String(item.width) : '1';
+            card.append(el('div','skeleton home-skeleton-heading'));
+            for (var i = 0; i < 10; i++) card.append(el('div','skeleton home-skeleton-line'));
+            grid.append(card);
+        });
     }
     function render() {
         grid.replaceChildren();
@@ -153,6 +170,7 @@
             var data = await response.json();
             if (!response.ok || data.code !== 0 || !Array.isArray(data.layout)) throw new Error('save failed');
             layout = data.layout; render();
+            try {localStorage.setItem(key + ':layout',JSON.stringify(layout));} catch (_) {}
             try {localStorage.removeItem(key);} catch (_) {}
             layoutDialog.close();
         } catch (_) {
@@ -184,7 +202,7 @@
         if (activeRequest) activeRequest.abort();
         status.hidden = false; status.textContent = lt('正在加载最近的记录…','Loading recent records…'); retry.hidden = true; grid.setAttribute('aria-busy','true');
         // Remove previous user's/stale records if authentication or loading fails.
-        grid.replaceChildren();
+        renderSkeleton();
         renderStats(null); document.getElementById('homeStats').setAttribute('aria-busy','true');
         try {
             var result = await requestSummary(ticket);
@@ -195,11 +213,13 @@
             sections = data.sections;
             renderStats(data.stats);
             layout = Array.isArray(data.layout) ? data.layout : defaultLayout().map(function(item) {item.hidden = hidden.includes(item.key); return item;});
+            try { localStorage.setItem(key + ':layout',JSON.stringify(layout)); } catch (_) {}
             render();
             if (!layoutDialog.open) {draft = layout.map(function(i) {return Object.assign({},i);}); preferences();}
         } catch (err) {
             if (ticket !== sequence) return;
             console.warn('Home load failed:',err);
+            grid.replaceChildren();
             renderStats(null);
             sections = []; preferences(); status.hidden = false; status.textContent = err.name === 'AbortError' ? lt('请求超时，请重试','Request timed out. Please retry.') : lt('首页加载失败，请检查网络后重试。','Could not load your home page. Check your connection and retry.'); retry.hidden = false;
         } finally { if (ticket === sequence) grid.setAttribute('aria-busy','false'); }

@@ -57,6 +57,14 @@ const assert=require('node:assert/strict');
     assert.equal(await page.locator('.public-info').isVisible(),false);
    }
    if(kind==='note'){
+    const alignment=await page.locator('.public-note-author-name').evaluate(n=>{
+     const a=n.getBoundingClientRect(),b=n.parentElement.querySelector('.public-note-actions').getBoundingClientRect();
+     return {sameRow:Math.abs(a.y+a.height/2-b.y-b.height/2)<1,after:b.x>=a.right};
+    });
+    assert(alignment.sameRow&&alignment.after,'note actions must be beside the author');
+    await page.evaluate(()=>window.scrollTo(0,500));
+    assert.equal(await page.locator('.public-header').evaluate(n=>Math.round(n.getBoundingClientRect().top)),0,'header stays at viewport top');
+    await page.evaluate(()=>window.scrollTo(0,0));
     assert.equal(await page.evaluate(()=>Boolean(window.__noteXss)),false);
     assert.equal(await page.locator('[data-note-content] script').count(),0);
     assert(await page.locator('[data-note-content] strong').count()>0);

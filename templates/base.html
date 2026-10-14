@@ -32,6 +32,7 @@
 .nav-link:hover { color: var(--color-text); }
 .nav-link.active { border-bottom-color: var(--color-primary); color: var(--color-primary); }
 .header-home-link { display: none; }
+@media (max-width: 1024px) { .header-plaza-link .nav-text { display: none; } header .logo-text { margin-right: var(--spacing-sm) !important; } }
 @media (min-width: 640px) { .header-home-link { display: inline-block; } }
 .header-nav-group { position: relative; display: inline-flex; align-items: center; }
 .header-nav-trigger { display: inline-flex; align-items: center; gap: 4px; border: 0; background: transparent; cursor: pointer; white-space: nowrap; }
@@ -165,17 +166,17 @@ button:active:not(:disabled), .page-btn:active:not(:disabled) {
         </div>
         {{end}}
         <div class="header-nav-group">
-            <a href="/" class="nav-link header-nav-trigger px-2 py-2.5 font-semibold {{if or (eq .Nav "nav") (eq .Nav "assets") (eq .Nav "shares")}}active{{end}}" data-nav-idx="2" data-header-menu-trigger data-header-menu-id="header-assets-menu" aria-haspopup="menu" aria-expanded="false">
+            <a href="/" class="nav-link header-nav-trigger px-2 py-2.5 font-semibold {{if or (eq .Nav "nav") (eq .Nav "assets")}}active{{end}}" data-nav-idx="2" data-header-menu-trigger data-header-menu-id="header-assets-menu" aria-haspopup="menu" aria-expanded="false">
                 <i class="fa-solid fa-server nav-icon"></i><span class="nav-text">{{call .T "nav.assets"}}</span><i class="fa-solid fa-chevron-down"></i>
             </a>
             <div id="header-assets-menu" class="header-dropdown hidden" role="menu">
                 <div class="header-dropdown-panel">
                     <a href="/nav" class="header-menu-item {{if eq .Nav "nav"}}active{{end}}" role="menuitem"><i class="fa-solid fa-compass menu-icon"></i>{{call .T "nav.home"}}</a>
-                    <a href="/shares" class="header-menu-item {{if eq .Nav "shares"}}active{{end}}" role="menuitem"><i class="fa-solid fa-share-nodes menu-icon"></i>{{call .T "nav.shares"}}</a>
                     {{if .IsAdmin}}<a href="/admin/assets" class="header-menu-item {{if eq .Nav "assets"}}active{{end}}" role="menuitem"><i class="fa-solid fa-server menu-icon"></i>{{call .T "page.assets.title"}}</a>{{end}}
                 </div>
             </div>
         </div>
+        <a href="/shares" class="nav-link header-plaza-link px-2 py-2.5 font-semibold {{if eq .Nav "shares"}}active{{end}}" data-nav-idx="3" aria-label="{{call .T "nav.shares"}}" title="{{call .T "nav.shares"}}"><i class="fa-solid fa-users nav-icon" aria-hidden="true"></i><span class="nav-text">{{call .T "nav.shares"}}</span></a>
     </nav>
     <button type="button" class="header-cmdk-hint" onclick="if(window.BookStarkCommandPalette)BookStarkCommandPalette.open()" aria-label="{{call .T "header.cmdk.label"}}" title="{{call .T "header.cmdk.label"}}">
         <kbd>⌘K</kbd><span>{{call .T "header.cmdk.hint"}}</span>
@@ -186,19 +187,6 @@ button:active:not(:disabled), .page-btn:active:not(:disabled) {
         <i class="fa-solid fa-magnifying-glass" style="color:var(--color-gray-400);font-size:14px;flex-shrink:0;"></i>
         <input type="text" id="headerSearchInput" placeholder="{{call .T "header.search.placeholder"}}" autocomplete="off" aria-label="{{call .T "search.aria"}}">
         <button class="header-close-search" id="headerCloseSearch" aria-label="{{call .T "header.search.close"}}"><i class="fa-solid fa-xmark" style="font-size:12px;"></i></button>
-    </div>
-    <div class="relative header-create-wrapper">
-        <button class="search-trigger" id="headerCreateTrigger" type="button" aria-label="{{call .T "nav.create"}}" title="{{call .T "nav.create"}}" data-header-menu-trigger data-header-menu-id="header-create-menu" aria-haspopup="menu" aria-expanded="false"><i class="fa-solid fa-plus"></i></button>
-        <div id="header-create-menu" class="header-dropdown align-right hidden" role="menu">
-            <div class="header-dropdown-panel">
-                <a href="/notes?command=new-note" class="header-menu-item" role="menuitem"><i class="fa-solid fa-note-sticky menu-icon"></i>{{call .T "nav.create_note"}}</a>
-                <a href="/notes?command=new-article" class="header-menu-item" role="menuitem"><i class="fa-solid fa-pen-nib menu-icon"></i>{{call .T "nav.create_article"}}</a>
-                <a href="/books?command=new-book" class="header-menu-item" role="menuitem"><i class="fa-solid fa-book menu-icon"></i>{{call .T "nav.create_book"}}</a>
-                <a href="/bookmarks?command=new-bookmark" class="header-menu-item" role="menuitem"><i class="fa-solid fa-bookmark menu-icon"></i>{{call .T "nav.create_bookmark"}}</a>
-                <a href="/notes?tab=tasks&command=new-task" class="header-menu-item" role="menuitem"><i class="fa-solid fa-list-check menu-icon"></i>{{call .T "nav.create_task"}}</a>
-                <a href="/topics?command=new-topic" class="header-menu-item" role="menuitem"><i class="fa-solid fa-diagram-project menu-icon"></i>{{call .T "nav.create_topic"}}</a>
-            </div>
-        </div>
     </div>
     <button class="search-trigger header-theme-toggle" id="themeToggle" aria-label="{{call .T "header.theme.toggle"}}" title="{{call .T "header.theme.toggle"}}" onclick="BookStarkTheme.toggle()"><i class="fa-solid fa-moon" id="theme-icon"></i></button>
     <div class="relative lang-switcher-wrapper header-lang-switcher">

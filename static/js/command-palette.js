@@ -46,7 +46,7 @@
     var commands = [
       command('导航页', '/nav', '页面', 'fa-compass', '/nav', null, 'home nav'),
       command('书签', '/bookmarks', '页面', 'fa-bookmark', '/bookmarks', null, 'bookmark'),
-      command('分享', '/shares', '页面', 'fa-share-nodes', '/shares', null, 'share public'),
+      command('广场', '/shares', '页面', 'fa-users', '/shares', null, 'share public community'),
       command('切换主题', '浅色 / 暗色', '操作', 'fa-moon', '', function() { if (window.BookStarkTheme) BookStarkTheme.toggle(); }, 'theme dark light')
     ];
     if (isAuthed()) {

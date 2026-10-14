@@ -5,17 +5,24 @@ const fs=require('node:fs'),assert=require('node:assert/strict');
  const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH,args:['--no-sandbox']});
  try {
  for(const lang of ['zh','en'])for(const [width,theme] of [[1440,'light'],[768,'light'],[390,'light'],[320,'dark']]){
-  const page=await browser.newPage({viewport:{width,height:1000}}),errors=[];let calls=0,fail=false;
+  if(process.env.HOME_TEST_LANG&&process.env.HOME_TEST_LANG!==lang)continue;
+  const page=await browser.newPage({viewport:{width,height:1000}}),errors=[];let calls=0,fail=false,release;
+  const pending=new Promise(resolve=>release=resolve);
   page.on('pageerror',e=>errors.push(e.message));
   await page.addInitScript(t=>localStorage.setItem('bookstark-theme',t),theme);
-  await page.route('http://home.test/**',route=>{
+  await page.route('http://home.test/**',async route=>{
    const u=new URL(route.request().url());
    if(u.pathname.startsWith('/static/'))return route.fulfill({path:'.'+u.pathname});
-   if(u.pathname==='/api/home'){calls++;return route.fulfill({json:fail?{code:500}:{code:0,stats:{notes:119,articles:86,pending_tasks:6,created_this_week:12},sections:['notes','articles','tasks'].map(key=>({key,total:1,items:[{title:'Example',url:'/notes',date:'2026-10-14'}]})),layout:null},status:fail?500:200});}
+   if(u.pathname==='/api/home'){calls++;await pending;return route.fulfill({json:fail?{code:500}:{code:0,stats:{notes:119,articles:86,pending_tasks:6,created_this_week:12},sections:['notes','articles','tasks'].map(key=>({key,total:1,items:[{title:'Example',url:'/notes',date:'2026-10-14'}]})),layout:null},status:fail?500:200});}
    if(u.pathname==='/home')return route.fulfill({contentType:'text/html',body:fs.readFileSync('/tmp/home-b1-'+lang+'.html','utf8')});
    return route.fulfill({status:404,body:''});
   });
-  await page.goto('http://home.test/home');await page.locator('.home-card').first().waitFor();
+  await page.goto('http://home.test/home');await page.locator('.home-loading-card').first().waitFor();
+  assert.equal(await page.locator('#homeGrid').getAttribute('aria-busy'),'true');
+  assert.equal(await page.locator('#headerCreateTrigger').count(),0);
+  assert.equal(await page.locator('#main-nav > a[href="/shares"]').textContent(),lang==='zh'?'广场':'Community');
+  release();await page.locator('.home-card:not(.home-loading-card)').first().waitFor();
+  assert.equal(await page.locator('.home-loading-card').count(),0);
   assert.deepEqual(await page.locator('[data-home-stat]').allTextContents(),['119','86','6','12']);
   assert.equal(await page.locator('.home-eyebrow').count(),0);
   assert(await page.locator('.home-heading-card [data-home-dialog="homeCreate"]').isVisible());
@@ -29,7 +36,7 @@ const fs=require('node:fs'),assert=require('node:assert/strict');
   const before=calls;await sort.click();assert.equal(calls,before,'selected sort must not reload');
   fail=true;await page.locator('[data-home-sort="updated"]').click();await page.locator('#homeRetry').waitFor({state:'visible'});
   assert.deepEqual(await page.locator('[data-home-stat]').allTextContents(),['—','—','—','—']);assert.equal(await page.locator('.home-card').count(),0);
-  fail=false;await page.locator('#homeRetry').click();await page.locator('.home-card').first().waitFor();
+  fail=false;await page.locator('#homeRetry').click();await page.locator('.home-card:not(.home-loading-card)').first().waitFor();
   await page.locator('.home-heading-card [data-home-dialog="homeCustomize"]').click();assert(await page.locator('#homeCustomize').isVisible());await page.keyboard.press('Escape');
   await page.screenshot({path:'/tmp/home-b1-'+lang+'-'+width+'.png'});assert.deepEqual(errors,[]);console.log('PASS',lang,width,theme,'stats, sort, retry, layout dialog');await page.close();
  }
