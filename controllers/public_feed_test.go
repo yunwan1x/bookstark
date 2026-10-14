@@ -119,6 +119,12 @@ func TestPublicFeedPrivacyFiltersAndRendering(t *testing.T) {
 		}
 	}
 	if dir := os.Getenv("PUBLIC_FEED_SNAPSHOT_DIR"); dir != "" {
+		if _, err := models.DB.Exec("UPDATE md_blogs SET is_pinned=1 WHERE blog_identify IN ('public-test-a','public-test-b')"); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := models.DB.Exec("UPDATE md_shares SET is_pinned=1 WHERE share_type='book'"); err != nil {
+			t.Fatal(err)
+		}
 		for _, lang := range []string{"zh", "en"} {
 			for _, kind := range []string{"article", "note", "book", "bookmark"} {
 				for _, signedIn := range []bool{false, true} {

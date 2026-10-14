@@ -67,21 +67,23 @@
    <a class="public-book-cover" href="/shares/{{.ShareIdentify}}" aria-label="{{.Title}}"><i class="fa-solid fa-book-open" aria-hidden="true"></i><span>{{.Title}}</span></a>
    {{end}}
    {{if eq .BlogType "note"}}
-   <div class="public-note-author"><i class="fa-regular fa-user" aria-hidden="true"></i><span>{{.Author}}</span><time datetime="{{.ShareTime.Format "2006-01-02"}}">{{.ShareTime.Format "2006-01-02"}}</time></div>
+   <div class="public-note-author">{{if .IsPinned}}<span class="tag-badge public-pinned"><i class="fa-solid fa-thumbtack" aria-hidden="true"></i>{{call $.T "note.badge.pinned"}}</span>{{end}}<i class="fa-regular fa-user" aria-hidden="true"></i><span>{{.Author}}</span><time datetime="{{.ShareTime.Format "2006-01-02"}}">{{.ShareTime.Format "2006-01-02"}}</time></div>
    {{if not .HasPassword}}<div class="public-note-actions">
     <button class="row-action" type="button" data-note-action="copy" aria-label="{{call $.T "note.action.copy"}}"><i class="fa-regular fa-copy" aria-hidden="true"></i></button>
     {{if $.ShareCommentsEnabled}}<button class="row-action" type="button" data-note-action="comments" aria-expanded="false" aria-label="{{call $.T "share_comments.title"}}"><i class="fa-regular fa-comments" aria-hidden="true"></i></button>{{end}}
     <button class="row-action" type="button" data-note-action="expand" aria-label="{{call $.T "note.action.fullscreen"}}"><i class="fa-solid fa-expand" aria-hidden="true"></i></button>
    </div>{{end}}
    {{else}}
+   <div class="public-entry-heading">
+   {{if .IsPinned}}<span class="tag-badge public-pinned"><i class="fa-solid fa-thumbtack" aria-hidden="true"></i>{{call $.T "note.badge.pinned"}}</span>{{end}}
    <h2><a href="/shares/{{.ShareIdentify}}">{{.Title}}{{if .HasPassword}} <i class="fa-solid fa-lock" aria-label="{{call $.T "public.locked"}}"></i>{{end}}</a></h2>
    {{if ne .ShareType "book"}}<span class="tag-badge public-content-type">{{if eq .DocType "html"}}HTML{{else if eq .DocType "drawing"}}{{call $.T "public.drawing"}}{{else if eq .DocType "markdown"}}Markdown{{else if .DocType}}{{.DocType}}{{else}}Markdown{{end}}</span>{{end}}
+   </div>
    {{end}}
    {{if .HasPassword}}<p class="public-excerpt">{{call $.T "public.locked"}}</p>{{else}}
    {{if eq .ShareType "book"}}<p class="public-excerpt">{{.Description}}</p>{{else if eq .BlogType "note"}}<div class="public-note sh-note-text" data-note-content>{{.Content}}</div>{{else}}<p class="public-excerpt">{{.Content}}</p>{{end}}{{end}}
    <div class="public-meta">{{if ne .BlogType "note"}}<span>{{.Author}}</span><time datetime="{{.ShareTime.Format "2006-01-02"}}">{{.ShareTime.Format "2006-01-02"}}</time>{{end}}{{if not .HasPassword}}{{range .Labels}}<span class="tag-badge">{{.}}</span>{{end}}{{end}}</div>
    {{if eq .ShareType "book"}}<a class="public-read-link" href="/shares/{{.ShareIdentify}}">{{call $.T "public.read_book"}} <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>{{end}}
-   {{if .IsPinned}}<span class="tag-badge public-pinned"><i class="fa-solid fa-thumbtack" aria-hidden="true"></i> {{call $.T "note.badge.pinned"}}</span>{{end}}
    {{if .HasPassword}}<a class="public-read-link" href="/shares/{{.ShareIdentify}}">{{call $.T "public.unlock"}}</a>{{end}}
    {{if and (eq .BlogType "note") (not .HasPassword) $.ShareCommentsEnabled}}<section class="share-comments sh-note-comments" data-share-identify="{{.ShareIdentify}}" data-comments-lazy="1" hidden aria-label="{{call $.T "share_comments.title"}}"></section>{{end}}
   </article>{{else}}<div class="public-empty">{{call .T "public.empty"}}</div>{{end}}

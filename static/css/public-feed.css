@@ -23,9 +23,12 @@
 .public-manage > .header-dropdown-panel { position: absolute; right: 0; top: 100%; min-width: 160px; }
 .public-manage .header-menu-item { width: 100%; text-decoration: none; border: 0; text-align: left; background: transparent; cursor: pointer; }
 .public-note-actions { display: flex; justify-content: flex-end; gap: var(--spacing-xs); margin-bottom: var(--spacing-sm); }
-.public-pinned { display: inline-flex; gap: var(--spacing-xs); margin-top: var(--spacing-sm); }
+.public-entry-heading { display: flex; flex-wrap: wrap; align-items: center; gap: var(--spacing-sm); }
+.public-entry .public-entry-heading h2 { min-width: 0; margin: 0; }
+.public-pinned { display: inline-flex; align-items: center; gap: var(--spacing-xs); flex-shrink: 0; }
+.public-pinned i { line-height: 1; }
 .public-entry:not(.public-book-card) h2 { display: inline; font-size: 14px; }
-.public-content-type { display: inline-flex; vertical-align: middle; margin-left: var(--spacing-sm); }
+.public-content-type { display: inline-flex; align-items: center; flex-shrink: 0; }
 .public-note-card .public-note { color: var(--color-text); font-size: 15px; line-height: 1.8; max-height: 360px; overflow: hidden; }
 .public-note img { max-width: 100%; max-height: 240px; object-fit: contain; cursor: zoom-in; border-radius: var(--radius-md); }
 .sh-note-text { color: var(--color-text); overflow-wrap: anywhere; }
@@ -60,7 +63,7 @@
 .public-note { -webkit-line-clamp: 5; white-space: pre-line; }
 .public-note-card .public-note { -webkit-line-clamp: 10; font-size: 16px; }
 .public-note-author { display: flex; align-items: center; gap: var(--spacing-sm); color: var(--color-text-secondary); font-size: 13px; margin-bottom: var(--spacing-md); }
-.public-note-author i { background: var(--color-primary-light); color: var(--color-primary); padding: var(--spacing-sm); border-radius: var(--radius-lg); }
+.public-note-author > i { background: var(--color-primary-light); color: var(--color-primary); padding: var(--spacing-sm); border-radius: var(--radius-lg); }
 .public-note-author time { margin-left: auto; color: var(--color-text-muted); font-size: 12px; }
 .public-read-link { display: inline-flex; align-items: center; gap: var(--spacing-sm); color: var(--color-primary); text-decoration: none; font-size: 13px; margin-top: var(--spacing-md); }
 .public-read-link:hover { text-decoration: underline; }
@@ -85,6 +88,7 @@
 .public-pagination { margin-top: auto; display: flex; justify-content: center; align-items: center; gap: var(--spacing-md); padding: var(--spacing-lg); }
 .public-empty { padding: var(--spacing-lg); color: var(--color-text-secondary); }
 @media (max-width: 1024px) {
+ .public-header-inner { gap: var(--spacing-sm); }
  .public-layout { grid-template-columns: minmax(0,1fr) 220px; grid-template-rows: auto 1fr; }
  .public-categories { grid-column: 1 / -1; }
  .public-categories summary { display: none; }

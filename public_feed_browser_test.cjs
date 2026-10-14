@@ -37,6 +37,17 @@ const assert=require('node:assert/strict');
    if(kind==='article')assert.equal(await page.locator('.public-content-type').count(),2);
    if(kind==='note'){assert.equal(await page.locator('.public-note-card h2').count(),0);assert.equal(await page.locator('.public-read-link').count(),0);assert(await page.locator('.public-note-author').isVisible());}
    if(kind==='book')assert(await page.locator('.public-book-cover').isVisible());
+   if(kind!=='bookmark'){
+    const badge=page.locator('.public-pinned').first();
+    assert(await badge.count()>0,'missing pinned fixture');
+    assert.equal(await badge.evaluate(n=>getComputedStyle(n).alignItems),'center');
+    if(kind!=='note'){
+     assert.equal(await badge.locator('..').getAttribute('class'),'public-entry-heading');
+     const aligned=await badge.evaluate(n=>{const title=n.parentElement.querySelector('h2'),a=n.getBoundingClientRect(),b=title.getBoundingClientRect();return {delta:Math.abs(a.y+a.height/2-b.y-b.height/2),before:n.compareDocumentPosition(title)&Node.DOCUMENT_POSITION_FOLLOWING};});
+     assert(aligned.before,'badge must precede title');
+     if(width>=768)assert(aligned.delta<1,'badge/title vertical alignment');
+    }
+   }
    assert.notEqual(await page.locator('.public-categories').evaluate(n=>getComputedStyle(n).backgroundColor),'rgba(0, 0, 0, 0)');
    if(width<=640){
     assert.equal(await page.locator('.public-search').isVisible(),false);
