@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
+	"time"
 )
 
 func PersonalHomePage(c *gin.Context) {
@@ -32,7 +33,13 @@ func HomeSummary(c *gin.Context) {
 		apiError(c, http.StatusInternalServerError, "首页加载失败，请重试")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"code": 0, "sections": sections, "layout": layout})
+	stats, err := models.GetHomeStats(middleware.GetMemberID(c), time.Now())
+	if err != nil {
+		log.Printf("home stats: %v", err)
+		apiError(c, http.StatusInternalServerError, "首页加载失败，请重试")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": 0, "sections": sections, "layout": layout, "stats": stats})
 }
 
 func SaveHomeLayout(c *gin.Context) {

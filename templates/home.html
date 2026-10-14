@@ -16,10 +16,16 @@
 <main class="home-page">
   <div class="home-heading-card">
   <section class="home-welcome">
-    <div><div class="home-eyebrow">{{call .T "home.eyebrow"}}</div><h1>{{call .T "home.title"}}</h1></div>
+    <div><h1 class="page-title">{{call .T "home.title"}}</h1></div>
     <div class="home-actions"><time id="homeToday"></time><div><button class="home-button home-primary" data-home-dialog="homeCreate"><i class="fa-solid fa-plus" aria-hidden="true"></i> {{call .T "home.new"}}</button><button class="home-button" data-home-dialog="homeCustomize"><i class="fa-solid fa-sliders" aria-hidden="true"></i> {{call .T "home.layout.title"}}</button></div></div>
   </section>
-  <div class="home-toolbar"><div role="group" aria-label="{{call .T "home.sort"}}"><button data-home-sort="updated" aria-pressed="true">{{call .T "home.updated"}}</button><button data-home-sort="created" aria-pressed="false">{{call .T "home.created"}}</button></div></div>
+  <div class="home-stats" id="homeStats" aria-label="{{call .T "home.stats.title"}}" aria-busy="true">
+    <a class="home-stat" href="/notes?tab=notes"><span class="home-stat-icon"><i class="fa-solid fa-note-sticky" aria-hidden="true"></i></span><span><span class="home-stat-label">{{call .T "note.tab.notes"}}</span><strong data-home-stat="notes">—</strong></span></a>
+    <a class="home-stat" href="/notes?tab=articles"><span class="home-stat-icon"><i class="fa-solid fa-file-lines" aria-hidden="true"></i></span><span><span class="home-stat-label">{{call .T "note.tab.articles"}}</span><strong data-home-stat="articles">—</strong></span></a>
+    <a class="home-stat" href="/notes?tab=tasks"><span class="home-stat-icon"><i class="fa-solid fa-list-check" aria-hidden="true"></i></span><span><span class="home-stat-label">{{call .T "home.stats.pending"}}</span><strong data-home-stat="pending_tasks">—</strong></span></a>
+    <div class="home-stat" title="{{call .T "home.stats.week_hint"}}"><span class="home-stat-icon"><i class="fa-solid fa-arrow-trend-up" aria-hidden="true"></i></span><span><span class="home-stat-label">{{call .T "home.stats.week"}}</span><strong data-home-stat="created_this_week">—</strong></span></div>
+  </div>
+  <div class="home-toolbar"><div class="main-tabs" role="group" aria-label="{{call .T "home.sort"}}"><button type="button" class="main-tab active" data-home-sort="updated" aria-pressed="true"><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>{{call .T "home.updated"}}</button><button type="button" class="main-tab" data-home-sort="created" aria-pressed="false"><i class="fa-regular fa-square-plus" aria-hidden="true"></i>{{call .T "home.created"}}</button></div></div>
   </div>
   <p id="homeStatus" role="status" aria-live="polite">{{call .T "home.loading"}}</p>
   <button id="homeRetry" class="home-button" hidden>{{call .T "home.retry"}}</button>

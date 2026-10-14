@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"time"
 )
 
 // HomeItem deliberately contains no content, passwords, tokens or credentials.
@@ -19,6 +20,41 @@ type HomeSection struct {
 	Key   string     `json:"key"`
 	Total int        `json:"total"`
 	Items []HomeItem `json:"items"`
+}
+
+type HomeStats struct {
+	Notes           int `json:"notes"`
+	Articles        int `json:"articles"`
+	PendingTasks    int `json:"pending_tasks"`
+	CreatedThisWeek int `json:"created_this_week"`
+}
+
+// GetHomeStats counts owned records only, without content or duplicated nav/share entries.
+// Weeks start on Monday in the application timezone; the upper bound excludes future dates.
+func GetHomeStats(memberID int64, now time.Time) (HomeStats, error) {
+	start := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+	start = start.AddDate(0, 0, -(int(start.Weekday())+6)%7)
+	var stats HomeStats
+	err := DB.QueryRow(`WITH raw AS (
+		SELECT COALESCE(blog_type,'article') kind, 0 done, CAST(create_time AS TEXT) created FROM md_blogs WHERE member_id=?
+		UNION ALL SELECT 'task', done, CAST(create_time AS TEXT) FROM md_tasks WHERE member_id=?
+		UNION ALL SELECT 'book', 0, CAST(create_time AS TEXT) FROM md_books WHERE member_id=?
+		UNION ALL SELECT 'bookmark', 0, CAST(create_time AS TEXT) FROM md_bookmark WHERE member_id=?
+		UNION ALL SELECT 'topic', 0, CAST(create_time AS TEXT) FROM md_topics WHERE member_id=?
+	), offsets AS (
+		SELECT *, MAX(instr(created,' +'),instr(created,' -')) pos FROM raw
+	), records AS (
+		SELECT kind, done, CASE
+		WHEN pos>0 THEN substr(created,1,pos-1)||substr(created,pos+1,3)||':'||substr(created,pos+4,2)
+		WHEN length(created)=19 THEN created||?
+		ELSE created END created FROM offsets
+	) SELECT
+		COALESCE(SUM(kind='note'),0), COALESCE(SUM(kind='article'),0),
+		COALESCE(SUM(kind='task' AND done=0),0),
+		COALESCE(SUM(julianday(created)>=julianday(?) AND julianday(created)<=julianday(?)),0)
+		FROM records`, memberID, memberID, memberID, memberID, memberID, now.Format("-07:00"), start.Format(time.RFC3339), now.Format(time.RFC3339)).
+		Scan(&stats.Notes, &stats.Articles, &stats.PendingTasks, &stats.CreatedThisWeek)
+	return stats, err
 }
 
 // ListHomeSections is a personal view, including for administrators: knowledge

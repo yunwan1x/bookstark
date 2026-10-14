@@ -1,4 +1,11 @@
 /* ===== BookStark Shared Components ===== */
+/* Shared segmented switch, used by notes and personal home. */
+.main-tabs { display: inline-flex; border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+.main-tab { padding: 6px 14px; font-size: 13px; font-weight: 500; border: 0; background: var(--color-bg-card); color: var(--color-text-secondary); cursor: pointer; transition: background-color 0.15s ease, color 0.15s ease; display: flex; align-items: center; justify-content: center; gap: var(--spacing-xs); }
+.main-tab.active { background: var(--color-primary); color: var(--color-on-primary); }
+.main-tab:hover:not(.active) { background: var(--color-bg-hover); color: var(--color-text); }
+.main-tab:focus-visible { outline: 2px solid var(--color-focus); outline-offset: -3px; }
+@media (prefers-reduced-motion: reduce) { .main-tab { transition: none; } }
 /* Extracted & unified from bookmarks.css design system */
 
 button.is-submitting {

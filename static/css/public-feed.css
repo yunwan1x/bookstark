@@ -27,16 +27,31 @@
 .public-entry .public-entry-heading h2 { min-width: 0; margin: 0; }
 .public-pinned { display: inline-flex; align-items: center; gap: var(--spacing-xs); flex-shrink: 0; }
 .public-pinned i { line-height: 1; }
-.public-entry:not(.public-book-card) h2 { display: inline; font-size: 14px; }
+.public-entry:not(.public-book-card) .public-entry-heading h2 { display: inline; font-size: 14px; }
 .public-content-type { display: inline-flex; align-items: center; flex-shrink: 0; }
-.public-note-card .public-note { color: var(--color-text); font-size: 15px; line-height: 1.8; max-height: 360px; overflow: hidden; }
+.public-note-card .public-note { color: var(--color-text); font-size: 16px; line-height: 1.8; max-height: none; overflow: visible; white-space: normal; }
 .public-note img { max-width: 100%; max-height: 240px; object-fit: contain; cursor: zoom-in; border-radius: var(--radius-md); }
 .sh-note-text { color: var(--color-text); overflow-wrap: anywhere; }
+.sh-note-text p { margin: 0 0 var(--spacing-sm); }
+.sh-note-text p:last-child { margin-bottom: 0; }
+.sh-note-text strong { font-weight: 600; }
+.sh-note-text em { font-style: italic; }
+.sh-note-text a { color: var(--color-primary); text-decoration: underline; }
+.sh-note-text ul,.sh-note-text ol { padding-left: var(--spacing-lg); margin: var(--spacing-sm) 0; }
+.sh-note-text ul { list-style: disc; }
+.sh-note-text ol { list-style: decimal; }
+.sh-note-text blockquote { border-left: 3px solid var(--color-primary); padding-left: var(--spacing-md); margin: var(--spacing-sm) 0; }
+.public-note-card .sh-note-text :is(h1,h2,h3,h4,h5,h6) { display: block; font-weight: 600; line-height: 1.5; margin: var(--spacing-md) 0 var(--spacing-sm); }
+.public-note-card .sh-note-text h1 { font-size: 20px; }
+.public-note-card .sh-note-text h2 { font-size: 18px; }
+.public-note-card .sh-note-text :is(h3,h4,h5,h6) { font-size: 16px; }
 .sh-note-text img { max-width: 100%; }
 .sh-note-text pre { max-width: 100%; overflow-x: auto; padding: var(--spacing-md); background: var(--color-bg-hover); border-radius: var(--radius-md); }
+.sh-note-text pre code { white-space: pre; }
 .sh-note-text .code-block-header { display: flex; align-items: center; gap: var(--spacing-sm); }
 .sh-note-text .code-copy-btn { margin-left: auto; }
 .sh-note-text table { display: block; overflow-x: auto; max-width: 100%; }
+.sh-note-text :is(th,td) { padding: var(--spacing-sm); border: 1px solid var(--color-border); }
 .sh-note-comments { padding-top: var(--spacing-md); }
 .sh-note-comments .share-comments-fields { display: grid; gap: var(--spacing-sm); grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .sh-note-comments input, .sh-note-comments textarea { width: 100%; box-sizing: border-box; padding: var(--spacing-sm); color: var(--color-text); background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
@@ -60,8 +75,6 @@
 .public-entry h2 a { color: var(--color-text); text-decoration: none; }
 .public-entry h2 a:hover { color: var(--color-primary); }
 .public-excerpt { color: var(--color-text); font-size: 15px; line-height: 1.8; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; margin: var(--spacing-sm) 0; }
-.public-note { -webkit-line-clamp: 5; white-space: pre-line; }
-.public-note-card .public-note { -webkit-line-clamp: 10; font-size: 16px; }
 .public-note-author { display: flex; align-items: center; gap: var(--spacing-sm); color: var(--color-text-secondary); font-size: 13px; margin-bottom: var(--spacing-md); }
 .public-note-author > i { background: var(--color-primary-light); color: var(--color-primary); padding: var(--spacing-sm); border-radius: var(--radius-lg); }
 .public-note-author time { margin-left: auto; color: var(--color-text-muted); font-size: 12px; }

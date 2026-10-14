@@ -5,7 +5,7 @@ const assert=require('node:assert/strict');
  const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH,args:['--no-sandbox']});
  try {
   for(const [width,lang,theme] of [[1440,'zh','light'],[390,'zh','light'],[320,'en','dark'],[768,'en','scholar-paper']]){
-   for(const kind of ['article','note','book','bookmark']){
+   for(const kind of (process.env.PUBLIC_FEED_TEST_TYPES||'article,note,book,bookmark').split(',')){
    for(const signedIn of [false,true]) {
    const page=await browser.newPage({viewport:{width,height:1000}}),errors=[];
    page.on('pageerror',e=>errors.push(e.message));
@@ -35,7 +35,7 @@ const assert=require('node:assert/strict');
     assert(await page.locator('[data-public-action="unpublish"]').count()=== (kind==='bookmark'?0:kind==='article'?2:1));
    } else assert.equal(await page.locator('[data-public-action]').count(),0);
    if(kind==='article')assert.equal(await page.locator('.public-content-type').count(),2);
-   if(kind==='note'){assert.equal(await page.locator('.public-note-card h2').count(),0);assert.equal(await page.locator('.public-read-link').count(),0);assert(await page.locator('.public-note-author').isVisible());}
+   if(kind==='note'){assert.equal(await page.locator('.public-note-card .public-entry-heading h2').count(),0);assert.equal(await page.locator('.public-read-link').count(),0);assert(await page.locator('.public-note-author').isVisible());}
    if(kind==='book')assert(await page.locator('.public-book-cover').isVisible());
    if(kind!=='bookmark'){
     const badge=page.locator('.public-pinned').first();
@@ -60,6 +60,12 @@ const assert=require('node:assert/strict');
     assert.equal(await page.evaluate(()=>Boolean(window.__noteXss)),false);
     assert.equal(await page.locator('[data-note-content] script').count(),0);
     assert(await page.locator('[data-note-content] strong').count()>0);
+    const noteBody=page.locator('[data-note-content]');
+    assert.equal(await noteBody.locator('h2').evaluate(n=>getComputedStyle(n).display),'block');
+    assert(await noteBody.locator('ul li').count()>0);assert(await noteBody.locator('blockquote').count()>0);assert(await noteBody.locator('pre code').count()>0);
+    assert((await noteBody.innerText()).includes('LAST_VISIBLE_NOTE_LINE'));
+    const full=await noteBody.evaluate(n=>({max:getComputedStyle(n).maxHeight,height:n.clientHeight,scroll:n.scrollHeight,bottom:n.getBoundingClientRect().bottom,last:n.lastElementChild.getBoundingClientRect().bottom}));
+    assert.equal(full.max,'none');assert(full.height>360);assert(full.scroll<=full.height+1);assert(full.last<=full.bottom+1,'last line is not clipped');
     await page.locator('[data-note-content] img').click();assert(await page.locator('#shareNoteImageLightboxOverlay').isVisible());
     await page.locator('#shareNoteImageLightboxCloseBtn').press('Escape');assert.equal(await page.locator('#shareNoteImageLightboxOverlay').isVisible(),false);
     await page.locator('[data-note-action="expand"]').click();assert(await page.locator('#shareNoteViewerOverlay').isVisible());

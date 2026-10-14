@@ -920,10 +920,6 @@
 @media (prefers-reduced-motion: reduce) { .note-card { animation: none; } }
 
 /* Main tabs */
-.main-tabs { display: inline-flex; border: 1px solid var(--color-border, #e2e8f0); border-radius: var(--radius-md, 6px); overflow: hidden; }
-.main-tab { padding: 6px 14px; font-size: 13px; font-weight: 500; border: none; background: var(--color-bg-card, #fff); color: var(--color-gray-500, #64748b); cursor: pointer; transition: background 0.15s, color 0.15s; display: flex; align-items: center; gap: 4px; }
-.main-tab.active { background: var(--color-primary, #2563eb); color: #fff; }
-.main-tab:hover:not(.active) { background: var(--color-gray-50, #f8fafc); color: var(--color-gray-700, #334155); }
 .page-sticky-header .tasks-toolbar {
     position: static;
     top: auto;

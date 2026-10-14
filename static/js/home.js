@@ -29,6 +29,14 @@
     var now = new Date();
     document.getElementById('homeToday').textContent = now.toLocaleDateString(english ? 'en-US' : 'zh-CN', {year:'numeric', month:'long', day:'numeric', weekday:'long'});
     function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; }
+    function renderStats(stats) {
+        var box = document.getElementById('homeStats');
+        box.querySelectorAll('[data-home-stat]').forEach(function(n) {
+            var value = stats && stats[n.dataset.homeStat];
+            n.textContent = Number.isSafeInteger(value) && value >= 0 ? String(value) : '—';
+        });
+        box.setAttribute('aria-busy', 'false');
+    }
     function render() {
         grid.replaceChildren();
         layout.forEach(function (item) {
@@ -177,6 +185,7 @@
         status.hidden = false; status.textContent = lt('正在加载最近的记录…','Loading recent records…'); retry.hidden = true; grid.setAttribute('aria-busy','true');
         // Remove previous user's/stale records if authentication or loading fails.
         grid.replaceChildren();
+        renderStats(null); document.getElementById('homeStats').setAttribute('aria-busy','true');
         try {
             var result = await requestSummary(ticket);
             var response = result.response, data = result.data;
@@ -184,18 +193,21 @@
             if (response.status === 401) { window.location.replace('/login'); return; }
             if (!response.ok || data.code !== 0 || !Array.isArray(data.sections)) throw new Error('home request failed');
             sections = data.sections;
+            renderStats(data.stats);
             layout = Array.isArray(data.layout) ? data.layout : defaultLayout().map(function(item) {item.hidden = hidden.includes(item.key); return item;});
             render();
             if (!layoutDialog.open) {draft = layout.map(function(i) {return Object.assign({},i);}); preferences();}
         } catch (err) {
             if (ticket !== sequence) return;
             console.warn('Home load failed:',err);
+            renderStats(null);
             sections = []; preferences(); status.hidden = false; status.textContent = err.name === 'AbortError' ? lt('请求超时，请重试','Request timed out. Please retry.') : lt('首页加载失败，请检查网络后重试。','Could not load your home page. Check your connection and retry.'); retry.hidden = false;
         } finally { if (ticket === sequence) grid.setAttribute('aria-busy','false'); }
     }
     document.querySelectorAll('[data-home-sort]').forEach(function (button) { button.onclick = function () {
+        if (sort === button.dataset.homeSort) return;
         sort = button.dataset.homeSort;
-        document.querySelectorAll('[data-home-sort]').forEach(function (b) { b.setAttribute('aria-pressed',String(b === button)); }); load();
+        document.querySelectorAll('[data-home-sort]').forEach(function (b) { b.setAttribute('aria-pressed',String(b === button)); b.classList.toggle('active',b === button); }); load();
     }; });
     document.querySelectorAll('[data-home-dialog]').forEach(function (b) { b.onclick = function () {
         if (b.dataset.homeDialog === 'homeCustomize') {draft = layout.map(function(i) {return Object.assign({},i);}); layoutStatus.textContent = ''; preferences();}

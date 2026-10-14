@@ -23,7 +23,7 @@ func TestPublicFeedPrivacyFiltersAndRendering(t *testing.T) {
 		}
 		b := &models.Blog{BlogTitle: name, BlogIdentify: "public-test-" + string(rune('a'+i)), MemberID: 1, BlogType: kind, BlogContent: "正文内容，记录知识与思考。", Visibility: 1}
 		if i == 1 {
-			b.BlogContent = "**正文内容**，记录知识与思考。\n\n![截图](/static/icon-192.png)\n\n<script>window.__noteXss=true</script>"
+			b.BlogContent = "## Markdown heading\n\n**正文内容**，记录知识与思考。\n\n- List item\n\n> Quote\n\n```js\nconst safe = '<script>';\n```\n\n![截图](/static/icon-192.png)\n\n<script>window.__noteXss=true</script>\n\n" + strings.Repeat("A full paragraph that must never be clipped.\n\n", 30) + "LAST_VISIBLE_NOTE_LINE"
 		}
 		if i == 2 {
 			b.Visibility = 0

@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -163,7 +165,7 @@ func TestPersonalHomeEnglishTemplate(t *testing.T) {
 	if w.Code != 200 {
 		t.Fatalf("home response: %d", w.Code)
 	}
-	for _, expected := range []string{`<html lang="en">`, `<h1>Personal Home</h1>`, `Recently updated`, `Customize sections`, `New Note`, `Mobile navigation`, `All sections`, `Capture an idea`} {
+	for _, expected := range []string{`<html lang="en">`, `<h1 class="page-title">Personal Home</h1>`, `Recently updated`, `Customize sections`, `New Note`, `Mobile navigation`, `All sections`, `Capture an idea`, `New this week`, `Pending tasks`} {
 		if !strings.Contains(w.Body.String(), expected) {
 			t.Errorf("missing translation: %s", expected)
 		}
@@ -171,6 +173,74 @@ func TestPersonalHomeEnglishTemplate(t *testing.T) {
 	for _, old := range []string{`>个人首页<`, `>最近更新<`, `>新建笔记<`, `>全部模块<`, `>记录新想法<`} {
 		if strings.Contains(w.Body.String(), old) {
 			t.Errorf("untranslated text: %s", old)
+		}
+	}
+}
+
+func TestHomeStatsOwnerAndWeekBoundary(t *testing.T) {
+	router, token := initAssetControllerTest(t)
+	loc := time.FixedZone("test-east", 8*60*60)
+	now := time.Date(2026, 10, 14, 12, 0, 0, 0, loc)
+	start := time.Date(2026, 10, 12, 0, 0, 0, 0, loc)
+	for i, created := range []time.Time{start, start.Add(-time.Second), now.Add(time.Hour)} {
+		if _, err := models.DB.Exec(`INSERT INTO md_blogs(blog_title,blog_identify,blog_type,member_id,create_time,modify_time) VALUES(?,?,'note',1,?,?)`, "Note", fmt.Sprintf("stat-note-%d", i), created.Format("2006-01-02 15:04:05"), created.Format(time.RFC3339)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	queries := []string{
+		`INSERT INTO md_blogs(blog_title,blog_identify,blog_type,member_id,create_time,modify_time) VALUES('Article','stat-article','article',1,?,?)`,
+		`INSERT INTO md_tasks(content,done,member_id,create_time,modify_time) VALUES('Open',0,1,?,?)`,
+		`INSERT INTO md_tasks(content,done,member_id,create_time,modify_time) VALUES('Done',1,1,?,?)`,
+		`INSERT INTO md_books(book_name,identify,member_id,create_time,modify_time) VALUES('Book','stat-book',1,?,?)`,
+		`INSERT INTO md_bookmark(title,url,member_id,create_time,modify_time) VALUES('Link','https://example.com',1,?,?)`,
+		`INSERT INTO md_topics(title,member_id,create_time,modify_time) VALUES('Topic',1,?,?)`,
+		`INSERT INTO md_blogs(blog_title,blog_identify,blog_type,member_id,create_time,modify_time) VALUES('Other','stat-other','note',99,?,?)`,
+		`INSERT INTO md_tasks(content,done,member_id,create_time,modify_time) VALUES('Other',0,99,?,?)`,
+	}
+	for i, q := range queries {
+		var created any = start.UTC().Format(time.RFC3339)
+		if i%2 == 0 {
+			created = start
+		}
+		if _, err := models.DB.Exec(q, created, created); err != nil {
+			t.Fatal(err)
+		}
+	}
+	stats, err := models.GetHomeStats(1, now)
+	if err != nil || stats != (models.HomeStats{Notes: 3, Articles: 1, PendingTasks: 1, CreatedThisWeek: 7}) {
+		t.Fatalf("wrong stats %+v: %v", stats, err)
+	}
+	stats, err = models.GetHomeStats(1, start.AddDate(0, 0, 7))
+	if err != nil || stats.CreatedThisWeek != 0 {
+		t.Fatalf("week reset %+v: %v", stats, err)
+	}
+	stats, err = models.GetHomeStats(100, now)
+	if err != nil || stats != (models.HomeStats{}) {
+		t.Fatalf("empty account %+v: %v", stats, err)
+	}
+	w := adminAssetRequest(router, token, "GET", "/api/home", nil)
+	var result struct {
+		Stats models.HomeStats `json:"stats"`
+	}
+	if w.Code != 200 {
+		t.Fatal(w.Code, w.Body.String())
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil || result.Stats.Notes != 3 || result.Stats.PendingTasks != 1 {
+		t.Fatalf("API stats %+v: %v", result, err)
+	}
+	if dir := os.Getenv("HOME_SNAPSHOT_DIR"); dir != "" {
+		for _, lang := range []string{"zh", "en"} {
+			req := httptest.NewRequest("GET", "/home", nil)
+			req.Header.Set("Authorization", "Token "+token)
+			req.AddCookie(&http.Cookie{Name: "lang", Value: lang})
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+			if w.Code != 200 {
+				t.Fatal(w.Code)
+			}
+			if err := os.WriteFile(filepath.Join(dir, "home-b1-"+lang+".html"), w.Body.Bytes(), 0600); err != nil {
+				t.Fatal(err)
+			}
 		}
 	}
 }
