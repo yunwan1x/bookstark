@@ -531,7 +531,8 @@
         }, 0);
     }
     function deleteTask(task) {
-        var msg = task.child_total ? tr('task.confirm.delete_children', '删除这个待办及其子待办？') : tr('task.confirm.delete', '删除这个待办？');
+        var msg = task.child_total ? tr('task.confirm.delete_children', '删除待办「{name}」及其子待办？') : tr('task.confirm.delete', '删除待办「{name}」？');
+        msg = formatDeleteConfirmation(msg, task.content, task.task_id, true);
         var confirm = window.BSDialog && BSDialog.confirm2 ? BSDialog.confirm2(msg) : Promise.resolve(window.confirm(msg));
         confirm.then(function(ok) {
             if (!ok) return;

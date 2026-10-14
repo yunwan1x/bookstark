@@ -14,8 +14,8 @@ func TestModalSaveActionsUseRequestLock(t *testing.T) {
 			"BookStarkRequestLock.run('books:delete:'",
 			"bookModalSaveBtn",
 		},
-		"templates/shares.html": {
-			"BookStarkRequestLock.run('shares:pin:'",
+		"static/js/public-feed.js": {
+			"lockKey: 'public:'",
 		},
 		"static/js/assets.js": {
 			"runSubmitLocked",

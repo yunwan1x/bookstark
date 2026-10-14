@@ -27,7 +27,7 @@
     var translated = typeof window.__ === 'function' ? window.__(key) : key;
     var result = translated && translated !== key ? translated : fallback;
     Object.keys(values || {}).forEach(function (name) {
-      result = result.replace(new RegExp('\\{' + name + '\\}', 'g'), values[name]);
+      result = result.replace(new RegExp('\\{' + name + '\\}', 'g'), function () { return values[name]; });
     });
     return result;
   }

@@ -11,7 +11,7 @@ func TestSearchToolbarParentsExposePageBackground(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read base template: %v", err)
 	}
-	shareBytes, err := os.ReadFile("templates/shares.html")
+	shareBytes, err := os.ReadFile("static/css/public-feed.css")
 	if err != nil {
 		t.Fatalf("read shares template: %v", err)
 	}
@@ -39,11 +39,8 @@ func TestSearchToolbarParentsExposePageBackground(t *testing.T) {
 		t.Fatalf("notes page sticky header should not override the shared transparent default")
 	}
 
-	if !strings.Contains(shares, `.sh-search-wrap { margin-bottom: 20px; position: sticky; top: 40px; z-index: 10; background: transparent;`) {
-		t.Fatalf("share search wrapper should expose the page background by default")
-	}
-	if strings.Contains(shares, `.sh-search-wrap { margin-bottom: 20px; position: sticky; top: 40px; z-index: 10; background: var(--color-bg);`) {
-		t.Fatalf("share search wrapper should not paint a solid page-colored slab by default")
+	if !strings.Contains(shares, `.public-search { display: flex;`) || strings.Contains(shares, `.sh-search-wrap`) {
+		t.Fatal("unified reading search must live in the header, not the removed sticky toolbar")
 	}
 
 	assertCSSRuleContains(t, assetCSS, "#panel-ssh,\n#panel-webdav", "background: transparent;")
@@ -63,7 +60,7 @@ func TestStickySearchToolbarsPaintOnlyWhenStuck(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read sticky bg script: %v", err)
 	}
-	sharesBytes, err := os.ReadFile("templates/shares.html")
+	sharesBytes, err := os.ReadFile("static/css/public-feed.css")
 	if err != nil {
 		t.Fatalf("read shares template: %v", err)
 	}
@@ -83,7 +80,7 @@ func TestStickySearchToolbarsPaintOnlyWhenStuck(t *testing.T) {
 	assertCSSRuleContains(t, base, ".page-sticky-header.is-stuck", "background: var(--color-bg);")
 	assertCSSRuleContains(t, base, ".page-sticky-header.is-stuck", "border-bottom: 1px solid var(--color-border);")
 	assertCSSRuleContains(t, base, ".page-sticky-header.is-stuck", "box-shadow:")
-	assertCSSRuleContains(t, shares, ".sh-search-wrap.is-stuck", "background: var(--color-bg);")
+	assertCSSRuleContains(t, shares, ".public-header", "background: var(--color-bg-card);")
 	assertCSSRuleContains(t, assetCSS, "#panel-ssh .asset-panel-head.is-stuck,\n#panel-webdav .asset-panel-head.is-stuck", "background: var(--color-bg);")
 
 	for _, want := range []string{

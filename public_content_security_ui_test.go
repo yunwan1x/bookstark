@@ -23,11 +23,15 @@ func TestPublicMarkdownRenderingUsesSharedSanitizer(t *testing.T) {
 		}
 	}
 
-	sharesData, err := os.ReadFile("templates/shares.html")
+	sharesData, err := os.ReadFile("static/js/share-note-reader.js")
 	if err != nil {
 		t.Fatalf("ReadFile(shares.html): %v", err)
 	}
-	shares := string(sharesData)
+	feedData, err := os.ReadFile("static/js/public-feed.js")
+	if err != nil {
+		t.Fatal(err)
+	}
+	shares := string(sharesData) + string(feedData)
 	if got := strings.Count(shares, "marked.parse("); got != 2 {
 		t.Fatalf("shares.html marked.parse call count = %d; update this test when adding a render path", got)
 	}

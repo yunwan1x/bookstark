@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"html/template"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -90,6 +91,10 @@ func (r *rateLimiter) reset(key string) {
 }
 
 func LoginPage(c *gin.Context) {
+	loginReturn := "/"
+	if next, err := url.Parse(c.Query("next")); err == nil && next.Scheme == "" && next.Host == "" && !strings.ContainsAny(next.Path, "\\\r\n") && (next.Path == "/shares" || strings.HasPrefix(next.Path, "/shares/")) {
+		loginReturn = next.String()
+	}
 	lang := middleware.GetLang(c)
 	t := i18n.MakeT(lang)
 	bundleJSON, _ := json.Marshal(i18n.JSBundle(lang))
@@ -98,6 +103,7 @@ func LoginPage(c *gin.Context) {
 		"T":                      t,
 		"JSBundle":               template.JS(bundleJSON),
 		"PasswordResetAvailable": models.GetMailSettings().PasswordResetReady(),
+		"LoginReturn":            loginReturn,
 	})
 }
 

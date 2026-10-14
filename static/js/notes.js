@@ -2479,7 +2479,8 @@ NotesApp.prototype._updateArticleCard = function(blogId, title, desc, labels, ha
 NotesApp.prototype.deleteNote = function(id) {
     var self = this;
     var request = this._runSubmitRequest('notes:note:delete:' + id, this._getCardActionButton('.note-card[data-id="' + id + '"]', '.del'), function() {
-        return BSDialog.confirm2(window.__('note.confirm.delete')).then(function(ok) {
+        var content = document.querySelector('.note-card[data-id="' + id + '"] .note-content');
+        return BSDialog.confirm2(formatDeleteConfirmation(window.__('note.confirm.delete'), content && content.textContent, id, true)).then(function(ok) {
             if (!ok) return null;
             return fetchWithCurrentCSRF('/api/blogs/' + id, {
             method: 'DELETE',
@@ -2919,7 +2920,8 @@ NotesApp.prototype.unpublishArticle = function(id) {
 NotesApp.prototype.deleteArticle = function(id) {
     var self = this;
     var request = this._runSubmitRequest('notes:article:delete:' + id, this._getCardActionButton('.article-card[data-id="' + id + '"]', '.del'), function() {
-        return BSDialog.confirm2(window.__('note.confirm.delete_article')).then(function(ok) {
+        var title = document.querySelector('.article-card[data-id="' + id + '"] .article-title');
+        return BSDialog.confirm2(formatDeleteConfirmation(window.__('note.confirm.delete_article'), title && title.textContent, id)).then(function(ok) {
             if (!ok) return null;
             return fetchWithCurrentCSRF('/api/blogs/' + id, {
             method: 'DELETE',

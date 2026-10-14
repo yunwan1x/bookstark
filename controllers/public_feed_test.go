@@ -1,24 +1,30 @@
 package controllers_test
 
 import (
+	"bookstark/middleware"
 	"bookstark/models"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 )
 
 func TestPublicFeedPrivacyFiltersAndRendering(t *testing.T) {
-	router, _ := initAssetControllerTest(t)
+	router, token := initAssetControllerTest(t)
 	for i, name := range []string{"公开文章一", "公开速记二", "PRIVATE_SENTINEL", "加密文章"} {
 		kind := "article"
 		if i == 1 {
 			kind = "note"
 		}
 		b := &models.Blog{BlogTitle: name, BlogIdentify: "public-test-" + string(rune('a'+i)), MemberID: 1, BlogType: kind, BlogContent: "正文内容，记录知识与思考。", Visibility: 1}
+		if i == 1 {
+			b.BlogContent = "**正文内容**，记录知识与思考。\n\n![截图](/static/icon-192.png)\n\n<script>window.__noteXss=true</script>"
+		}
 		if i == 2 {
 			b.Visibility = 0
 		}
@@ -56,62 +62,142 @@ func TestPublicFeedPrivacyFiltersAndRendering(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	for _, path := range []string{"/", "/shares", "/?sort=updated", "/?label=教育", "/?type=note", "/?type=book", "/?type=bookmark", "/?type=bookmark&sort=updated", "/?type=bookmark&keyword=nomatch", "/?type=bookmark&label=PRIVATE_BOOKMARK_LABEL", "/?keyword=不存在", "/?page=2", "/?label=%27%20OR%201=1--"} {
-		w := adminAssetRequest(router, "", "GET", path, nil)
-		if w.Code != 200 {
-			t.Fatalf("%s: %d %s", path, w.Code, w.Body.String())
-		}
-		html := w.Body.String()
-		if strings.Contains(html, `>PRIVATE_BOOKMARK<`) || strings.Contains(html, `>PRIVATE_BOOKMARK_LABEL<`) {
-			t.Fatal("private bookmark leaked")
-		}
-		if path == "/?type=bookmark" && (!strings.Contains(html, `class="bm-row"`) || !strings.Contains(html, `target="_blank"`)) {
-			t.Fatal("missing public bookmark row")
-		}
-		for _, private := range []string{"PRIVATE_SENTINEL", "PRIVATE_LABEL", "PROTECTED_SENTINEL", "PROTECTED_LABEL"} {
-			if strings.Contains(html, private) {
-				t.Fatalf("%s leaked %s", path, private)
+	for _, path := range []string{"/", "/shares", "/shares?type=note", "/shares?type=book", "/shares?type=bookmark", "/?sort=updated", "/?label=教育", "/?type=note", "/?type=book", "/?type=bookmark", "/?type=bookmark&sort=updated", "/?type=bookmark&keyword=nomatch", "/?type=bookmark&label=PRIVATE_BOOKMARK_LABEL", "/?keyword=不存在", "/?page=2", "/?label=%27%20OR%201=1--"} {
+		for _, auth := range []string{"", token} {
+			if !strings.HasPrefix(path, "/shares") && auth != "" {
+				continue
+			} // Personal home is intentionally separate.
+			w := adminAssetRequest(router, auth, "GET", path, nil)
+			if w.Code != 200 {
+				t.Fatalf("%s: %d %s", path, w.Code, w.Body.String())
 			}
-		}
-		if !strings.Contains(html, "public-layout") || !strings.Contains(w.Header().Get("Cache-Control"), "no-store") {
-			t.Fatal("missing visitor layout/cache policy")
-		}
-		if path == "/?type=note" && strings.Contains(html, "公开文章一") {
-			t.Fatal("type filter failed")
-		}
-		if path == "/?label=教育" && strings.Contains(html, "公开速记二") {
-			t.Fatal("label filter failed")
-		}
-		if path == "/?sort=updated" && strings.Index(html, "公开文章一") > strings.Index(html, "加密文章") {
-			t.Fatal("updated sort failed")
-		}
-		if path == "/" && strings.Index(html, "公开文章一") < strings.Index(html, "加密文章") {
-			t.Fatal("published sort failed")
-		}
-		if path == "/" && (strings.Contains(html, `public-note-card`) || !strings.Contains(html, `public-content-type`)) {
-			t.Fatal("default must be typed articles")
-		}
-		if path == "/?type=note" && (!strings.Contains(html, `public-note-card`) || strings.Contains(html, `<h2><a href="/shares/public-test-b"`)) {
-			t.Fatal("notes should be body-first")
-		}
-		if path == "/?type=note" && strings.Contains(html, `public-read-link`) {
-			t.Fatal("note list should not show redundant detail link")
-		}
-		if path == "/?type=book" && !strings.Contains(html, `public-book-cover`) {
-			t.Fatal("missing bookshelf")
+			html := w.Body.String()
+			if strings.Contains(html, `>PRIVATE_BOOKMARK<`) || strings.Contains(html, `>PRIVATE_BOOKMARK_LABEL<`) {
+				t.Fatal("private bookmark leaked")
+			}
+			if path == "/?type=bookmark" && (!strings.Contains(html, `class="bm-row"`) || !strings.Contains(html, `target="_blank"`)) {
+				t.Fatal("missing public bookmark row")
+			}
+			for _, private := range []string{"PRIVATE_SENTINEL", "PRIVATE_LABEL", "PROTECTED_SENTINEL", "PROTECTED_LABEL"} {
+				if strings.Contains(html, private) {
+					t.Fatalf("%s leaked %s", path, private)
+				}
+			}
+			if !strings.Contains(html, "public-layout") || !strings.Contains(w.Header().Get("Cache-Control"), "no-store") {
+				t.Fatal("missing visitor layout/cache policy")
+			}
+			if auth != "" && (!strings.Contains(html, `class="relative public-account"`) || strings.Contains(html, `class="sh-page"`)) {
+				t.Fatal("signed-in layout not unified")
+			}
+			if auth == "" && strings.Contains(html, `data-public-action=`) {
+				t.Fatal("anonymous management controls leaked")
+			}
+			if path == "/?type=note" && strings.Contains(html, "公开文章一") {
+				t.Fatal("type filter failed")
+			}
+			if path == "/?label=教育" && strings.Contains(html, "公开速记二") {
+				t.Fatal("label filter failed")
+			}
+			if path == "/?sort=updated" && strings.Index(html, "公开文章一") > strings.Index(html, "加密文章") {
+				t.Fatal("updated sort failed")
+			}
+			if path == "/" && strings.Index(html, "公开文章一") < strings.Index(html, "加密文章") {
+				t.Fatal("published sort failed")
+			}
+			if path == "/" && (strings.Contains(html, `public-note-card`) || !strings.Contains(html, `public-content-type`)) {
+				t.Fatal("default must be typed articles")
+			}
+			if path == "/?type=note" && (!strings.Contains(html, `public-note-card`) || strings.Contains(html, `<h2><a href="/shares/public-test-b"`)) {
+				t.Fatal("notes should be body-first")
+			}
+			if path == "/?type=note" && strings.Contains(html, `public-read-link`) {
+				t.Fatal("note list should not show redundant detail link")
+			}
+			if path == "/?type=book" && !strings.Contains(html, `public-book-cover`) {
+				t.Fatal("missing bookshelf")
+			}
 		}
 	}
 	if dir := os.Getenv("PUBLIC_FEED_SNAPSHOT_DIR"); dir != "" {
 		for _, lang := range []string{"zh", "en"} {
 			for _, kind := range []string{"article", "note", "book", "bookmark"} {
-				req := httptest.NewRequest("GET", "/?type="+kind, nil)
-				req.AddCookie(&http.Cookie{Name: "lang", Value: lang})
-				w := httptest.NewRecorder()
-				router.ServeHTTP(w, req)
-				if err := os.WriteFile(filepath.Join(dir, "public-feed-"+lang+"-"+kind+".html"), w.Body.Bytes(), 0600); err != nil {
-					t.Fatal(err)
+				for _, signedIn := range []bool{false, true} {
+					req := httptest.NewRequest("GET", "/shares?type="+kind, nil)
+					name := "public-feed-" + lang + "-" + kind
+					if signedIn {
+						req.Header.Set("Authorization", "Token "+token)
+						name += "-auth"
+					}
+					req.AddCookie(&http.Cookie{Name: "lang", Value: lang})
+					w := httptest.NewRecorder()
+					router.ServeHTTP(w, req)
+					if err := os.WriteFile(filepath.Join(dir, name+".html"), w.Body.Bytes(), 0600); err != nil {
+						t.Fatal(err)
+					}
 				}
 			}
+		}
+	}
+}
+
+func TestUnifiedFeedManagementPrivacyAndLoginReturn(t *testing.T) {
+	router, adminToken := initAssetControllerTest(t)
+	owner := &models.Member{Account: "reader-owner", Email: "owner@example.test", Password: "test-only", Role: 1, Status: 1, CreateTime: time.Now()}
+	if err := owner.Insert(); err != nil {
+		t.Fatal(err)
+	}
+	other := &models.Member{Account: "reader-other", Email: "other@example.test", Password: "test-only", Role: 1, Status: 1, CreateTime: time.Now()}
+	if err := other.Insert(); err != nil {
+		t.Fatal(err)
+	}
+	ownerToken, _ := middleware.GenerateToken(owner.MemberID, owner.Account, owner.Role)
+	otherToken, _ := middleware.GenerateToken(other.MemberID, other.Account, other.Role)
+	blog := &models.Blog{BlogTitle: "Owner public", BlogIdentify: "owned-public", MemberID: owner.MemberID, BlogType: "article", BlogContent: "Original retained", Visibility: 1}
+	if err := blog.Insert(); err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		token     string
+		canManage bool
+	}{{"", false}, {ownerToken, true}, {otherToken, false}, {adminToken, true}} {
+		w := adminAssetRequest(router, tc.token, "GET", "/shares?type=article", nil)
+		if w.Code != 200 {
+			t.Fatal(w.Code, w.Body.String())
+		}
+		if strings.Contains(w.Body.String(), `data-public-action="unpublish"`) != tc.canManage {
+			t.Fatal("incorrect ownership controls")
+		}
+	}
+	endpoint := "/api/shares/blog/" + strconv.FormatInt(blog.BlogID, 10)
+	if w := adminAssetRequest(router, otherToken, "DELETE", endpoint, nil); w.Code != 403 {
+		t.Fatal("non-owner unpublish allowed", w.Code)
+	}
+	if w := adminAssetRequest(router, ownerToken, "PATCH", endpoint+"/pin", nil); w.Code != 403 {
+		t.Fatal("non-admin pin allowed", w.Code)
+	}
+	if w := adminAssetRequest(router, ownerToken, "DELETE", endpoint, nil); w.Code != 200 {
+		t.Fatal(w.Code, w.Body.String())
+	}
+	saved, err := models.GetBlogByID(blog.BlogID)
+	if err != nil || saved.Visibility != 0 || saved.BlogContent != "Original retained" {
+		t.Fatal("unpublish must preserve original and make private")
+	}
+	for _, token := range []string{"", adminToken} {
+		if w := adminAssetRequest(router, token, "GET", "/shares", nil); strings.Contains(w.Body.String(), "Owner public") {
+			t.Fatal("unpublished entry remains public")
+		}
+	}
+	for _, next := range []string{"/shares?type=note&label=教育&sort=updated&page=2", "https://evil.example/", "//evil.example/", "/shares\\evil.example/"} {
+		w := adminAssetRequest(router, "", "GET", "/login?next="+url.QueryEscape(next), nil)
+		if w.Code != 200 {
+			t.Fatal(w.Code)
+		}
+		if strings.HasPrefix(next, "/shares?") {
+			if !strings.Contains(w.Body.String(), `window.location.href = "/shares?`) {
+				t.Fatal("login return lost")
+			}
+		} else if !strings.Contains(w.Body.String(), `window.location.href = "/"`) {
+			t.Fatal("unsafe login return")
 		}
 	}
 }

@@ -1974,7 +1974,8 @@
     deleteTopicComment: async function(commentID) {
       var topicID = this.selectedId;
       if (!topicID) return;
-      var message = t('topic.comment.delete_confirm', 'Delete this comment?');
+      var comment = (this.topicComments || []).find(function(row) { return Number(row.comment_id) === Number(commentID); });
+      var message = formatDeleteConfirmation(t('topic.comment.delete_confirm', 'Delete comment "{name}"?'), comment && comment.content, commentID, true);
       var ok = !window.BSDialog || await BSDialog.confirm2(message);
       if (!ok) return;
       try {
@@ -2536,7 +2537,8 @@
 
     deleteTopic: async function() {
       if (!this.selectedId) return;
-      var ok = !window.BSDialog || await BSDialog.confirm2(t('topic.delete.confirm', 'Delete this topic?'));
+      var topic = this.detail && this.detail.topic;
+      var ok = !window.BSDialog || await BSDialog.confirm2(formatDeleteConfirmation(t('topic.delete.confirm', 'Delete topic "{name}"?'), topic && topic.title, this.selectedId));
       if (!ok) return;
       try {
         var deletedId = this.selectedId;
@@ -2955,7 +2957,8 @@
 
     deleteResource: async function(resourceId) {
       if (!this.selectedId || !resourceId) return;
-      var ok = !window.BSDialog || await BSDialog.confirm2(t('topic.item.delete.confirm', 'Remove this material?'));
+      var resource = ((this.detail || {}).resources || []).find(function(row) { return Number(row.topic_resource_id) === Number(resourceId); });
+      var ok = !window.BSDialog || await BSDialog.confirm2(formatDeleteConfirmation(t('topic.item.delete.confirm', 'Remove material reference "{name}"? The original content will not be deleted.'), resource && resource.title_snapshot, resourceId));
       if (!ok) return;
       try {
         await apiJSON('/api/topics/' + this.selectedId + '/resources/' + resourceId, { method: 'DELETE' });
@@ -3637,7 +3640,8 @@
 
     deleteSummary: async function(summaryId) {
       if (!this.selectedId || !summaryId) return;
-      var ok = !window.BSDialog || await BSDialog.confirm2(t('topic.summary.delete.confirm', 'Delete this summary?'));
+      var summary = ((this.detail || {}).summaries || []).find(function(row) { return Number(row.summary_id) === Number(summaryId); });
+      var ok = !window.BSDialog || await BSDialog.confirm2(formatDeleteConfirmation(t('topic.summary.delete.confirm', 'Delete summary "{name}"?'), summary && summary.content, summaryId, true));
       if (!ok) return;
       try {
         await apiJSON('/api/topics/' + this.selectedId + '/summaries/' + summaryId, { method: 'DELETE' });
@@ -3785,7 +3789,8 @@
 
     deleteTask: async function(task) {
       if (!task || !task.task_id) return;
-      var ok = !window.BSDialog || await BSDialog.confirm2(t('topic.task.delete.confirm', 'Delete this todo?'));
+      var message = task.child_total ? t('task.confirm.delete_children', 'Delete todo "{name}" and its subtodos?') : t('topic.task.delete.confirm', 'Delete todo "{name}"?');
+      var ok = !window.BSDialog || await BSDialog.confirm2(formatDeleteConfirmation(message, task.content, task.task_id, true));
       if (!ok) return;
       try {
         await apiJSON('/api/tasks/' + task.task_id, { method: 'DELETE' });

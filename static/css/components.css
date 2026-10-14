@@ -1175,6 +1175,7 @@ body.tag-input-sheet-open {
 .asset-modal-body {
     padding: 14px;
     overflow-y: auto;
+    overflow-wrap: anywhere;
 }
 .asset-modal-foot {
     padding: 12px 14px;

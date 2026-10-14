@@ -93,6 +93,25 @@ func DeleteShare(shareType string, targetID int64) error {
 	return err
 }
 
+// Removing a public blog's share row alone would leave it in the public feed.
+// Explicitly make it private in the same transaction; never delete the content.
+func UnpublishPublicShare(shareType string, targetID int64) error {
+	tx, err := DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if shareType == "blog" {
+		if _, err = tx.Exec("UPDATE md_blogs SET visibility=0 WHERE blog_id=?", targetID); err != nil {
+			return err
+		}
+	}
+	if _, err = tx.Exec("DELETE FROM md_shares WHERE share_type=? AND target_id=?", shareType, targetID); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
 // GetShareMemberID returns the member_id of a share record
 func GetShareMemberID(shareType string, targetID int64) (int64, error) {
 	var memberID int64
@@ -246,7 +265,7 @@ func ListSharesPaged(page, pageSize int, keyword, filter string, options ...Publ
 		if options[0].Sort == "updated" {
 			order = "updated_time"
 		}
-		query = "SELECT share_id, share_type, share_identify, target_id, share_time, title, author, book_name, has_password, is_pinned, blog_type, doc_type, content, doc_count, description FROM (" + baseQuery + where + ") ORDER BY " + order + " DESC, share_id DESC LIMIT ? OFFSET ?"
+		query = "SELECT share_id, share_type, share_identify, target_id, share_time, title, author, book_name, has_password, is_pinned, blog_type, doc_type, content, doc_count, description FROM (" + baseQuery + where + ") ORDER BY is_pinned DESC, " + order + " DESC, share_id DESC LIMIT ? OFFSET ?"
 	}
 	args = append(args, pageSize, offset)
 

@@ -1,9 +1,12 @@
 package controllers
 
 import (
+	"bookstark/middleware"
 	"bookstark/models"
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"hash/fnv"
+	"html/template"
 	"net/http"
 	"net/url"
 	"sort"
@@ -13,6 +16,10 @@ import (
 type publicNavItem struct {
 	Name, URL, Icon string
 	Active          bool
+}
+
+type publicFeedManagement struct {
+	EditURL string
 }
 
 // Distinct glyphs in the bundled Font Awesome solid font; excludes the All icon.
@@ -66,7 +73,18 @@ func assignPublicLabelIcons(labels []string) map[string]string {
 func PublicFeedPage(c *gin.Context) {
 	c.Header("Cache-Control", "private, no-store")
 	data := commonData(c, "public")
+	data["Background"] = nil
+	data["ShareCommentsEnabled"] = models.ShareCommentsEnabled()
+	data["ShareCommentMaxLength"] = models.ShareCommentMaxLength()
+	returnURL := "/shares"
+	if c.Request.URL.RawQuery != "" {
+		returnURL += "?" + c.Request.URL.RawQuery
+	}
+	data["LoginURL"] = "/login?next=" + url.QueryEscape(returnURL)
 	kind, order, label, keyword := c.Query("type"), c.Query("sort"), c.Query("label"), c.Query("keyword")
+	if kind == "" {
+		kind = c.Query("tab")
+	}
 	if kind != "article" && kind != "note" && kind != "book" && kind != "bookmark" {
 		kind = "article"
 	}
@@ -88,7 +106,7 @@ func PublicFeedPage(c *gin.Context) {
 		if keyword != "" {
 			v.Set("keyword", keyword)
 		}
-		return "/?" + v.Encode()
+		return "/shares?" + v.Encode()
 	}
 	var items []models.ShareItem
 	var total int64
@@ -112,6 +130,39 @@ func PublicFeedPage(c *gin.Context) {
 		c.String(http.StatusInternalServerError, "Unable to load public content")
 		return
 	}
+	management := map[string]*publicFeedManagement{}
+	notes := map[string]*models.ShareDetail{}
+	memberID := middleware.GetMemberID(c)
+	for _, item := range items {
+		if item.BlogType == "note" && !item.HasPassword {
+			if detail, err := models.GetShareDetailByIdentify(item.ShareIdentify); err == nil && !detail.HasPassword {
+				notes[item.ShareIdentify] = detail
+			}
+		}
+		if memberID <= 0 {
+			continue
+		}
+		if item.ShareType == "blog" {
+			var ownerID int64
+			if err := models.DB.QueryRow("SELECT member_id FROM md_blogs WHERE blog_id=?", item.TargetID).Scan(&ownerID); err == nil && checkOwnership(c, ownerID) {
+				tab := "articles"
+				if item.BlogType == "note" {
+					tab = "notes"
+				}
+				management[item.ShareIdentify] = &publicFeedManagement{EditURL: "/notes?tab=" + tab + "&id=" + strconv.FormatInt(item.TargetID, 10)}
+			}
+		} else if item.ShareType == "book" {
+			if book, err := models.GetBookByID(item.TargetID); err == nil && checkOwnership(c, book.MemberID) {
+				management[item.ShareIdentify] = &publicFeedManagement{EditURL: "/books/" + url.PathEscape(book.Identify) + "/edit"}
+			}
+		}
+	}
+	notesJSON, err := json.Marshal(notes)
+	if err != nil {
+		c.String(http.StatusInternalServerError, "Unable to load public notes")
+		return
+	}
+	data["Management"], data["PublicNotesJSON"] = management, template.JS(notesJSON)
 	labels, err := models.PublicFeedLabels(kind)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Unable to load public categories")
@@ -124,6 +175,15 @@ func PublicFeedPage(c *gin.Context) {
 	}
 	books, _, _ := models.ListSharesPaged(1, 4, "", "book", models.PublicFeedOptions{Sort: "updated"})
 	data["Items"], data["Categories"], data["PublicBooks"] = items, categories, books
+	typeURLs := map[string]string{}
+	for _, k := range []string{"article", "note", "book", "bookmark"} {
+		l := ""
+		if k == kind {
+			l = label
+		}
+		typeURLs[k] = link(k, order, l, 1)
+	}
+	data["TypeURLs"] = typeURLs
 	data["Type"], data["Sort"], data["Label"], data["Keyword"] = kind, order, label, keyword
 	data["LatestURL"], data["UpdatedURL"] = link(kind, "latest", label, 1), link(kind, "updated", label, 1)
 	data["Page"], data["Total"] = page, total

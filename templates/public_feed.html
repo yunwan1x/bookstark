@@ -7,24 +7,37 @@
 {{template "head-assets" .}}
 {{if eq .Type "bookmark"}}<link rel="stylesheet" href="/static/css/bookmarks.css?v={{assetVer "/static/css/bookmarks.css"}}">{{end}}
 <link rel="stylesheet" href="/static/css/public-feed.css?v={{assetVer "/static/css/public-feed.css"}}">
+{{if eq .Type "note"}}<link rel="stylesheet" href="/static/css/share-note-reader.css?v={{assetVer "/static/css/share-note-reader.css"}}">{{end}}
 </head>
 <body class="public-feed-body">
 <header class="public-header"><div class="public-header-inner">
- <a class="public-brand" href="/"><i class="fa-solid fa-book-open" aria-hidden="true"></i> BookStark</a>
+ <a class="public-brand" href="/shares"><i class="fa-solid fa-book-open" aria-hidden="true"></i> BookStark</a>
  <nav class="public-nav" aria-label="{{call .T "public.navigation"}}">
-  <a href="/?type=article" {{if eq .Type "article"}}aria-current="page"{{end}}><i class="fa-solid fa-pen-nib" aria-hidden="true"></i> {{call .T "public.articles"}}</a>
-  <a href="/?type=note" {{if eq .Type "note"}}aria-current="page"{{end}}><i class="fa-solid fa-note-sticky" aria-hidden="true"></i> {{call .T "public.notes"}}</a>
-  <a href="/?type=book" {{if eq .Type "book"}}aria-current="page"{{end}}><i class="fa-solid fa-book" aria-hidden="true"></i> {{call .T "public.books"}}</a>
-  <a href="/?type=bookmark" {{if eq .Type "bookmark"}}aria-current="page"{{end}}><i class="fa-solid fa-bookmark" aria-hidden="true"></i> {{call .T "public.bookmarks"}}</a>
+  <a href="{{index .TypeURLs "article"}}" {{if eq .Type "article"}}aria-current="page"{{end}}><i class="fa-solid fa-pen-nib" aria-hidden="true"></i> {{call .T "public.articles"}}</a>
+  <a href="{{index .TypeURLs "note"}}" {{if eq .Type "note"}}aria-current="page"{{end}}><i class="fa-solid fa-note-sticky" aria-hidden="true"></i> {{call .T "public.notes"}}</a>
+  <a href="{{index .TypeURLs "book"}}" {{if eq .Type "book"}}aria-current="page"{{end}}><i class="fa-solid fa-book" aria-hidden="true"></i> {{call .T "public.books"}}</a>
+  <a href="{{index .TypeURLs "bookmark"}}" {{if eq .Type "bookmark"}}aria-current="page"{{end}}><i class="fa-solid fa-bookmark" aria-hidden="true"></i> {{call .T "public.bookmarks"}}</a>
  </nav>
  <button class="row-action public-search-toggle" type="button" aria-label="{{call .T "public.search"}}" aria-controls="publicSearch" aria-expanded="false"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></button>
- <form id="publicSearch" class="public-search" action="/" role="search">
+ <form id="publicSearch" class="public-search" action="/shares" role="search">
   <input type="hidden" name="type" value="{{.Type}}"><input type="hidden" name="sort" value="{{.Sort}}"><input type="hidden" name="label" value="{{.Label}}">
   <input class="dialog-input" name="keyword" value="{{.Keyword}}" placeholder="{{call .T "public.search"}}" aria-label="{{call .T "public.search"}}" maxlength="200">
   <button class="row-action" type="submit" aria-label="{{call .T "public.search"}}"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></button>
  </form>
  <button class="row-action" type="button" onclick="switchLang('{{if eq .Lang "zh"}}en{{else}}zh{{end}}')" aria-label="{{if eq .Lang "zh"}}Switch to English{{else}}切换为中文{{end}}">{{if eq .Lang "zh"}}EN{{else}}中文{{end}}</button>
- <a class="ai-dlg-btn ai-dlg-btn-cancel public-login" href="/login">{{call .T "public.login"}}</a>
+ {{if .Account}}
+ <a class="ai-dlg-btn ai-dlg-btn-cancel public-workspace" href="/home">{{call .T "public.workspace"}}</a>
+ <div class="relative public-account">
+  <button type="button" id="user-menu-trigger" data-click-menu class="row-action" aria-label="{{.Account}}" aria-haspopup="menu" aria-expanded="false" aria-controls="user-menu-dropdown"><i class="fa-solid fa-circle-user" aria-hidden="true"></i><i class="fa-solid fa-chevron-down" aria-hidden="true" id="user-menu-arrow"></i></button>
+  <div id="user-menu-dropdown" class="hidden header-dropdown align-right" role="menu"><div class="header-dropdown-panel">
+   <span class="public-account-name">{{.Account}}</span>
+   <a href="/home" class="header-menu-item" role="menuitem"><i class="fa-solid fa-house menu-icon"></i>{{call .T "public.workspace"}}</a>
+   <a href="/profile" class="header-menu-item" role="menuitem"><i class="fa-solid fa-id-card menu-icon"></i>{{call .T "user.menu.profile"}}</a>
+   {{if .IsAdmin}}<a href="/admin/system" class="header-menu-item" role="menuitem"><i class="fa-solid fa-gear menu-icon"></i>{{call .T "user.menu.system"}}</a>{{end}}
+   <a href="/shares" onclick="logout(event); return false;" class="header-menu-item" role="menuitem"><i class="fa-solid fa-right-from-bracket menu-icon"></i>{{call .T "user.menu.logout"}}</a>
+  </div></div>
+ </div>
+ {{else}}<a class="ai-dlg-btn ai-dlg-btn-cancel public-login" href="{{.LoginURL}}">{{call .T "public.login"}}</a>{{end}}
 </div></header>
 <main class="public-layout" role="main">
  <aside class="public-categories" aria-label="{{call .T "public.categories"}}">
@@ -40,24 +53,37 @@
   {{range .Bookmarks}}<article class="bm-row"><div class="bm-row-content"><div class="bm-row-body">
    <div class="bm-row-top"><a href="{{.URL}}" target="_blank" rel="noopener noreferrer" class="bm-row-title">{{if .Favicon}}<img src="/api/favicon?url={{.Favicon}}" class="bm-row-favicon" loading="lazy" alt="" onerror="this.hidden=true">{{else}}<i class="fa-solid fa-globe bm-row-favicon" aria-hidden="true"></i>{{end}}{{.Title}}</a></div>
    <div class="bm-row-second">{{if .Description}}<span class="bm-row-desc">{{.Description}}</span>{{end}}
-    <div class="bm-row-label-line"><span class="bm-row-labels">{{range .Labels}}<a class="bm-label-badge" href="/?type=bookmark&amp;label={{.}}">{{.}}</a>{{end}}</span><span class="bm-row-account">{{.Account}}</span></div>
+    <div class="bm-row-label-line"><span class="bm-row-labels">{{range .Labels}}<a class="bm-label-badge" href="/shares?type=bookmark&amp;label={{.}}">{{.}}</a>{{end}}</span><span class="bm-row-account">{{.Account}}</span></div>
    </div>
-  </div></div></article>{{else}}<div class="public-empty">{{call .T "public.empty"}}</div>{{end}}
+  </div></div>{{if and $.MemberID (or $.IsAdmin (eq $.MemberID .MemberID))}}<a class="row-action" href="/bookmarks?id={{.BookmarkID}}" aria-label="{{call $.T "public.manage"}}"><i class="fa-solid fa-ellipsis" aria-hidden="true"></i></a>{{end}}</article>{{else}}<div class="public-empty">{{call .T "public.empty"}}</div>{{end}}
   {{else}}
-  {{range .Items}}<article class="public-entry{{if eq .ShareType "book"}} public-book-card{{else if eq .BlogType "note"}} public-note-card{{end}}">
+  {{range .Items}}<article class="public-entry{{if eq .ShareType "book"}} public-book-card{{else if eq .BlogType "note"}} public-note-card sh-note-row{{end}}" data-share-identify="{{.ShareIdentify}}" data-note-key="{{.ShareIdentify}}">
+   {{if or (index $.Management .ShareIdentify) $.IsAdmin}}<details class="public-manage"><summary class="row-action" aria-label="{{call $.T "public.manage"}}"><i class="fa-solid fa-ellipsis" aria-hidden="true"></i></summary><div class="header-dropdown-panel">
+    {{with index $.Management .ShareIdentify}}<a class="header-menu-item" href="{{.EditURL}}"><i class="fa-solid fa-pen menu-icon"></i>{{call $.T "note.action.edit"}}</a>{{end}}
+    {{if $.IsAdmin}}<button type="button" class="header-menu-item" data-public-action="pin" data-type="{{.ShareType}}" data-id="{{.TargetID}}"><i class="fa-solid fa-thumbtack menu-icon"></i>{{if .IsPinned}}{{call $.T "share.unpin.title"}}{{else}}{{call $.T "share.pin.title"}}{{end}}</button>{{end}}
+    {{if index $.Management .ShareIdentify}}<button type="button" class="header-menu-item" data-public-action="unpublish" data-type="{{.ShareType}}" data-id="{{.TargetID}}" data-title="{{.Title}}"><i class="fa-solid fa-eye-slash menu-icon"></i>{{call $.T "public.unpublish"}}</button>{{end}}
+   </div></details>{{end}}
    {{if eq .ShareType "book"}}
    <a class="public-book-cover" href="/shares/{{.ShareIdentify}}" aria-label="{{.Title}}"><i class="fa-solid fa-book-open" aria-hidden="true"></i><span>{{.Title}}</span></a>
    {{end}}
    {{if eq .BlogType "note"}}
    <div class="public-note-author"><i class="fa-regular fa-user" aria-hidden="true"></i><span>{{.Author}}</span><time datetime="{{.ShareTime.Format "2006-01-02"}}">{{.ShareTime.Format "2006-01-02"}}</time></div>
+   {{if not .HasPassword}}<div class="public-note-actions">
+    <button class="row-action" type="button" data-note-action="copy" aria-label="{{call $.T "note.action.copy"}}"><i class="fa-regular fa-copy" aria-hidden="true"></i></button>
+    {{if $.ShareCommentsEnabled}}<button class="row-action" type="button" data-note-action="comments" aria-expanded="false" aria-label="{{call $.T "share_comments.title"}}"><i class="fa-regular fa-comments" aria-hidden="true"></i></button>{{end}}
+    <button class="row-action" type="button" data-note-action="expand" aria-label="{{call $.T "note.action.fullscreen"}}"><i class="fa-solid fa-expand" aria-hidden="true"></i></button>
+   </div>{{end}}
    {{else}}
    <h2><a href="/shares/{{.ShareIdentify}}">{{.Title}}{{if .HasPassword}} <i class="fa-solid fa-lock" aria-label="{{call $.T "public.locked"}}"></i>{{end}}</a></h2>
    {{if ne .ShareType "book"}}<span class="tag-badge public-content-type">{{if eq .DocType "html"}}HTML{{else if eq .DocType "drawing"}}{{call $.T "public.drawing"}}{{else if eq .DocType "markdown"}}Markdown{{else if .DocType}}{{.DocType}}{{else}}Markdown{{end}}</span>{{end}}
    {{end}}
    {{if .HasPassword}}<p class="public-excerpt">{{call $.T "public.locked"}}</p>{{else}}
-   {{if eq .ShareType "book"}}<p class="public-excerpt">{{.Description}}</p>{{else}}<p class="public-excerpt{{if eq .BlogType "note"}} public-note{{end}}">{{.Content}}</p>{{end}}{{end}}
+   {{if eq .ShareType "book"}}<p class="public-excerpt">{{.Description}}</p>{{else if eq .BlogType "note"}}<div class="public-note sh-note-text" data-note-content>{{.Content}}</div>{{else}}<p class="public-excerpt">{{.Content}}</p>{{end}}{{end}}
    <div class="public-meta">{{if ne .BlogType "note"}}<span>{{.Author}}</span><time datetime="{{.ShareTime.Format "2006-01-02"}}">{{.ShareTime.Format "2006-01-02"}}</time>{{end}}{{if not .HasPassword}}{{range .Labels}}<span class="tag-badge">{{.}}</span>{{end}}{{end}}</div>
    {{if eq .ShareType "book"}}<a class="public-read-link" href="/shares/{{.ShareIdentify}}">{{call $.T "public.read_book"}} <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>{{end}}
+   {{if .IsPinned}}<span class="tag-badge public-pinned"><i class="fa-solid fa-thumbtack" aria-hidden="true"></i> {{call $.T "note.badge.pinned"}}</span>{{end}}
+   {{if .HasPassword}}<a class="public-read-link" href="/shares/{{.ShareIdentify}}">{{call $.T "public.unlock"}}</a>{{end}}
+   {{if and (eq .BlogType "note") (not .HasPassword) $.ShareCommentsEnabled}}<section class="share-comments sh-note-comments" data-share-identify="{{.ShareIdentify}}" data-comments-lazy="1" hidden aria-label="{{call $.T "share_comments.title"}}"></section>{{end}}
   </article>{{else}}<div class="public-empty">{{call .T "public.empty"}}</div>{{end}}
   {{end}}
   </div>
@@ -69,13 +95,12 @@
  </aside>
 </main>
 {{template "footer" .}}
-<script>
-const categories=document.getElementById('publicCategories');const narrow=matchMedia('(max-width: 1024px)');
-function adaptCategories(){categories.open=!narrow.matches;}adaptCategories();narrow.addEventListener('change',adaptCategories);
-const searchToggle=document.querySelector('.public-search-toggle'), searchForm=document.getElementById('publicSearch');
-function toggleSearch(open){searchToggle.setAttribute('aria-expanded',String(open));searchForm.classList.toggle('is-open',open);if(open)searchForm.querySelector('[name="keyword"]').focus();}
-searchToggle.addEventListener('click',()=>toggleSearch(searchToggle.getAttribute('aria-expanded')!=='true'));
-searchForm.addEventListener('keydown',e=>{if(e.key==='Escape'){toggleSearch(false);searchToggle.focus();}});
-if(searchForm.querySelector('[name="keyword"]').value) searchForm.classList.add('is-open');
-</script>
+{{if eq .Type "note"}}
+{{template "share-note-reader" .}}
+<script>window.__PUBLIC_NOTES__={{.PublicNotesJSON}};window.__SHARE_COMMENTS_ENABLED__={{.ShareCommentsEnabled}};window.__SHARE_COMMENT_ACCOUNT__={{jsonJS .Account}};window.__SHARE_COMMENT_MAX_LENGTH__={{.ShareCommentMaxLength}};</script>
+<script src="/static/js/marked.min.js?v={{assetVer "/static/js/marked.min.js"}}"></script>
+<script src="/static/js/share-note-reader.js?v={{assetVer "/static/js/share-note-reader.js"}}"></script>
+<script src="/static/js/share-comments.js?v={{assetVer "/static/js/share-comments.js"}}"></script>
+{{end}}
+<script src="/static/js/public-feed.js?v={{assetVer "/static/js/public-feed.js"}}"></script>
 </body></html>

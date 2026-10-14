@@ -1,0 +1,99 @@
+--- a/crates/ui-egui/src/theme.rs
++++ b/crates/ui-egui/src/theme.rs
+@@ -724,6 +724,32 @@
+     install_fonts_with(ctx, crate::cjk_fonts::Sources::system());
+ }
+ 
++type ServedUiFonts = Vec<(String, Arc<FontData>)>;
++
++/// Keep browser-served fallback faces in the context so language/theme changes do not
++/// discard them. These are appended, preserving Inter, named weights and icon fonts.
++pub fn install_served_ui_fonts(ctx: &egui::Context, delivered: &[(String, Vec<u8>)]) {
++    if delivered.is_empty() {
++        return;
++    }
++    let id = egui::Id::new("photocraft-served-ui-fonts");
++    let mut fonts = ctx.data(|d| d.get_temp::<ServedUiFonts>(id)).unwrap_or_default();
++    let mut changed = false;
++    for (family, bytes) in delivered {
++        let name = format!("served-ui-{family}");
++        if bytes.is_empty() || fonts.iter().any(|(existing, _)| existing == &name) {
++            continue;
++        }
++        fonts.push((name, Arc::new(FontData::from_owned(bytes.clone()))));
++        changed = true;
++    }
++    if changed {
++        ctx.data_mut(|d| d.insert_temp(id, fonts));
++        install_fonts(ctx);
++        ctx.request_repaint();
++    }
++}
++
+ /// [`install_fonts`] with the CJK and other-script fallback fonts taken from `cjk` (tests swap the sources).
+ pub fn install_fonts_with(ctx: &egui::Context, cjk: crate::cjk_fonts::Sources) {
+     // egui's default fonts stay last in the stack, for symbols and emoji Inter lacks.
+@@ -755,6 +781,13 @@
+         stack.extend(fallback.iter().cloned());
+         fonts.families.insert(FontFamily::Name(fam.into()), stack);
+     }
++    let served_id = egui::Id::new("photocraft-served-ui-fonts");
++    for (name, data) in ctx.data(|d| d.get_temp::<ServedUiFonts>(served_id)).unwrap_or_default() {
++        fonts.font_data.insert(name.clone(), data);
++        for stack in fonts.families.values_mut() {
++            stack.push(name.clone());
++        }
++    }
+     let size = ui_font_size(ctx);
+     for (name, data) in &mut fonts.font_data {
+         size_ui_font(ctx, name, Arc::make_mut(data));
+@@ -960,6 +993,30 @@
+ mod tests {
+     use super::*;
+ 
++    #[test]
++    fn served_ui_fonts_survive_reset_without_duplicate_or_size_accumulation() {
++        let ctx = egui::Context::default();
++        let delivered = vec![("test-fallback".to_string(), photocraft_text::fonts::INTER_REGULAR.to_vec())];
++        install_fonts(&ctx);
++        install_served_ui_fonts(&ctx, &delivered);
++        let name = "served-ui-test-fallback";
++        for size in [UiFontSize::Small, UiFontSize::Large, UiFontSize::Small] {
++            set_ui_font_size(&ctx, size);
++            install_fonts(&ctx);
++            install_served_ui_fonts(&ctx, &delivered);
++            ctx.run_ui(Default::default(), |_| {}).textures_delta.clear();
++            ctx.run_ui(Default::default(), |_| {}).textures_delta.clear();
++            let fonts = ctx.fonts(|f| f.definitions().clone());
++            assert!(fonts.font_data.contains_key(name));
++            for stack in fonts.families.values() {
++                assert_eq!(stack.iter().filter(|n| n.as_str() == name).count(), 1);
++                assert_eq!(stack.last().map(String::as_str), Some(name));
++                assert_ne!(stack.first().map(String::as_str), Some(name));
++            }
++            assert!((fonts.font_data[name].tweak.scale - font_scale(size)).abs() < 0.001);
++        }
++    }
++
+     fn text_sizes(ctx: &egui::Context) -> Vec<egui::Vec2> {
+         let mut sizes = Vec::new();
+         // The plugin queues changed fonts at the end of a pass; egui applies them next pass.
+--- a/apps/photocraft-web/src/web.rs
++++ b/apps/photocraft-web/src/web.rs
+@@ -252,6 +252,8 @@
+     /// Fetches the served families asked for (picked in a font menu, or needed by a layout) and
+     /// installs the files that arrived.
+     fn serve_fonts(&mut self, ctx: &egui::Context) {
++        // The chosen interface language may differ from navigator.languages.
++        served_fonts::request_for_languages([i18n::current().code()]);
+         let requested = served_fonts::take_requests();
+         let (fetch, arrived) = {
+             let mut s = self.served.lock().unwrap_or_else(|e| e.into_inner());
+@@ -278,6 +280,7 @@
+                 }
+             });
+         }
++        photocraft_ui_egui::theme::install_served_ui_fonts(ctx, &arrived);
+         served_fonts::install(&mut self.app, arrived);
+     }
+ }

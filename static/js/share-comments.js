@@ -290,7 +290,10 @@
   }
 
   function deleteComment(root, commentID) {
-    if (!commentID || !window.confirm(t('share_comments.delete_confirm'))) return;
+    if (!commentID) return;
+    var row = root.querySelector('article[data-comment-id="' + CSS.escape(String(commentID)) + '"]');
+    var content = row && row.querySelector('.share-comment-content');
+    if (!window.confirm(formatDeleteConfirmation(t('share_comments.delete_confirm'), content && content.textContent, commentID, true))) return;
     apiJSON('/api/share-comments/' + encodeURIComponent(commentID) + '?identify=' + encodeURIComponent(rootIdentify(root)), {
       method: 'DELETE'
     }).then(function() {

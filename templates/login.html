@@ -60,7 +60,7 @@
                 if (window.BookStarkPWA && window.BookStarkPWA.clearPageCache) {
                     await window.BookStarkPWA.clearPageCache().catch(function() {});
                 }
-                window.location.href = '/';
+                window.location.href = {{jsonJS .LoginReturn}};
             } else {
                 errEl.textContent = data.message || window.__('auth.login.error.default');
                 errEl.classList.remove('hidden');

@@ -4794,7 +4794,8 @@
     }
 
     async function deleteDoc(docId) {
-      var ok = await BookStarkEditor.confirm2('确定删除此文档？');
+      var doc = findNodeById(docTree, docId);
+      var ok = await BookStarkEditor.confirm2(formatDeleteConfirmation(window.__('editor.delete_doc.confirm'), doc && doc.document_name, docId));
       if (!ok) return;
       var res = await csrfFetch('/api/docs/' + docId, { method: 'DELETE' });
       if (res.ok) {

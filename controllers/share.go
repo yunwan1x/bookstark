@@ -18,42 +18,7 @@ import (
 
 // SharesPage renders the public shares list page
 func SharesPage(c *gin.Context) {
-	if middleware.GetMemberID(c) <= 0 {
-		PublicFeedPage(c)
-		return
-	}
-	friendLinks, err := models.ListEnabledFriendLinks()
-	if err != nil {
-		log.Printf("SharesPage: ListEnabledFriendLinks failed: %v", err)
-	}
-
-	account := ""
-	isAdmin := false
-	tokenStr, _ := c.Cookie("token")
-	if tokenStr != "" {
-		if claims, err := middleware.ParseToken(tokenStr); err == nil {
-			account = claims.Account
-			isAdmin = claims.Role == 0
-		}
-	}
-
-	lang := middleware.GetLang(c)
-	t := i18n.MakeT(lang)
-	bundleJSON, _ := json.Marshal(i18n.JSBundle(lang))
-
-	c.HTML(http.StatusOK, "shares.html", gin.H{
-		"Account":               account,
-		"IsAdmin":               isAdmin,
-		"Nav":                   "shares",
-		"FriendLinks":           friendLinks,
-		"CSRFToken":             middleware.GetCSRFToken(c),
-		"Lang":                  lang,
-		"T":                     t,
-		"JSBundle":              template.JS(bundleJSON),
-		"MemberID":              middleware.GetMemberID(c),
-		"ShareCommentsEnabled":  models.ShareCommentsEnabled(),
-		"ShareCommentMaxLength": models.ShareCommentMaxLength(),
-	})
+	PublicFeedPage(c)
 }
 
 // ShareViewPage renders a single share content preview
@@ -227,26 +192,48 @@ func PublishShare(c *gin.Context) {
 // UnpublishShare removes a share (auth required)
 func UnpublishShare(c *gin.Context) {
 	shareType := c.Param("type")
+	if shareType != "blog" && shareType != "book" && shareType != "document" {
+		apiError(c, http.StatusBadRequest, "不支持的分享类型")
+		return
+	}
 	id, ok := middleware.ParseID(c, "id")
 	if !ok {
 		apiError(c, http.StatusBadRequest, "无效ID")
 		return
 	}
 
-	// Verify ownership
-	if !isAdmin(c) {
-		shareMemberID, err := models.GetShareMemberID(shareType, id)
-		if err != nil {
-			apiError(c, http.StatusNotFound, "分享不存在")
-			return
+	// Public blogs need not have an explicit share row; authorize against the resource.
+	var owner int64
+	var err error
+	if shareType == "blog" {
+		var blog *models.Blog
+		blog, err = models.GetBlogByID(id)
+		if err == nil {
+			owner = blog.MemberID
 		}
-		if shareMemberID != middleware.GetMemberID(c) {
-			apiError(c, http.StatusForbidden, "无权操作")
-			return
+	} else if shareType == "book" {
+		var book *models.Book
+		book, err = models.GetBookByID(id)
+		if err == nil {
+			owner = book.MemberID
+		}
+	} else {
+		var doc *models.Document
+		doc, err = models.GetDocumentByID(id)
+		if err == nil {
+			owner = doc.MemberID
 		}
 	}
+	if err != nil {
+		apiError(c, http.StatusNotFound, "分享不存在")
+		return
+	}
+	if !checkOwnership(c, owner) {
+		apiError(c, http.StatusForbidden, "无权操作")
+		return
+	}
 
-	if err := models.DeleteShare(shareType, id); err != nil {
+	if err := models.UnpublishPublicShare(shareType, id); err != nil {
 		apiError(c, http.StatusInternalServerError, "撤回失败")
 		return
 	}

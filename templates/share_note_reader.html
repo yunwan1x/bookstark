@@ -1,0 +1,39 @@
+{{define "share-note-reader"}}
+    <div class="editor-overlay note-viewer-overlay" id="shareNoteViewerOverlay" role="dialog" aria-modal="true" aria-labelledby="shareNoteViewerTitle" onclick="if(event.target===this)closeShareNoteViewer()">
+        <div class="note-viewer-shell">
+            <button class="note-viewer-nav note-viewer-prev" id="shareNoteViewerPrevBtn" type="button" onclick="showAdjacentShareNoteViewer(-1)" aria-label="{{call .T "note.viewer.previous"}}" title="{{call .T "note.viewer.previous"}}"><i class="fa-solid fa-chevron-left"></i></button>
+            <button class="note-viewer-nav note-viewer-next" id="shareNoteViewerNextBtn" type="button" onclick="showAdjacentShareNoteViewer(1)" aria-label="{{call .T "note.viewer.next"}}" title="{{call .T "note.viewer.next"}}"><i class="fa-solid fa-chevron-right"></i></button>
+            <div class="note-viewer-stage">
+                <article class="note-viewer-panel">
+                    <header class="note-viewer-topbar">
+                        <div class="note-viewer-heading">
+                            <span class="note-viewer-kicker">{{call .T "share.type.note"}}</span>
+                            <h2 class="note-viewer-title" id="shareNoteViewerTitle">{{call .T "share.type.note"}}</h2>
+                            <div class="note-viewer-meta" id="shareNoteViewerMeta"></div>
+                        </div>
+                        <div class="note-viewer-actions">
+                            <button class="note-viewer-icon-btn" id="shareNoteViewerCopyBtn" type="button" onclick="copyShareNoteViewerContent()" aria-label="{{call .T "note.action.copy"}}" title="{{call .T "note.action.copy"}}"><i class="fa-regular fa-copy"></i></button>
+                            <button class="note-viewer-icon-btn note-viewer-close" type="button" onclick="closeShareNoteViewer()" aria-label="{{call .T "note.viewer.close"}}" title="{{call .T "note.viewer.close"}}"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    </header>
+                    <div class="sh-note-text note-viewer-content" id="shareNoteViewerContent"></div>
+                </article>
+            </div>
+        </div>
+    </div>
+
+    <div class="editor-overlay note-image-lightbox-overlay" id="shareNoteImageLightboxOverlay" role="dialog" aria-modal="true" aria-label="{{call .T "note.compose.image"}}" onclick="if(event.target===this)closeShareImageLightbox()">
+        <div class="note-image-lightbox-shell">
+            <button class="note-image-lightbox-close" id="shareNoteImageLightboxCloseBtn" type="button" onclick="closeShareImageLightbox()" aria-label="{{call .T "note.viewer.close"}}" title="{{call .T "note.viewer.close"}}"><i class="fa-solid fa-xmark"></i></button>
+            <button class="note-image-lightbox-nav note-image-lightbox-prev" id="shareNoteImageLightboxPrevBtn" type="button" onclick="showAdjacentShareImageLightbox(-1)" aria-label="{{call .T "note.viewer.previous"}}" title="{{call .T "note.viewer.previous"}}"><i class="fa-solid fa-chevron-left"></i></button>
+            <figure class="note-image-lightbox-figure">
+                <img class="note-image-lightbox-img" id="shareNoteImageLightboxImg" alt="">
+                <figcaption class="note-image-lightbox-caption" id="shareNoteImageLightboxCaption"></figcaption>
+            </figure>
+            <button class="note-image-lightbox-nav note-image-lightbox-next" id="shareNoteImageLightboxNextBtn" type="button" onclick="showAdjacentShareImageLightbox(1)" aria-label="{{call .T "note.viewer.next"}}" title="{{call .T "note.viewer.next"}}"><i class="fa-solid fa-chevron-right"></i></button>
+            <div class="note-image-lightbox-counter" id="shareNoteImageLightboxCounter">0 / 0</div>
+        </div>
+    </div>
+
+
+{{end}}

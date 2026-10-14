@@ -375,6 +375,7 @@
     function renderTokenRow(t){
       const div=document.createElement('div');
       div.className='flex items-center gap-3 p-3 bg-slate-50 rounded-lg';
+      div.dataset.tokenName=t.name||'default';
       const masked=t.masked_token||'****';
       div.innerHTML=`
         <div class="flex-1 min-w-0">
@@ -382,7 +383,7 @@
           <div class="text-xs text-slate-500 font-mono mt-0.5" data-token-id="${t.token_id}" title="${window.__('profile.api_token.click_copy')}" style="cursor:pointer">${escHtml(masked)}</div>
         </div>
         <div class="text-xs text-slate-500">${new Date(t.create_time).toLocaleDateString()}</div>
-        <button type="button" class="px-2 py-1 text-xs text-red-600 bg-red-50 rounded hover:bg-red-100" onclick="deleteApiToken(${t.token_id})">${window.__('profile.api_token.delete')}</button>`;
+        <button type="button" class="px-2 py-1 text-xs text-red-600 bg-red-50 rounded hover:bg-red-100" onclick="deleteApiToken(${t.token_id}, this)">${window.__('profile.api_token.delete')}</button>`;
       return div;
     }
     function copyToken(btn){var token=btn.dataset.token;navigator.clipboard.writeText(token).then(()=>{btn.textContent=window.__('profile.api_token.copied');setTimeout(()=>btn.textContent=window.__('profile.api_token.copy'),1500);});}
@@ -412,8 +413,9 @@
         BookStarkErrors.field('api-token-error', err, window.__('profile.api_token.create_error'));
       }
     }
-    async function deleteApiToken(id){
-      const ok=await BSDialog.confirm2(window.__('profile.api_token.delete_confirm'));
+    async function deleteApiToken(id, btn){
+      const row=btn && btn.closest('[data-token-name]');
+      const ok=await BSDialog.confirm2(formatDeleteConfirmation(window.__('profile.api_token.delete_confirm'), row && row.dataset.tokenName, id));
       if(!ok)return;
       try {
         const r=await csrfFetch('/api/api-tokens/'+id,{method:'DELETE',lockKey:'profile:api-token:delete:'+id});

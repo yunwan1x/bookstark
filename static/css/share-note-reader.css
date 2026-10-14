@@ -1,0 +1,59 @@
+        /* Note fullscreen viewer + image lightbox, matching the notes page. */
+        #shareNoteViewerOverlay.editor-overlay,
+        #shareNoteImageLightboxOverlay.editor-overlay { display: none; position: fixed; inset: 0; z-index: 100; background: color-mix(in srgb, var(--color-text) 70%, transparent); }
+        #shareNoteViewerOverlay.editor-overlay.active,
+        #shareNoteImageLightboxOverlay.editor-overlay.active { display: block; }
+        #shareNoteViewerOverlay.note-viewer-overlay { background: color-mix(in srgb, var(--color-text) 70%, transparent); backdrop-filter: blur(12px); }
+        .note-viewer-shell { position: relative; width: 100vw; height: 100vh; height: 100dvh; color: var(--color-text); overflow: hidden; }
+        .note-viewer-stage { height: 100%; overflow-y: auto; padding: 32px 88px; scrollbar-width: none; -ms-overflow-style: none; display: flex; align-items: center; justify-content: center; }
+        .note-viewer-stage::-webkit-scrollbar { display: none; }
+        .note-viewer-panel { width: min(920px, 100%); height: calc(100vh - 64px); height: calc(100dvh - 64px); max-height: 720px; display: flex; flex-direction: column; overflow: hidden; background: var(--color-bg-card); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--surface-shadow-hover); }
+        .note-viewer-topbar { flex: 0 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 18px; padding: 18px 20px 14px; border-bottom: 1px solid var(--color-border); background: color-mix(in srgb, var(--color-bg-card) 94%, transparent); }
+        .note-viewer-heading { min-width: 0; }
+        .note-viewer-kicker { display: block; margin-bottom: 5px; color: var(--color-text-muted); font-size: 12px; font-weight: 600; line-height: 1.2; }
+        .note-viewer-title { margin: 0; color: var(--color-text); font-size: 19px; font-weight: 700; line-height: 1.35; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .note-viewer-meta { min-height: 18px; margin-top: 5px; color: var(--color-text-secondary); font-size: 12px; line-height: 1.45; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .note-viewer-actions { display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px; }
+        .note-viewer-icon-btn,
+        .note-viewer-nav { width: 38px; height: 38px; border: 1px solid var(--color-border); border-radius: var(--radius-full); background: var(--color-bg-card); color: var(--color-text-secondary); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--surface-shadow-hover); transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.16s ease, opacity 0.16s ease; }
+        .note-viewer-icon-btn:hover,
+        .note-viewer-nav:hover { background: var(--color-gray-100); border-color: var(--color-gray-200); color: var(--color-primary); transform: translateY(-1px); }
+        .note-viewer-nav { position: fixed; z-index: 2; top: 50%; margin-top: -22px; width: 44px; height: 44px; background: color-mix(in srgb, var(--color-text) 70%, transparent); }
+        .note-viewer-prev { left: max(18px, env(safe-area-inset-left)); }
+        .note-viewer-next { right: max(18px, env(safe-area-inset-right)); }
+        .note-viewer-nav:disabled { opacity: 0.35; cursor: default; transform: none; pointer-events: none; }
+        .note-viewer-content { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 22px 24px 28px; color: var(--color-text); font-size: 16px; line-height: 1.86; scrollbar-width: thin; }
+        #shareNoteImageLightboxOverlay.note-image-lightbox-overlay { background: color-mix(in srgb, var(--color-text) 70%, transparent); backdrop-filter: blur(14px); }
+        .note-image-lightbox-shell { position: relative; width: 100vw; height: 100vh; height: 100dvh; display: flex; align-items: center; justify-content: center; overflow: hidden; color: var(--color-white); }
+        .note-image-lightbox-figure { margin: 0; width: min(1180px, calc(100vw - 176px)); height: calc(100vh - 112px); height: calc(100dvh - 112px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+        .note-image-lightbox-img { display: block; max-width: 100%; max-height: 100%; object-fit: contain; border-radius: var(--radius-lg); box-shadow: var(--surface-shadow-hover); }
+        .note-image-lightbox-caption { min-height: 20px; max-width: min(760px, 100%); color: color-mix(in srgb, var(--color-text) 70%, transparent); font-size: 13px; line-height: 1.5; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .note-image-lightbox-close,
+        .note-image-lightbox-nav { position: fixed; z-index: 2; width: 44px; height: 44px; border: 1px solid color-mix(in srgb, var(--color-text) 70%, transparent); border-radius: var(--radius-full); background: color-mix(in srgb, var(--color-text) 70%, transparent); color: var(--color-white); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--surface-shadow-hover); transition: background 0.16s ease, transform 0.16s ease, opacity 0.16s ease; }
+        .note-image-lightbox-close:hover,
+        .note-image-lightbox-nav:hover { background: color-mix(in srgb, var(--color-text) 70%, transparent); transform: translateY(-1px); }
+        .note-image-lightbox-close { top: max(18px, env(safe-area-inset-top)); right: max(18px, env(safe-area-inset-right)); }
+        .note-image-lightbox-nav { top: 50%; margin-top: -22px; }
+        .note-image-lightbox-prev { left: max(18px, env(safe-area-inset-left)); }
+        .note-image-lightbox-next { right: max(18px, env(safe-area-inset-right)); }
+        .note-image-lightbox-nav:disabled { opacity: 0.28; cursor: default; transform: none; pointer-events: none; }
+        .note-image-lightbox-counter { position: fixed; left: 50%; bottom: max(18px, env(safe-area-inset-bottom)); transform: translateX(-50%); min-width: 54px; padding: 5px 10px; border-radius: var(--radius-full); background: color-mix(in srgb, var(--color-text) 70%, transparent); color: color-mix(in srgb, var(--color-text) 70%, transparent); font-size: 12px; text-align: center; }
+
+@media (max-width: 640px) {
+ .note-viewer-stage { padding: var(--spacing-sm); }
+ .note-viewer-panel { width: 100%; height: calc(100dvh - 16px); max-height: none; }
+ .note-viewer-topbar, .note-viewer-content { padding: var(--spacing-md); }
+ .note-viewer-nav { top: auto; bottom: var(--spacing-md); }
+ .note-image-lightbox-figure { width: calc(100vw - 24px); height: calc(100dvh - 120px); }
+}
+@media (prefers-reduced-motion: reduce) {
+ .note-viewer-icon-btn, .note-viewer-nav, .note-image-lightbox-close, .note-image-lightbox-nav { transition: none; }
+}
+
+/* Backdrop follows the active theme while controls keep surface/text contrast. */
+#shareNoteViewerOverlay.note-viewer-overlay,
+#shareNoteImageLightboxOverlay.note-image-lightbox-overlay { background: color-mix(in srgb, var(--color-bg) 88%, transparent); }
+.note-image-lightbox-close, .note-image-lightbox-nav,
+.note-image-lightbox-counter { background: var(--color-bg-card); color: var(--color-text); border-color: var(--color-border); }
+.note-image-lightbox-caption { color: var(--color-text); }
+.note-viewer-nav { background: var(--color-bg-card); color: var(--color-text); }

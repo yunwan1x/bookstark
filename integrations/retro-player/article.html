@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>复古游戏机 · Retro Player</title>
+<link rel="stylesheet" href="/static/css/variables.css">
+<style>
+:root{color-scheme:dark;--retro-bg:var(--color-gray-950,black);--retro-panel:color-mix(in srgb,var(--color-gray-900) 94%,transparent);--retro-text:var(--color-gray-100);--retro-muted:var(--color-gray-400);--retro-line:var(--color-gray-600);--retro-accent:paleturquoise;--retro-danger:var(--color-danger);--retro-gap:var(--spacing-sm,8px);--retro-pad:var(--spacing-lg,16px)}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--retro-bg);color:var(--retro-text);font:13px/1.5 system-ui,sans-serif}button,select,input{font:inherit;color:inherit}button,select{min-height:32px;border:1px solid var(--retro-line);border-radius:var(--radius-sm,4px);background:transparent;padding:var(--spacing-xs,4px) var(--retro-gap)}button,summary,select{cursor:pointer}button:hover,summary:hover{background:color-mix(in srgb,var(--retro-accent) 9%,transparent);border-color:var(--retro-accent)}button:disabled{opacity:.35;cursor:not-allowed}button:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible,canvas:focus-visible{outline:2px solid var(--retro-accent);outline-offset:2px}option{background:var(--color-gray-900);color:var(--retro-text)}button.primary{border-color:var(--retro-accent);color:var(--retro-accent)}button.danger{color:var(--retro-danger)}[hidden]{display:none!important}a{color:var(--retro-accent)}h1,h2,p{margin:0}.page-title{font-size:18px;font-weight:600}.hint{font-size:12px;color:var(--retro-muted)}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}.tools{display:flex;gap:var(--retro-gap);align-items:center;flex-wrap:wrap}
+#player{position:relative;width:100%;height:100dvh;overflow:hidden;background:var(--retro-bg)}
+#player:fullscreen,#player.immersive{position:fixed;inset:0;width:100%;height:100dvh;z-index:1000}
+#stage{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--retro-bg)}
+#stage canvas{display:block;flex:none;width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;object-fit:contain;image-rendering:pixelated;touch-action:none}
+#empty{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 45%,color-mix(in srgb,var(--retro-accent) 9%,transparent),transparent 65%);opacity:.6}
+#empty::after{content:"";position:absolute;inset:0;background-image:linear-gradient(color-mix(in srgb,var(--retro-line) 8%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--retro-line) 8%,transparent) 1px,transparent 1px);background-size:32px 32px}
+#setup{position:absolute;inset:auto;top:50%;left:50%;transform:translate(-50%,-50%);width:min(460px,calc(100% - 32px));max-height:calc(100% - 80px);overflow:auto;z-index:4;padding:var(--spacing-xl,24px);background:var(--retro-panel);border:1px solid var(--retro-line);box-shadow:4px 4px 0 color-mix(in srgb,var(--retro-line) 25%,transparent)}
+#setup header{display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--retro-pad)}.eyebrow{font:11px ui-monospace,monospace;letter-spacing:.15em;color:var(--retro-accent);margin-bottom:var(--retro-gap)}
+#setup .field{display:grid;gap:var(--retro-gap);margin-bottom:var(--retro-pad)}#setup input{width:100%;min-width:0;font-size:12px}#setup input::file-selector-button{background:var(--color-gray-800);color:var(--retro-text);border:1px solid var(--retro-line);padding:var(--retro-gap);margin-right:var(--retro-gap)}#setup details{margin-bottom:var(--retro-pad)}#setup #start{flex:1}.playing #setup{display:none}#core-size{font:11px ui-monospace,monospace}
+#game-menu{position:absolute;right:max(var(--retro-gap),env(safe-area-inset-right));top:max(var(--retro-gap),env(safe-area-inset-top));z-index:10}#game-menu>summary{list-style:none;display:grid;place-items:center;margin-left:auto;width:32px;height:32px;border:1px solid var(--retro-line);border-radius:var(--radius-sm,4px);background:var(--retro-panel);color:var(--retro-accent);font:20px/1 ui-monospace,monospace;opacity:.45;transition:opacity .15s ease}summary::-webkit-details-marker{display:none}#game-menu>summary:hover,#game-menu>summary:focus-visible,#game-menu[open]>summary{opacity:1}.playing:not(.ui-visible) #game-menu:not([open])>summary{opacity:.24}
+#menu-items{position:absolute;top:40px;right:0;width:min(360px,calc(100vw - 16px));max-height:calc(100dvh - 64px);display:flex;flex-direction:column;overflow:hidden;background:var(--retro-panel);border:1px solid var(--retro-line);backdrop-filter:blur(12px);box-shadow:4px 4px 0 color-mix(in srgb,var(--retro-bg) 65%,transparent)}
+.menu-heading{display:flex;align-items:center;justify-content:space-between;gap:var(--retro-gap);padding:var(--retro-gap) var(--retro-pad);border-bottom:1px solid var(--retro-line)}.menu-heading strong{font-size:13px}.menu-heading button{min-height:28px;border:0;padding:0 var(--retro-gap);color:var(--retro-accent)}#game-name{font:10px ui-monospace,monospace;color:var(--retro-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:230px}
+.menu-scroll{padding:var(--retro-pad);overflow:auto;min-height:0;scrollbar-width:thin;scrollbar-color:var(--retro-line) transparent}#menu-home{display:grid;grid-template-columns:1fr 1fr;gap:var(--retro-gap);margin-bottom:var(--retro-pad)}#menu-home button{text-align:left}#controller-settings>summary,.help>summary{list-style:none;padding:var(--retro-gap) 0;color:var(--retro-accent);font-weight:600}#controller-settings>summary::before,.help>summary::before{content:"+ ";font-family:monospace}#controller-settings[open]>summary::before,.help[open]>summary::before{content:"− "}
+#menu-items:has(#controller-settings[open]) #menu-home,#menu-items:has(#controller-settings[open]) .help,#menu-items:has(#controller-settings[open]) #display-options{display:none}
+#player-tabs{display:grid;grid-template-columns:repeat(4,1fr);margin:var(--retro-gap) 0 var(--retro-pad);border-bottom:1px solid var(--retro-line)}#player-tabs button{border:0;border-bottom:2px solid transparent;border-radius:0;font:12px ui-monospace,monospace}#player-tabs button[aria-selected=true]{color:var(--retro-accent);border-bottom-color:var(--retro-accent)}
+#controller-settings select{width:100%;min-width:0;margin-top:var(--spacing-xs,4px)}#controller-info{margin:var(--retro-gap) 0}
+#binding-grid{display:grid;grid-template-columns:minmax(0,.65fr) repeat(2,minmax(0,1fr));align-items:center;gap:var(--spacing-xs,4px);font-size:12px}#binding-grid strong{color:var(--retro-muted);font-weight:400}#binding-grid button{padding:var(--spacing-xs,4px);min-width:0;overflow-wrap:anywhere;font:11px ui-monospace,monospace;border-color:color-mix(in srgb,var(--retro-line) 55%,transparent)}#binding-grid button[aria-pressed=true]{outline:1px solid var(--retro-accent);color:var(--retro-accent)}#binding-status{min-height:18px;margin-top:var(--retro-gap);font-size:11px;color:var(--retro-accent)}.control-actions{display:flex;gap:var(--retro-gap);margin-top:var(--retro-gap)}.control-actions button{flex:1}
+#display-options{display:grid;grid-template-columns:1fr 1fr;gap:var(--retro-gap);margin-top:var(--retro-pad)}#display-options label{display:grid;gap:var(--spacing-xs,4px)}.help{margin-top:var(--retro-gap);font-size:12px}.help ul{padding-left:var(--retro-pad)}.help li{margin-bottom:var(--retro-gap)}
+.menu-footer{display:flex;align-items:center;gap:var(--retro-gap);padding:var(--retro-gap);border-top:1px solid var(--retro-line);flex:none}.menu-footer button{flex:1;border:0;font-size:12px}.menu-footer select{width:64px;border:0;font-size:11px;padding:0}
+#status{position:absolute;z-index:8;bottom:max(var(--retro-pad),env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);max-width:90%;padding:var(--retro-gap) var(--retro-pad);background:var(--retro-panel);border:1px solid var(--retro-line);font-size:12px;overflow-wrap:anywhere}#status[data-quiet=true]{display:none}#progress{position:absolute;top:0;left:0;width:100%;height:3px;z-index:12;accent-color:var(--retro-accent)}
+#pad-zone{display:none;position:absolute;bottom:max(var(--retro-gap),env(safe-area-inset-bottom));left:var(--retro-gap);right:var(--retro-gap);z-index:3;pointer-events:none}.playing.pads-on #pad-zone{display:block}.controller{display:flex;justify-content:space-between;align-items:end;gap:var(--retro-gap);padding-bottom:40px}.dpad{display:grid;grid-template-columns:repeat(3,40px);grid-template-rows:repeat(3,40px);gap:var(--spacing-xs,4px)}.dpad [data-key=up]{grid-area:1/2}.dpad [data-key=left]{grid-area:2/1}.dpad [data-key=down]{grid-area:3/2}.dpad [data-key=right]{grid-area:2/3}.actions{display:grid;grid-template-columns:repeat(3,40px);gap:var(--retro-gap)}#pad-zone button{pointer-events:auto;touch-action:none;user-select:none;height:40px;padding:0;opacity:.48;background:var(--retro-panel);font:12px ui-monospace,monospace}#pad-zone button.held{opacity:1;color:var(--retro-accent);border-color:var(--retro-accent)}.pad-meta{position:absolute;bottom:0;left:50%;transform:translateX(-50%);display:flex;gap:var(--retro-gap);white-space:nowrap}.pad-meta button{padding:0 var(--retro-gap)!important}
+@media(pointer:coarse){#game-menu>summary{width:40px;height:40px;background:transparent;border-color:transparent;font-size:18px}#menu-items{top:44px;max-height:calc(100dvh - 72px)}}
+@media(max-width:640px){#setup{padding:var(--retro-pad)}#menu-items{width:min(340px,calc(100vw - 16px))}.menu-scroll{padding:var(--retro-gap) var(--retro-pad)}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+.binding-pair{display:grid;gap:var(--spacing-xs,4px);min-width:0}#binding-grid .binding-pair button{font-size:10px;padding:0;min-height:32px}
+</style>
+<style>
+#setup{width:min(1000px,calc(100% - 32px));max-height:calc(100% - 64px)}
+.library-toolbar{margin-bottom:var(--retro-gap)}.library-toolbar input{flex:1;min-width:140px!important;width:auto!important}
+#setup input:not([type=file]){background:var(--retro-bg);border:1px solid var(--retro-line);padding:var(--retro-gap);border-radius:var(--radius-sm)}
+.library-path{margin:var(--retro-gap) 0}.library-path span{overflow-wrap:anywhere;min-width:0;flex:1;font:12px ui-monospace,monospace;color:var(--retro-muted)}
+.library-columns{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);border:1px solid var(--retro-line);margin-bottom:var(--retro-pad)}
+#rom-list{height:min(42dvh,380px);min-height:160px;overflow:auto;padding:var(--retro-gap)}
+.rom-row{display:flex;align-items:center;width:100%;gap:var(--retro-gap);text-align:left;border:0;border-bottom:1px solid color-mix(in srgb,var(--retro-line) 30%,transparent);border-radius:0;padding:var(--retro-gap);min-height:48px}
+.rom-row span:first-child{flex:1;overflow-wrap:anywhere}.rom-row small{color:var(--retro-muted);white-space:nowrap}.rom-row[aria-current=true]{color:var(--retro-accent);background:color-mix(in srgb,var(--retro-accent) 10%,transparent)}
+#rom-detail{padding:var(--retro-pad);border-left:1px solid var(--retro-line);display:flex;flex-direction:column;gap:var(--retro-pad);overflow-wrap:anywhere}#rom-detail .tools{margin-top:auto}#rom-detail button{font-size:12px}#rom-progress{width:100%;accent-color:var(--retro-accent)}
+#dav-settings{border:1px solid var(--retro-line);padding:var(--retro-pad);margin-bottom:var(--retro-pad);display:grid;grid-template-columns:120px minmax(0,1fr);gap:var(--retro-gap);align-items:center}#dav-settings p,#dav-settings .tools{grid-column:1/-1}
+@media(max-width:640px){#setup{width:calc(100% - 16px);max-height:calc(100% - 56px);padding:var(--retro-gap)}.library-columns{grid-template-columns:1fr}#rom-list{height:26dvh}#rom-detail{border-left:0;border-top:1px solid var(--retro-line);gap:var(--retro-gap)}#dav-settings{grid-template-columns:1fr}#rom-detail h2{font-size:14px}.library-toolbar{gap:var(--spacing-xs)}.library-toolbar button{font-size:11px}.library-toolbar input{flex-basis:100%}#setup header{margin-bottom:var(--retro-gap)}}
+</style>
+</head>
+<body><main id="player" role="main">
+<div id="stage"><div id="empty"></div><canvas id="canvas" tabindex="0" aria-label="Game screen" hidden></canvas></div>
+<section id="setup">
+<p class="eyebrow">RETRO PLAYER</p>
+<header><h1 class="page-title" data-t="title"></h1><span id="core-size" class="hint"></span></header>
+<select id="platform" hidden aria-label="Core"><option value="fceumm">FC / NES</option><option value="gambatte">GB / GBC</option><option value="mgba">GBA</option><option value="snes9x">SFC / SNES</option><option value="genesis_plus_gx">MD / Mega Drive</option><option value="pcsx_rearmed">PS1</option><option value="mame2003_plus">Arcade · MAME 2003 Plus</option><option value="fbneo">Arcade · FBNeo</option></select>
+<div class="tools library-toolbar"><input id="rom-search" type="search" aria-label="Search ROM"><button id="public-games" data-t="publicLibrary"></button><button id="local-view" data-t="localLibrary"></button><button id="refresh-library" data-t="refreshLibrary"></button><button id="open-dav" data-t="davSettings"></button><button id="import-rom" data-t="importRom"></button><input id="rom" type="file" multiple hidden></div>
+<form id="dav-settings" hidden>
+<label for="dav-url" data-t="davURL"></label><input id="dav-url" type="url" required placeholder="https://example.com/dav/roms/" autocomplete="off">
+<label for="dav-user" data-t="davUser"></label><input id="dav-user" autocomplete="off">
+<label for="dav-password" data-t="davPassword"></label><input id="dav-password" type="password" autocomplete="off">
+<label for="arcade-core" data-t="arcadeDefault"></label><select id="arcade-core"><option value="mame2003_plus">MAME 2003 Plus</option><option value="fbneo">FBNeo</option></select>
+<p class="hint" data-t="davPrivacy"></p><div class="tools"><button type="submit" class="primary" data-t="connectDav"></button><button type="button" id="close-dav" data-t="doneControls"></button></div>
+</form>
+<div class="tools library-path"><button id="rom-up" aria-label="Parent folder">↑</button><span id="rom-path"></span></div>
+<div class="library-columns"><div id="rom-list" role="list" aria-label="ROM library"></div><aside id="rom-detail"><p class="eyebrow">GAME LIBRARY</p><h2 id="selected-rom" class="page-title"></h2><p id="rom-meta" class="hint"></p><p id="library-status" role="status" aria-live="polite"></p><progress id="rom-progress" hidden></progress><div class="tools"><button id="fetch-rom" class="primary" data-t="downloadRom"></button><button id="cancel-rom" hidden data-t="cancelBind"></button><button id="delete-rom" class="danger" data-t="deleteLocal"></button></div></aside></div>
+<details><summary data-t="bios"></summary><div class="field"><label for="bios" class="sr-only" data-t="bios"></label><input id="bios" type="file" multiple></div></details>
+<div class="tools"><button id="start" class="primary" data-t="start"></button><button id="setup-controls" data-t="controls"></button></div>
+<p id="keyboard-hint" class="hint"></p>
+</section>
+<details id="game-menu"><summary aria-label="菜单" title="Menu">☰</summary>
+<div id="menu-items">
+<div class="menu-heading"><div><strong data-t="menu"></strong><div id="game-name"></div></div><button id="close-menu" aria-label="Close menu">×</button></div>
+<div class="menu-scroll">
+<div id="menu-home"><button id="pause" data-t="pause" disabled></button><button id="stop" class="danger" data-t="stop" disabled></button><button id="save" data-t="save" disabled></button><button id="load" data-t="load" disabled></button></div>
+<input id="state" type="file" accept=".state" hidden>
+<details id="controller-settings"><summary data-t="controls"></summary>
+<div id="player-tabs" role="tablist" aria-label="Players"></div>
+<label for="controller-device" data-t="device"></label><select id="controller-device"></select><p id="controller-info" class="hint"></p>
+<div id="binding-grid"></div><p id="binding-status" role="status" aria-live="polite"></p>
+<p class="hint" data-t="controlHint"></p>
+<div class="control-actions"><button id="cancel-binding" data-t="cancelBind" hidden></button><button id="reset-controls" data-t="resetControls"></button><button id="done-controls" class="primary" data-t="doneControls"></button></div>
+</details>
+<div id="display-options"><label for="pad-mode"><span data-t="padMode"></span><select id="pad-mode"><option value="auto" data-t="auto"></option><option value="on" data-t="show"></option><option value="off" data-t="hide"></option></select></label><label for="touch-player"><span data-t="touchPlayer"></span><select id="touch-player"><option value="1">P1</option><option value="2">P2</option><option value="3">P3</option><option value="4">P4</option></select></label></div>
+<details class="help"><summary data-t="help"></summary><ul><li data-t="local"></li><li data-t="multiplayer"></li><li data-t="formats"></li><li data-t="ps1"></li><li data-t="arcade"></li><li data-t="states"></li><li data-t="fitHint"></li></ul><a href="https://www.mamedev.org/roms/robby/" target="_blank" rel="noopener" data-t="demo"></a><p class="hint" data-t="demoHint"></p><a id="licenses" target="_blank" rel="noopener" data-t="licenses"></a></details>
+</div>
+<div class="menu-footer"><button id="fit-screen" data-t="fit"></button><button id="fullscreen" data-t="fullscreen"></button><label for="lang" class="sr-only">Language</label><select id="lang"><option value="zh">中文</option><option value="en">EN</option></select></div>
+</div></details>
+<div id="status" role="status" aria-live="polite"></div><progress id="progress" hidden></progress>
+<div id="pad-zone"><div class="controller"><div class="dpad"><button data-key="up" aria-label="Up">↑</button><button data-key="left" aria-label="Left">←</button><button data-key="down" aria-label="Down">↓</button><button data-key="right" aria-label="Right">→</button></div><div class="actions"><button data-key="l">L</button><button data-key="x">X</button><button data-key="r">R</button><button data-key="y">Y</button><button data-key="b">B</button><button data-key="a">A</button></div></div><div class="pad-meta"><button id="touch-badge">P1</button><button data-key="select" data-t="coin"></button><button data-key="start">Start</button></div></div>
+<script>
+(()=>{'use strict';
+const ROOT='/dav-public/admin/retro-player/v1/',CACHE='bookstark-retro-v1';
+const S={zh:{title:'复古游戏机',platform:'游戏平台',rom:'游戏文件（可多选）',bios:'BIOS / 附加文件（选填）',start:'启动',pause:'暂停',resume:'继续',stop:'结束',save:'导出存档',load:'导入存档',fullscreen:'全屏',empty:'选择平台和游戏文件，点击启动',ready:'就绪',loading:'正在加载模拟器…',running:'运行中',paused:'已暂停',needRom:'请先选择游戏文件。',fail:'启动失败，请检查游戏格式、核心版本及 BIOS。可结束后重试。',network:'模拟器资源加载失败，请检查网络后重试。',help:'使用说明',local:'游戏和 BIOS 只在当前浏览器读取，不会上传。支持键盘、手柄和屏幕按键。',formats:'FC、GB、GBA、SFC、MD 选择对应游戏文件；街机选择 ZIP，保留原文件名。',ps1:'PS1 支持 CHD、PBP，或同时选择 CUE 与其引用的全部 BIN 文件；建议提供对应 BIOS。大光盘镜像可能超出手机内存。',arcade:'街机 ROM 必须匹配所选核心。克隆版需同时选择母版 ZIP；Neo Geo 等还需对应 BIOS。',states:'存档需手动导出保存；使用相同游戏和核心导入。刷新页面会结束游戏。',demo:'下载街机测试游戏 Robby Roto',demoHint:'官方免费非商业使用；下载后选择 MAME 2003 Plus 加载 robby.zip。',licenses:'资源与许可',coin:'Select / 投币',keyboard:'方向键移动 · Z/X 操作 · Enter 开始 · Shift 投币/选择',stopping:'结束游戏并丢弃未导出的进度？',saved:'存档已导出',loaded:'存档已载入',stateError:'存档操作失败，请确认文件与当前游戏及核心匹配。',fullError:'此浏览器不支持内嵌全屏，请使用文章全屏阅读。',badCue:'请同时选择 CUE 引用的所有文件：',core:'核心',wrongState:'该存档属于不同的游戏或核心。',chooseOne:'此平台每次只选择一个游戏。'},en:{title:'Retro Player',platform:'Platform',rom:'Game files (multiple allowed)',bios:'BIOS / additional files (optional)',start:'Start',pause:'Pause',resume:'Resume',stop:'Stop',save:'Export state',load:'Import state',fullscreen:'Fullscreen',empty:'Choose a platform and game, then Start',ready:'Ready',loading:'Loading emulator…',running:'Running',paused:'Paused',needRom:'Choose a game file first.',fail:'Launch failed. Check ROM format, core version and BIOS. Stop and retry.',network:'Could not load emulator resources. Check your connection and retry.',help:'Help',local:'Games and BIOS stay in your browser and are not uploaded. Keyboard, gamepads and touch controls are supported.',formats:'Choose the matching game file for consoles. For arcade games, use ZIP files and keep their original filenames.',ps1:'PS1: CHD, PBP, or CUE with all referenced BIN files. Matching BIOS recommended. Large disc images may exceed mobile memory.',arcade:'Arcade ROM sets must match the core. Include parent ZIPs for clones and any required BIOS (e.g. Neo Geo).',states:'Export progress manually. Import with the same game and core. Refreshing ends the game.',demo:'Download Robby Roto arcade test ROM',demoHint:'Official free non-commercial download. Choose MAME 2003 Plus and open robby.zip.',licenses:'Resources & licenses',coin:'Select / Coin',keyboard:'Arrows move · Z/X action · Enter start · Shift coin/select',stopping:'Stop and discard progress that has not been exported?',saved:'State exported',loaded:'State loaded',stateError:'State operation failed. Check that the file matches this game and core.',fullError:'Embedded fullscreen is unavailable. Use the article fullscreen reader.',badCue:'Also select these CUE files: ',core:'Core',wrongState:'This state belongs to a different game or core.',chooseOne:'Select one game at a time for this platform.'}};
+const sizes={fceumm:'1.10',gambatte:'1.02',mgba:'1.10',snes9x:'1.18',genesis_plus_gx:'1.35',pcsx_rearmed:'1.09',mame2003_plus:'6.05',fbneo:'9.85'};
+const $=id=>document.getElementById(id);let lang='zh',emu=null,busy=false,paused=false,activeCore='',activeName='',launchAbort=null,libPromise=null,coreData=null,stateKey='ready';const held=new Map();
+try{lang=parent.document.documentElement.lang.startsWith('en')?'en':'zh'}catch(_){}
+const t=k=>S[lang][k]||k;function status(k,extra=''){stateKey=k;$('status').textContent=t(k)+extra;$('status').dataset.quiet=String(['ready','running','paused'].includes(k))}
+function translate(){document.documentElement.lang=lang;$('lang').value=lang;document.querySelectorAll('[data-t]').forEach(e=>e.textContent=t(e.dataset.t));$('core-size').textContent=t('core')+' '+sizes[$('platform').value]+' MiB';status(stateKey);buttons()}
+function buttons(){for(const id of ['platform','rom','bios','start'])$(id).disabled=busy||!!emu;for(const id of ['pause','save','load'])$(id).disabled=busy||!emu;$('stop').disabled=!emu&&!busy;$('pause').textContent=t(paused?'resume':'pause');$('progress').hidden=!busy;document.querySelectorAll('[data-key]').forEach(e=>e.disabled=!emu||paused||busy);updateLayout()}
+function script(name){return new Promise((resolve,reject)=>{const e=document.createElement('script');e.src=ROOT+name;e.onload=resolve;e.onerror=()=>{e.remove();reject(Error('network'))};document.head.appendChild(e)})}
+function libs(){if(!libPromise)libPromise=Promise.all([script('nostalgist-0.23.0.js'),script('fflate-0.8.2.js')]).catch(e=>{libPromise=null;throw e});return libPromise}
+async function core(name,signal){if(coreData?.name===name)return coreData;const url=ROOT+name+'_libretro.zip';let cache,response;try{cache=await caches.open(CACHE);response=await cache.match(url)}catch(_){}if(!response){response=await fetch(url,{signal});if(!response.ok)throw Error('network');if(cache)try{await cache.put(url,response.clone())}catch(_){}}const zip=fflate.unzipSync(new Uint8Array(await response.arrayBuffer()));const js=Object.keys(zip).find(x=>x.endsWith('.js')),wasm=Object.keys(zip).find(x=>x.endsWith('.wasm'));if(!js||!wasm)throw Error('network');coreData={name,js:new Blob([zip[js]],{type:'application/javascript'}),wasm:new Blob([zip[wasm]],{type:'application/wasm'})};return coreData}
+async function confirmStop(){if(document.fullscreenElement)await document.exitFullscreen();$('player').classList.remove('immersive');updateLayout();try{if(parent.BSDialog)return await parent.BSDialog.confirm2(t('stopping'))}catch(_){}return confirm(t('stopping'))}
+function sendInput(method,token){const [player,button]=token.split(':');emu?.[method]({player:Number(player),button})}
+function setInput(id,action,player=1){const key=action?player+':'+action:null,old=held.get(id);if(old===key)return;if(old){held.delete(id);if(![...held.values()].includes(old))sendInput('pressUp',old)}if(key){const down=[...held.values()].includes(key);held.set(id,key);if(!down)sendInput('pressDown',key)}}
+function releaseAll(){for(const key of new Set(held.values())){try{sendInput('pressUp',key)}catch(_){}}held.clear();document.querySelectorAll('.held').forEach(e=>e.classList.remove('held'))}
+async function stop(){releaseAll();launchAbort?.abort();launchAbort=null;if(emu){emu.exit();emu=null}busy=false;paused=false;$('canvas')?.remove();const c=document.createElement('canvas');c.id='canvas';c.width=1;c.height=1;lastRenderSize='';c.tabIndex=0;c.setAttribute('aria-label','Game screen');c.hidden=true;$('stage').append(c);$('empty').hidden=false;buttons();status('ready')}
+async function start(){if(busy||emu)return;let files=Array.from($('rom').files);if(!files.length){status('needRom');return}const name=$('platform').value;const arcade=['fbneo','mame2003_plus'].includes(name);if(!arcade&&name!=='pcsx_rearmed'&&files.length>1){status('chooseOne');return}if(name==='pcsx_rearmed'){files.sort((a,b)=>Number(/\.(m3u|cue)$/i.test(b.name))-Number(/\.(m3u|cue)$/i.test(a.name)));const cue=files.find(f=>/\.cue$/i.test(f.name));if(cue){const body=await cue.text();const refs=[...body.matchAll(/^\s*FILE\s+(?:"([^"]+)"|(\S+))/gmi)].map(m=>m[1]||m[2]);const missing=refs.filter(n=>!files.some(f=>f.name===n));if(missing.length){status('badCue',missing.join(', '));return}}}closeMenu();busy=true;paused=false;status('loading');buttons();const controller=new AbortController();launchAbort=controller;let contentFailed=false;const timer=setTimeout(()=>{if(launchAbort===controller){stop();status('fail')}},90000);try{await libs();const data=await core(name,controller.signal);if(controller.signal.aborted)return;activeCore=name;activeName=files[0].name;$('canvas').hidden=false;const instance=await Nostalgist.launch({element:$('canvas'),core:name,rom:files.map(f=>({fileName:f.name,fileContent:f})),bios:Array.from($('bios').files).map(f=>({fileName:f.name,fileContent:f})),signal:controller.signal,respondToGlobalEvents:false,cache:false,resolveCoreJs:()=>data.js,resolveCoreWasm:()=>data.wasm,size:renderSize(),style:{position:'static',display:'block',maxWidth:'100%',maxHeight:'100%',width:'100%',height:'100%'},retroarchConfig:{...controllerInputConfig(),video_force_aspect:true,aspect_ratio_index:22,video_scale_integer:false,video_crop_overscan:false,video_vsync:true,pause_nonactive:false,video_smooth:false,rewind_enable:false,run_ahead_enabled:false,video_shader_enable:false,audio_latency:64,input_exit_emulator:'nul',input_menu_toggle:'nul',log_verbosity:true},retroarchCoreConfig:name==='mame2003_plus'?{'mame2003-plus_skip_disclaimer':'enabled'}:{},onLog:({message})=>{console.debug('[retro]',message);if(/Failed to load content|Failed to open libretro core/i.test(message))contentFailed=true}});if(controller.signal.aborted){instance.exit();return}if(contentFailed){instance.exit();throw Error('content')}emu=instance;lastRenderSize='';queueFit();$('canvas').hidden=false;$('empty').hidden=true;busy=false;status('running');buttons();$('canvas').focus();}catch(e){console.error('Retro launch failed',e);if(!controller.signal.aborted){await stop();status(e.message==='network'?'network':'fail')}}finally{clearTimeout(timer);if(launchAbort===controller){busy=false;buttons()}}}
+$('start').onclick=start;$('stop').onclick=async()=>{if(busy||await confirmStop())await stop()};$('pause').onclick=()=>{if(!emu)return;releaseAll();paused?emu.resume():emu.pause();paused=!paused;status(paused?'paused':'running');buttons()};$('platform').onchange=translate;$('lang').onchange=()=>{lang=$('lang').value;translate()};
+function download(blob,name){const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),60000)}
+$('save').onclick=async()=>{if(!emu||busy)return;busy=true;releaseAll();buttons();try{const {state}=await emu.saveState();download(state,activeCore+'--'+activeName+'.state');status('saved')}catch(e){console.error(e);status('stateError')}finally{busy=false;if(paused)emu?.pause();buttons()}};
+$('load').onclick=()=>$('state').click();$('state').onchange=async()=>{const file=$('state').files[0];$('state').value='';if(!file||!emu||busy)return;if(file.name.includes('--')&&!file.name.startsWith(activeCore+'--'+activeName+'.')){status('wrongState');return}busy=true;releaseAll();buttons();try{await emu.loadState(file);status('loaded')}catch(e){console.error(e);status('stateError')}finally{busy=false;if(paused)emu?.pause();buttons()}};
+$('fullscreen').onclick=async()=>{const player=$('player');if(document.fullscreenElement){await document.exitFullscreen()}else if(player.classList.contains('immersive')){player.classList.remove('immersive')}else{try{await player.requestFullscreen()}catch(_){player.classList.add('immersive')}}closeMenu();updateLayout();queueFit();$('canvas').focus();wake()};
+document.querySelectorAll('[data-key]').forEach(el=>{el.onpointerdown=e=>{e.preventDefault();if(!emu||paused||busy||menu.open)return;el.setPointerCapture(e.pointerId);setInput(e.pointerId,el.dataset.key,Number($('touch-player').value));el.classList.add('held')};const up=e=>{setInput(e.pointerId,null);el.classList.remove('held')};el.onpointerup=up;el.onpointercancel=up;el.onlostpointercapture=up});
+
+const player=$('player'),menu=$('game-menu'),controlPanel=$('controller-settings');
+let menuPaused=false,hideTimer=0,fitFrame=0,lastRenderSize='';
+const touch=matchMedia('(any-pointer: coarse)');
+Object.assign(S.zh,{menu:'游戏菜单',controls:'控制器',padMode:'屏幕手柄',touchPlayer:'触屏玩家',auto:'自动',show:'显示',hide:'隐藏',exitFull:'退出全屏',fit:'适应窗口',fitHint:'自动按窗口尺寸完整显示游戏，保持核心提供的比例；黑边属于正常现象。',multiplayer:'P1–P4 为本地多人输入；人数取决于游戏版本和核心。家用机的三、四人游戏可能需要核心支持多手柄扩展器。',controlHint:'点击按键后重新绑定 · Esc 取消 · 退格清除',device:'实体手柄',deviceAuto:'自动分配',deviceNone:'不使用手柄',noPad:'连接手柄后按一下按钮以识别',keyboardMap:'键盘',gamepadMap:'手柄',action:'动作',notBound:'—',listenKey:'请按键…',listenPad:'松开所有按键，再按按钮或拨动摇杆…',resetControls:'恢复默认',cancelBind:'取消绑定',doneControls:'完成',padUnsupported:'浏览器未开放手柄访问',padNonstandard:'非标准手柄，请逐项绑定',padStandard:'左摇杆默认兼作方向键',localOnly:'浏览器无法保存，设置仅本次有效',bindingSaved:'已保存',bindingMoved:'已保存；重复按键已从原动作解除',restored:'已恢复此玩家的默认按键',padDisconnected:'手柄已断开，按键已释放',deviceMoved:'手柄已分配给当前玩家',up:'上',down:'下',left:'左',right:'右',select:'投币 / 选择',startAction:'开始',keyHelp:'P1–P4 · 本地多人 · 按键配置自动保存',buttonName:'按钮',axisName:'轴'});
+Object.assign(S.en,{menu:'Game menu',controls:'Controllers',padMode:'Touch controls',touchPlayer:'Touch player',auto:'Auto',show:'Show',hide:'Hide',exitFull:'Exit fullscreen',fit:'Fit to window',fitHint:'The complete game fits the window using the core aspect ratio. Letterboxing is normal.',multiplayer:'P1–P4 are local inputs. Player count depends on the game version and core. Console games may require core support for a multitap.',controlHint:'Click to rebind · Esc cancels · Backspace clears',device:'Physical controller',deviceAuto:'Assign automatically',deviceNone:'No gamepad',noPad:'Connect a controller and press a button',keyboardMap:'Keyboard',gamepadMap:'Gamepad',action:'Action',notBound:'—',listenKey:'Press a key…',listenPad:'Release controls, then press a button or move a stick…',resetControls:'Restore defaults',cancelBind:'Cancel',doneControls:'Done',padUnsupported:'Gamepad access unavailable',padNonstandard:'Non-standard pad: bind each action',padStandard:'Left stick also acts as the D-pad',localOnly:'Storage unavailable; session-only settings',bindingSaved:'Saved',bindingMoved:'Saved; duplicate binding removed from its previous action',restored:'This player’s default bindings restored',padDisconnected:'Controller disconnected; inputs released',deviceMoved:'Controller assigned to this player',up:'Up',down:'Down',left:'Left',right:'Right',select:'Coin / Select',startAction:'Start',keyHelp:'P1–P4 · Local multiplayer · Bindings saved automatically',buttonName:'Button',axisName:'Axis'});
+const ACTIONS=['up','down','left','right','b','a','y','x','l','r','l2','r2','l3','r3','select','start'];
+const DEFAULT_KEYS={up:'ArrowUp',down:'ArrowDown',left:'ArrowLeft',right:'ArrowRight',b:'KeyZ',a:'KeyX',y:'KeyA',x:'KeyS',l:'KeyQ',r:'KeyW',l2:'KeyE',r2:'KeyR',l3:'KeyD',r3:'KeyF',select:'ShiftRight',start:'Enter'};
+const STANDARD_PAD={up:'b12',down:'b13',left:'b14',right:'b15',b:'b0',a:'b1',y:'b2',x:'b3',l:'b4',r:'b5',l2:'b6',r2:'b7',l3:'b10',r3:'b11',select:'b8',start:'b9'};
+const STORE='bookstark-retro-controls-v2';
+let profiles={},legacyProfiles={},capture=null,padSignature='',storageOK=true,gamepadAllowed=true,selectedPlayer=1,assignedPads=[null,null,null,null];
+// Each port gets unique internal keyboard codes. The UI routes all sources to
+// Nostalgist's player-aware press API; actual user key bindings remain separate.
+function controllerInputConfig(){
+  const virtual=[...'abcdefghijklmnopqrstuvwxyz',...Array.from({length:10},(_,i)=>'num'+i),...Array.from({length:10},(_,i)=>'keypad'+i),...Array.from({length:12},(_,i)=>'f'+(i+1)),'up','down','left','right','enter','rshift'];
+  const config={input_max_users:4,input_autodetect_enable:false,input_enable_hotkey:'ralt'};
+  const analog=['l_x_plus','l_x_minus','l_y_plus','l_y_minus','r_x_plus','r_x_minus','r_y_plus','r_y_minus'];
+  for(let p=1;p<=4;p++){
+    config['input_player'+p+'_joypad_index']=15;
+    config['input_libretro_device_p'+p]=1;
+    config['input_player'+p+'_analog_dpad_mode']=0;
+    for(const [i,a] of ACTIONS.entries())config['input_player'+p+'_'+a]=virtual[(p-1)*16+i];
+    for(const a of [...ACTIONS,...analog]){
+      config['input_player'+p+'_'+a+'_btn']='nul';
+      config['input_player'+p+'_'+a+'_axis']='nul';
+    }
+  }
+  return config;
+}
+try{
+  const saved=JSON.parse(localStorage.getItem(STORE)||'{}');
+  if(saved&&typeof saved==='object'&&!Array.isArray(saved))profiles=saved;
+  const legacy=JSON.parse(localStorage.getItem('bookstark-retro-controls-v1')||'{}');
+  if(legacy&&typeof legacy==='object'&&!Array.isArray(legacy))legacyProfiles=legacy;
+}catch(_){storageOK=false}
+function coreProfile(){
+  const core=$('platform').value;
+  if(!profiles[core]||typeof profiles[core]!=='object')profiles[core]={};
+  const p=profiles[core];
+  if(!Array.isArray(p.players)){
+    const old=legacyProfiles[core];
+    p.players=Array.from({length:4},(_,i)=>({keys:i===0?{...DEFAULT_KEYS,...old?.keys}:{},pads:i===0&&old?.pads?old.pads:{},device:'auto'}));
+  }
+  for(let i=0;i<4;i++){
+    if(!p.players[i]||typeof p.players[i]!=='object')p.players[i]={};
+    const pp=p.players[i];
+    if(!pp.keys||typeof pp.keys!=='object')pp.keys=i===0?{...DEFAULT_KEYS}:{};
+    if(!pp.pads||typeof pp.pads!=='object')pp.pads={};
+    if(typeof pp.device!=='string')pp.device='auto';
+  }
+  return p;
+}
+function profile(p=selectedPlayer){return coreProfile().players[p-1]}
+function padKey(p){return JSON.stringify([p.id,p.mapping])}
+function readPads(){
+  try{
+    gamepadAllowed=!!navigator.getGamepads;
+    return Array.from(navigator.getGamepads?.()||[]).filter(p=>p&&p.connected).map(p=>{
+      return {pad:p,key:JSON.stringify([p.id,p.mapping,p.index])};
+    });
+  }catch(_){gamepadAllowed=false;return []}
+}
+function padMap(p=selectedPlayer){
+  const g=assignedPads[p-1]?.pad;if(!g)return {};
+  const map=profile(p).pads,id=padKey(g);
+  if(!map[id]||typeof map[id]!=='object')map[id]=g.mapping==='standard'?{...STANDARD_PAD}:{};
+  return map[id];
+}
+function persist(){
+  try{localStorage.setItem(STORE,JSON.stringify(profiles));storageOK=true}catch(_){storageOK=false}
+  if(!storageOK)$('binding-status').textContent=t('localOnly');
+}
+function notice(k){$('binding-status').textContent=t(storageOK?k:'localOnly')}
+function actionName(a){return ['up','down','left','right','select'].includes(a)?t(a):a==='start'?t('startAction'):a.toUpperCase()}
+function bindingName(v,type){
+  if(typeof v!=='string'||!v)return t('notBound');
+  if(type==='keys')return v.replace(/^Key/,'').replace(/^Digit/,'').replace('ArrowUp','↑').replace('ArrowDown','↓').replace('ArrowLeft','←').replace('ArrowRight','→');
+  return /^b\d+$/.test(v)?t('buttonName')+' '+v.slice(1):t('axisName')+' '+v.slice(1);
+}
+function renderBindings(){
+  const grid=$('binding-grid');grid.replaceChildren();
+  for(const k of ['action','keyboardMap','gamepadMap']){const h=document.createElement('strong');h.textContent=t(k);grid.append(h)}
+  for(const group of [['up','down','left','right'],['a','b'],['x','y'],['l','r'],['l2','r2'],['l3','r3'],['start'],['select']]){
+    const name=document.createElement('span');name.textContent=group.length===4?(lang==='zh'?'方向':'D-pad'):group.map(actionName).join(' / ');grid.append(name);
+    for(const type of ['keys','pad']){
+      const pair=document.createElement('div');pair.className='binding-pair';pair.style.gridTemplateColumns='repeat('+group.length+',minmax(0,1fr))';
+      for(const a of group){
+      const b=document.createElement('button'),map=type==='keys'?profile().keys:padMap();
+      b.dataset.action=a;b.dataset.binding=type;
+      b.textContent=capture?.action===a&&capture.type===type?'…':bindingName(map[a],type);
+      b.disabled=type==='pad'&&!assignedPads[selectedPlayer-1];
+      b.setAttribute('aria-label','P'+selectedPlayer+' · '+actionName(a)+' · '+t(type==='keys'?'keyboardMap':'gamepadMap')+' · '+bindingName(map[a],type));
+      b.setAttribute('aria-pressed',String(capture?.action===a&&capture.type===type));
+      b.onclick=()=>beginBinding(type,a);pair.append(b);
+      }
+      grid.append(pair);
+    }
+  }
+  for(const tab of $('player-tabs').children)tab.setAttribute('aria-selected',String(Number(tab.dataset.player)===selectedPlayer));
+  $('cancel-binding').hidden=!capture;$('keyboard-hint').textContent=t('keyHelp');
+}
+function renderDevices(pads=readPads()){
+  const select=$('controller-device');select.replaceChildren(new Option(t('deviceAuto'),'auto'),new Option(t('deviceNone'),'none'));
+  for(const g of pads){
+    const owner=assignedPads.findIndex(a=>a?.key===g.key);
+    select.add(new Option(g.pad.id+' #'+(g.pad.index+1)+(owner>=0?' · P'+(owner+1):''),g.key));
+  }
+  const value=profile().device;
+  if(value!=='auto'&&value!=='none'&&!pads.some(g=>g.key===value))select.add(new Option(t('padDisconnected'),value));
+  select.value=value;
+  const g=assignedPads[selectedPlayer-1]?.pad;
+  $('controller-info').textContent=!gamepadAllowed?t('padUnsupported'):g?'P'+selectedPlayer+' · '+g.id+' · '+t(g.mapping==='standard'?'padStandard':'padNonstandard'):t('noPad');
+}
+function refreshPads(force=false){
+  const pads=readPads(),sig=JSON.stringify(pads.map(g=>[g.key,g.pad.index]));
+  if(sig===padSignature&&!force){assignedPads=assignedPads.map(g=>pads.find(p=>p.key===g?.key&&p.pad.index===g?.pad.index)||null);return}
+  padSignature=sig;const prev=assignedPads;assignedPads=[null,null,null,null];const used=new Set();
+  // Explicit reservations are assigned first; automatic slots only use leftovers.
+  for(let i=0;i<4;i++){const pref=profile(i+1).device;const g=pads.find(g=>g.key===pref&&!used.has(g.key));if(g){assignedPads[i]=g;used.add(g.key)}}
+  for(let i=0;i<4;i++)if(profile(i+1).device==='auto'){const g=pads.find(g=>g.key===prev[i]?.key&&!used.has(g.key));if(g){assignedPads[i]=g;used.add(g.key)}}
+  for(let i=0;i<4;i++)if(profile(i+1).device==='auto'&&!assignedPads[i]){const g=pads.find(g=>!used.has(g.key));if(g){assignedPads[i]=g;used.add(g.key)}}
+  if(prev.some((g,i)=>g&&(g.key!==assignedPads[i]?.key||g.pad.index!==assignedPads[i]?.pad.index))){releaseAll();capture=null;notice('padDisconnected')}
+  renderDevices(pads);renderBindings();
+}
+function cancelBinding(){capture=null;renderBindings()}
+function beginBinding(type,action){releaseAll();capture={type,action,player:selectedPlayer,neutral:false};$('binding-status').textContent=t(type==='keys'?'listenKey':'listenPad');renderBindings()}
+function removeKeyConflicts(value,player,action){
+  let moved=false;if(value)for(let p=1;p<=4;p++)for(const a of ACTIONS)if((p!==player||a!==action)&&profile(p).keys[a]===value){profile(p).keys[a]=null;moved=true}
+  return moved;
+}
+function bind(value){
+  if(!capture)return;const {type,action,player:p}=capture;let moved=false;
+  const map=type==='keys'?profile(p).keys:padMap(p);
+  if(type==='keys')moved=removeKeyConflicts(value,p,action);
+  else if(value)for(const a of ACTIONS)if(a!==action&&map[a]===value){map[a]=null;moved=true}
+  map[action]=value;capture=null;releaseAll();persist();renderBindings();notice(moved?'bindingMoved':'bindingSaved');
+  $('binding-grid').querySelector('[data-action="'+action+'"][data-binding="'+type+'"]').focus();
+}
+for(let p=1;p<=4;p++){
+  const tab=document.createElement('button');tab.textContent='P'+p;tab.dataset.player=p;tab.setAttribute('role','tab');tab.setAttribute('aria-controls','binding-grid');
+  tab.onclick=()=>{releaseAll();capture=null;selectedPlayer=p;renderDevices();renderBindings();$('binding-status').textContent=''};
+  $('player-tabs').append(tab);
+}
+$('controller-device').onchange=()=>{
+  releaseAll();capture=null;const value=$('controller-device').value;
+  if(value!=='auto'&&value!=='none')for(let p=1;p<=4;p++)if(p!==selectedPlayer&&profile(p).device===value)profile(p).device='none';
+  profile().device=value;persist();refreshPads(true);notice('deviceMoved');
+};
+$('cancel-binding').onclick=()=>{cancelBinding();$('binding-status').textContent=''};
+$('reset-controls').onclick=()=>{
+  releaseAll();capture=null;
+  const defaults=selectedPlayer===1?{...DEFAULT_KEYS}:{};
+  for(const [a,value] of Object.entries(defaults))removeKeyConflicts(value,selectedPlayer,a);
+  profile().keys=defaults;const g=assignedPads[selectedPlayer-1]?.pad;
+  if(g)profile().pads[padKey(g)]=g.mapping==='standard'?{...STANDARD_PAD}:{};
+  persist();renderBindings();notice('restored');
+};
+$('done-controls').onclick=()=>{cancelBinding();closeMenu()};
+$('setup-controls').onclick=()=>{menu.open=true;controlPanel.open=true};
+$('close-menu').onclick=closeMenu;
+controlPanel.addEventListener('toggle',()=>{cancelBinding();if(controlPanel.open){releaseAll();refreshPads(true)}});
+function closeMenu(){capture=null;controlPanel.open=false;menu.open=false}
+menu.addEventListener('toggle',()=>{
+  releaseAll();wake();
+  menu.querySelector('summary').setAttribute('aria-expanded',String(menu.open));
+  if(menu.open&&emu&&!paused&&!busy){emu.pause();paused=true;menuPaused=true;status('paused');buttons()}
+  else if(!menu.open){
+    capture=null;controlPanel.open=false;
+    if(menuPaused){menuPaused=false;if(emu&&paused&&!document.hidden){emu.resume();paused=false;status('running');buttons()}}
+    if(emu)$('canvas').focus();
+  }
+});
+const manualPause=$('pause').onclick;
+$('pause').onclick=()=>{menuPaused=false;manualPause();if(!paused)closeMenu()};
+const endGame=$('stop').onclick;
+$('stop').onclick=async()=>{await endGame();if(!emu&&!busy){menuPaused=false;closeMenu()}};
+$('platform').onchange=()=>{releaseAll();capture=null;assignedPads=[null,null,null,null];translate();refreshPads(true)};
+$('lang').onchange=()=>{lang=$('lang').value;capture=null;translate();refreshPads(true);$('binding-status').textContent=''};
+$('pad-mode').onchange=()=>{releaseAll();updateLayout()};
+$('touch-player').onchange=()=>{releaseAll();$('touch-badge').textContent='P'+$('touch-player').value};
+$('touch-badge').onclick=()=>{$('touch-player').value=String(Number($('touch-player').value)%4+1);$('touch-player').onchange()};
+function updateLayout(){
+  document.body.classList.toggle('playing',!!emu);
+  document.body.classList.toggle('pads-on',$('pad-mode').value==='on'||$('pad-mode').value==='auto'&&touch.matches);
+  $('game-name').textContent=emu?activeName:'RETRO PLAYER';
+  $('fullscreen').textContent=t(document.fullscreenElement||player.classList.contains('immersive')?'exitFull':'fullscreen');
+  menu.querySelector('summary').setAttribute('aria-label',t('menu'));
+  $('close-menu').setAttribute('aria-label',t('doneControls'));
+  $('touch-badge').setAttribute('aria-label',t('touchPlayer')+' P'+$('touch-player').value);
+  queueFit();wake();
+}
+function renderSize(){
+  const rect=$('stage').getBoundingClientRect(),scale=Math.min(1,1920/Math.max(1,rect.width),1920/Math.max(1,rect.height));
+  return {width:Math.max(1,Math.round(rect.width*scale)),height:Math.max(1,Math.round(rect.height*scale))};
+}
+function queueFit(){
+  cancelAnimationFrame(fitFrame);fitFrame=requestAnimationFrame(()=>{
+    if(!emu||busy)return;const size=renderSize(),key=size.width+'x'+size.height;
+    if(key!==lastRenderSize){emu.resize(size);lastRenderSize=key}
+  });
+}
+$('fit-screen').onclick=()=>{lastRenderSize='';queueFit();closeMenu()};
+new ResizeObserver(queueFit).observe($('stage'));
+window.addEventListener('resize',queueFit);window.visualViewport?.addEventListener('resize',queueFit);
+document.addEventListener('fullscreenchange',()=>{lastRenderSize='';updateLayout()});
+touch.addEventListener('change',updateLayout);
+function wake(){
+  clearTimeout(hideTimer);player.classList.add('ui-visible');
+  if(emu&&!menu.open)hideTimer=setTimeout(()=>player.classList.remove('ui-visible'),2500);
+}
+$('stage').addEventListener('pointermove',wake);$('stage').addEventListener('pointerdown',wake);
+function keyboardEvent(e){
+  if(capture&&e.type==='keydown'){
+    e.preventDefault();e.stopImmediatePropagation();if(e.repeat)return;
+    if(e.code==='Escape'){cancelBinding();$('binding-status').textContent=''}
+    else if(e.code==='Backspace'||e.code==='Delete')bind(null);
+    else if(capture.type==='keys'&&e.code&&!e.ctrlKey&&!e.altKey&&!e.metaKey&&!/^(Control|Alt|Meta)/.test(e.code))bind(e.code);
+    return;
+  }
+  if(!emu)return;e.stopImmediatePropagation();
+  if(e.type==='keyup'){setInput('key:'+e.code,null);return}
+  if(e.code==='Escape'){e.preventDefault();if(menu.open)closeMenu();else{wake();menu.open=true}return}
+  if(menu.open||paused||busy||document.hidden||e.ctrlKey||e.metaKey||e.altKey)return;
+  if(e.target.closest?.('button,input,select,summary,a')||e.code==='Tab')return;
+  e.preventDefault();
+  for(let p=1;p<=4;p++){const a=ACTIONS.find(a=>profile(p).keys[a]===e.code);if(a){setInput('key:'+e.code,a,p);break}}
+}
+window.addEventListener('keydown',keyboardEvent,true);window.addEventListener('keyup',keyboardEvent,true);
+window.addEventListener('blur',()=>{releaseAll();capture=null;renderBindings()});
+document.addEventListener('visibilitychange',()=>{
+  releaseAll();if(document.hidden){menuPaused=false;capture=null;if(emu&&!paused&&!busy){emu.pause();paused=true;status('paused');buttons()}}
+});
+window.addEventListener('beforeunload',e=>{if(emu){e.preventDefault();e.returnValue=''}});
+function padValue(code,pad,wasDown=false){
+  if(typeof code!=='string')return false;
+  if(/^b\d+$/.test(code)){const b=pad.buttons[Number(code.slice(1))];return !!b&&(b.pressed||b.value>.5)}
+  const m=/^a(\d+)([+-])$/.exec(code);
+  return !!m&&(pad.axes[Number(m[1])]||0)*(m[2]==='+'?1:-1)>(wasDown?.4:.6);
+}
+function pollControllers(){
+  refreshPads();
+  if(capture?.type==='pad'){
+    const pad=assignedPads[capture.player-1]?.pad;
+    if(pad){if(!capture.neutral)capture.neutral=pad.buttons.every(b=>!b.pressed&&b.value<.25)&&pad.axes.every(a=>Math.abs(a)<.35);
+    else{const b=pad.buttons.findIndex(b=>b.pressed||b.value>.65),a=pad.axes.findIndex(a=>Math.abs(a)>.7);if(b>=0)bind('b'+b);else if(a>=0)bind('a'+a+(pad.axes[a]>0?'+':'-'))}}
+  }else if(emu&&!paused&&!busy&&!menu.open&&!document.hidden&&document.hasFocus()){
+    for(let p=1;p<=4;p++){
+      const pad=assignedPads[p-1]?.pad,map=padMap(p);
+      for(const a of ACTIONS){
+        const id='pad:'+p+':'+a;let down=!!pad&&padValue(map[a],pad,held.has(id));
+        if(pad?.mapping==='standard'&&map[a]===STANDARD_PAD[a]){
+          const axes={up:'a1-',down:'a1+',left:'a0-',right:'a0+'};
+          if(axes[a]&&!ACTIONS.some(other=>other!==a&&map[other]===axes[a]))down=down||padValue(axes[a],pad,held.has(id));
+        }
+        setInput(id,down?a:null,p);
+      }
+    }
+  }else{for(const id of [...held.keys()])if(String(id).startsWith('pad:'))setInput(id,null)}
+  if(emu||menu.open)requestAnimationFrame(pollControllers);else setTimeout(pollControllers,250);
+}
+// WebDAV is read-only. Credentials never enter ROM metadata or resource URLs.
+Object.assign(S.zh,{localLibrary:'本地游戏',remoteLibrary:'远端游戏',refreshLibrary:'刷新',davSettings:'设置',importRom:'导入 ROM',davURL:'WebDAV 目录',davUser:'用户名',davPassword:'密码（本次有效）',arcadeDefault:'街机 ZIP 默认核心',davPrivacy:'仅保存地址和用户名，不保存密码。本地副本可能被浏览器清理。本站 WebDAV 请使用 WebDAV 专用密码；外站需允许跨域 PROPFIND / GET。',connectDav:'保存并连接',downloadRom:'下载到本地',deleteLocal:'删除本地副本',selectRom:'选择游戏',cachedRom:'已下载',remoteRom:'未下载',emptyLibrary:'暂无游戏，请连接 WebDAV 或导入本地 ROM。',listing:'正在读取目录…',downloading:'正在下载…',downloaded:'下载完成，可以启动',davAuth:'认证失败，请检查 WebDAV 用户名和专用密码。',davError:'无法读取 WebDAV，请检查目录地址、HTTPS 和服务器跨域设置。',romError:'操作失败，请检查存储空间、网络及文件格式。',unknownRom:'无法识别游戏平台，请导入解压后的游戏文件。街机 ZIP 使用设置中的默认核心。',deleteAsk:'仅删除浏览器本地副本，不会删除 WebDAV 文件：',localPath:'浏览器本地游戏库',folder:'目录',cancelled:'已取消',sizeLimit:'单个游戏最多 512 MiB，请使用较小镜像。',cueMissing:'CUE 引用文件无效或缺失，请同时导入全部 BIN 文件。',storageMissing:'本地副本已丢失，请重新下载。',needPassword:'请输入密码并连接，或切换到本地游戏。'});
+Object.assign(S.en,{localLibrary:'Local games',remoteLibrary:'Remote games',refreshLibrary:'Refresh',davSettings:'Settings',importRom:'Import ROM',davURL:'WebDAV folder',davUser:'Username',davPassword:'Password (this session)',arcadeDefault:'Default arcade ZIP core',davPrivacy:'Only URL and username are saved, never the password. Browsers may evict local copies. Use the site’s dedicated WebDAV password. External servers need PROPFIND / GET CORS support.',connectDav:'Save & connect',downloadRom:'Download locally',deleteLocal:'Delete local copy',selectRom:'Select a game',cachedRom:'Downloaded',remoteRom:'Not downloaded',emptyLibrary:'No games. Connect WebDAV or import a ROM.',listing:'Reading folder…',downloading:'Downloading…',downloaded:'Downloaded. Ready to start.',davAuth:'Authentication failed. Check your WebDAV username and dedicated password.',davError:'Cannot read WebDAV. Check the folder URL, HTTPS and server CORS settings.',romError:'Operation failed. Check storage, network and file format.',unknownRom:'Unknown platform. Import an extracted console ROM. Arcade ZIPs use the configured default core.',deleteAsk:'Delete only this browser’s local copy, not the WebDAV file: ',localPath:'Browser game library',folder:'Folder',cancelled:'Cancelled',sizeLimit:'Maximum game size is 512 MiB. Use a smaller image.',cueMissing:'Missing or invalid CUE references. Import all referenced BIN files together.',storageMissing:'Local copy is missing. Download it again.',needPassword:'Enter your password and connect, or switch to local games.'});
+const DAV_STORE='bookstark-retro-dav-v1',MAX_ROM=512*1024*1024;
+const PUBLIC_GAMES=new URL('/dav-public/admin/retro-player/library/',location.origin).href;
+let publicMode=false;
+Object.assign(S.zh,{publicLibrary:'公共游戏',publicLoading:'正在读取公共游戏库…',publicFailed:'公共游戏库暂时无法读取，请稍后刷新。',dependencies:'BIOS / 母版自动下载'});
+Object.assign(S.en,{publicLibrary:'Public games',publicLoading:'Loading public game library…',publicFailed:'Public library unavailable. Try refreshing later.',dependencies:'BIOS / parent ROM downloaded automatically'});
+let dav={url:location.origin+'/dav/',user:'',arcade:'mame2003_plus'},davPassword='',folderURL='',remoteRows=[],localRows=[],selected=null,localView=false,romTask=null;
+try{const saved=JSON.parse(localStorage.getItem(DAV_STORE)||'null');if(saved)dav={...dav,...saved}}catch(_){}
+$('dav-url').value=dav.url;$('dav-user').value=dav.user;$('arcade-core').value=dav.arcade;
+function libStatus(key,extra=''){$('library-status').textContent=t(key)+(extra?' '+extra:'')}
+function bytes(n){return (n/1048576).toFixed(2)+' MiB'}
+function detectCore(name){const ext=name.split('.').pop().toLowerCase();return ({nes:'fceumm',gb:'gambatte',gbc:'gambatte',gba:'mgba',sfc:'snes9x',smc:'snes9x',md:'genesis_plus_gx',gen:'genesis_plus_gx',smd:'genesis_plus_gx',chd:'pcsx_rearmed',pbp:'pcsx_rearmed',cue:'pcsx_rearmed',zip:dav.arcade})[ext]||''}
+function scopedURL(href,base=dav.url){const root=new URL(dav.url),u=new URL(href,base);if(u.origin!==root.origin||!u.pathname.startsWith(root.pathname)||u.username||u.password||u.search||u.hash)throw Error('davError');return u.href}
+async function davFetch(url,options={}){if(new URL(url,location.href).href.startsWith(PUBLIC_GAMES)){const r=await fetch(url,{...options,credentials:'omit',redirect:'error',cache:'no-store'});if(!r.ok)throw Error('publicFailed');return r}const headers=new Headers(options.headers);if(dav.user||davPassword){const encoded=new TextEncoder().encode(dav.user+':'+davPassword);headers.set('Authorization','Basic '+btoa(Array.from(encoded,x=>String.fromCharCode(x)).join('')))}let r;try{r=await fetch(scopedURL(url),{...options,headers,credentials:'omit',redirect:'error',cache:'no-store'})}catch(e){if(e.name==='AbortError')throw e;throw Error('davError')}if(r.status===401||r.status===403)throw Error('davAuth');if(!r.ok)throw Error('davError');return r}
+let dbPromise;
+function database(){if(!dbPromise)dbPromise=new Promise((resolve,reject)=>{const r=indexedDB.open('bookstark-retro-roms-v1',1);r.onupgradeneeded=()=>r.result.createObjectStore('games',{keyPath:'id'});r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)}).catch(e=>{dbPromise=null;throw e});return dbPromise}
+async function dbCall(method,value){const db=await database();return new Promise((resolve,reject)=>{const tx=db.transaction('games',method==='getAll'?'readonly':'readwrite'),r=tx.objectStore('games')[method](value);tx.oncomplete=()=>resolve(r.result);tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||Error('romError'))})}
+async function disk(){if(!navigator.storage?.getDirectory)return null;try{return await (await navigator.storage.getDirectory()).getDirectoryHandle('bookstark-retro-roms-v1',{create:true})}catch(_){return null}}
+async function cleanup(record){if(!record?.files)return;const dir=await disk();for(const f of record.files)if(f.path&&dir)try{await dir.removeEntry(f.path)}catch(_){}}
+async function saveGame(entry,files){if(files.reduce((s,f)=>s+f.size,0)>MAX_ROM)throw Error('sizeLimit');const record={...entry,files:[],size:files.reduce((s,f)=>s+f.size,0)},dir=await disk(),old=localRows.find(r=>r.id===entry.id);try{for(const f of files){if(dir){const path=crypto.randomUUID(),h=await dir.getFileHandle(path,{create:true});record.files.push({name:f.name,path});const w=await h.createWritable();try{await w.write(f);await w.close()}catch(e){try{await w.abort()}catch(_){}throw e}}else record.files.push({name:f.name,blob:f})}await dbCall('put',record)}catch(e){await cleanup(record);throw e}await cleanup(old);await readLocal();return record}
+async function readGame(record){try{const dir=await disk();return await Promise.all(record.files.map(async f=>new File([f.blob||await (await dir.getFileHandle(f.path)).getFile()],f.name)))}catch(_){throw Error('storageMissing')}}
+async function readLocal(){localRows=await dbCall('getAll');renderLibrary()}
+function currentLocal(){return selected&&localRows.find(r=>r.id===selected.id)}
+function renderLibrary(){const list=$('rom-list');list.replaceChildren();const q=$('rom-search').value.trim().toLowerCase();const rows=(localView?localRows:remoteRows).filter(r=>r.name.toLowerCase().includes(q));for(const r of rows){const b=document.createElement('button');b.className='rom-row';b.setAttribute('role','listitem');b.setAttribute('aria-current',String(selected?.id===r.id));const n=document.createElement('span'),s=document.createElement('small');n.textContent=(r.dir?'▸ ':'')+r.name;s.textContent=r.dir?t('folder'):(localRows.some(l=>l.id===r.id)?'✓ ':'↓ ')+bytes(r.size);b.append(n,s);b.onclick=()=>{if(romTask)return;if(r.dir)listRemote(r.url);else{selected=r;$('platform').value=r.core||detectCore(r.name);$('platform').onchange();renderLibrary()}};list.append(b)}if(!rows.length){const p=document.createElement('p');p.className='hint';p.textContent=t('emptyLibrary');list.append(p)}$('rom-path').textContent=localView?t('localPath'):(publicMode?t('publicLibrary'):(folderURL?decodeURI(new URL(folderURL).pathname):dav.url));$('local-view').textContent=t(localView?(publicMode?'publicLibrary':'remoteLibrary'):'localLibrary');$('rom-up').disabled=!!romTask||localView||publicMode||!folderURL||folderURL===dav.url;$('selected-rom').textContent=selected?.name||t('selectRom');const cached=currentLocal();$('rom-meta').textContent=selected?[$('platform').selectedOptions[0]?.textContent,bytes(selected.size),t(cached?'cachedRom':'remoteRom'),...(selected.dependencies?.length?[t('dependencies')]:[])].join(' · '):'';$('fetch-rom').disabled=!selected||!!cached||!!romTask||localView;$('delete-rom').disabled=!cached||!!romTask;$('start').disabled=!cached||!!romTask||busy||!!emu;$('refresh-library').disabled=!!romTask;$('import-rom').disabled=!!romTask;$('open-dav').disabled=!!romTask;$('rom-search').placeholder=lang==='zh'?'搜索游戏…':'Search games…'}
+function beginROMTask(){const c=new AbortController();romTask=c;$('cancel-rom').hidden=false;$('rom-progress').hidden=false;$('rom-progress').removeAttribute('value');renderLibrary();return c}
+function endROMTask(c){if(romTask===c){romTask=null;$('cancel-rom').hidden=true;$('cancel-rom').disabled=false;$('rom-progress').hidden=true;renderLibrary()}}
+function reportLibraryError(e){libStatus(e.name==='AbortError'?'cancelled':S[lang][e.message]?e.message:'romError')}
+async function listRemote(url=dav.url){if(romTask)return;publicMode=false;const c=beginROMTask();libStatus('listing');const timer=setTimeout(()=>c.abort(),30000);try{url=scopedURL(url);const r=await davFetch(url,{method:'PROPFIND',headers:{Depth:'1','Content-Type':'application/xml'},body:'<?xml version="1.0"?><d:propfind xmlns:d="DAV:"><d:prop><d:displayname/><d:resourcetype/><d:getcontentlength/></d:prop></d:propfind>',signal:c.signal});const xml=new DOMParser().parseFromString(await r.text(),'application/xml');if(xml.querySelector('parsererror')||xml.documentElement.localName!=='multistatus')throw Error('davError');const result=[];for(const item of xml.getElementsByTagNameNS('*','response')){const href=item.getElementsByTagNameNS('*','href')[0]?.textContent;if(!href)continue;let u;try{u=scopedURL(href,url)}catch(_){continue}if(new URL(u).pathname.replace(/\/$/,'')===new URL(url).pathname.replace(/\/$/,''))continue;const propstat=Array.from(item.getElementsByTagNameNS('*','propstat')).find(p=>/\s200\s/.test(p.getElementsByTagNameNS('*','status')[0]?.textContent||''));if(!propstat)continue;const dir=!!propstat.getElementsByTagNameNS('*','collection').length;let name;try{name=decodeURIComponent(new URL(u).pathname.replace(/\/$/,'').split('/').pop())}catch(_){continue}if(dir&&!u.endsWith('/'))u+='/';const core=detectCore(name);if(!dir&&!core)continue;result.push({id:JSON.stringify([dav.user,u]),name,url:u,dir,core,size:Number(propstat.getElementsByTagNameNS('*','getcontentlength')[0]?.textContent)||0})}remoteRows=result.sort((a,b)=>Number(b.dir)-Number(a.dir)||a.name.localeCompare(b.name));folderURL=url;localView=false;selected=null;libStatus('ready')}catch(e){reportLibraryError(e)}finally{clearTimeout(timer);endROMTask(c)}}
+function cueRefs(text){return [...text.matchAll(/^\s*FILE\s+(?:"([^"]+)"|(\S+))/gmi)].map(m=>m[1]||m[2])}
+async function listPublic(){
+  if(romTask)return;const c=beginROMTask(),timer=setTimeout(()=>c.abort(),30000);libStatus('publicLoading');
+  try{
+    const r=await davFetch(PUBLIC_GAMES+'games.json',{signal:c.signal}),data=await r.json();
+    if(!Array.isArray(data.games)||data.games.length>5000)throw Error('publicFailed');
+    const valid=n=>typeof n==='string'&&/^[a-z0-9_-]+\.zip$/i.test(n);
+    const rows=data.games.map(g=>{
+      if(!valid(g.name)||!sizes[g.core]||!Array.isArray(g.dependencies)||!g.dependencies.every(valid))throw Error('publicFailed');
+      const url=new URL(g.name,PUBLIC_GAMES).href;
+      return {id:'public:'+url,name:g.name,url,size:Number(g.size)||0,core:g.core,dependencies:g.dependencies,public:true};
+    });
+    remoteRows=rows;folderURL='';publicMode=true;localView=false;selected=null;libStatus('ready');
+  }catch(e){reportLibraryError(e)}finally{clearTimeout(timer);endROMTask(c)}
+}
+$('public-games').onclick=listPublic;
+async function fetchFile(url,name,signal,budget){const r=await davFetch(url,{signal});const length=Number(r.headers.get('content-length'));if(length>budget.remaining)throw Error('sizeLimit');const reader=r.body.getReader(),chunks=[];let received=0;try{while(true){const {done,value}=await reader.read();if(done)break;received+=value.length;budget.remaining-=value.length;if(budget.remaining<0)throw Error('sizeLimit');chunks.push(value);libStatus('downloading',bytes(MAX_ROM-budget.remaining));if(length){$('rom-progress').max=length;$('rom-progress').value=received}}}finally{try{await reader.cancel()}catch(_){}}return new File(chunks,name)}
+$('fetch-rom').onclick=async()=>{if(!selected||romTask)return;const entry={...selected},c=beginROMTask(),timer=setTimeout(()=>c.abort(),300000);libStatus('downloading');try{const budget={remaining:MAX_ROM},files=[await fetchFile(entry.url,entry.name,c.signal,budget)];if(entry.public)for(const name of entry.dependencies||[])files.push(await fetchFile(new URL(name,PUBLIC_GAMES).href,name,c.signal,budget));if(/\.cue$/i.test(entry.name))for(const name of new Set(cueRefs(await files[0].text()))){if(!name||/[\\/]/.test(name)||name==='..'||!name.toLowerCase().endsWith('.bin'))throw Error('cueMissing');files.push(await fetchFile(scopedURL(encodeURIComponent(name),entry.url),name,c.signal,budget))}if(c.signal.aborted)throw new DOMException('Cancelled','AbortError');$('cancel-rom').disabled=true;await saveGame(entry,files);libStatus('downloaded')}catch(e){reportLibraryError(e)}finally{clearTimeout(timer);endROMTask(c)}};
+$('start').onclick=async()=>{if(romTask||busy||emu)return;const entry=currentLocal();if(!entry)return;const c=beginROMTask();try{const files=await readGame(entry);if(c.signal.aborted)return;const dt=new DataTransfer();files.forEach(f=>dt.items.add(f));$('rom').files=dt.files;$('platform').value=/\.zip$/i.test(entry.name)&&!entry.public?dav.arcade:entry.core;endROMTask(c);await start()}catch(e){reportLibraryError(e)}finally{endROMTask(c)}};
+$('import-rom').onclick=()=>$('rom').click();
+$('rom').onchange=async()=>{if(romTask)return;const files=Array.from($('rom').files);if(!files.length)return;const c=beginROMTask();try{files.sort((a,b)=>Number(/\.cue$/i.test(b.name))-Number(/\.cue$/i.test(a.name)));const first=files[0],core=detectCore(first.name);if(!core)throw Error('unknownRom');if(core!=='pcsx_rearmed'&&core!=='mame2003_plus'&&core!=='fbneo'&&files.length>1)throw Error('chooseOne');if(/\.cue$/i.test(first.name)&&cueRefs(await first.text()).some(n=>!files.some(f=>f.name===n)))throw Error('cueMissing');const entry={id:'local:'+crypto.randomUUID(),name:first.name,core,size:0};selected=await saveGame(entry,files);localView=true;$('platform').value=core;$('platform').onchange();libStatus('downloaded')}catch(e){reportLibraryError(e)}finally{endROMTask(c)}};
+$('delete-rom').onclick=async()=>{const entry=currentLocal();if(!entry||romTask)return;const question=t('deleteAsk')+'\n'+entry.name;let yes;try{yes=parent.BSDialog?await parent.BSDialog.confirm2(question):confirm(question)}catch(_){yes=confirm(question)}if(!yes)return;const c=beginROMTask();try{await dbCall('delete',entry.id);await cleanup(entry);await readLocal();if(localView)selected=null;libStatus('ready')}catch(e){reportLibraryError(e)}finally{endROMTask(c)}};
+$('cancel-rom').onclick=()=>romTask?.abort();$('rom-search').oninput=renderLibrary;
+$('local-view').onclick=()=>{if(romTask)return;localView=!localView;selected=null;renderLibrary()};
+$('refresh-library').onclick=()=>localView?readLocal().catch(reportLibraryError):publicMode?listPublic():listRemote(folderURL||dav.url);
+$('rom-up').onclick=()=>listRemote(scopedURL('../',folderURL));
+$('open-dav').onclick=()=>{$('dav-settings').hidden=!$('dav-settings').hidden};$('close-dav').onclick=()=>{$('dav-settings').hidden=true};
+$('dav-settings').onsubmit=e=>{e.preventDefault();if(romTask)return;try{const u=new URL($('dav-url').value);if(u.protocol!=='https:'||u.username||u.password||u.search||u.hash)throw Error('davError');if(!u.pathname.endsWith('/'))u.pathname+='/';dav={url:u.href,user:$('dav-user').value.trim(),arcade:$('arcade-core').value};davPassword=$('dav-password').value;try{localStorage.setItem(DAV_STORE,JSON.stringify(dav))}catch(_){}folderURL='';remoteRows=[];selected=null;$('dav-settings').hidden=true;listRemote()}catch(e){reportLibraryError(e)}};
+const playerButtons=buttons;buttons=function(){playerButtons();renderLibrary()};
+const translatePlayer=translate;translate=function(){translatePlayer();renderLibrary()};
+$('licenses').href=ROOT+'NOTICE.txt';translate();refreshPads(true);pollControllers();
+readLocal().then(()=>{localView=localRows.length>0;renderLibrary();if(!localRows.length){$('dav-settings').hidden=true;listPublic()}}).catch(reportLibraryError);
+})();
+</script></main></body></html>

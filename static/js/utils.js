@@ -1,5 +1,18 @@
 /* ===== BookStark Shared Utilities ===== */
 
+// Return plain text; the dialog renderer is responsible for HTML escaping.
+// Untitled content uses a short excerpt plus its ID to disambiguate matches.
+function formatDeleteConfirmation(message, name, id, excerpt) {
+  var label = String(name == null ? '' : name).trim();
+  if (excerpt) {
+    label = label.replace(/\s+/g, ' ');
+    var chars = Array.from(label);
+    if (chars.length > 80) label = chars.slice(0, 80).join('') + '…';
+  }
+  if (!label || excerpt) label += (label ? ' ' : '') + '(#' + id + ')';
+  return message.replace(/\{name\}/g, function() { return label; });
+}
+
 /**
  * Compute SHA-256 hash of a File/Blob object
  * @param {File|Blob} file - The file to hash
