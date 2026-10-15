@@ -40,6 +40,12 @@ const fs=require('node:fs'),assert=require('node:assert/strict');
   if(width<=640){await page.locator('#homeCalendarToggle').click();assert(await page.locator('#homeCalendar').isVisible());await page.locator('#homeCalendarToggle').press('Escape');await page.locator('#homeCalendarToggle').click();assert.equal(await page.locator('#homeCalendar').isVisible(),false);}
   const ready=()=>page.waitForFunction(()=>document.querySelector('#homeGrid').getAttribute('aria-busy')==='false');
   assert.equal(await page.locator('#homeActivity').isVisible(),width>=1280);
+  assert.equal(await page.locator('.home-date-controls #homeRangeForm').count(),0,'no inline date inputs');
+  if(width>=1280){
+   const heights=await page.evaluate(()=>({height:document.querySelector('.home-date-layout').getBoundingClientRect().height,bottoms:['homeCalendar','homeActivity'].map(id=>document.getElementById(id).getBoundingClientRect().bottom)}));
+   assert(heights.height<330,'header should stay compact: '+JSON.stringify(heights));
+   assert(Math.abs(heights.bottoms[0]-heights.bottoms[1])<2,'calendar and heatmap bottoms aligned');
+  }
   assert.equal(await page.locator('#homeHeatmap button').count(),84);
   if(width>=1280){
    const hot=page.locator('[data-heat-date="2026-10-14"]');
@@ -52,7 +58,9 @@ const fs=require('node:fs'),assert=require('node:assert/strict');
   }
   await page.locator('[data-home-range="7"]').click();await ready();assert.equal((new Date(lastQuery.get('end'))-new Date(lastQuery.get('start')))/86400000,6);
   await page.locator('#homeLimit').selectOption('20');await ready();assert.equal(lastQuery.get('limit'),'20');
-  await page.locator('[data-home-range="custom"]').click();await page.locator('#homeStart').fill('2026-10-01');await page.locator('#homeEnd').fill('2026-10-15');await page.locator('#homeRangeApply').click();await ready();assert.equal(lastQuery.get('start'),'2026-10-01');assert.equal(lastQuery.get('end'),'2026-10-15');
+  const beforeDialog=calls,previousStart=lastQuery.get('start');
+  await page.locator('[data-home-range="custom"]').click();assert(await page.locator('#homeDateDialog').isVisible());await page.locator('#homeStart').fill('2026-10-01');await page.keyboard.press('Escape');assert.equal(await page.locator('#homeDateDialog').isVisible(),false);assert.equal(calls,beforeDialog,'cancelling must not fetch');assert.equal(lastQuery.get('start'),previousStart,'cancelling must not change filter');
+  await page.locator('[data-home-range="custom"]').click();await page.locator('#homeStart').fill('2026-10-01');await page.locator('#homeEnd').fill('2026-10-15');await page.locator('#homeRangeApply').click();await ready();assert.equal(lastQuery.get('start'),'2026-10-01');assert.equal(lastQuery.get('end'),'2026-10-15');assert.equal(await page.locator('#homeDateDialog').isVisible(),false);assert((await page.locator('#homeSelectedDate').textContent()).includes('2026/10/01'));
   if(width<=640)await page.locator('#homeCalendarToggle').click();
   await page.locator('#homeCalendarDays [data-date="2026-10-12"]').click();await ready();assert.equal(lastQuery.get('start'),'2026-10-12');assert.equal(lastQuery.get('end'),'2026-10-12');
   const currentRange=lastQuery.get('start');await page.locator('#homePrevMonth').click();await ready();assert.equal(lastQuery.get('month'),'2026-09');assert.equal(lastQuery.get('start'),currentRange,'browsing month must not change selected range');

@@ -92,30 +92,30 @@
         var target=this.querySelector('[data-heat-date="'+dateKey(date)+'"]');if(target&&!target.disabled)target.focus();
     });
     function syncDates() {
-        document.getElementById('homeRangeForm').hidden=rangeMode==='all';
         startInput.value=rangeStart;endInput.value=rangeEnd;endInput.min=rangeStart;startInput.max=rangeEnd;
-        startInput.readOnly=endInput.readOnly=rangeMode!=='custom';
-        document.getElementById('homeRangeApply').hidden=rangeMode!=='custom';
-        document.getElementById('homeRangeForm').classList.toggle('is-custom',rangeMode==='custom');
-        document.getElementById('homeSelectedDate').textContent=selected ? parseDate(selected).toLocaleDateString(english?'en-US':'zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'}) : lt('最近内容','Recent content');
+        document.getElementById('homeSelectedDate').textContent=rangeStart&&rangeStart!==rangeEnd ? rangeStart.replaceAll('-','/')+' – '+rangeEnd.replaceAll('-','/') : selected ? parseDate(selected).toLocaleDateString(english?'en-US':'zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'}) : lt('最近内容','Recent content');
         document.querySelector('.home-date-hint').textContent=rangeStart ? lt('所选日期内的内容，按时间倒序显示。','Content within the selected dates, newest first.') : lt('不限日期，按时间倒序显示最近内容。','Recent content across all dates, newest first.');
         document.querySelectorAll('[data-home-range]').forEach(function(b){var active=b.dataset.homeRange===rangeMode;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
         renderCalendar();
         renderActivity();
     }
     document.querySelectorAll('[data-home-range]').forEach(function(b){b.onclick=function(){
+        if(b.dataset.homeRange==='custom'){
+            startInput.value=rangeStart||dateKey(new Date());endInput.value=rangeEnd||startInput.value;
+            startInput.max=endInput.value;endInput.min=startInput.value;
+            document.getElementById('homeDateDialog').showModal();startInput.focus();return;
+        }
         rangeMode=b.dataset.homeRange;
         if(rangeMode==='all'){selected='';rangeStart='';rangeEnd='';syncDates();load();return;}
         if(!selected)selected=dateKey(new Date());
         if(!rangeStart){rangeStart=selected;rangeEnd=selected;}
-        if(rangeMode==='custom'){syncDates();startInput.focus();return;}
         var first=parseDate(selected);first.setDate(first.getDate()-Number(rangeMode)+1);rangeStart=dateKey(first);rangeEnd=selected;syncDates();load();
     };});
     document.querySelectorAll('[data-home-today]').forEach(function(b){b.onclick=function(){selectDay(dateKey(new Date()));};});
     document.getElementById('homeRangeForm').onsubmit=function(e){
         e.preventDefault();var from=parseDate(startInput.value),to=parseDate(endInput.value);
         if(!startInput.value||!endInput.value||!Number.isFinite(+from)||!Number.isFinite(+to)||from>to||to-from>366*86400000){BSDialog.toast(lt('请选择有效的日期范围，最多一年。','Choose a valid date range of up to one year.'),'error');return;}
-        rangeStart=startInput.value;rangeEnd=endInput.value;selected=rangeEnd;calendarMonth=new Date(to.getFullYear(),to.getMonth(),1);syncDates();load();
+        rangeStart=startInput.value;rangeEnd=endInput.value;selected=rangeEnd;rangeMode='custom';calendarMonth=new Date(to.getFullYear(),to.getMonth(),1);document.getElementById('homeDateDialog').close();syncDates();load();
     };
     startInput.oninput=function(){endInput.min=startInput.value;};endInput.oninput=function(){startInput.max=endInput.value;};
     document.getElementById('homeLimit').onchange=function(){limit=Number(this.value);load();};
