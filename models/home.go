@@ -20,6 +20,13 @@ type HomeSection struct {
 	Key   string     `json:"key"`
 	Total int        `json:"total"`
 	Items []HomeItem `json:"items"`
+	Dates []string   `json:"dates,omitempty"`
+}
+
+type HomeFilter struct {
+	Start, End, Month string
+	Limit             int
+	Location          *time.Location
 }
 
 type HomeStats struct {
@@ -59,7 +66,7 @@ func GetHomeStats(memberID int64, now time.Time) (HomeStats, error) {
 
 // ListHomeSections is a personal view, including for administrators: knowledge
 // records are always scoped to their owner. Asset inventory is admin-only.
-func ListHomeSections(memberID int64, admin bool, order string) ([]HomeSection, error) {
+func ListHomeSections(memberID int64, admin bool, order string, filters ...HomeFilter) ([]HomeSection, error) {
 	column := "modified"
 	if order == "created" {
 		column = "created"
@@ -85,11 +92,55 @@ func ListHomeSections(memberID int64, admin bool, order string) ([]HomeSection, 
 	sections := make([]HomeSection, 0, len(sources))
 	for _, s := range sources {
 		section := HomeSection{Key: s.key, Items: []HomeItem{}}
-		if err := DB.QueryRow("SELECT COUNT(*) FROM ("+s.query+")", s.args...).Scan(&section.Total); err != nil {
+		query := "SELECT *, substr(CAST(COALESCE(" + column + ",created) AS TEXT),1,10) day, COALESCE(" + column + ",created) stamp FROM (" + s.query + ")"
+		args := append([]any{}, s.args...)
+		limit := 10
+		where := ""
+		if len(filters) > 0 {
+			f := filters[0]
+			if f.Limit >= 1 && f.Limit <= 50 {
+				limit = f.Limit
+			}
+			loc := f.Location
+			if loc == nil {
+				loc = time.Local
+			}
+			offset := time.Now().In(loc).Format("-07:00")
+			// SQLite accepts RFC3339, but Go time.Time values may include an
+			// offset and zone suffix. Interpret legacy timezone-less values locally.
+			query = `WITH raw AS (SELECT *, CAST(COALESCE(` + column + `,created) AS TEXT) value FROM (` + s.query + `)),
+			 offsets AS (SELECT *, MAX(instr(value,' +'),instr(value,' -')) pos FROM raw),
+			 normalized AS (SELECT *, CASE WHEN pos>0 THEN substr(value,1,pos-1)||substr(value,pos+1,3)||':'||substr(value,pos+4,2)
+			 WHEN length(value)=19 THEN value||? WHEN length(value)=10 THEN value||'T00:00:00'||? ELSE value END moment FROM offsets)
+			 SELECT *, date(moment,?) day, julianday(moment) stamp FROM normalized`
+			args = append(args, offset, offset, offset)
+			if f.Month != "" {
+				monthRows, err := DB.Query("SELECT DISTINCT day FROM ("+query+") WHERE substr(day,1,7)=? ORDER BY day", append(append([]any{}, args...), f.Month)...)
+				if err != nil {
+					return nil, err
+				}
+				for monthRows.Next() {
+					var day string
+					if err := monthRows.Scan(&day); err != nil {
+						monthRows.Close()
+						return nil, err
+					}
+					section.Dates = append(section.Dates, day)
+				}
+				err = monthRows.Err()
+				monthRows.Close()
+				if err != nil {
+					return nil, err
+				}
+			}
+			where = " WHERE day>=? AND day<=?"
+			args = append(args, f.Start, f.End)
+		}
+		if err := DB.QueryRow("SELECT COUNT(*) FROM ("+query+")"+where, args...).Scan(&section.Total); err != nil {
 			return nil, fmt.Errorf("home %s count: %w", s.key, err)
 		}
 		// The sort column is selected from constants above, never from raw input.
-		rows, err := DB.Query("SELECT id, COALESCE(title,''), COALESCE(target,''), COALESCE(badge,''), COALESCE(substr(CAST(COALESCE("+column+",created) AS TEXT),1,10), '') FROM ("+s.query+") ORDER BY COALESCE("+column+",created) DESC, id DESC, target ASC LIMIT 10", s.args...)
+		rows, err := DB.Query("SELECT id, COALESCE(title,''), COALESCE(target,''), COALESCE(badge,''), COALESCE(day,'') FROM ("+query+")"+where+" ORDER BY stamp DESC, id DESC, target ASC LIMIT ?", append(args, limit)...)
 		if err != nil {
 			return nil, fmt.Errorf("home %s: %w", s.key, err)
 		}

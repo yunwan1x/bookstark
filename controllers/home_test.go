@@ -41,7 +41,7 @@ func TestHomeSummaryIsolationOrderAndLinks(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, test := range []struct{ order, title string }{{"updated", "note-00"}, {"created", "note-11"}} {
-		w := adminAssetRequest(router, token, "GET", "/api/home?order="+test.order, nil)
+		w := adminAssetRequest(router, token, "GET", "/api/home?start=2026-01-01&end=2026-02-28&order="+test.order, nil)
 		if w.Code != 200 {
 			t.Fatalf("summary: %d %s", w.Code, w.Body.String())
 		}
@@ -98,7 +98,7 @@ func TestHomeAssetsIncludeSSHAndWebDAV(t *testing.T) {
 		}
 	}
 	for _, order := range []string{"created", "updated"} {
-		w := adminAssetRequest(router, token, "GET", "/api/home?order="+order, nil)
+		w := adminAssetRequest(router, token, "GET", "/api/home?start=2026-01-01&end=2026-02-28&order="+order, nil)
 		if w.Code != 200 {
 			t.Fatalf("summary failed: %s", w.Body.String())
 		}
@@ -165,7 +165,7 @@ func TestPersonalHomeEnglishTemplate(t *testing.T) {
 	if w.Code != 200 {
 		t.Fatalf("home response: %d", w.Code)
 	}
-	for _, expected := range []string{`<html lang="en">`, `<h1 class="page-title">Personal Home</h1>`, `Recently updated`, `Customize sections`, `New Note`, `Mobile navigation`, `All sections`, `Capture an idea`, `New this week`, `Pending tasks`} {
+	for _, expected := range []string{`<html lang="en">`, `<h1 class="page-title">Personal Home</h1>`, `Recently updated`, `Customize sections`, `New Note`, `Mobile navigation`, `All sections`, `Capture an idea`, `Date range`, `Per section`, `Latest 10`} {
 		if !strings.Contains(w.Body.String(), expected) {
 			t.Errorf("missing translation: %s", expected)
 		}
@@ -219,14 +219,11 @@ func TestHomeStatsOwnerAndWeekBoundary(t *testing.T) {
 		t.Fatalf("empty account %+v: %v", stats, err)
 	}
 	w := adminAssetRequest(router, token, "GET", "/api/home", nil)
-	var result struct {
-		Stats models.HomeStats `json:"stats"`
-	}
 	if w.Code != 200 {
 		t.Fatal(w.Code, w.Body.String())
 	}
-	if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil || result.Stats.Notes != 3 || result.Stats.PendingTasks != 1 {
-		t.Fatalf("API stats %+v: %v", result, err)
+	if strings.Contains(w.Body.String(), `"stats"`) {
+		t.Fatal("calendar home must not query or expose statistics")
 	}
 	if dir := os.Getenv("HOME_SNAPSHOT_DIR"); dir != "" {
 		for _, lang := range []string{"zh", "en"} {
@@ -241,6 +238,52 @@ func TestHomeStatsOwnerAndWeekBoundary(t *testing.T) {
 			if err := os.WriteFile(filepath.Join(dir, "home-b1-"+lang+".html"), w.Body.Bytes(), 0600); err != nil {
 				t.Fatal(err)
 			}
+		}
+	}
+}
+
+func TestHomeCalendarFilteringValidationAndDefaults(t *testing.T) {
+	router, token := initAssetControllerTest(t)
+	for i, day := range []string{"2026-10-01", "2026-10-15", "2026-10-15", "2026-10-16"} {
+		_, err := models.DB.Exec(`INSERT INTO md_blogs(blog_title,blog_identify,blog_type,member_id,create_time,modify_time) VALUES(?,?,'note',1,?,?)`, fmt.Sprintf("Calendar %d", i), fmt.Sprintf("calendar-%d", i), day+" 10:00:00", day+" 11:00:00")
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, order := range []string{"created", "updated"} {
+		w := adminAssetRequest(router, token, "GET", "/api/home?start=2026-10-15&end=2026-10-15&month=2026-10&limit=5&order="+order, nil)
+		var data struct {
+			Sections   []models.HomeSection `json:"sections"`
+			Start, End string
+			Limit      int
+		}
+		if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &data) != nil {
+			t.Fatal(w.Code, w.Body.String())
+		}
+		if data.Sections[0].Total != 2 || len(data.Sections[0].Items) != 2 || len(data.Sections[0].Dates) != 3 || data.Limit != 5 {
+			t.Fatalf("unexpected filter: %+v", data)
+		}
+		for _, item := range data.Sections[0].Items {
+			if item.Date != "2026-10-15" {
+				t.Fatal(item)
+			}
+		}
+	}
+	w := adminAssetRequest(router, token, "GET", "/api/home", nil)
+	var defaults struct {
+		Start, End string
+		Limit      int
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &defaults); err != nil {
+		t.Fatal(err)
+	}
+	if defaults.Start != time.Now().Format("2006-01-02") || defaults.End != defaults.Start || defaults.Limit != 10 {
+		t.Fatal(defaults)
+	}
+	for _, query := range []string{"start=bad", "start=2026-10-16&end=2026-10-15", "start=2024-01-01&end=2026-10-15", "limit=10000", "limit=abc", "month=bad", "start=2026-02-30"} {
+		w := adminAssetRequest(router, token, "GET", "/api/home?"+query, nil)
+		if w.Code != 400 {
+			t.Fatalf("accepted %s: %d", query, w.Code)
 		}
 	}
 }

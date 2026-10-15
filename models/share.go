@@ -232,15 +232,18 @@ func ListSharesPaged(page, pageSize int, keyword, filter string, options ...Publ
 		case "book":
 			where = ` WHERE title LIKE ?`
 			args = append(args, kw)
-		case "article", "note":
+		case "note":
+			where = ` WHERE (title LIKE ? OR description LIKE ? OR target_id IN (SELECT r.resource_id FROM md_label_relation r JOIN md_label l ON r.label_id=l.label_id WHERE l.label_name LIKE ? AND r.relation_type='blog') OR (has_password=0 AND content LIKE ?))`
+			args = append(args, kw, kw, kw, kw)
+		case "article":
 			where = ` WHERE (title LIKE ? OR description LIKE ? OR target_id IN (SELECT r.resource_id FROM md_label_relation r JOIN md_label l ON r.label_id=l.label_id WHERE l.label_name LIKE ? AND r.relation_type='blog'))`
 			args = append(args, kw, kw, kw)
 		default:
 			where = ` WHERE (
-				(share_type='blog' AND (title LIKE ? OR description LIKE ? OR target_id IN (SELECT r.resource_id FROM md_label_relation r JOIN md_label l ON r.label_id=l.label_id WHERE l.label_name LIKE ? AND r.relation_type='blog')))
+				(share_type='blog' AND (title LIKE ? OR description LIKE ? OR target_id IN (SELECT r.resource_id FROM md_label_relation r JOIN md_label l ON r.label_id=l.label_id WHERE l.label_name LIKE ? AND r.relation_type='blog') OR (blog_type='note' AND has_password=0 AND content LIKE ?)))
 				OR (share_type='book' AND title LIKE ?)
 			)`
-			args = append(args, kw, kw, kw, kw)
+			args = append(args, kw, kw, kw, kw, kw)
 		}
 	}
 

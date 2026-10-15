@@ -1,6 +1,58 @@
 package models
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
+
+func TestPublicNoteSearchIncludesBodyOnlyForUnprotectedNotes(t *testing.T) {
+	initAssetTestDB(t)
+	for i, fixture := range []struct {
+		kind       string
+		visibility int
+		password   string
+		shared     bool
+	}{
+		{"note", 1, "", false}, {"note", 1, "", true},
+		{"note", 0, "", false}, {"note", 0, "", true},
+		{"note", 1, "protected", false}, {"note", 1, "protected", true},
+		{"article", 1, "", false}, {"article", 1, "", true},
+	} {
+		blog := &Blog{BlogTitle: "Unrelated title", BlogIdentify: fmt.Sprintf("body-search-%d", i), MemberID: 1, BlogContent: "**正文专属关键词**", BlogType: fixture.kind, EditorType: "markdown", Visibility: fixture.visibility, Password: fixture.password}
+		if err := blog.Insert(); err != nil {
+			t.Fatal(err)
+		}
+		if fixture.shared {
+			if _, err := CreateShare("blog", blog.BlogID, 1, ""); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	for _, filter := range []string{"note", "article", ""} {
+		want := int64(2)
+		if filter == "article" {
+			want = 0
+		}
+		items, total, err := ListSharesPaged(1, 1, "正文专属关键词", filter, PublicFeedOptions{Sort: "updated"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if total != want || (want > 0 && len(items) != 1) || (want == 0 && len(items) != 0) {
+			t.Fatalf("filter=%q total=%d items=%d want=%d", filter, total, len(items), want)
+		}
+		for _, item := range items {
+			if item.HasPassword || item.BlogType != "note" {
+				t.Fatalf("body search exposed invalid item: %#v", item)
+			}
+		}
+		if want > 0 {
+			second, count, err := ListSharesPaged(2, 1, "正文专属关键词", filter, PublicFeedOptions{Sort: "updated"})
+			if err != nil || count != want || len(second) != 1 || second[0].TargetID == items[0].TargetID {
+				t.Fatalf("pagination: count=%d items=%#v err=%v", count, second, err)
+			}
+		}
+	}
+}
 
 func TestShareBlogUsesManualDescription(t *testing.T) {
 	initAssetTestDB(t)

@@ -1,11 +1,13 @@
 package controllers
 
 import (
+	"bookstark/i18n"
 	"bookstark/middleware"
 	"bookstark/models"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -21,7 +23,18 @@ func HomeSummary(c *gin.Context) {
 		apiError(c, http.StatusBadRequest, "不支持的排序方式")
 		return
 	}
-	sections, err := models.ListHomeSections(middleware.GetMemberID(c), isAdmin(c), order)
+	today := time.Now().Format("2006-01-02")
+	start, end := c.DefaultQuery("start", today), c.DefaultQuery("end", today)
+	from, err1 := time.ParseInLocation("2006-01-02", start, time.Local)
+	to, err2 := time.ParseInLocation("2006-01-02", end, time.Local)
+	limit, err3 := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	month := c.DefaultQuery("month", time.Now().Format("2006-01"))
+	_, err4 := time.Parse("2006-01", month)
+	if err1 != nil || err2 != nil || err3 != nil || err4 != nil || from.After(to) || to.Sub(from) > 366*24*time.Hour || (limit != 5 && limit != 10 && limit != 20 && limit != 50) {
+		apiError(c, http.StatusBadRequest, i18n.T(i18n.GetLang(c), "home.invalid_filter"))
+		return
+	}
+	sections, err := models.ListHomeSections(middleware.GetMemberID(c), isAdmin(c), order, models.HomeFilter{Start: start, End: end, Month: month, Limit: limit, Location: time.Local})
 	if err != nil {
 		log.Printf("home summary: %v", err)
 		apiError(c, http.StatusInternalServerError, "首页加载失败，请重试")
@@ -33,13 +46,7 @@ func HomeSummary(c *gin.Context) {
 		apiError(c, http.StatusInternalServerError, "首页加载失败，请重试")
 		return
 	}
-	stats, err := models.GetHomeStats(middleware.GetMemberID(c), time.Now())
-	if err != nil {
-		log.Printf("home stats: %v", err)
-		apiError(c, http.StatusInternalServerError, "首页加载失败，请重试")
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"code": 0, "sections": sections, "layout": layout, "stats": stats})
+	c.JSON(http.StatusOK, gin.H{"code": 0, "sections": sections, "layout": layout, "start": start, "end": end, "limit": limit})
 }
 
 func SaveHomeLayout(c *gin.Context) {

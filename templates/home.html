@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}">
 {{template "head-assets" .}}
 <link rel="stylesheet" href="/static/css/home.css?v={{assetVer "/static/css/home.css"}}">
+<link rel="stylesheet" href="/static/css/calendar.css?v={{assetVer "/static/css/calendar.css"}}">
 </head>
 <body class="home-body min-h-screen flex flex-col" data-home-member="{{.MemberID}}">
 {{template "header" .}}
@@ -17,15 +18,23 @@
   <div class="home-heading-card">
   <section class="home-welcome">
     <div><h1 class="page-title">{{call .T "home.title"}}</h1></div>
-    <div class="home-actions"><time id="homeToday"></time><div><button class="home-button home-primary" data-home-dialog="homeCreate"><i class="fa-solid fa-plus" aria-hidden="true"></i> {{call .T "home.new"}}</button><button class="home-button" data-home-dialog="homeCustomize"><i class="fa-solid fa-sliders" aria-hidden="true"></i> {{call .T "home.layout.title"}}</button></div></div>
+    <div class="home-actions"><div><button class="home-button home-primary" data-home-dialog="homeCreate"><i class="fa-solid fa-plus" aria-hidden="true"></i> {{call .T "home.new"}}</button><button class="home-button" data-home-dialog="homeCustomize"><i class="fa-solid fa-sliders" aria-hidden="true"></i> {{call .T "home.layout.title"}}</button></div></div>
   </section>
-  <div class="home-stats" id="homeStats" aria-label="{{call .T "home.stats.title"}}" aria-busy="true">
-    <a class="home-stat" href="/notes?tab=notes"><span class="home-stat-icon"><i class="fa-solid fa-note-sticky" aria-hidden="true"></i></span><span><span class="home-stat-label">{{call .T "note.tab.notes"}}</span><strong data-home-stat="notes">—</strong></span></a>
-    <a class="home-stat" href="/notes?tab=articles"><span class="home-stat-icon"><i class="fa-solid fa-file-lines" aria-hidden="true"></i></span><span><span class="home-stat-label">{{call .T "note.tab.articles"}}</span><strong data-home-stat="articles">—</strong></span></a>
-    <a class="home-stat" href="/notes?tab=tasks"><span class="home-stat-icon"><i class="fa-solid fa-list-check" aria-hidden="true"></i></span><span><span class="home-stat-label">{{call .T "home.stats.pending"}}</span><strong data-home-stat="pending_tasks">—</strong></span></a>
-    <div class="home-stat" title="{{call .T "home.stats.week_hint"}}"><span class="home-stat-icon"><i class="fa-solid fa-arrow-trend-up" aria-hidden="true"></i></span><span><span class="home-stat-label">{{call .T "home.stats.week"}}</span><strong data-home-stat="created_this_week">—</strong></span></div>
-  </div>
+  <div class="home-date-layout">
+  <section class="calendar-card home-calendar" aria-label="{{call .T "home.calendar"}}" id="homeCalendar">
+    <div class="calendar-header"><button type="button" class="calendar-nav-btn" id="homePrevMonth" aria-label="{{call .T "calendar.nav.prev"}}"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button><span class="calendar-title" id="homeMonthTitle"></span><button type="button" class="calendar-nav-btn" id="homeNextMonth" aria-label="{{call .T "calendar.nav.next"}}"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button><button type="button" class="home-button" data-home-today>{{call .T "home.today"}}</button></div>
+    <div class="calendar-weekdays"><span class="calendar-weekday">{{call .T "calendar.mon"}}</span><span class="calendar-weekday">{{call .T "calendar.tue"}}</span><span class="calendar-weekday">{{call .T "calendar.wed"}}</span><span class="calendar-weekday">{{call .T "calendar.thu"}}</span><span class="calendar-weekday">{{call .T "calendar.fri"}}</span><span class="calendar-weekday">{{call .T "calendar.sat"}}</span><span class="calendar-weekday">{{call .T "calendar.sun"}}</span></div>
+    <div class="calendar-days" id="homeCalendarDays"></div>
+  </section>
+  <div class="home-date-controls">
+    <div class="home-date-heading"><h2 id="homeSelectedDate"></h2><button type="button" class="row-action home-mobile-calendar-toggle" id="homeCalendarToggle" aria-label="{{call .T "home.calendar"}}" aria-expanded="false" aria-controls="homeCalendar"><i class="fa-regular fa-calendar" aria-hidden="true"></i></button><button type="button" class="home-button home-mobile-today" data-home-today>{{call .T "home.today"}}</button></div>
+    <div class="home-week-strip" id="homeWeekStrip" aria-label="{{call .T "home.calendar"}}"></div>
+    <div class="main-tabs home-date-presets" role="group" aria-label="{{call .T "home.range"}}"><button type="button" class="main-tab active" data-home-range="1" aria-pressed="true">{{call .T "home.day"}}</button><button type="button" class="main-tab" data-home-range="7" aria-pressed="false">{{call .T "home.week"}}</button><button type="button" class="main-tab" data-home-range="30" aria-pressed="false">{{call .T "home.month"}}</button><button type="button" class="main-tab" data-home-range="custom" aria-pressed="false">{{call .T "home.custom"}}</button></div>
+    <form id="homeRangeForm" class="home-range-form"><label for="homeStart">{{call .T "home.range"}}</label><input class="dialog-input" id="homeStart" type="date" required><span>{{call .T "home.to"}}</span><label class="sr-only" for="homeEnd">{{call .T "home.end"}}</label><input class="dialog-input" id="homeEnd" type="date" required><button type="submit" class="home-button" id="homeRangeApply" hidden>{{call .T "home.apply"}}</button></form>
+    <div class="home-limit-row"><label for="homeLimit">{{call .T "home.per_section"}}</label><select class="dialog-input" id="homeLimit"><option value="5">{{call .T "home.limit5"}}</option><option value="10" selected>{{call .T "home.limit10"}}</option><option value="20">{{call .T "home.limit20"}}</option><option value="50">{{call .T "home.limit50"}}</option></select></div>
   <div class="home-toolbar"><div class="main-tabs" role="group" aria-label="{{call .T "home.sort"}}"><button type="button" class="main-tab active" data-home-sort="updated" aria-pressed="true"><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>{{call .T "home.updated"}}</button><button type="button" class="main-tab" data-home-sort="created" aria-pressed="false"><i class="fa-regular fa-square-plus" aria-hidden="true"></i>{{call .T "home.created"}}</button></div></div>
+  <p class="home-date-hint">{{call .T "home.date_hint"}}</p>
+  </div></div>
   </div>
   <p id="homeStatus" role="status" aria-live="polite">{{call .T "home.loading"}}</p>
   <button id="homeRetry" class="home-button" hidden>{{call .T "home.retry"}}</button>

@@ -2,18 +2,19 @@
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const fs=require('node:fs'),assert=require('node:assert/strict');
 (async()=>{
- const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH,args:['--no-sandbox']});
+ const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH,args:['--no-sandbox','--disable-dev-shm-usage']});
  try {
  for(const lang of ['zh','en'])for(const [width,theme] of [[1440,'light'],[768,'light'],[390,'light'],[320,'dark']]){
   if(process.env.HOME_TEST_LANG&&process.env.HOME_TEST_LANG!==lang)continue;
-  const page=await browser.newPage({viewport:{width,height:1000}}),errors=[];let calls=0,fail=false,release;
+  if(process.env.HOME_TEST_WIDTH&&Number(process.env.HOME_TEST_WIDTH)!==width)continue;
+  const page=await browser.newPage({viewport:{width,height:1000}}),errors=[];let calls=0,fail=false,release,lastQuery;
   const pending=new Promise(resolve=>release=resolve);
   page.on('pageerror',e=>errors.push(e.message));
   await page.addInitScript(t=>localStorage.setItem('bookstark-theme',t),theme);
   await page.route('http://home.test/**',async route=>{
    const u=new URL(route.request().url());
    if(u.pathname.startsWith('/static/'))return route.fulfill({path:'.'+u.pathname});
-   if(u.pathname==='/api/home'){calls++;await pending;return route.fulfill({json:fail?{code:500}:{code:0,stats:{notes:119,articles:86,pending_tasks:6,created_this_week:12},sections:['notes','articles','tasks'].map(key=>({key,total:1,items:[{title:'Example',url:'/notes',date:'2026-10-14'}]})),layout:null},status:fail?500:200});}
+   if(u.pathname==='/api/home'){calls++;lastQuery=u.searchParams;await pending;return route.fulfill({json:fail?{code:500}:{code:0,sections:['notes','articles','tasks'].map(key=>({key,total:1,dates:[u.searchParams.get('end')],items:[{title:'Example',url:'/notes',date:u.searchParams.get('end')}]})),layout:null},status:fail?500:200});}
    if(u.pathname==='/home')return route.fulfill({contentType:'text/html',body:fs.readFileSync('/tmp/home-b1-'+lang+'.html','utf8')});
    return route.fulfill({status:404,body:''});
   });
@@ -23,22 +24,35 @@ const fs=require('node:fs'),assert=require('node:assert/strict');
   assert.equal(await page.locator('#main-nav > a[href="/shares"]').textContent(),lang==='zh'?'广场':'Community');
   release();await page.locator('.home-card:not(.home-loading-card)').first().waitFor();
   assert.equal(await page.locator('.home-loading-card').count(),0);
-  assert.deepEqual(await page.locator('[data-home-stat]').allTextContents(),['119','86','6','12']);
+  assert.equal(await page.locator('[data-home-stat]').count(),0);
+  assert.equal(lastQuery.get('start'),lastQuery.get('end'));assert.equal(lastQuery.get('limit'),'10');
+  assert.equal(lastQuery.get('start'),await page.evaluate(()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}));
   assert.equal(await page.locator('.home-eyebrow').count(),0);
   assert(await page.locator('.home-heading-card [data-home-dialog="homeCreate"]').isVisible());
   const overflow=await page.evaluate(()=>({ok:document.documentElement.scrollWidth<=innerWidth,items:[...document.querySelectorAll('body *')].filter(n=>n.getBoundingClientRect().right>innerWidth+1).map(n=>({class:n.className,right:n.getBoundingClientRect().right})).slice(0,12)}));
   assert(overflow.ok,'overflow '+lang+' '+width+' '+JSON.stringify(overflow.items));
-  assert.equal(await page.locator('.home-stats').evaluate(n=>getComputedStyle(n).gridTemplateColumns.split(' ').length),width<=768?2:4);
-  const sort=page.locator('[data-home-sort="created"]');await sort.click();await page.waitForFunction(()=>document.querySelector('#homeStats').getAttribute('aria-busy')==='false');
+  assert.equal(await page.locator('#homeCalendar').isVisible(),width>640);
+  if(width<=640){await page.locator('#homeCalendarToggle').click();assert(await page.locator('#homeCalendar').isVisible());await page.locator('#homeCalendarToggle').press('Escape');await page.locator('#homeCalendarToggle').click();assert.equal(await page.locator('#homeCalendar').isVisible(),false);}
+  const ready=()=>page.waitForFunction(()=>document.querySelector('#homeGrid').getAttribute('aria-busy')==='false');
+  await page.locator('[data-home-range="7"]').click();await ready();assert.equal((new Date(lastQuery.get('end'))-new Date(lastQuery.get('start')))/86400000,6);
+  await page.locator('#homeLimit').selectOption('20');await ready();assert.equal(lastQuery.get('limit'),'20');
+  await page.locator('[data-home-range="custom"]').click();await page.locator('#homeStart').fill('2026-10-01');await page.locator('#homeEnd').fill('2026-10-15');await page.locator('#homeRangeApply').click();await ready();assert.equal(lastQuery.get('start'),'2026-10-01');assert.equal(lastQuery.get('end'),'2026-10-15');
+  if(width<=640)await page.locator('#homeCalendarToggle').click();
+  await page.locator('#homeCalendarDays [data-date="2026-10-12"]').click();await ready();assert.equal(lastQuery.get('start'),'2026-10-12');assert.equal(lastQuery.get('end'),'2026-10-12');
+  const currentRange=lastQuery.get('start');await page.locator('#homePrevMonth').click();await ready();assert.equal(lastQuery.get('month'),'2026-09');assert.equal(lastQuery.get('start'),currentRange,'browsing month must not change selected range');
+  await page.locator('[data-home-today]').filter({visible:true}).first().click();await ready();
+  if(width<=640)await page.locator('#homeCalendarToggle').click();
+  const sort=page.locator('[data-home-sort="created"]');await sort.click();await ready();assert.equal(lastQuery.get('order'),'created');
   assert.equal(await sort.getAttribute('aria-pressed'),'true');assert((await sort.getAttribute('class')).includes('active'));
-  assert.equal(await sort.evaluate(n=>getComputedStyle(n).borderBottomWidth),'0px');
+  assert.equal(await sort.evaluate(n=>getComputedStyle(n).borderBottomWidth),'2px');
   assert.notEqual(await sort.evaluate(n=>getComputedStyle(n).color),await sort.evaluate(n=>getComputedStyle(n).backgroundColor));
   const before=calls;await sort.click();assert.equal(calls,before,'selected sort must not reload');
   fail=true;await page.locator('[data-home-sort="updated"]').click();await page.locator('#homeRetry').waitFor({state:'visible'});
-  assert.deepEqual(await page.locator('[data-home-stat]').allTextContents(),['—','—','—','—']);assert.equal(await page.locator('.home-card').count(),0);
+  assert.equal(await page.locator('.home-card').count(),0);
   fail=false;await page.locator('#homeRetry').click();await page.locator('.home-card:not(.home-loading-card)').first().waitFor();
   await page.locator('.home-heading-card [data-home-dialog="homeCustomize"]').click();assert(await page.locator('#homeCustomize').isVisible());await page.keyboard.press('Escape');
-  await page.screenshot({path:'/tmp/home-b1-'+lang+'-'+width+'.png'});assert.deepEqual(errors,[]);console.log('PASS',lang,width,theme,'stats, sort, retry, layout dialog');await page.close();
+  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'overflow after date filtering');
+  await page.screenshot({path:'/tmp/home-calendar-'+lang+'-'+width+'.png'});assert.deepEqual(errors,[]);console.log('PASS',lang,width,theme,'calendar, date range, limit, sort, retry, layout dialog');await page.close();
  }
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1});
