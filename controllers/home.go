@@ -23,14 +23,14 @@ func HomeSummary(c *gin.Context) {
 		apiError(c, http.StatusBadRequest, "不支持的排序方式")
 		return
 	}
-	today := time.Now().Format("2006-01-02")
-	start, end := c.DefaultQuery("start", today), c.DefaultQuery("end", today)
+	start, end := c.Query("start"), c.Query("end")
 	from, err1 := time.ParseInLocation("2006-01-02", start, time.Local)
 	to, err2 := time.ParseInLocation("2006-01-02", end, time.Local)
 	limit, err3 := strconv.Atoi(c.DefaultQuery("limit", "10"))
 	month := c.DefaultQuery("month", time.Now().Format("2006-01"))
 	_, err4 := time.Parse("2006-01", month)
-	if err1 != nil || err2 != nil || err3 != nil || err4 != nil || from.After(to) || to.Sub(from) > 366*24*time.Hour || (limit != 5 && limit != 10 && limit != 20 && limit != 50) {
+	dateInvalid := (start != "" || end != "") && (err1 != nil || err2 != nil || from.After(to) || to.Sub(from) > 366*24*time.Hour)
+	if dateInvalid || err3 != nil || err4 != nil || (limit != 5 && limit != 10 && limit != 20 && limit != 50) {
 		apiError(c, http.StatusBadRequest, i18n.T(i18n.GetLang(c), "home.invalid_filter"))
 		return
 	}

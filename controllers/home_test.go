@@ -273,12 +273,17 @@ func TestHomeCalendarFilteringValidationAndDefaults(t *testing.T) {
 	var defaults struct {
 		Start, End string
 		Limit      int
+		Sections   []models.HomeSection
 	}
 	if err := json.Unmarshal(w.Body.Bytes(), &defaults); err != nil {
 		t.Fatal(err)
 	}
-	if defaults.Start != time.Now().Format("2006-01-02") || defaults.End != defaults.Start || defaults.Limit != 10 {
+	if w.Code != 200 || defaults.Start != "" || defaults.End != "" || defaults.Limit != 10 || len(defaults.Sections[0].Items) != 4 {
 		t.Fatal(defaults)
+	}
+	w = adminAssetRequest(router, token, "GET", "/api/home?start=&end=&limit=5&month=2026-10", nil)
+	if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &defaults) != nil || len(defaults.Sections[0].Items) != 4 || len(defaults.Sections[0].Dates) != 3 {
+		t.Fatal("all-time filter lost records or activity", w.Body.String())
 	}
 	for _, query := range []string{"start=bad", "start=2026-10-16&end=2026-10-15", "start=2024-01-01&end=2026-10-15", "limit=10000", "limit=abc", "month=bad", "start=2026-02-30"} {
 		w := adminAssetRequest(router, token, "GET", "/api/home?"+query, nil)

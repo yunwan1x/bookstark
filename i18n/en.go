@@ -96,7 +96,7 @@ var enMessages = map[string]string{
 	"home.invalid_filter":                "Choose a valid date range (up to one year) and item limit.",
 	"home.calendar":                      "Choose a date",
 	"home.today":                         "Today",
-	"home.day":                           "Day",
+	"home.all_time":                      "All time",
 	"home.week":                          "Last 7 days",
 	"home.month":                         "Last 30 days",
 	"home.custom":                        "Custom",

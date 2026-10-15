@@ -133,8 +133,10 @@ func ListHomeSections(memberID int64, admin bool, order string, filters ...HomeF
 					return nil, err
 				}
 			}
-			where = " WHERE day>=? AND day<=?"
-			args = append(args, f.Start, f.End)
+			if f.Start != "" && f.End != "" {
+				where = " WHERE day>=? AND day<=?"
+				args = append(args, f.Start, f.End)
+			}
 		}
 		if err := DB.QueryRow("SELECT COUNT(*) FROM ("+query+")"+where, args...).Scan(&section.Total); err != nil {
 			return nil, fmt.Errorf("home %s count: %w", s.key, err)

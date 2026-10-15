@@ -96,7 +96,7 @@ var zhMessages = map[string]string{
 	"home.invalid_filter":                "请选择有效的日期范围（最多一年）和条数。",
 	"home.calendar":                      "选择日期",
 	"home.today":                         "今天",
-	"home.day":                           "当天",
+	"home.all_time":                      "全部时间",
 	"home.week":                          "近7天",
 	"home.month":                         "近30天",
 	"home.custom":                        "自定义",

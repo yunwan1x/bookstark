@@ -29,7 +29,7 @@
     var now = new Date();
     function dateKey(date) { return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0'); }
     function parseDate(value) { return new Date(value+'T12:00:00'); }
-    var selected = dateKey(now), rangeStart = selected, rangeEnd = selected, rangeMode = '1', limit = 10;
+    var selected = '', rangeStart = '', rangeEnd = '', rangeMode = 'all', limit = 10;
     var calendarMonth = new Date(now.getFullYear(),now.getMonth(),1), activity = new Set();
     var startInput = document.getElementById('homeStart'), endInput = document.getElementById('homeEnd');
     function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; }
@@ -54,20 +54,25 @@
         var first=new Date(calendarMonth), offset=(first.getDay()+6)%7;first.setDate(1-offset);
         var cells=Math.ceil((offset+new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+1,0).getDate())/7)*7;
         for(var i=0;i<cells;i++){var d=new Date(first);d.setDate(first.getDate()+i);days.append(dateButton(d,d.getMonth()!==calendarMonth.getMonth(),false));}
-        var strip=document.getElementById('homeWeekStrip');strip.replaceChildren();var monday=parseDate(selected);monday.setDate(monday.getDate()-(monday.getDay()+6)%7);
+        var strip=document.getElementById('homeWeekStrip');strip.replaceChildren();var monday=parseDate(selected || dateKey(now));monday.setDate(monday.getDate()-(monday.getDay()+6)%7);
         for(var j=0;j<7;j++){var day=new Date(monday);day.setDate(monday.getDate()+j);strip.append(dateButton(day,false,true));}
     }
     function syncDates() {
+        document.getElementById('homeRangeForm').hidden=rangeMode==='all';
         startInput.value=rangeStart;endInput.value=rangeEnd;endInput.min=rangeStart;startInput.max=rangeEnd;
         startInput.readOnly=endInput.readOnly=rangeMode!=='custom';
         document.getElementById('homeRangeApply').hidden=rangeMode!=='custom';
         document.getElementById('homeRangeForm').classList.toggle('is-custom',rangeMode==='custom');
-        document.getElementById('homeSelectedDate').textContent=parseDate(selected).toLocaleDateString(english?'en-US':'zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+        document.getElementById('homeSelectedDate').textContent=selected ? parseDate(selected).toLocaleDateString(english?'en-US':'zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'}) : lt('最近内容','Recent content');
+        document.querySelector('.home-date-hint').textContent=rangeStart ? lt('所选日期内的内容，按时间倒序显示。','Content within the selected dates, newest first.') : lt('不限日期，按时间倒序显示最近内容。','Recent content across all dates, newest first.');
         document.querySelectorAll('[data-home-range]').forEach(function(b){var active=b.dataset.homeRange===rangeMode;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
         renderCalendar();
     }
     document.querySelectorAll('[data-home-range]').forEach(function(b){b.onclick=function(){
         rangeMode=b.dataset.homeRange;
+        if(rangeMode==='all'){selected='';rangeStart='';rangeEnd='';syncDates();load();return;}
+        if(!selected)selected=dateKey(new Date());
+        if(!rangeStart){rangeStart=selected;rangeEnd=selected;}
         if(rangeMode==='custom'){syncDates();startInput.focus();return;}
         var first=parseDate(selected);first.setDate(first.getDate()-Number(rangeMode)+1);rangeStart=dateKey(first);rangeEnd=selected;syncDates();load();
     };});
@@ -138,7 +143,7 @@
                 var date = el('time','',item.date ? item.date.slice(5) : ''); date.dateTime = item.date; date.title = item.date; a.append(date); li.append(a); list.append(li);
             });
             card.append(list);
-            if (!s.items.length) card.append(el('p','home-empty',lt('所选日期内没有记录','No records in the selected date range')));
+            if (!s.items.length) card.append(el('p','home-empty',rangeStart ? lt('所选日期内没有记录','No records in the selected date range') : lt('暂无记录','No records yet')));
             if (s.items.length > 3) {
                 var expandText = lt('展开最近 ' + s.items.length + ' 条 ↓','Show latest ' + s.items.length + ' ↓');
                 var expand = el('button','home-expand',expandText); expand.setAttribute('aria-expanded','false'); expand.setAttribute('aria-controls',list.id);
