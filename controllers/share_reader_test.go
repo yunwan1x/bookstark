@@ -11,7 +11,7 @@ import (
 )
 
 func TestShareReaderTemplatesForAllDocumentTypes(t *testing.T) {
-	router, _ := initAssetControllerTest(t)
+	router, token := initAssetControllerTest(t)
 	paths := map[string]string{}
 	for _, kind := range []string{"markdown", "html", "richdoc", "spreadsheet", "presentation", "drawing", "mindmap"} {
 		blog := &models.Blog{BlogTitle: "Reader " + kind, BlogIdentify: "reader-" + kind, BlogType: "article", EditorType: kind, MemberID: 1, Visibility: 1, BlogContent: "# Test heading"}
@@ -29,6 +29,17 @@ func TestShareReaderTemplatesForAllDocumentTypes(t *testing.T) {
 		t.Fatal(err)
 	}
 	paths["book"] = "/shares/" + share.ShareIdentify
+	for _, auth := range []string{"", token} {
+		w := adminAssetRequest(router, auth, "GET", "/shares?type=article", nil)
+		if w.Code != http.StatusOK {
+			t.Fatal(w.Code, w.Body.String())
+		}
+		for kind, path := range paths {
+			if kind != "book" && !strings.Contains(w.Body.String(), `href="`+path+`" target="_blank" rel="noopener noreferrer"`) {
+				t.Fatalf("%s article must open in a new tab (authenticated=%v)", kind, auth != "")
+			}
+		}
+	}
 	for kind, path := range paths {
 		for _, lang := range []string{"zh", "en"} {
 			req := httptest.NewRequest(http.MethodGet, path, nil)

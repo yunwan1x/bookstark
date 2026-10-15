@@ -9,6 +9,7 @@ function source(name){
  const code=template.slice(start,end+7);new Function(code);return code;
 }
 const names=['getShareLayoutStorage','readShareLayoutState','writeShareLayoutState','setShareSidebarCollapsed','isCompactShareViewport','applyShareLayoutState','enterShareReaderFullscreen','exitShareReaderFullscreen','toggleShareSidebar','openMobileDrawer','closeMobileDrawer','switchShareTab','switchBookTab','onFullpage','setShareOutlineAvailable','setShareReaderType','buildShareToc','setActiveTocItem','bindTocObserver','renderShareContent'];
+names.push('isShareImmersiveArticle');
 const functions=names.map(source).join('\n');
 // Syntax-check inline scripts from real Go-rendered pages when snapshots exist.
 for(const kind of ['markdown','html','richdoc','spreadsheet','presentation','drawing','mindmap','book'])for(const lang of ['zh','en']){
@@ -58,6 +59,15 @@ for(const kind of ['markdown','html','richdoc','spreadsheet','presentation','dra
   await page.evaluate(()=>{shareIdentify='article-a';renderShareContent('<h1>Heading</h1>','markdown');delayed.shift()();});
   assert(await page.locator('#share-reader-exit-btn').isVisible(),'restore only this article preference');
   for(const type of ['html','richdoc','spreadsheet','presentation','drawing','mindmap']){
+   await page.evaluate(type=>{shareType='blog';renderShareContent('Tool',type);},type);
+   assert(await page.locator('body').evaluate(n=>n.classList.contains('share-reader-fullscreen')),type+' articles default to immersive fullscreen');
+   assert.equal(await page.locator('#share-reader-fullscreen-btn').isVisible(),false,type+' hides entry toggle');
+   assert.equal(await page.locator('#share-reader-exit-btn').isVisible(),false,type+' hides floating exit toggle');
+   assert.equal(await page.locator('#share-tab-outline').isVisible(),false,type+' no outer outline');
+   await page.keyboard.press('Escape');
+   assert(await page.locator('body').evaluate(n=>n.classList.contains('share-reader-fullscreen')),type+' Escape keeps tool immersive');
+   await page.evaluate(()=>{setShareReaderType('');});
+   assert.equal(await page.locator('body').evaluate(n=>n.classList.contains('share-reader-fullscreen')),false,'loading/editing clears immersive mode');
    await page.evaluate(type=>{
     shareType='book';renderShareContent('<h1>Not an outer heading</h1>',type);
     switchBookTab('outline');enterShareReaderFullscreen();

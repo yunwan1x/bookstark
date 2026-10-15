@@ -81,6 +81,9 @@ func TestShareReaderCapabilitiesFollowRenderedContent(t *testing.T) {
 	}
 	for _, required := range []string{
 		`state.readerShare = shareIdentify;`,
+		`if (isShareImmersiveArticle() ||`,
+		`if (isShareImmersiveArticle()) return;`,
+		`exitButton.hidden = _shareReaderDocType !== 'markdown'`,
 		`_shareReaderDocType === 'markdown' && state.readerShare === shareIdentify`,
 		`if (_shareReaderDocType !== 'markdown') return;`,
 		`button.hidden = _shareReaderDocType !== 'markdown'`,

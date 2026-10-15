@@ -1050,9 +1050,13 @@
         return window.innerWidth <= 768 || (window.innerWidth <= 960 && window.innerHeight <= 520);
     }
 
+    function isShareImmersiveArticle() {
+        return shareType !== 'book' && !!_shareReaderDocType && _shareReaderDocType !== 'markdown';
+    }
+
     function applyShareLayoutState() {
         var state = readShareLayoutState();
-        if (_shareReaderDocType === 'markdown' && state.readerShare === shareIdentify && state.readerFullscreen === true) {
+        if (isShareImmersiveArticle() || (_shareReaderDocType === 'markdown' && state.readerShare === shareIdentify && state.readerFullscreen === true)) {
             document.body.classList.add('share-reader-fullscreen');
             var readerBtn = document.getElementById('share-reader-fullscreen-btn');
             if (readerBtn) readerBtn.setAttribute('aria-pressed', 'true');
@@ -1159,6 +1163,7 @@
     }
 
     function exitShareReaderFullscreen() {
+        if (isShareImmersiveArticle()) return;
         document.body.classList.remove('share-reader-fullscreen');
         var btn = document.getElementById('share-reader-fullscreen-btn');
         if (btn) {
@@ -1270,6 +1275,8 @@
         _shareReaderDocType = type || '';
         var button = document.getElementById('share-reader-fullscreen-btn');
         if (button) button.hidden = _shareReaderDocType !== 'markdown';
+        var exitButton = document.getElementById('share-reader-exit-btn');
+        if (exitButton) exitButton.hidden = _shareReaderDocType !== 'markdown';
         if (_shareTocObserver) { _shareTocObserver.disconnect(); _shareTocObserver = null; }
         _shareHeadings = [];
         var outline = document.getElementById('outline-content');
