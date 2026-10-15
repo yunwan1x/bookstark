@@ -50,6 +50,10 @@ func TestShareReaderTemplatesForAllDocumentTypes(t *testing.T) {
 				t.Fatalf("%s: %d %s", kind, w.Code, w.Body.String())
 			}
 			body := w.Body.String()
+			immersive := kind != "book" && kind != "markdown"
+			if strings.Contains(body, `editor-full-height share-reader-fullscreen share-article-immersive"`) != immersive {
+				t.Fatalf("%s: initial HTML must already match immersive capability", kind)
+			}
 			if !strings.Contains(body, `id="share-reader-fullscreen-btn" hidden`) || !strings.Contains(body, `role="tab" hidden`) {
 				t.Fatalf("%s: controls must start hidden until capability detection", kind)
 			}

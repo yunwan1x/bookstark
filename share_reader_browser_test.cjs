@@ -19,6 +19,31 @@ for(const kind of ['markdown','html','richdoc','spreadsheet','presentation','dra
 (async()=>{
  const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH,args:['--no-sandbox','--disable-dev-shm-usage']});
  try{
+ // Check first paint from real server HTML with JavaScript disabled: no delayed
+ // renderer, raw HTML fetch or fullscreen click may be needed to hide the frame.
+ const initialContext=await browser.newContext({javaScriptEnabled:false});
+ await initialContext.route('**/*',route=>{
+  const match=new URL(route.request().url()).pathname.match(/^\/initial-(\w+)$/);
+  if(match)return route.fulfill({contentType:'text/html',body:fs.readFileSync('/tmp/share-reader-'+match[1]+'-zh.html','utf8')});
+  return route.abort();
+ });
+ for(const width of [1440,390]){
+  const initialPage=await initialContext.newPage();await initialPage.setViewportSize({width,height:900});
+  for(const type of ['html','richdoc','spreadsheet','presentation','drawing','mindmap','markdown','book']){
+   await initialPage.goto('http://reader.test/initial-'+type);
+   const immersive=!['markdown','book'].includes(type);
+   assert.equal(await initialPage.locator('body').evaluate(n=>n.classList.contains('share-reader-fullscreen')),immersive,type+' server-rendered first paint');
+   if(immersive){
+    assert.equal(await initialPage.locator('#share-reader-exit-btn').isVisible(),false,'no floating exit button flash');
+    assert.equal(await initialPage.locator('#sidebar').evaluate(n=>getComputedStyle(n).width),'0px');
+    assert.equal(await initialPage.locator('.share-topbar').evaluate(n=>getComputedStyle(n).height),'0px');
+    assert.equal(await initialPage.locator('.share-topbar').evaluate(n=>getComputedStyle(n).transitionProperty),'none');
+    assert.equal(await initialPage.locator('#preview-wrap').evaluate(n=>getComputedStyle(n).padding),'0px');
+   }
+  }
+  await initialPage.close();console.log('PASS',width,'initial server HTML: immersive before JavaScript, no transition');
+ }
+ await initialContext.close();
  for(const width of [1440,390]){
   const page=await browser.newPage({viewport:{width,height:900}}),errors=[];
   page.on('pageerror',e=>errors.push(e.message));

@@ -337,6 +337,10 @@
             overflow: hidden;
             transform: translateX(-18px);
         }
+        body.share-article-immersive #sidebar,
+        body.share-article-immersive .share-topbar {
+            transition: none !important;
+        }
         body.share-reader-fullscreen .share-topbar {
             height: 0 !important;
             min-height: 0 !important;
@@ -547,8 +551,9 @@
         }
     </style>
 </head>
-<body class="bg-slate-50 flex flex-col overflow-hidden editor-full-height">
-    <button type="button" id="share-reader-exit-btn" class="share-reader-exit-btn" onclick="exitShareReaderFullscreen()" aria-label="{{call .T "share_view.reader.exit_fullscreen"}}" title="{{call .T "share_view.reader.exit_fullscreen"}}">
+{{$immersiveArticle := and (ne .Share.ShareType "book") (ne .Share.DocType "") (ne .Share.DocType "markdown")}}
+<body class="bg-slate-50 flex flex-col overflow-hidden editor-full-height{{if $immersiveArticle}} share-reader-fullscreen share-article-immersive{{end}}">
+    <button type="button" id="share-reader-exit-btn" class="share-reader-exit-btn" hidden onclick="exitShareReaderFullscreen()" aria-label="{{call .T "share_view.reader.exit_fullscreen"}}" title="{{call .T "share_view.reader.exit_fullscreen"}}">
         <i class="fa-solid fa-compress"></i>
     </button>
 
@@ -989,7 +994,8 @@
     // ── Sidebar ──────────────────────────────────────────────────────────
     var SHARE_LAYOUT_STORAGE_KEY = 'bookstark:share-view-layout:v1';
     var _sidebarCollapsed = false;
-    var _shareReaderDocType = ''; // Enable capabilities only after content is ready.
+    // Preserve the server-rendered immersive layout while tool content loads.
+    var _shareReaderDocType = shareType === 'book' ? '' : (shareDocType || '');
     var _shareOutlineAvailable = false;
     var _shareRenderVersion = 0;
     var _shareTocObserver = null;
@@ -1056,6 +1062,7 @@
 
     function applyShareLayoutState() {
         var state = readShareLayoutState();
+        document.body.classList.toggle('share-article-immersive', isShareImmersiveArticle());
         if (isShareImmersiveArticle() || (_shareReaderDocType === 'markdown' && state.readerShare === shareIdentify && state.readerFullscreen === true)) {
             document.body.classList.add('share-reader-fullscreen');
             var readerBtn = document.getElementById('share-reader-fullscreen-btn');
@@ -2251,7 +2258,7 @@
     });
 
     // ── Boot ──────────────────────────────────────────────────────────────
-    setShareReaderType('');
+    setShareReaderType(shareType === 'book' ? '' : shareDocType);
     var _bootParams = new URLSearchParams(window.location.search);
     if (_bootParams.get('token')) {
         checkEditMode();
