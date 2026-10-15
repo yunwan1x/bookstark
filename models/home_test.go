@@ -20,7 +20,7 @@ func TestHomeDateFilterTimezoneAndLimit(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	filter := HomeFilter{Start: "2026-10-15", End: "2026-10-15", Month: "2026-10", Limit: 2, Location: loc}
+	filter := HomeFilter{Start: "2026-10-15", End: "2026-10-15", Month: "2026-11", Limit: 2, Location: loc, ActivityStart: "2026-10-14", ActivityEnd: "2026-10-16"}
 	for _, order := range []string{"created", "updated"} {
 		sections, err := ListHomeSections(1, false, order, filter)
 		if err != nil {
@@ -31,6 +31,9 @@ func TestHomeDateFilterTimezoneAndLimit(t *testing.T) {
 			want = 4
 		}
 		notes := sections[0]
+		if notes.Activity["2026-10-15"] != want || notes.Activity["2026-10-14"] != 1 || notes.Activity["2026-10-16"] != 1 || len(notes.Dates) != 0 {
+			t.Fatalf("activity must ignore item limit, date filter and displayed month: %+v", notes)
+		}
 		if notes.Total != want || len(notes.Items) != 2 || notes.Items[0].Title != "go-time" {
 			t.Fatalf("%s: %+v", order, notes)
 		}
@@ -45,7 +48,7 @@ func TestHomeDateFilterTimezoneAndLimit(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, section := range sections {
-		if section.Total != 0 || len(section.Dates) != 0 {
+		if section.Total != 0 || len(section.Dates) != 0 || len(section.Activity) != 0 {
 			t.Fatalf("owner data leaked: %+v", section)
 		}
 	}

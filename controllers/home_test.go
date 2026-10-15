@@ -293,6 +293,41 @@ func TestHomeCalendarFilteringValidationAndDefaults(t *testing.T) {
 	}
 }
 
+func TestHomeActivityWindowCountsAndDeduplication(t *testing.T) {
+	router, token := initAssetControllerTest(t)
+	today := time.Now().Format("2006-01-02")
+	blog := &models.Blog{BlogTitle: "Activity", BlogIdentify: "activity-note", BlogType: "note", MemberID: 1, Visibility: 1}
+	if err := blog.Insert(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := models.CreateShare("blog", blog.BlogID, 1, ""); err != nil {
+		t.Fatal(err)
+	}
+	for _, member := range []int{1, 99} {
+		if _, err := models.DB.Exec(`INSERT INTO md_bookmark(title,url,member_id,nav_visible,create_time,modify_time) VALUES('Activity link','https://example.com',?,1,?,?)`, member, today+" 00:00:00", today+" 00:00:00"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, query := range []string{"", "?start=2020-01-01&end=2020-01-01&month=2020-01&limit=5", "?order=created&limit=20"} {
+		w := adminAssetRequest(router, token, "GET", "/api/home"+query, nil)
+		var data struct {
+			Activity map[string]int `json:"activity"`
+			Start    string         `json:"activity_start"`
+			End      string         `json:"activity_end"`
+		}
+		if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &data) != nil {
+			t.Fatal(w.Code, w.Body.String())
+		}
+		if data.Activity[today] != 2 || len(data.Activity) != 1 || data.End != today {
+			t.Fatalf("duplicates, owner leak or filtered heatmap: %+v", data)
+		}
+		start, err := time.ParseInLocation("2006-01-02", data.Start, time.Local)
+		if err != nil || start.Weekday() != time.Monday || time.Since(start) < 77*24*time.Hour || time.Since(start) > 84*24*time.Hour {
+			t.Fatalf("invalid 12-week window: %+v", data)
+		}
+	}
+}
+
 func TestHomeLayoutPersistenceValidationAndIsolation(t *testing.T) {
 	router, token := initAssetControllerTest(t)
 	other := &models.Member{Account: "layout-other", Password: "test-only", Role: 1}

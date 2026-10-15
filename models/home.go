@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -17,16 +18,18 @@ type HomeItem struct {
 }
 
 type HomeSection struct {
-	Key   string     `json:"key"`
-	Total int        `json:"total"`
-	Items []HomeItem `json:"items"`
-	Dates []string   `json:"dates,omitempty"`
+	Key      string         `json:"key"`
+	Total    int            `json:"total"`
+	Items    []HomeItem     `json:"items"`
+	Dates    []string       `json:"dates,omitempty"`
+	Activity map[string]int `json:"-"`
 }
 
 type HomeFilter struct {
-	Start, End, Month string
-	Limit             int
-	Location          *time.Location
+	Start, End, Month          string
+	Limit                      int
+	Location                   *time.Location
+	ActivityStart, ActivityEnd string
 }
 
 type HomeStats struct {
@@ -115,17 +118,26 @@ func ListHomeSections(memberID int64, admin bool, order string, filters ...HomeF
 			 SELECT *, date(moment,?) day, julianday(moment) stamp FROM normalized`
 			args = append(args, offset, offset, offset)
 			if f.Month != "" {
-				monthRows, err := DB.Query("SELECT DISTINCT day FROM ("+query+") WHERE substr(day,1,7)=? ORDER BY day", append(append([]any{}, args...), f.Month)...)
+				monthRows, err := DB.Query("SELECT day, COUNT(*) FROM ("+query+") WHERE substr(day,1,7)=? OR (day>=? AND day<=?) GROUP BY day ORDER BY day", append(append([]any{}, args...), f.Month, f.ActivityStart, f.ActivityEnd)...)
 				if err != nil {
 					return nil, err
 				}
 				for monthRows.Next() {
 					var day string
-					if err := monthRows.Scan(&day); err != nil {
+					var count int
+					if err := monthRows.Scan(&day, &count); err != nil {
 						monthRows.Close()
 						return nil, err
 					}
-					section.Dates = append(section.Dates, day)
+					if strings.HasPrefix(day, f.Month) {
+						section.Dates = append(section.Dates, day)
+					}
+					if f.ActivityStart != "" && day >= f.ActivityStart && day <= f.ActivityEnd {
+						if section.Activity == nil {
+							section.Activity = map[string]int{}
+						}
+						section.Activity[day] = count
+					}
 				}
 				err = monthRows.Err()
 				monthRows.Close()

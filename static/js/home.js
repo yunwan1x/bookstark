@@ -31,6 +31,9 @@
     function parseDate(value) { return new Date(value+'T12:00:00'); }
     var selected = '', rangeStart = '', rangeEnd = '', rangeMode = 'all', limit = 10;
     var calendarMonth = new Date(now.getFullYear(),now.getMonth(),1), activity = new Set();
+    var activityCounts = {}, activityEnd = dateKey(now), activityReady = false;
+    var firstActivityDay = new Date(now);firstActivityDay.setDate(firstActivityDay.getDate()-(firstActivityDay.getDay()+6)%7-77);
+    var activityStart = dateKey(firstActivityDay);
     var startInput = document.getElementById('homeStart'), endInput = document.getElementById('homeEnd');
     function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; }
     function selectDay(value) {
@@ -57,6 +60,37 @@
         var strip=document.getElementById('homeWeekStrip');strip.replaceChildren();var monday=parseDate(selected || dateKey(now));monday.setDate(monday.getDate()-(monday.getDay()+6)%7);
         for(var j=0;j<7;j++){var day=new Date(monday);day.setDate(monday.getDate()+j);strip.append(dateButton(day,false,true));}
     }
+    function renderActivity() {
+        var heatmap=document.getElementById('homeHeatmap'),months=document.getElementById('homeActivityMonths'),weekdays=document.getElementById('homeActivityWeekdays');
+        var focusDay=heatmap.contains(document.activeElement)?document.activeElement.dataset.heatDate:'';
+        heatmap.replaceChildren();months.replaceChildren();weekdays.replaceChildren();
+        var labels=english?['M','T','W','T','F','S','S']:['一','二','三','四','五','六','日'];
+        labels.forEach(function(label){weekdays.append(el('span','',label));});
+        var first=parseDate(activityStart),lastMonth=-1;
+        for(var week=0;week<12;week++){
+            var monday=new Date(first);monday.setDate(first.getDate()+week*7);
+            months.append(el('span','',monday.getMonth()!==lastMonth?monday.toLocaleDateString(english?'en-US':'zh-CN',{month:'short'}):''));lastMonth=monday.getMonth();
+            for(var day=0;day<7;day++){
+                var date=new Date(monday);date.setDate(monday.getDate()+day);
+                var value=dateKey(date),count=Number(activityCounts[value])||0,button=el('button','home-heat-cell');
+                button.type='button';button.dataset.heatDate=value;button.dataset.level=String(count===0?0:count===1?1:count<=3?2:count<=7?3:4);
+                button.disabled=!activityReady||value>activityEnd;
+                var description=value+' · '+(activityReady?lt(count+' 条内容',''+count+' items'):lt('正在加载','Loading'));
+                button.title=description;button.setAttribute('aria-label',description);button.setAttribute('aria-pressed',String(value===selected));
+                if(rangeStart&&value>=rangeStart&&value<=rangeEnd)button.classList.add('is-in-range');
+                button.onclick=function(){selectDay(this.dataset.heatDate);};heatmap.append(button);
+            }
+        }
+        document.getElementById('homeActivity').setAttribute('aria-busy',String(!activityReady));
+        document.getElementById('homeActivityHint').textContent=sort==='created'?lt('按内容创建日期统计 · 点击日期筛选','By creation date · Click a day to filter'):lt('按内容最近更新日期统计 · 点击日期筛选','By last update date · Click a day to filter');
+        if(focusDay){var target=heatmap.querySelector('[data-heat-date="'+focusDay+'"]');if(target&&!target.disabled)target.focus();}
+    }
+    document.getElementById('homeHeatmap').addEventListener('keydown',function(e){
+        var button=e.target.closest('[data-heat-date]'),offset={ArrowLeft:-7,ArrowRight:7,ArrowUp:-1,ArrowDown:1}[e.key];
+        if(!button||!offset)return;
+        e.preventDefault();var date=parseDate(button.dataset.heatDate);date.setDate(date.getDate()+offset);
+        var target=this.querySelector('[data-heat-date="'+dateKey(date)+'"]');if(target&&!target.disabled)target.focus();
+    });
     function syncDates() {
         document.getElementById('homeRangeForm').hidden=rangeMode==='all';
         startInput.value=rangeStart;endInput.value=rangeEnd;endInput.min=rangeStart;startInput.max=rangeEnd;
@@ -67,6 +101,7 @@
         document.querySelector('.home-date-hint').textContent=rangeStart ? lt('所选日期内的内容，按时间倒序显示。','Content within the selected dates, newest first.') : lt('不限日期，按时间倒序显示最近内容。','Recent content across all dates, newest first.');
         document.querySelectorAll('[data-home-range]').forEach(function(b){var active=b.dataset.homeRange===rangeMode;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
         renderCalendar();
+        renderActivity();
     }
     document.querySelectorAll('[data-home-range]').forEach(function(b){b.onclick=function(){
         rangeMode=b.dataset.homeRange;
@@ -269,6 +304,7 @@
             if (response.status === 401) { window.location.replace('/login'); return; }
             if (!response.ok || data.code !== 0 || !Array.isArray(data.sections)) throw new Error('home request failed');
             sections = data.sections;
+            activityCounts=data.activity||{};activityStart=data.activity_start||activityStart;activityEnd=data.activity_end||activityEnd;activityReady=true;renderActivity();
             activity = new Set(); sections.forEach(function(s){(s.dates||[]).forEach(function(day){activity.add(day);});});renderCalendar();
             layout = Array.isArray(data.layout) ? data.layout : defaultLayout().map(function(item) {item.hidden = hidden.includes(item.key); return item;});
             try { localStorage.setItem(key + ':layout',JSON.stringify(layout)); } catch (_) {}
@@ -278,6 +314,7 @@
             if (ticket !== sequence) return;
             console.warn('Home load failed:',err);
             grid.replaceChildren();
+            activityCounts={};activityReady=false;renderActivity();
             activity.clear();renderCalendar();
             sections = []; preferences(); status.hidden = false; status.textContent = err.name === 'AbortError' ? lt('请求超时，请重试','Request timed out. Please retry.') : lt('首页加载失败，请检查网络后重试。','Could not load your home page. Check your connection and retry.'); retry.hidden = false;
         } finally { if (ticket === sequence) grid.setAttribute('aria-busy','false'); }

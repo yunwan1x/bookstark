@@ -4,17 +4,18 @@ const fs=require('node:fs'),assert=require('node:assert/strict');
 (async()=>{
  const browser=await chromium.launch({executablePath:process.env.CHROMIUM_PATH,args:['--no-sandbox','--disable-dev-shm-usage']});
  try {
- for(const lang of ['zh','en'])for(const [width,theme] of [[1440,'light'],[768,'light'],[390,'light'],[320,'dark']]){
+ for(const lang of ['zh','en'])for(const [width,theme] of [[1440,'light'],[1280,'dark'],[768,'light'],[390,'light'],[320,'dark']]){
   if(process.env.HOME_TEST_LANG&&process.env.HOME_TEST_LANG!==lang)continue;
   if(process.env.HOME_TEST_WIDTH&&Number(process.env.HOME_TEST_WIDTH)!==width)continue;
   const page=await browser.newPage({viewport:{width,height:1000}}),errors=[];let calls=0,fail=false,release,lastQuery;
   const pending=new Promise(resolve=>release=resolve);
   page.on('pageerror',e=>errors.push(e.message));
   await page.addInitScript(t=>localStorage.setItem('bookstark-theme',t),theme);
+  await page.route('**/*',route=>new URL(route.request().url()).hostname==='home.test'?route.fallback():route.abort());
   await page.route('http://home.test/**',async route=>{
    const u=new URL(route.request().url());
    if(u.pathname.startsWith('/static/'))return route.fulfill({path:'.'+u.pathname});
-   if(u.pathname==='/api/home'){calls++;lastQuery=u.searchParams;await pending;return route.fulfill({json:fail?{code:500}:{code:0,sections:['notes','articles','tasks'].map(key=>({key,total:1,dates:[u.searchParams.get('end')],items:[{title:'Example',url:'/notes',date:u.searchParams.get('end')}]})),layout:null},status:fail?500:200});}
+   if(u.pathname==='/api/home'){calls++;lastQuery=u.searchParams;await pending;return route.fulfill({json:fail?{code:500}:{code:0,activity:{'2026-10-14':3,'2026-10-07':9},activity_start:'2026-07-27',activity_end:'2026-10-15',sections:['notes','articles','tasks'].map(key=>({key,total:1,dates:[u.searchParams.get('end')],items:[{title:'Example',url:'/notes',date:u.searchParams.get('end')}]})),layout:null},status:fail?500:200});}
    if(u.pathname==='/home')return route.fulfill({contentType:'text/html',body:fs.readFileSync('/tmp/home-b1-'+lang+'.html','utf8')});
    return route.fulfill({status:404,body:''});
   });
@@ -38,6 +39,17 @@ const fs=require('node:fs'),assert=require('node:assert/strict');
   assert.equal(await page.locator('#homeCalendar').isVisible(),width>640);
   if(width<=640){await page.locator('#homeCalendarToggle').click();assert(await page.locator('#homeCalendar').isVisible());await page.locator('#homeCalendarToggle').press('Escape');await page.locator('#homeCalendarToggle').click();assert.equal(await page.locator('#homeCalendar').isVisible(),false);}
   const ready=()=>page.waitForFunction(()=>document.querySelector('#homeGrid').getAttribute('aria-busy')==='false');
+  assert.equal(await page.locator('#homeActivity').isVisible(),width>=1280);
+  assert.equal(await page.locator('#homeHeatmap button').count(),84);
+  if(width>=1280){
+   const hot=page.locator('[data-heat-date="2026-10-14"]');
+   assert.equal(await hot.getAttribute('data-level'),'2');assert((await hot.getAttribute('aria-label')).includes('3'));
+   assert.equal(await page.locator('[data-heat-date="2026-10-16"]').isDisabled(),true);
+   await hot.click();await ready();assert.equal(lastQuery.get('start'),'2026-10-14');assert.equal(lastQuery.get('end'),'2026-10-14');
+   assert.equal(await hot.getAttribute('aria-pressed'),'true');assert(await page.locator('#homeCalendarDays [data-date="2026-10-14"]').evaluate(n=>n.classList.contains('selected')));
+   await page.locator('[data-heat-date="2026-10-07"]').focus();await page.keyboard.press('ArrowRight');assert.equal(await page.locator(':focus').getAttribute('data-heat-date'),'2026-10-14');
+   await page.locator('[data-home-range="all"]').click();await ready();assert.equal(await hot.getAttribute('aria-pressed'),'false');
+  }
   await page.locator('[data-home-range="7"]').click();await ready();assert.equal((new Date(lastQuery.get('end'))-new Date(lastQuery.get('start')))/86400000,6);
   await page.locator('#homeLimit').selectOption('20');await ready();assert.equal(lastQuery.get('limit'),'20');
   await page.locator('[data-home-range="custom"]').click();await page.locator('#homeStart').fill('2026-10-01');await page.locator('#homeEnd').fill('2026-10-15');await page.locator('#homeRangeApply').click();await ready();assert.equal(lastQuery.get('start'),'2026-10-01');assert.equal(lastQuery.get('end'),'2026-10-15');

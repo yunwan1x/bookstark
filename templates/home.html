@@ -34,7 +34,15 @@
     <div class="home-limit-row"><label for="homeLimit">{{call .T "home.per_section"}}</label><select class="dialog-input" id="homeLimit"><option value="5">{{call .T "home.limit5"}}</option><option value="10" selected>{{call .T "home.limit10"}}</option><option value="20">{{call .T "home.limit20"}}</option><option value="50">{{call .T "home.limit50"}}</option></select></div>
   <div class="home-toolbar"><div class="main-tabs" role="group" aria-label="{{call .T "home.sort"}}"><button type="button" class="main-tab active" data-home-sort="updated" aria-pressed="true"><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>{{call .T "home.updated"}}</button><button type="button" class="main-tab" data-home-sort="created" aria-pressed="false"><i class="fa-regular fa-square-plus" aria-hidden="true"></i>{{call .T "home.created"}}</button></div></div>
   <p class="home-date-hint">{{call .T "home.date_hint"}}</p>
-  </div></div>
+  </div>
+  <section class="home-activity" id="homeActivity" aria-labelledby="homeActivityTitle" aria-busy="true">
+    <h2 id="homeActivityTitle">{{call .T "home.activity.title"}}</h2>
+    <p class="home-date-hint" id="homeActivityHint">{{call .T "home.activity.updated"}}</p>
+    <div class="home-heatmap-months" id="homeActivityMonths" aria-hidden="true"></div>
+    <div class="home-heatmap-layout"><div class="home-heatmap-weekdays" id="homeActivityWeekdays" aria-hidden="true"></div><div class="home-heatmap" id="homeHeatmap" role="group" aria-label="{{call .T "home.activity.title"}}"></div></div>
+    <div class="home-heatmap-legend" aria-hidden="true"><span>{{call .T "home.activity.less"}}</span><span class="home-heat-cell"></span><span class="home-heat-cell" data-level="1"></span><span class="home-heat-cell" data-level="2"></span><span class="home-heat-cell" data-level="3"></span><span class="home-heat-cell" data-level="4"></span><span>{{call .T "home.activity.more"}}</span></div>
+    <p class="home-date-hint">{{call .T "home.activity.hint"}}</p>
+  </section></div>
   </div>
   <p id="homeStatus" role="status" aria-live="polite">{{call .T "home.loading"}}</p>
   <button id="homeRetry" class="home-button" hidden>{{call .T "home.retry"}}</button>
