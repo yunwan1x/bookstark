@@ -288,6 +288,7 @@
         }
         @media (max-width: 640px) { .share-topbar-title { display: none; } }
         .share-reader-fullscreen-btn { width: 28px; height: 28px; padding: 0; }
+        .share-view-shell [hidden], #share-reader-exit-btn[hidden] { display: none !important; }
         .share-reader-exit-btn {
             position: fixed;
             top: 12px;
@@ -583,7 +584,7 @@
                         onclick="switchBookTab('tree')">
                     <i class="fa-solid fa-list-tree"></i> {{call .T "share_view.book.tab.tree"}}
                 </button>
-                <button id="share-tab-outline" class="sidebar-tab" type="button" role="tab"
+                <button id="share-tab-outline" class="sidebar-tab" type="button" role="tab" hidden
                         aria-selected="false" aria-controls="share-panel-outline"
                         onclick="switchBookTab('outline')">
                     <i class="fa-solid fa-list-ul"></i> {{call .T "share_view.book.tab.outline"}}
@@ -601,7 +602,7 @@
                 <div id="share-book-tree" role="tree" aria-label="{{call .T "share_view.book.tab.tree"}}"></div>
             </div>
             <!-- Panel: 大纲 -->
-            <div id="share-panel-outline" class="tab-panel" role="tabpanel" aria-labelledby="share-tab-outline">
+            <div id="share-panel-outline" class="tab-panel" role="tabpanel" aria-labelledby="share-tab-outline" hidden>
                 <div class="outline-toolbar">
                     <button class="toolbar-btn" onclick="expandOutlineAll()" aria-label="{{call .T "editor.outline.expand_all.aria"}}"><i class="fa-solid fa-angles-down"></i> {{call .T "share_view.outline.expand"}}</button>
                     <button class="toolbar-btn" onclick="collapseOutlineAll()" aria-label="{{call .T "editor.outline.collapse_all.aria"}}"><i class="fa-solid fa-angles-up"></i> {{call .T "share_view.outline.collapse"}}</button>
@@ -620,7 +621,7 @@
                         onclick="switchShareTab('meta')">
                     <i class="fa-regular fa-rectangle-list"></i> {{call .T "share_view.tab.meta"}}
                 </button>
-                <button id="share-tab-outline" class="sidebar-tab" type="button" role="tab"
+                <button id="share-tab-outline" class="sidebar-tab" type="button" role="tab" hidden
                         aria-selected="false" aria-controls="share-panel-outline"
                         onclick="switchShareTab('outline')">
                     <i class="fa-solid fa-list-ul"></i> {{call .T "share_view.tab.outline"}}
@@ -692,7 +693,7 @@
             </div>
 
             <!-- Panel: 目录 -->
-            <div id="share-panel-outline" class="tab-panel" role="tabpanel" aria-labelledby="share-tab-outline">
+            <div id="share-panel-outline" class="tab-panel" role="tabpanel" aria-labelledby="share-tab-outline" hidden>
                 <div class="outline-toolbar">
                     <button class="toolbar-btn" onclick="expandOutlineAll()" aria-label="{{call .T "editor.outline.expand_all.aria"}}"><i class="fa-solid fa-angles-down"></i> {{call .T "share_view.outline.expand"}}</button>
                     <button class="toolbar-btn" onclick="collapseOutlineAll()" aria-label="{{call .T "editor.outline.collapse_all.aria"}}"><i class="fa-solid fa-angles-up"></i> {{call .T "share_view.outline.collapse"}}</button>
@@ -752,7 +753,7 @@
                 </button>
                 {{end}}
                 <!-- Fullscreen reader -->
-                <button type="button" class="tb-btn tb-btn-slate share-reader-fullscreen-btn" id="share-reader-fullscreen-btn" aria-label="{{call .T "share_view.reader.fullscreen"}}" title="{{call .T "share_view.reader.fullscreen"}}" onclick="enterShareReaderFullscreen()">
+                <button type="button" class="tb-btn tb-btn-slate share-reader-fullscreen-btn" id="share-reader-fullscreen-btn" hidden aria-label="{{call .T "share_view.reader.fullscreen"}}" title="{{call .T "share_view.reader.fullscreen"}}" onclick="enterShareReaderFullscreen()">
                     <i class="fa-solid fa-expand"></i>
                 </button>
                 <!-- Theme toggle -->
@@ -988,6 +989,10 @@
     // ── Sidebar ──────────────────────────────────────────────────────────
     var SHARE_LAYOUT_STORAGE_KEY = 'bookstark:share-view-layout:v1';
     var _sidebarCollapsed = false;
+    var _shareReaderDocType = ''; // Enable capabilities only after content is ready.
+    var _shareOutlineAvailable = false;
+    var _shareRenderVersion = 0;
+    var _shareTocObserver = null;
     var _shareReaderExitDragState = null;
     var _shareReaderExitDragSuppressClick = false;
 
@@ -1017,7 +1022,10 @@
         if (!storage || !patch) return;
         var state = readShareLayoutState();
         if (typeof patch.sidebarCollapsed === 'boolean') state.sidebarCollapsed = patch.sidebarCollapsed;
-        if (typeof patch.readerFullscreen === 'boolean') state.readerFullscreen = patch.readerFullscreen;
+        if (typeof patch.readerFullscreen === 'boolean') {
+            state.readerFullscreen = patch.readerFullscreen;
+            state.readerShare = shareIdentify;
+        }
         try {
             storage.setItem(SHARE_LAYOUT_STORAGE_KEY, JSON.stringify(state));
         } catch(e) {}
@@ -1044,10 +1052,14 @@
 
     function applyShareLayoutState() {
         var state = readShareLayoutState();
-        if (state.readerFullscreen === true) {
+        if (_shareReaderDocType === 'markdown' && state.readerShare === shareIdentify && state.readerFullscreen === true) {
             document.body.classList.add('share-reader-fullscreen');
             var readerBtn = document.getElementById('share-reader-fullscreen-btn');
             if (readerBtn) readerBtn.setAttribute('aria-pressed', 'true');
+        } else {
+            document.body.classList.remove('share-reader-fullscreen');
+            var readerBtn = document.getElementById('share-reader-fullscreen-btn');
+            if (readerBtn) readerBtn.setAttribute('aria-pressed', 'false');
         }
         if (window.innerWidth > 768 && isCompactShareViewport()) {
             setShareSidebarCollapsed(true, false);
@@ -1138,6 +1150,7 @@
     }
 
     function enterShareReaderFullscreen() {
+        if (_shareReaderDocType !== 'markdown') return;
         closeMobileDrawer();
         document.body.classList.add('share-reader-fullscreen');
         var btn = document.getElementById('share-reader-fullscreen-btn');
@@ -1150,7 +1163,7 @@
         var btn = document.getElementById('share-reader-fullscreen-btn');
         if (btn) {
             btn.setAttribute('aria-pressed', 'false');
-            try { btn.focus(); } catch(e) {}
+            if (!btn.hidden) { try { btn.focus(); } catch(e) {} }
         }
         writeShareLayoutState({ readerFullscreen: false });
     }
@@ -1205,6 +1218,7 @@
 
     function switchShareTab(tab, opts) {
         opts = opts || {};
+        if (tab === 'outline' && !_shareOutlineAvailable) tab = 'meta';
         if (opts.updateUrl !== false && window.BookStarkTabURL) window.BookStarkTabURL.set('shareTab', tab);
         var isMeta = (tab === 'meta');
         document.getElementById('share-tab-meta').classList.toggle('active', isMeta);
@@ -1217,6 +1231,7 @@
 
     function switchBookTab(tab, opts) {
         opts = opts || {};
+        if (tab === 'outline' && !_shareOutlineAvailable) tab = 'tree';
         if (opts.updateUrl !== false && window.BookStarkTabURL) window.BookStarkTabURL.set('shareTab', tab);
         var isTree = (tab === 'tree');
         document.getElementById('share-tab-tree').classList.toggle('active', isTree);
@@ -1230,8 +1245,6 @@
     // ── Fullpage callback (spreadsheet / drawing / mindmap) ───────────────
     function onFullpage() {
         document.documentElement.classList.add('spreadsheet-fullpage');
-        var outlineTab = document.getElementById('share-tab-outline');
-        if (outlineTab) outlineTab.style.display = 'none';
         var copyBtn = document.getElementById('share-copy-content-btn');
         if (copyBtn) copyBtn.style.display = 'none';
         // Keep footer visible and scrolling enabled in share view.
@@ -1241,7 +1254,32 @@
     // ── TOC ───────────────────────────────────────────────────────────────
     var _shareHeadings = [];
 
+    function setShareOutlineAvailable(available) {
+        _shareOutlineAvailable = _shareReaderDocType === 'markdown' && available;
+        var tab = document.getElementById('share-tab-outline');
+        var panel = document.getElementById('share-panel-outline');
+        if (tab) tab.hidden = !_shareOutlineAvailable;
+        if (panel) panel.hidden = !_shareOutlineAvailable;
+        if (!_shareOutlineAvailable) {
+            if (shareType === 'book') switchBookTab('tree', {updateUrl:false});
+            else switchShareTab('meta', {updateUrl:false});
+        }
+    }
+
+    function setShareReaderType(type) {
+        _shareReaderDocType = type || '';
+        var button = document.getElementById('share-reader-fullscreen-btn');
+        if (button) button.hidden = _shareReaderDocType !== 'markdown';
+        if (_shareTocObserver) { _shareTocObserver.disconnect(); _shareTocObserver = null; }
+        _shareHeadings = [];
+        var outline = document.getElementById('outline-content');
+        if (outline) outline.replaceChildren();
+        setShareOutlineAvailable(false);
+        applyShareLayoutState();
+    }
+
     function buildShareToc() {
+        if (_shareReaderDocType !== 'markdown') return;
         var previewer = document.querySelector('#preview-area .cherry-previewer');
         var outlineEl = document.getElementById('outline-content');
         var emptyEl = document.getElementById('share-toc-empty');
@@ -1253,6 +1291,7 @@
 
         if (!nodes.length) {
             if (emptyEl) emptyEl.style.display = '';
+            setShareOutlineAvailable(false);
             return;
         }
         if (emptyEl) emptyEl.style.display = 'none';
@@ -1293,6 +1332,11 @@
             outlineEl.appendChild(btn);
         });
 
+        setShareOutlineAvailable(_shareHeadings.length > 0);
+        if (_shareOutlineAvailable && new URLSearchParams(window.location.search).get('shareTab') === 'outline') {
+            if (shareType === 'book') switchBookTab('outline', {updateUrl:false});
+            else switchShareTab('outline', {updateUrl:false});
+        }
         bindTocObserver();
     }
 
@@ -1314,6 +1358,7 @@
     }
 
     function bindTocObserver() {
+        if (_shareTocObserver) _shareTocObserver.disconnect();
         if (!('IntersectionObserver' in window) || !_shareHeadings.length) return;
         var headings = _shareHeadings.map(function(h) { return document.getElementById(h.id); }).filter(Boolean);
         if (!headings.length) return;
@@ -1322,6 +1367,7 @@
                 .sort(function(a, b) { return Math.abs(a.boundingClientRect.top) - Math.abs(b.boundingClientRect.top); });
             if (visible.length) setActiveTocItem(visible[0].target.id);
         }, { rootMargin: '-80px 0px -60% 0px', threshold: [0, 0.2, 1] });
+        _shareTocObserver = observer;
         headings.forEach(function(h) { observer.observe(h); });
         if (headings[0]) setActiveTocItem(headings[0].id);
     }
@@ -1748,11 +1794,11 @@
     async function loadBookDoc(docIdentify, docType) {
         if (_currentBookDocIdentify === docIdentify) return;
         setActiveBookNode(docIdentify);
+        var loadVersion = ++_shareRenderVersion;
+        setShareReaderType('');
         var area = document.getElementById('preview-area');
         // Remove fullpage state and restore UI elements hidden by onFullpage
         document.documentElement.classList.remove('spreadsheet-fullpage');
-        var outlineTab = document.getElementById('share-tab-outline');
-        if (outlineTab) outlineTab.style.display = '';
         var copyBtn = document.getElementById('share-copy-content-btn');
         if (copyBtn) copyBtn.style.display = '';
         var zoomBar = document.getElementById('share-drawing-zoom');
@@ -1764,12 +1810,14 @@
         try {
             var r = await fetch('/api/shares/' + shareIdentify + '/docs/' + docIdentify);
             var d = await r.json();
+            if (_currentBookDocIdentify !== docIdentify || loadVersion !== _shareRenderVersion) return;
             if (d.data) {
                 var loadedType = d.data.doc_type || docType;
                 var content = d.data.content || '';
                 if ((loadedType === 'html' || loadedType === 'richdoc') && d.data.content_url) {
                     content = await fetchShareRawHTMLContent(d.data.content_url);
                 }
+                if (_currentBookDocIdentify !== docIdentify || loadVersion !== _shareRenderVersion) return;
                 if (!content || content.trim() === '') {
                     area.innerHTML = '<div class="share-book-welcome">' +
                         '<div class="share-book-welcome-icon"><i class="fa-regular fa-file-lines"></i></div>' +
@@ -1785,6 +1833,7 @@
                 area.innerHTML = '<div style="padding:40px;text-align:center;color:var(--color-danger,#ef4444);">' + window.__('share_view.book.load_error') + '</div>';
             }
         } catch(e) {
+            if (_currentBookDocIdentify !== docIdentify || loadVersion !== _shareRenderVersion) return;
             area.innerHTML = '<div style="padding:40px;text-align:center;color:var(--color-danger,#ef4444);">' + window.__('share_view.book.load_error') + '</div>';
         }
     }
@@ -1799,7 +1848,9 @@
 
     // ── Main render ───────────────────────────────────────────────────────
     function renderShareContent(content, docType, contentTitle) {
-        var type = docType || shareDocType;
+        var type = docType || shareDocType || 'markdown';
+        var renderVersion = ++_shareRenderVersion;
+        setShareReaderType(type);
         document.body.classList.toggle('share-html-tool-mode', type === 'html');
         // 画板类型显示放大/缩小/重置工具栏（mobile 模式下 Excalidraw 自带 footer 不渲染）
         var zoomBar = document.getElementById('share-drawing-zoom');
@@ -1807,9 +1858,12 @@
         BookStarkEditor.renderContent('preview-area', content, type, {
             title: contentTitle || shareTitle,
             onTocReady: function() {
+                if (renderVersion !== _shareRenderVersion) return;
                 buildShareToc();
             },
-            onFullpage: type === 'html' ? null : onFullpage
+            onFullpage: type === 'html' ? null : function() {
+                if (renderVersion === _shareRenderVersion) onFullpage();
+            }
         });
     }
 
@@ -2035,6 +2089,8 @@
     }
 
     function enterEditMode(data) {
+        ++_shareRenderVersion;
+        setShareReaderType('');
         shareHasSavedSuccessfully = false;
         document.body.classList.add('share-edit-mode');
         document.getElementById('edit-mode-badge').style.display = '';
@@ -2188,6 +2244,7 @@
     });
 
     // ── Boot ──────────────────────────────────────────────────────────────
+    setShareReaderType('');
     var _bootParams = new URLSearchParams(window.location.search);
     if (_bootParams.get('token')) {
         checkEditMode();

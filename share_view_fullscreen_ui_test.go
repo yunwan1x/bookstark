@@ -74,6 +74,29 @@ func TestShareViewPersistsReaderLayoutPreference(t *testing.T) {
 	}
 }
 
+func TestShareReaderCapabilitiesFollowRenderedContent(t *testing.T) {
+	tpl, err := os.ReadFile("templates/share_view.html")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, required := range []string{
+		`state.readerShare = shareIdentify;`,
+		`_shareReaderDocType === 'markdown' && state.readerShare === shareIdentify`,
+		`if (_shareReaderDocType !== 'markdown') return;`,
+		`button.hidden = _shareReaderDocType !== 'markdown'`,
+		`setShareOutlineAvailable(_shareHeadings.length > 0);`,
+		`if (tab === 'outline' && !_shareOutlineAvailable) tab = 'meta';`,
+		`if (tab === 'outline' && !_shareOutlineAvailable) tab = 'tree';`,
+		`if (renderVersion !== _shareRenderVersion) return;`,
+		`loadVersion !== _shareRenderVersion`,
+		`.share-view-shell [hidden], #share-reader-exit-btn[hidden] { display: none !important; }`,
+	} {
+		if !strings.Contains(string(tpl), required) {
+			t.Fatalf("missing reader capability guard: %s", required)
+		}
+	}
+}
+
 func TestShareViewFullscreenExitButtonIsDraggable(t *testing.T) {
 	tpl, err := os.ReadFile("templates/share_view.html")
 	if err != nil {

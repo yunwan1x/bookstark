@@ -42,7 +42,7 @@ func TestShareViewCommentsJumpUsesContentScrollerAndKeepsMobilePadding(t *testin
 		`#content-scroll.html-mode #preview-wrap`,
 		`#content-scroll.html-mode #preview-area`,
 		`#content-scroll.html-mode .html-preview-iframe`,
-		`onFullpage: type === 'html' ? null : onFullpage`,
+		`onFullpage: type === 'html' ? null : function()`,
 	} {
 		if !strings.Contains(text, required) {
 			t.Fatalf("share view comment UI behavior missing %q", required)
