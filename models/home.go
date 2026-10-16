@@ -132,7 +132,7 @@ func ListHomeSections(memberID int64, admin bool, order string, filters ...HomeF
 					if strings.HasPrefix(day, f.Month) {
 						section.Dates = append(section.Dates, day)
 					}
-					if f.ActivityStart != "" && day >= f.ActivityStart && day <= f.ActivityEnd {
+					if strings.HasPrefix(day, f.Month) || (f.ActivityStart != "" && day >= f.ActivityStart && day <= f.ActivityEnd) {
 						if section.Activity == nil {
 							section.Activity = map[string]int{}
 						}
@@ -148,6 +148,9 @@ func ListHomeSections(memberID int64, admin bool, order string, filters ...HomeF
 			if f.Start != "" && f.End != "" {
 				where = " WHERE day>=? AND day<=?"
 				args = append(args, f.Start, f.End)
+			} else if f.End != "" {
+				where = " WHERE day<=?"
+				args = append(args, f.End)
 			}
 		}
 		if err := DB.QueryRow("SELECT COUNT(*) FROM ("+query+")"+where, args...).Scan(&section.Total); err != nil {

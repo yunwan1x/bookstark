@@ -65,6 +65,7 @@ func BlogEditorPage(c *gin.Context) {
 		data["BlogContentJS"] = blog.BlogContent
 		data["BlogContentURL"] = ""
 	}
+	recordRecentContent(c, "blog", blog.BlogID, "")
 	c.HTML(http.StatusOK, "editor.html", data)
 }
 
@@ -310,6 +311,7 @@ func GetBlog(c *gin.Context) {
 	} else {
 		result["blog_content"] = blog.BlogContent
 	}
+	recordRecentContent(c, "blog", blog.BlogID, "")
 	apiSuccess(c, result)
 }
 

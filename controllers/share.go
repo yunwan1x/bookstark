@@ -31,6 +31,7 @@ func ShareViewPage(c *gin.Context) {
 		return
 	}
 	prepareShareHTMLPayload(detail)
+	recordRecentContent(c, detail.ShareType, detail.TargetID, detail.ShareIdentify)
 
 	friendLinks, err := models.ListEnabledFriendLinks()
 	if err != nil {

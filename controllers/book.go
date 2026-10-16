@@ -245,5 +245,6 @@ func EditorPage(c *gin.Context) {
 	data["AIActionsBook"] = models.GetSetting("ai_actions_book")
 	data["AIActionsArticle"] = models.GetSetting("ai_actions_article")
 	data["AIActionsEmpty"] = models.GetSetting("ai_actions_empty")
+	recordRecentContent(c, "book", book.BookID, "")
 	c.HTML(http.StatusOK, "editor.html", data)
 }

@@ -413,6 +413,15 @@ func createTables() error {
 		`CREATE INDEX IF NOT EXISTS idx_asset_webdav_servers_credential ON md_asset_webdav_servers(credential_id)`,
 		`CREATE INDEX IF NOT EXISTS idx_asset_webdav_servers_created_by ON md_asset_webdav_servers(created_by)`,
 		`CREATE INDEX IF NOT EXISTS idx_asset_webdav_servers_status ON md_asset_webdav_servers(status)`,
+		`CREATE TABLE IF NOT EXISTS md_recent_content (
+			member_id INTEGER NOT NULL,
+			resource_type TEXT NOT NULL,
+			target_id INTEGER NOT NULL,
+			share_identify TEXT NOT NULL DEFAULT '',
+			visited_at INTEGER NOT NULL,
+			PRIMARY KEY (member_id, resource_type, target_id)
+		)`,
+		`CREATE INDEX IF NOT EXISTS idx_recent_content_member_time ON md_recent_content(member_id, visited_at DESC)`,
 		`CREATE TABLE IF NOT EXISTS md_visit_log (
 			visit_id   INTEGER PRIMARY KEY AUTOINCREMENT,
 			ip         VARCHAR(45)  NOT NULL DEFAULT '',

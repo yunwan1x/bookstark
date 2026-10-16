@@ -52,4 +52,20 @@ func TestHomeDateFilterTimezoneAndLimit(t *testing.T) {
 			t.Fatalf("owner data leaked: %+v", section)
 		}
 	}
+	// An upper bound includes all older content, not merely the selected day.
+	cutoff := HomeFilter{End: "2026-10-15", Month: "2026-10", Limit: 50, Location: loc}
+	for _, order := range []string{"updated", "created"} {
+		sections, err = ListHomeSections(1, false, order, cutoff)
+		if err != nil || sections[0].Total != 5 {
+			t.Fatal(sections, err)
+		}
+		for _, item := range sections[0].Items {
+			if item.Date > cutoff.End {
+				t.Fatal("future item passed cutoff", item)
+			}
+		}
+		if sections[0].Activity["2026-10-16"] != 1 {
+			t.Fatal("calendar heatmap must be independent of cutoff", sections[0])
+		}
+	}
 }

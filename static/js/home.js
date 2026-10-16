@@ -29,107 +29,75 @@
     var now = new Date();
     function dateKey(date) { return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0'); }
     function parseDate(value) { return new Date(value+'T12:00:00'); }
-    var selected = '', rangeStart = '', rangeEnd = '', rangeMode = 'all', limit = 10;
-    var calendarMonth = new Date(now.getFullYear(),now.getMonth(),1), activity = new Set();
-    var activityCounts = {}, activityEnd = dateKey(now), activityReady = false;
-    var firstActivityDay = new Date(now);firstActivityDay.setDate(firstActivityDay.getDate()-(firstActivityDay.getDay()+6)%7-77);
-    var activityStart = dateKey(firstActivityDay);
-    var startInput = document.getElementById('homeStart'), endInput = document.getElementById('homeEnd');
+    var selected = '', limit = 10;
+    var calendarMonth = new Date(now.getFullYear(),now.getMonth(),1);
+    var activityCounts = {}, activityReady = false, clearingRecent = false;
     function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; }
     function selectDay(value) {
-        selected = value; rangeStart=value; rangeEnd=value; rangeMode='1';
+        selected = value;
         calendarMonth=new Date(parseDate(value).getFullYear(),parseDate(value).getMonth(),1);
         syncDates(); load();
     }
-    function dateButton(date, other, strip) {
+    function dateButton(date, other) {
         var value=dateKey(date), button=el('button','calendar-day'+(other?' other-month':'')+(value===dateKey(new Date())?' today':'')+(value===selected?' selected':''));
         button.type='button';button.dataset.date=value;button.setAttribute('aria-pressed',String(value===selected));
-        button.setAttribute('aria-label',date.toLocaleDateString(english?'en-US':'zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'}));
-        if(value>=rangeStart&&value<=rangeEnd)button.classList.add('home-in-range');
+        var count=Number(activityCounts[value])||0;
+        button.dataset.level=String(activityReady?(count===0?0:count===1?1:count<=3?2:count<=7?3:4):0);
+        var known=activityReady&&(!other||Object.prototype.hasOwnProperty.call(activityCounts,value));
+        var description=date.toLocaleDateString(english?'en-US':'zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'})+' · '+(known?lt(count+' 条内容',''+count+' items'):lt('点击查看截至该日的内容','View content through this date'));
+        button.setAttribute('aria-label',description);button.title=description;
         button.append(el('span','calendar-day-num',String(date.getDate())));
-        if(strip)button.append(el('span','home-weekday',date.toLocaleDateString(english?'en-US':'zh-CN',{weekday:'short'})));
-        if(activity.has(value)){var dot=el('span','heat-dot');dot.setAttribute('aria-hidden','true');button.append(dot);}
         button.onclick=function(){selectDay(value);};return button;
     }
     function renderCalendar() {
         document.getElementById('homeMonthTitle').textContent=calendarMonth.toLocaleDateString(english?'en-US':'zh-CN',{year:'numeric',month:'long'});
-        var days=document.getElementById('homeCalendarDays');days.replaceChildren();
+        var days=document.getElementById('homeCalendarDays'),focused=days.contains(document.activeElement)?document.activeElement.dataset.date:'';days.replaceChildren();
         var first=new Date(calendarMonth), offset=(first.getDay()+6)%7;first.setDate(1-offset);
         var cells=Math.ceil((offset+new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+1,0).getDate())/7)*7;
-        for(var i=0;i<cells;i++){var d=new Date(first);d.setDate(first.getDate()+i);days.append(dateButton(d,d.getMonth()!==calendarMonth.getMonth(),false));}
-        var strip=document.getElementById('homeWeekStrip');strip.replaceChildren();var monday=parseDate(selected || dateKey(now));monday.setDate(monday.getDate()-(monday.getDay()+6)%7);
-        for(var j=0;j<7;j++){var day=new Date(monday);day.setDate(monday.getDate()+j);strip.append(dateButton(day,false,true));}
+        for(var i=0;i<cells;i++){var d=new Date(first);d.setDate(first.getDate()+i);days.append(dateButton(d,d.getMonth()!==calendarMonth.getMonth()));}
+        document.getElementById('homeCalendar').setAttribute('aria-busy',String(!activityReady));
+        document.getElementById('homeActivityHint').textContent=sort==='created'?lt('颜色表示当日创建的内容数 · 点击查看截至该日的内容','Color shows items created that day · Click for content through that date'):lt('颜色表示当日最近更新的内容数 · 点击查看截至该日的内容','Color shows items last updated that day · Click for content through that date');
+        if(focused){var target=days.querySelector('[data-date="'+focused+'"]');if(target)target.focus();}
     }
-    function renderActivity() {
-        var heatmap=document.getElementById('homeHeatmap'),months=document.getElementById('homeActivityMonths'),weekdays=document.getElementById('homeActivityWeekdays');
-        var focusDay=heatmap.contains(document.activeElement)?document.activeElement.dataset.heatDate:'';
-        heatmap.replaceChildren();months.replaceChildren();weekdays.replaceChildren();
-        var labels=english?['M','T','W','T','F','S','S']:['一','二','三','四','五','六','日'];
-        labels.forEach(function(label){weekdays.append(el('span','',label));});
-        var first=parseDate(activityStart),lastMonth=-1;
-        for(var week=0;week<12;week++){
-            var monday=new Date(first);monday.setDate(first.getDate()+week*7);
-            months.append(el('span','',monday.getMonth()!==lastMonth?monday.toLocaleDateString(english?'en-US':'zh-CN',{month:'short'}):''));lastMonth=monday.getMonth();
-            for(var day=0;day<7;day++){
-                var date=new Date(monday);date.setDate(monday.getDate()+day);
-                var value=dateKey(date),count=Number(activityCounts[value])||0,button=el('button','home-heat-cell');
-                button.type='button';button.dataset.heatDate=value;button.dataset.level=String(count===0?0:count===1?1:count<=3?2:count<=7?3:4);
-                button.disabled=!activityReady||value>activityEnd;
-                var description=value+' · '+(activityReady?lt(count+' 条内容',''+count+' items'):lt('正在加载','Loading'));
-                button.title=description;button.setAttribute('aria-label',description);button.setAttribute('aria-pressed',String(value===selected));
-                if(rangeStart&&value>=rangeStart&&value<=rangeEnd)button.classList.add('is-in-range');
-                button.onclick=function(){selectDay(this.dataset.heatDate);};heatmap.append(button);
-            }
-        }
-        document.getElementById('homeActivity').setAttribute('aria-busy',String(!activityReady));
-        document.getElementById('homeActivityHint').textContent=sort==='created'?lt('按内容创建日期统计 · 点击日期筛选','By creation date · Click a day to filter'):lt('按内容最近更新日期统计 · 点击日期筛选','By last update date · Click a day to filter');
-        if(focusDay){var target=heatmap.querySelector('[data-heat-date="'+focusDay+'"]');if(target&&!target.disabled)target.focus();}
-    }
-    document.getElementById('homeHeatmap').addEventListener('keydown',function(e){
-        var button=e.target.closest('[data-heat-date]'),offset={ArrowLeft:-7,ArrowRight:7,ArrowUp:-1,ArrowDown:1}[e.key];
-        if(!button||!offset)return;
-        e.preventDefault();var date=parseDate(button.dataset.heatDate);date.setDate(date.getDate()+offset);
-        var target=this.querySelector('[data-heat-date="'+dateKey(date)+'"]');if(target&&!target.disabled)target.focus();
-    });
     function syncDates() {
-        startInput.value=rangeStart;endInput.value=rangeEnd;endInput.min=rangeStart;startInput.max=rangeEnd;
-        document.getElementById('homeSelectedDate').textContent=rangeStart&&rangeStart!==rangeEnd ? rangeStart.replaceAll('-','/')+' – '+rangeEnd.replaceAll('-','/') : selected ? parseDate(selected).toLocaleDateString(english?'en-US':'zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'}) : lt('最近内容','Recent content');
-        document.querySelector('.home-date-hint').textContent=rangeStart ? lt('所选日期内的内容，按时间倒序显示。','Content within the selected dates, newest first.') : lt('不限日期，按时间倒序显示最近内容。','Recent content across all dates, newest first.');
-        document.querySelectorAll('[data-home-range]').forEach(function(b){var active=b.dataset.homeRange===rangeMode;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
+        document.getElementById('homeSelectedDate').textContent=selected?lt('截至 ','Through ')+selected.replaceAll('-','/'):lt('全部时间 · 最近内容','All time · Recent content');
+        document.getElementById('homeClearDate').hidden=!selected;
         renderCalendar();
-        renderActivity();
     }
-    document.querySelectorAll('[data-home-range]').forEach(function(b){b.onclick=function(){
-        if(b.dataset.homeRange==='custom'){
-            startInput.value=rangeStart||dateKey(new Date());endInput.value=rangeEnd||startInput.value;
-            startInput.max=endInput.value;endInput.min=startInput.value;
-            document.getElementById('homeDateDialog').showModal();startInput.focus();return;
-        }
-        rangeMode=b.dataset.homeRange;
-        if(rangeMode==='all'){selected='';rangeStart='';rangeEnd='';syncDates();load();return;}
-        if(!selected)selected=dateKey(new Date());
-        if(!rangeStart){rangeStart=selected;rangeEnd=selected;}
-        var first=parseDate(selected);first.setDate(first.getDate()-Number(rangeMode)+1);rangeStart=dateKey(first);rangeEnd=selected;syncDates();load();
-    };});
+    document.getElementById('homeClearDate').onclick=function(){selected='';syncDates();load();};
     document.querySelectorAll('[data-home-today]').forEach(function(b){b.onclick=function(){selectDay(dateKey(new Date()));};});
-    document.getElementById('homeRangeForm').onsubmit=function(e){
-        e.preventDefault();var from=parseDate(startInput.value),to=parseDate(endInput.value);
-        if(!startInput.value||!endInput.value||!Number.isFinite(+from)||!Number.isFinite(+to)||from>to||to-from>366*86400000){BSDialog.toast(lt('请选择有效的日期范围，最多一年。','Choose a valid date range of up to one year.'),'error');return;}
-        rangeStart=startInput.value;rangeEnd=endInput.value;selected=rangeEnd;rangeMode='custom';calendarMonth=new Date(to.getFullYear(),to.getMonth(),1);document.getElementById('homeDateDialog').close();syncDates();load();
-    };
-    startInput.oninput=function(){endInput.min=startInput.value;};endInput.oninput=function(){startInput.max=endInput.value;};
     document.getElementById('homeLimit').onchange=function(){limit=Number(this.value);load();};
-    [-1,1].forEach(function(delta){document.getElementById(delta<0?'homePrevMonth':'homeNextMonth').onclick=function(){calendarMonth.setMonth(calendarMonth.getMonth()+delta);activity.clear();renderCalendar();load();};});
-    document.getElementById('homeCalendarToggle').onclick=function(){
-        var open=document.getElementById('homeCalendar').classList.toggle('is-open');this.setAttribute('aria-expanded',String(open));
-    };
+    [-1,1].forEach(function(delta){document.getElementById(delta<0?'homePrevMonth':'homeNextMonth').onclick=function(){calendarMonth.setMonth(calendarMonth.getMonth()+delta);activityCounts={};activityReady=false;renderCalendar();load();};});
     document.getElementById('homeCalendar').addEventListener('keydown',function(e){
-        if(e.key==='Escape'){this.classList.remove('is-open');document.getElementById('homeCalendarToggle').setAttribute('aria-expanded','false');document.getElementById('homeCalendarToggle').focus();}
         var button=e.target.closest('[data-date]');if(!button)return;
         var shift={ArrowLeft:-1,ArrowRight:1,ArrowUp:-7,ArrowDown:7}[e.key];
         if(shift){e.preventDefault();var next=parseDate(button.dataset.date);next.setDate(next.getDate()+shift);selectDay(dateKey(next));var target=this.querySelector('[data-date="'+dateKey(next)+'"]');if(target)target.focus();}
     });
     syncDates();
+    function renderRecent(items, failed) {
+        var box=document.getElementById('homeRecentList');box.replaceChildren();
+        document.getElementById('homeRecent').setAttribute('aria-busy','false');
+        document.getElementById('homeRecentClear').hidden=!items.length;
+        if(!items.length){box.append(el('p','home-empty',failed?lt('最近访问加载失败，请重试。','Could not load recent visits. Please retry.'):lt('还没有访问记录，打开笔记、文章或书籍后会显示在这里。','No visits yet. Open a note, article or book to get started.')));return;}
+        var types={note:['note-sticky',lt('笔记','Note')],article:['file-lines',lt('文章','Article')],book:['book-open',lt('书籍','Book')],document:['file-lines',lt('章节','Chapter')]};
+        items.forEach(function(item){
+            if(!item.url||!item.url.startsWith('/')||item.url.startsWith('//'))return;
+            var type=types[item.type]||types.article,link=el('a','home-row home-recent-row');link.href=item.url;
+            var icon=el('span','home-recent-icon'),glyph=el('i','fa-solid fa-'+type[0]);glyph.setAttribute('aria-hidden','true');icon.append(glyph);
+            var copy=el('span','home-recent-copy');copy.append(el('strong','home-row-title',item.title||lt('未命名','Untitled')),el('span','home-date-hint',type[1]+(item.context?' · '+item.context:'')));
+            var date=new Date(item.visited_at),time=el('time','',date.toLocaleString(english?'en-US':'zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}));time.dateTime=date.toISOString();
+            var arrow=el('i','fa-solid fa-chevron-right');arrow.setAttribute('aria-hidden','true');
+            link.append(icon,copy,time,arrow);box.append(link);
+        });
+    }
+    document.getElementById('homeRecentClear').onclick=async function(){
+        if(clearingRecent)return;
+        if(!await BSDialog.confirm2(lt('清空当前账户在所有设备上的最近访问记录？不会删除任何内容。','Clear recent visits for this account on all devices? Your content will not be deleted.')))return;
+        clearingRecent=true;this.disabled=true;
+        try{var response=await csrfFetch('/api/home/recent',{method:'DELETE'}),data=await response.json();if(!response.ok||data.code!==0)throw new Error();renderRecent([]);await load();}
+        catch(_){BSDialog.toast(lt('清空失败，请重试。','Could not clear visits. Please retry.'),'error');}
+        finally{clearingRecent=false;this.disabled=false;}
+    };
     function renderSkeleton() {
         grid.replaceChildren();
         var pending = layout;
@@ -178,7 +146,7 @@
                 var date = el('time','',item.date ? item.date.slice(5) : ''); date.dateTime = item.date; date.title = item.date; a.append(date); li.append(a); list.append(li);
             });
             card.append(list);
-            if (!s.items.length) card.append(el('p','home-empty',rangeStart ? lt('所选日期内没有记录','No records in the selected date range') : lt('暂无记录','No records yet')));
+            if (!s.items.length) card.append(el('p','home-empty',selected ? lt('截至所选日期没有记录','No records through the selected date') : lt('暂无记录','No records yet')));
             if (s.items.length > 3) {
                 var expandText = lt('展开最近 ' + s.items.length + ' 条 ↓','Show latest ' + s.items.length + ' ↓');
                 var expand = el('button','home-expand',expandText); expand.setAttribute('aria-expanded','false'); expand.setAttribute('aria-controls',list.id);
@@ -280,7 +248,7 @@
             // A cold browser may queue this behind fonts/common assets on slow links.
             var timeout = setTimeout(function () { controller.abort(); }, 60000);
             try {
-                var query = new URLSearchParams({order:sort,start:rangeStart,end:rangeEnd,limit:String(limit),month:dateKey(calendarMonth).slice(0,7)});
+                var query = new URLSearchParams({order:sort,end:selected,limit:String(limit),month:dateKey(calendarMonth).slice(0,7)});
                 var response = await fetch('/api/home?' + query, {credentials:'same-origin',cache:'no-store',signal:controller.signal});
                 var data = await response.json();
                 return {response:response,data:data};
@@ -304,8 +272,8 @@
             if (response.status === 401) { window.location.replace('/login'); return; }
             if (!response.ok || data.code !== 0 || !Array.isArray(data.sections)) throw new Error('home request failed');
             sections = data.sections;
-            activityCounts=data.activity||{};activityStart=data.activity_start||activityStart;activityEnd=data.activity_end||activityEnd;activityReady=true;renderActivity();
-            activity = new Set(); sections.forEach(function(s){(s.dates||[]).forEach(function(day){activity.add(day);});});renderCalendar();
+            activityCounts=data.activity||{};activityReady=true;renderCalendar();
+            renderRecent(Array.isArray(data.recent)?data.recent:[]);
             layout = Array.isArray(data.layout) ? data.layout : defaultLayout().map(function(item) {item.hidden = hidden.includes(item.key); return item;});
             try { localStorage.setItem(key + ':layout',JSON.stringify(layout)); } catch (_) {}
             render();
@@ -314,8 +282,7 @@
             if (ticket !== sequence) return;
             console.warn('Home load failed:',err);
             grid.replaceChildren();
-            activityCounts={};activityReady=false;renderActivity();
-            activity.clear();renderCalendar();
+            activityCounts={};activityReady=false;renderCalendar();renderRecent([],true);
             sections = []; preferences(); status.hidden = false; status.textContent = err.name === 'AbortError' ? lt('请求超时，请重试','Request timed out. Please retry.') : lt('首页加载失败，请检查网络后重试。','Could not load your home page. Check your connection and retry.'); retry.hidden = false;
         } finally { if (ticket === sequence) grid.setAttribute('aria-busy','false'); }
     }

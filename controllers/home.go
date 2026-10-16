@@ -29,7 +29,9 @@ func HomeSummary(c *gin.Context) {
 	limit, err3 := strconv.Atoi(c.DefaultQuery("limit", "10"))
 	month := c.DefaultQuery("month", time.Now().Format("2006-01"))
 	_, err4 := time.Parse("2006-01", month)
-	dateInvalid := (start != "" || end != "") && (err1 != nil || err2 != nil || from.After(to) || to.Sub(from) > 366*24*time.Hour)
+	// End alone means all content through that local date. Retain valid paired
+	// ranges for existing API clients; the home UI only uses the upper bound.
+	dateInvalid := (end != "" && err2 != nil) || (start != "" && (end == "" || err1 != nil || from.After(to) || to.Sub(from) > 366*24*time.Hour))
 	if dateInvalid || err3 != nil || err4 != nil || (limit != 5 && limit != 10 && limit != 20 && limit != 50) {
 		apiError(c, http.StatusBadRequest, i18n.T(i18n.GetLang(c), "home.invalid_filter"))
 		return
@@ -59,7 +61,13 @@ func HomeSummary(c *gin.Context) {
 			activity[day] += count
 		}
 	}
-	c.JSON(http.StatusOK, gin.H{"code": 0, "sections": sections, "layout": layout, "start": start, "end": end, "limit": limit, "activity": activity, "activity_start": activityStart, "activity_end": activityEnd})
+	recent, err := models.ListRecentContent(middleware.GetMemberID(c), isAdmin(c))
+	if err != nil {
+		log.Printf("home recent content: %v", err)
+		apiError(c, http.StatusInternalServerError, "首页加载失败，请重试")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": 0, "sections": sections, "layout": layout, "start": start, "end": end, "limit": limit, "activity": activity, "activity_start": activityStart, "activity_end": activityEnd, "recent": recent})
 }
 
 func SaveHomeLayout(c *gin.Context) {

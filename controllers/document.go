@@ -80,6 +80,7 @@ func GetDocument(c *gin.Context) {
 		result["content_encoding"] = "gzip"
 		result["content_compressed"] = models.IsCompressedContent(doc.Markdown)
 	}
+	recordRecentContent(c, "document", doc.DocumentID, "")
 	apiSuccess(c, result)
 }
 

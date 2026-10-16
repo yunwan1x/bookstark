@@ -285,7 +285,11 @@ func TestHomeCalendarFilteringValidationAndDefaults(t *testing.T) {
 	if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &defaults) != nil || len(defaults.Sections[0].Items) != 4 || len(defaults.Sections[0].Dates) != 3 {
 		t.Fatal("all-time filter lost records or activity", w.Body.String())
 	}
-	for _, query := range []string{"start=bad", "start=2026-10-16&end=2026-10-15", "start=2024-01-01&end=2026-10-15", "limit=10000", "limit=abc", "month=bad", "start=2026-02-30"} {
+	w = adminAssetRequest(router, token, "GET", "/api/home?end=2026-10-15&month=2026-10", nil)
+	if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &defaults) != nil || defaults.Sections[0].Total != 3 {
+		t.Fatal("end-only filter must include older content", w.Body.String())
+	}
+	for _, query := range []string{"start=bad", "end=bad", "end=2026-02-30", "start=2026-10-16&end=2026-10-15", "start=2024-01-01&end=2026-10-15", "limit=10000", "limit=abc", "month=bad", "start=2026-02-30"} {
 		w := adminAssetRequest(router, token, "GET", "/api/home?"+query, nil)
 		if w.Code != 400 {
 			t.Fatalf("accepted %s: %d", query, w.Code)

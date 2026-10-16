@@ -274,6 +274,7 @@ func Setup() *gin.Engine {
 		auth.GET("/home", controllers.PersonalHomePage)
 		auth.GET("/api/home", controllers.HomeSummary)
 		auth.PUT("/api/home/layout", controllers.SaveHomeLayout)
+		auth.DELETE("/api/home/recent", controllers.ClearHomeRecent)
 		auth.GET("/books", controllers.IndexPage)
 		auth.GET("/books/:identify/edit", controllers.EditorPage)
 		auth.GET("/blogs", func(c *gin.Context) { c.Redirect(http.StatusMovedPermanently, "/notes") })
