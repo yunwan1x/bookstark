@@ -20,7 +20,8 @@ const fs=require('node:fs'),assert=require('node:assert/strict');
    if(u.pathname==='/api/home/recent'){assert.equal(route.request().method(),'DELETE');cleared=true;clearCalls++;return route.fulfill({json:{code:0}});}
    if(u.pathname==='/api/home'){
     calls++;lastQuery=u.searchParams;await pending;
-    return route.fulfill({status:fail?500:200,json:fail?{code:500}:{code:0,activity:u.searchParams.get('month')==='2026-10'?{'2026-10-14':3,'2026-10-07':9}:{'2026-09-01':2},
+    const activity=u.searchParams.get('view')==='month'?{'2026-10-14':3,'2026-10-07':9,'2026-10-01':2,'2026-09-30':5,'2026-09-01':2,'2026-01-01':4}:u.searchParams.get('view')==='week'?{'2026-10-14':3,'2026-10-07':9,'2026-10-01':2,'2026-09-30':5,'2026-09-01':2}:u.searchParams.get('month')==='2026-10'?{'2026-10-14':3,'2026-10-07':9}:{'2026-09-01':2};
+    return route.fulfill({status:fail?500:200,json:fail?{code:500}:{code:0,activity,
      recent:cleared?[]:[{type:'note',id:7,title:'<img src=x onerror=alert(1)>',url:'/notes?tab=notes&id=7',visited_at:1792134000000},{type:'document',id:8,title:'A recently visited chapter with a long title',context:'Book name',url:'/books/example/edit?doc=8',visited_at:1792130000000}],
      sections:['notes','articles','tasks'].map(key=>({key,total:1,items:[{title:'Example',url:'/notes',date:'2026-10-01'}]})),layout:null}});
    }
@@ -57,7 +58,22 @@ const fs=require('node:fs'),assert=require('node:assert/strict');
   await page.locator('#homePrevMonth').click();await ready();assert.equal(lastQuery.get('month'),'2026-09');assert.equal(lastQuery.get('end'),'2026-10-15');
   assert.equal(await page.locator('#homeCalendarDays [data-date="2026-09-01"]').getAttribute('data-level'),'2');
   await page.locator('#homeClearDate').click();await ready();assert.equal(lastQuery.get('end'),'');assert.equal(await page.locator('.calendar-day.selected').count(),0);
-  await page.locator('[data-home-today]').click();await ready();assert.equal(lastQuery.get('end'),'2026-10-16');
+  await page.locator('[data-home-view="week"]').click();await ready();assert.equal(lastQuery.get('view'),'week');assert.equal(lastQuery.get('end'),'');
+  assert.equal(await page.locator('#homeWeekdays').isVisible(),false);
+  const crossWeek=page.locator('[data-period-start="2026-09-28"]');assert.equal(await crossWeek.getAttribute('data-date'),'2026-10-04');assert((await crossWeek.getAttribute('aria-label')).includes('7'));
+  await noOverflow();await page.screenshot({path:'/tmp/home-week-'+lang+'-'+width+'.png'});
+  await crossWeek.click();await ready();assert.equal(lastQuery.get('end'),'2026-10-04');assert.equal(lastQuery.get('month'),'2026-09');
+  await page.locator('[data-home-view="month"]').click();await ready();assert.equal(lastQuery.get('view'),'month');assert.equal(lastQuery.get('end'),'2026-10-04');
+  assert.equal(await page.locator('#homeCalendarDays button').count(),12);
+  const october=page.locator('[data-period-start="2026-10-01"]');assert.equal(await october.getAttribute('data-date'),'2026-10-31');assert((await october.getAttribute('aria-label')).includes('14'));
+  await noOverflow();await page.screenshot({path:'/tmp/home-month-'+lang+'-'+width+'.png'});
+  await october.click();await ready();assert.equal(lastQuery.get('end'),'2026-10-31');
+  await page.locator('#homePrevMonth').click();await ready();assert.equal(lastQuery.get('month'),'2025-09');assert.equal(lastQuery.get('end'),'2026-10-31');
+  await page.locator('[data-home-current]').click();await ready();assert.equal(lastQuery.get('month'),'2026-10');assert.equal(lastQuery.get('end'),'2026-10-31','current returns display only');
+  await page.locator('[data-period-start="2026-02-01"]').focus();await page.keyboard.press('ArrowRight');assert.equal(await page.locator(':focus').getAttribute('data-period-start'),'2026-03-01');assert.equal(lastQuery.get('end'),'2026-10-31','period arrow keys only move focus');
+  await page.locator('[data-period-start="2026-02-01"]').click();await ready();assert.equal(lastQuery.get('end'),'2026-02-28');
+  await page.locator('[data-home-view="day"]').click();await ready();assert.equal(lastQuery.get('end'),'2026-02-28');assert(await page.locator('#homeWeekdays').isVisible());
+  await page.locator('#homeClearDate').click();await ready();assert.equal(lastQuery.get('end'),'');
   await page.locator('#homeLimit').selectOption('20');await ready();assert.equal(lastQuery.get('limit'),'20');
   await page.locator('[data-home-sort="created"]').click();await ready();assert.equal(lastQuery.get('order'),'created');
   assert.equal(await page.locator('[data-home-sort="created"]').evaluate(n=>getComputedStyle(n).borderBottomWidth),'2px');

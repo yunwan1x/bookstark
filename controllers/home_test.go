@@ -332,6 +332,51 @@ func TestHomeActivityWindowCountsAndDeduplication(t *testing.T) {
 	}
 }
 
+func TestHomeCalendarViewWindowsAndBoundaries(t *testing.T) {
+	router, token := initAssetControllerTest(t)
+	for i, day := range []string{"2024-01-01", "2024-02-29", "2024-12-31", "2026-12-28", "2027-01-03", "2027-02-01"} {
+		if _, err := models.DB.Exec(`INSERT INTO md_blogs(blog_title,blog_identify,blog_type,member_id,create_time,modify_time) VALUES(?,?,'note',1,?,?)`, "Period", fmt.Sprintf("period-%d", i), day+" 12:00:00", day+" 13:00:00"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, test := range []struct {
+		view, month, start, end string
+		days                    int
+	}{
+		{"month", "2024-02", "2024-01-01", "2024-12-31", 3},
+		{"week", "2027-01", "2026-12-28", "2027-01-31", 2},
+		{"day", "2024-02", "2024-01-29", "2024-03-03", 1},
+	} {
+		for _, order := range []string{"created", "updated"} {
+			w := adminAssetRequest(router, token, "GET", "/api/home?view="+test.view+"&month="+test.month+"&end=2000-01-01&limit=5&order="+order, nil)
+			var data struct {
+				Activity map[string]int       `json:"activity"`
+				Start    string               `json:"activity_start"`
+				End      string               `json:"activity_end"`
+				Sections []models.HomeSection `json:"sections"`
+			}
+			if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &data) != nil {
+				t.Fatal(w.Code, w.Body.String())
+			}
+			if data.Start != test.start || data.End != test.end || len(data.Activity) != test.days {
+				t.Fatalf("%s: %+v", test.view, data)
+			}
+			for _, count := range data.Activity {
+				if count != 1 {
+					t.Fatal("wrong aggregation", data)
+				}
+			}
+			if data.Sections[0].Total != 0 {
+				t.Fatal("calendar window changed content cutoff")
+			}
+		}
+	}
+	w := adminAssetRequest(router, token, "GET", "/api/home?view=year", nil)
+	if w.Code != 400 {
+		t.Fatal("unsupported view accepted", w.Code)
+	}
+}
+
 func TestHomeLayoutPersistenceValidationAndIsolation(t *testing.T) {
 	router, token := initAssetControllerTest(t)
 	other := &models.Member{Account: "layout-other", Password: "test-only", Role: 1}

@@ -28,17 +28,29 @@ func HomeSummary(c *gin.Context) {
 	to, err2 := time.ParseInLocation("2006-01-02", end, time.Local)
 	limit, err3 := strconv.Atoi(c.DefaultQuery("limit", "10"))
 	month := c.DefaultQuery("month", time.Now().Format("2006-01"))
-	_, err4 := time.Parse("2006-01", month)
+	calendarMonth, err4 := time.ParseInLocation("2006-01", month, time.Local)
+	view := c.Query("view")
 	// End alone means all content through that local date. Retain valid paired
 	// ranges for existing API clients; the home UI only uses the upper bound.
 	dateInvalid := (end != "" && err2 != nil) || (start != "" && (end == "" || err1 != nil || from.After(to) || to.Sub(from) > 366*24*time.Hour))
-	if dateInvalid || err3 != nil || err4 != nil || (limit != 5 && limit != 10 && limit != 20 && limit != 50) {
+	if dateInvalid || err3 != nil || err4 != nil || (limit != 5 && limit != 10 && limit != 20 && limit != 50) || (view != "" && view != "day" && view != "week" && view != "month") {
 		apiError(c, http.StatusBadRequest, i18n.T(i18n.GetLang(c), "home.invalid_filter"))
 		return
 	}
 	now := time.Now()
 	activityEnd := now.Format("2006-01-02")
 	activityStart := now.AddDate(0, 0, -((int(now.Weekday())+6)%7)-11*7).Format("2006-01-02")
+	// Explicit views fetch a bounded calendar window, independent of the
+	// content cutoff/limit. Include complete Monday–Sunday weeks at month edges.
+	if view == "month" {
+		activityStart = time.Date(calendarMonth.Year(), 1, 1, 0, 0, 0, 0, time.Local).Format("2006-01-02")
+		activityEnd = time.Date(calendarMonth.Year(), 12, 31, 0, 0, 0, 0, time.Local).Format("2006-01-02")
+	} else if view != "" {
+		first := calendarMonth.AddDate(0, 0, -((int(calendarMonth.Weekday()) + 6) % 7))
+		last := calendarMonth.AddDate(0, 1, -1)
+		last = last.AddDate(0, 0, (7-int(last.Weekday()))%7)
+		activityStart, activityEnd = first.Format("2006-01-02"), last.Format("2006-01-02")
+	}
 	sections, err := models.ListHomeSections(middleware.GetMemberID(c), isAdmin(c), order, models.HomeFilter{Start: start, End: end, Month: month, Limit: limit, Location: time.Local, ActivityStart: activityStart, ActivityEnd: activityEnd})
 	if err != nil {
 		log.Printf("home summary: %v", err)

@@ -30,7 +30,7 @@
     function dateKey(date) { return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0'); }
     function parseDate(value) { return new Date(value+'T12:00:00'); }
     var selected = '', limit = 10;
-    var calendarMonth = new Date(now.getFullYear(),now.getMonth(),1);
+    var calendarMonth = new Date(now.getFullYear(),now.getMonth(),1), calendarView = 'day';
     var activityCounts = {}, activityReady = false, clearingRecent = false;
     function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; }
     function selectDay(value) {
@@ -50,13 +50,45 @@
         button.onclick=function(){selectDay(value);};return button;
     }
     function renderCalendar() {
-        document.getElementById('homeMonthTitle').textContent=calendarMonth.toLocaleDateString(english?'en-US':'zh-CN',{year:'numeric',month:'long'});
+        document.getElementById('homeMonthTitle').textContent=calendarMonth.toLocaleDateString(english?'en-US':'zh-CN',calendarView==='month'?{year:'numeric'}:{year:'numeric',month:'long'});
+        document.querySelectorAll('[data-home-view]').forEach(function(b){var active=b.dataset.homeView===calendarView;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
+        document.getElementById('homeWeekdays').hidden=calendarView!=='day';
         var days=document.getElementById('homeCalendarDays'),focused=days.contains(document.activeElement)?document.activeElement.dataset.date:'';days.replaceChildren();
+        days.dataset.view=calendarView;
         var first=new Date(calendarMonth), offset=(first.getDay()+6)%7;first.setDate(1-offset);
         var cells=Math.ceil((offset+new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+1,0).getDate())/7)*7;
-        for(var i=0;i<cells;i++){var d=new Date(first);d.setDate(first.getDate()+i);days.append(dateButton(d,d.getMonth()!==calendarMonth.getMonth()));}
+        if(calendarView==='day'){
+            for(var i=0;i<cells;i++){var d=new Date(first);d.setDate(first.getDate()+i);days.append(dateButton(d,d.getMonth()!==calendarMonth.getMonth()));}
+        } else {
+            var periods=[];
+            for(var p=0;p<(calendarView==='month'?12:cells/7);p++){
+                var start=calendarView==='month'?new Date(calendarMonth.getFullYear(),p,1):new Date(first);
+                if(calendarView==='week')start.setDate(first.getDate()+p*7);
+                var end=calendarView==='month'?new Date(calendarMonth.getFullYear(),p+1,0):new Date(start);
+                if(calendarView==='week')end.setDate(start.getDate()+6);
+                var count=0;
+                for(var cursor=new Date(start);cursor<=end;cursor.setDate(cursor.getDate()+1))count+=Number(activityCounts[dateKey(cursor)])||0;
+                periods.push({start:start,end:end,count:count});
+            }
+            var maximum=Math.max.apply(null,periods.map(function(p){return p.count;}));
+            periods.forEach(function(period){
+                var value=dateKey(period.end),startValue=dateKey(period.start),button=el('button','calendar-day home-calendar-period'+(selected===value?' selected':'')+(dateKey(now)>=startValue&&dateKey(now)<=value?' today':''));
+                button.type='button';button.dataset.date=value;button.dataset.periodStart=startValue;
+                button.dataset.level=String(activityReady&&period.count?Math.max(1,Math.ceil(period.count/maximum*4)):0);
+                button.setAttribute('aria-pressed',String(selected===value));
+                var label=calendarView==='month'?period.start.toLocaleDateString(english?'en-US':'zh-CN',{month:'short'}):(period.start.getMonth()+1)+'/'+period.start.getDate()+' – '+(period.end.getMonth()+1)+'/'+period.end.getDate();
+                var countLabel=activityReady?lt(period.count+' 条',''+period.count+' items'):lt('加载中','Loading');
+                button.title=startValue+' – '+value+' · '+countLabel+' · '+lt('查看截至周期末的内容','View content through period end');
+                button.setAttribute('aria-label',button.title);
+                button.append(el('span','calendar-day-num',label),el('span','home-calendar-count',countLabel));
+                button.onclick=function(){selected=value;syncDates();load();};days.append(button);
+            });
+        }
         document.getElementById('homeCalendar').setAttribute('aria-busy',String(!activityReady));
-        document.getElementById('homeActivityHint').textContent=sort==='created'?lt('颜色表示当日创建的内容数 · 点击查看截至该日的内容','Color shows items created that day · Click for content through that date'):lt('颜色表示当日最近更新的内容数 · 点击查看截至该日的内容','Color shows items last updated that day · Click for content through that date');
+        var periodName=calendarView==='week'?lt('当周','that week'):calendarView==='month'?lt('当月','that month'):lt('当日','that day');
+        document.getElementById('homeActivityHint').textContent=english?'Color shows items '+(sort==='created'?'created ':'last updated ')+periodName+' · Click to filter through period end':'颜色表示'+periodName+(sort==='created'?'创建':'最近更新')+'的内容数 · 点击查看截至'+(calendarView==='day'?'该日':'周期末')+'的内容';
+        document.getElementById('homePrevMonth').setAttribute('aria-label',calendarView==='month'?lt('上一年','Previous year'):lt('上一月','Previous month'));
+        document.getElementById('homeNextMonth').setAttribute('aria-label',calendarView==='month'?lt('下一年','Next year'):lt('下一月','Next month'));
         if(focused){var target=days.querySelector('[data-date="'+focused+'"]');if(target)target.focus();}
     }
     function syncDates() {
@@ -65,11 +97,18 @@
         renderCalendar();
     }
     document.getElementById('homeClearDate').onclick=function(){selected='';syncDates();load();};
-    document.querySelectorAll('[data-home-today]').forEach(function(b){b.onclick=function(){selectDay(dateKey(new Date()));};});
+    function refreshCalendar() {activityCounts={};activityReady=false;renderCalendar();load();}
+    document.querySelectorAll('[data-home-view]').forEach(function(b){b.onclick=function(){if(calendarView===b.dataset.homeView)return;calendarView=b.dataset.homeView;refreshCalendar();};});
+    document.querySelectorAll('[data-home-current]').forEach(function(b){b.onclick=function(){var current=new Date();calendarMonth=new Date(current.getFullYear(),current.getMonth(),1);refreshCalendar();};});
     document.getElementById('homeLimit').onchange=function(){limit=Number(this.value);load();};
-    [-1,1].forEach(function(delta){document.getElementById(delta<0?'homePrevMonth':'homeNextMonth').onclick=function(){calendarMonth.setMonth(calendarMonth.getMonth()+delta);activityCounts={};activityReady=false;renderCalendar();load();};});
+    [-1,1].forEach(function(delta){document.getElementById(delta<0?'homePrevMonth':'homeNextMonth').onclick=function(){if(calendarView==='month')calendarMonth.setFullYear(calendarMonth.getFullYear()+delta);else calendarMonth.setMonth(calendarMonth.getMonth()+delta);refreshCalendar();};});
     document.getElementById('homeCalendar').addEventListener('keydown',function(e){
         var button=e.target.closest('[data-date]');if(!button)return;
+        if(calendarView!=='day'){
+            var buttons=Array.from(document.querySelectorAll('#homeCalendarDays [data-date]')),columns=calendarView==='month'?3:2;
+            var step={ArrowLeft:-1,ArrowRight:1,ArrowUp:-columns,ArrowDown:columns}[e.key];
+            if(step){e.preventDefault();var target=buttons[buttons.indexOf(button)+step];if(target)target.focus();}return;
+        }
         var shift={ArrowLeft:-1,ArrowRight:1,ArrowUp:-7,ArrowDown:7}[e.key];
         if(shift){e.preventDefault();var next=parseDate(button.dataset.date);next.setDate(next.getDate()+shift);selectDay(dateKey(next));var target=this.querySelector('[data-date="'+dateKey(next)+'"]');if(target)target.focus();}
     });
@@ -248,7 +287,7 @@
             // A cold browser may queue this behind fonts/common assets on slow links.
             var timeout = setTimeout(function () { controller.abort(); }, 60000);
             try {
-                var query = new URLSearchParams({order:sort,end:selected,limit:String(limit),month:dateKey(calendarMonth).slice(0,7)});
+                var query = new URLSearchParams({order:sort,end:selected,limit:String(limit),month:dateKey(calendarMonth).slice(0,7),view:calendarView});
                 var response = await fetch('/api/home?' + query, {credentials:'same-origin',cache:'no-store',signal:controller.signal});
                 var data = await response.json();
                 return {response:response,data:data};
