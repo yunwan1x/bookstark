@@ -4,6 +4,7 @@ import (
 	"bookstark/i18n"
 	"bookstark/middleware"
 	"bookstark/models"
+	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
@@ -13,7 +14,35 @@ import (
 
 func PersonalHomePage(c *gin.Context) {
 	c.Header("Cache-Control", "private, no-store")
-	c.HTML(http.StatusOK, "home.html", commonData(c, "home"))
+	data := commonData(c, "home")
+	layout, err := models.GetHomeLayout(middleware.GetMemberID(c))
+	if err != nil {
+		log.Printf("home loading layout: %v", err)
+	}
+	layout, _ = models.NormalizeHomeLayout(layout)
+	// Render fixed headers in the initial HTML, before JavaScript or summaries load.
+	definitions := map[string][3]string{
+		"notes":     {"nav.notes", "note-sticky", "/notes"},
+		"articles":  {"note.tab.articles", "file-lines", "/notes?tab=articles"},
+		"tasks":     {"nav.todos", "list-check", "/notes?tab=tasks"},
+		"books":     {"nav.books", "book-open", "/books"},
+		"bookmarks": {"nav.bookmarks", "link", "/bookmarks"},
+		"topics":    {"nav.topics", "layer-group", "/topics"},
+		"nav":       {"nav.home", "compass", "/nav"},
+		"shares":    {"nav.shares", "users", "/shares"},
+		"assets":    {"home.module_assets", "server", "/admin/assets"},
+	}
+	cards := []gin.H{}
+	for _, item := range layout {
+		if item.Hidden || (item.Key == "assets" && !isAdmin(c)) {
+			continue
+		}
+		m := definitions[item.Key]
+		cards = append(cards, gin.H{"Key": item.Key, "Width": item.Width, "Title": i18n.T(i18n.GetLang(c), m[0]), "Icon": m[1], "URL": m[2]})
+	}
+	raw, _ := json.Marshal(layout)
+	data["HomeLoadingLayout"], data["HomeLoadingCards"] = string(raw), cards
+	c.HTML(http.StatusOK, "home.html", data)
 }
 
 func HomeSummary(c *gin.Context) {

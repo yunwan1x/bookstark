@@ -118,7 +118,10 @@
 .home-bottom-nav{display:none}.home-dialog{width:min(460px,calc(100% - 32px));max-height:80dvh;overflow:auto;border:1px solid var(--color-border);border-radius:18px;background:var(--color-bg-card);color:var(--color-text);padding:24px;margin:auto;box-shadow:0 20px 80px #0003}.home-dialog::backdrop{background:#13213b66;backdrop-filter:blur(3px)}.home-dialog-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}.home-dialog h2{font-size:19px;font-weight:650}.home-dialog-head button{font-size:26px;width:36px;height:36px;border:0;background:none;cursor:pointer;color:var(--color-text-muted)}.home-dialog h3{color:var(--color-text-muted);font-size:12px;margin:18px 0 8px}.home-dialog p{font-size:13px;color:var(--color-text-muted);margin-bottom:16px}.home-menu-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:18px}.home-menu-grid a,.home-menu-grid label{padding:14px 6px;text-align:center;border:1px solid var(--color-border);border-radius:9px;background:var(--color-bg-hover);font-size:13px;cursor:pointer}.home-menu-grid label{display:flex;gap:7px;justify-content:center;align-items:center}.home-menu-grid input{accent-color:var(--color-primary)}
 .home-body :focus-visible{outline:2px solid var(--color-primary);outline-offset:3px}.home-body [hidden]{display:none!important}#homeStatus{font-size:14px;color:var(--color-text-muted);padding:12px 8px}
 .home-body .main-tab:focus-visible{outline-offset:-3px}
-.home-skeleton-heading{height:40px;width:60%;margin-bottom:var(--spacing-lg)}
+.home-loading-card{--home-accent:var(--color-primary)}
+.home-loading-card[data-section="articles"],.home-loading-card[data-section="shares"]{--home-accent:var(--color-success)}
+.home-loading-card[data-section="tasks"],.home-loading-card[data-section="assets"]{--home-accent:var(--color-warning)}
+.home-loading-card[data-section="books"]{--home-accent:var(--color-indigo)}
 .home-skeleton-line{height:20px;margin:var(--spacing-md) 0}
 .home-skeleton-line:nth-child(even){width:85%}
 /* Small-screen navigation uses the shared console header without home-only overrides. */

@@ -44,7 +44,7 @@
   </div>
   <p id="homeStatus" role="status" aria-live="polite">{{call .T "home.loading"}}</p>
   <button id="homeRetry" class="home-button" hidden>{{call .T "home.retry"}}</button>
-  <div class="home-grid" id="homeGrid" aria-busy="true">{{template "home-loading-card"}}{{template "home-loading-card"}}{{template "home-loading-card"}}</div>
+  <div class="home-grid" id="homeGrid" aria-busy="true" data-loading-layout="{{.HomeLoadingLayout}}">{{range .HomeLoadingCards}}<section class="home-card home-loading-card" data-section="{{.Key}}" data-width="{{.Width}}" aria-labelledby="home-title-{{.Key}}"><div class="home-card-head"><span class="home-card-icon"><i class="fa-solid fa-{{.Icon}}" aria-hidden="true"></i></span><div><h2 id="home-title-{{.Key}}">{{.Title}}</h2></div><a class="home-card-all" href="{{.URL}}">{{call $.T "home.view_all"}} →</a></div>{{template "home-loading-lines"}}</section>{{end}}</div>
   <noscript>{{call .T "home.noscript"}}</noscript>
 </main>
 <nav class="home-bottom-nav" aria-label="{{call .T "home.mobile_nav"}}"><a href="/home" aria-current="page"><i class="fa-solid fa-house" aria-hidden="true"></i><span>{{call .T "home.nav"}}</span></a><a href="/notes"><i class="fa-regular fa-note-sticky" aria-hidden="true"></i><span>{{call .T "nav.notes"}}</span></a><button data-home-dialog="homeCreate"><i class="fa-solid fa-plus home-new-icon" aria-hidden="true"></i><span>{{call .T "home.new"}}</span></button><a href="/notes?tab=tasks"><i class="fa-solid fa-list-check" aria-hidden="true"></i><span>{{call .T "nav.todos"}}</span></a><button data-home-dialog="homeMore"><i class="fa-solid fa-bars" aria-hidden="true"></i><span>{{call .T "home.more"}}</span></button></nav>
@@ -92,4 +92,4 @@
 {{template "footer" .}}
 </body>
 </html>
-{{define "home-loading-card"}}<section class="home-card skeleton-card home-loading-card" data-width="1" aria-hidden="true"><div class="skeleton home-skeleton-heading"></div><div class="skeleton home-skeleton-line"></div><div class="skeleton home-skeleton-line"></div><div class="skeleton home-skeleton-line"></div><div class="skeleton home-skeleton-line"></div><div class="skeleton home-skeleton-line"></div><div class="skeleton home-skeleton-line"></div></section>{{end}}
+{{define "home-loading-lines"}}<div aria-hidden="true"><div class="skeleton home-skeleton-line"></div><div class="skeleton home-skeleton-line"></div><div class="skeleton home-skeleton-line"></div><div class="skeleton home-skeleton-line"></div><div class="skeleton home-skeleton-line"></div><div class="skeleton home-skeleton-line"></div></div>{{end}}

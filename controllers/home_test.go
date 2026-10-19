@@ -417,6 +417,18 @@ func TestHomeLayoutPersistenceValidationAndIsolation(t *testing.T) {
 	if readLayout(otherToken.Token) != nil {
 		t.Fatal("layout leaked to another account")
 	}
+	page := adminAssetRequest(router, token, "GET", "/home", nil)
+	body := page.Body.String()
+	if page.Code != 200 || !strings.Contains(body, `data-section="articles" data-width="2"`) || !strings.Contains(body, `data-section="notes" data-width="3"`) || strings.Contains(body, `data-section="tasks"`) {
+		t.Fatal("initial skeleton headers must respect saved layout")
+	}
+	if strings.Index(body, `data-section="articles"`) > strings.Index(body, `data-section="notes"`) || strings.Contains(body, "ZgotmplZ") || strings.Contains(body, "home-skeleton-heading") {
+		t.Fatal("initial headers have invalid order, styles or title placeholders")
+	}
+	page = adminAssetRequest(router, otherToken.Token, "GET", "/home", nil)
+	if strings.Contains(page.Body.String(), `data-section="assets"`) {
+		t.Fatal("non-admin loading state exposes an admin-only module")
+	}
 	for _, input := range []any{
 		nil,
 		[]models.HomeLayoutItem{{Key: "unknown", Width: 1}},

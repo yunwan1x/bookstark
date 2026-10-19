@@ -1,15 +1,15 @@
 (function () {
     'use strict';
     var modules = {
-        notes: ['笔记', 'note-sticky', '#2563eb', '/notes'],
-        articles: ['文章', 'file-lines', '#0caa8b', '/notes?tab=articles'],
-        tasks: ['待办', 'list-check', '#ed8a19', '/notes?tab=tasks'],
-        books: ['书籍', 'book-open', '#8758eb', '/books'],
-        bookmarks: ['书签', 'link', '#168ef0', '/bookmarks'],
-        topics: ['专题', 'layer-group', '#198ae8', '/topics'],
-        nav: ['导航', 'compass', '#3468e8', '/nav'],
-        shares: ['广场', 'users', '#10a880', '/shares'],
-        assets: ['资产', 'server', '#d99b19', '/admin/assets']
+        notes: ['笔记', 'note-sticky', 'var(--color-primary)', '/notes'],
+        articles: ['文章', 'file-lines', 'var(--color-success)', '/notes?tab=articles'],
+        tasks: ['待办', 'list-check', 'var(--color-warning)', '/notes?tab=tasks'],
+        books: ['书籍', 'book-open', 'var(--color-indigo)', '/books'],
+        bookmarks: ['书签', 'link', 'var(--color-primary)', '/bookmarks'],
+        topics: ['专题', 'layer-group', 'var(--color-primary)', '/topics'],
+        nav: ['导航', 'compass', 'var(--color-primary)', '/nav'],
+        shares: ['广场', 'users', 'var(--color-success)', '/shares'],
+        assets: ['资产', 'server', 'var(--color-warning)', '/admin/assets']
     };
     var grid = document.getElementById('homeGrid');
     var status = document.getElementById('homeStatus');
@@ -17,6 +17,7 @@
     var key = 'bookstark-home:' + document.body.dataset.homeMember;
     var hidden = [], sections = [], sort = 'updated', sequence = 0, activeRequest;
     var layout = [], draft = [], saving = false, dragging = null;
+    try { layout = JSON.parse(grid.dataset.loadingLayout || '[]'); } catch (_) {}
     var layoutDialog = document.getElementById('homeCustomize');
     var layoutStatus = document.getElementById('homeLayoutStatus');
     var english = document.documentElement.lang.indexOf('en') === 0;
@@ -137,6 +138,18 @@
         catch(_){BSDialog.toast(lt('清空失败，请重试。','Could not clear visits. Please retry.'),'error');}
         finally{clearingRecent=false;this.disabled=false;}
     };
+    function appendCardHeader(card, sectionKey) {
+        var m = modules[sectionKey];
+        card.dataset.section = sectionKey; card.style.setProperty('--home-accent', m[2]);
+        var head = el('div', 'home-card-head');
+        var icon = el('span', 'home-card-icon'), glyph = el('i', 'fa-solid fa-' + m[1]);
+        glyph.setAttribute('aria-hidden','true'); icon.append(glyph);
+        var label = el('div'), title = el('h2', '', moduleName(sectionKey));
+        title.id = 'home-title-' + sectionKey; card.setAttribute('aria-labelledby', title.id); label.append(title);
+        var all = el('a', 'home-card-all', lt('查看全部 →','View all →'));
+        all.href = m[3]; all.setAttribute('aria-label',lt('查看全部','View all ') + moduleName(sectionKey));
+        head.append(icon,label,all); card.append(head);
+    }
     function renderSkeleton() {
         grid.replaceChildren();
         var pending = layout;
@@ -145,12 +158,13 @@
         }
         if (!Array.isArray(pending) || !pending.length) pending = defaultLayout().filter(function(item) { return !hidden.includes(item.key); });
         pending.forEach(function(item) {
-            if (!item || !modules[item.key] || item.hidden) return;
-            var card = el('section','home-card skeleton-card home-loading-card');
-            card.setAttribute('aria-hidden','true');
+            if (!item || !modules[item.key] || item.hidden || (item.key === 'assets' && !document.querySelector('#homeMore a[href="/admin/assets"]'))) return;
+            var card = el('section','home-card home-loading-card');
             card.dataset.width = [1,2,3].includes(item.width) ? String(item.width) : '1';
-            card.append(el('div','skeleton home-skeleton-heading'));
-            for (var i = 0; i < 10; i++) card.append(el('div','skeleton home-skeleton-line'));
+            appendCardHeader(card, item.key);
+            var lines = el('div'); lines.setAttribute('aria-hidden','true');
+            for (var i = 0; i < Math.min(limit, 10); i++) lines.append(el('div','skeleton home-skeleton-line'));
+            card.append(lines);
             grid.append(card);
         });
     }
@@ -161,13 +175,8 @@
             if (!s || item.hidden) return;
             var m = modules[s.key];
             if (!m) return;
-            var card = el('section', 'home-card'); card.dataset.section = s.key; card.style.setProperty('--home-accent', m[2]);
+            var card = el('section', 'home-card'); appendCardHeader(card, s.key);
             card.dataset.width = String(item.width);
-            var head = el('div', 'home-card-head');
-            var icon = el('span', 'home-card-icon'); var glyph = el('i', 'fa-solid fa-' + m[1]); glyph.setAttribute('aria-hidden','true'); icon.append(glyph);
-            var label = el('div'); var title = el('h2', '', moduleName(s.key)); title.id = 'home-title-' + s.key; card.setAttribute('aria-labelledby', title.id);
-            label.append(title);
-            var all = el('a', 'home-card-all', lt('查看全部 →','View all →')); all.href = m[3]; all.setAttribute('aria-label',lt('查看全部','View all ') + moduleName(s.key)); head.append(icon,label,all); card.append(head);
             var list = el('ul', 'home-list'); list.id = 'home-list-' + s.key;
             s.items.forEach(function (item) {
                 var li = el('li'); var a = el('a', 'home-row');

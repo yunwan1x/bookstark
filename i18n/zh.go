@@ -112,6 +112,8 @@ var zhMessages = map[string]string{
 	"home.activity.hint":                 "深浅表示内容数量，不是历史编辑次数。",
 	"home.today":                         "今天",
 	"home.all_time":                      "全部时间",
+	"home.view_all":                      "查看全部",
+	"home.module_assets":                 "资产",
 	"home.week":                          "近7天",
 	"home.month":                         "近30天",
 	"home.custom":                        "自定义",

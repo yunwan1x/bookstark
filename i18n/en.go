@@ -112,6 +112,8 @@ var enMessages = map[string]string{
 	"home.activity.hint":                 "Color shows content count, not past edits.",
 	"home.today":                         "Today",
 	"home.all_time":                      "All time",
+	"home.view_all":                      "View all",
+	"home.module_assets":                 "Assets",
 	"home.week":                          "Last 7 days",
 	"home.month":                         "Last 30 days",
 	"home.custom":                        "Custom",
