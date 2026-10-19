@@ -40,6 +40,11 @@ const fs=require('node:fs'),assert=require('node:assert/strict');
   assert.equal(await page.locator('#homeSelectedDate').textContent(),lang==='zh'?'全部时间 · 最近内容':'All time · Recent content');
   assert(await page.locator('#homeCalendar').isVisible(),'monthly calendar visible on phones too');
   assert.equal(await page.locator('.home-recent-row').count(),2);
+  const recentRects=await page.locator('.home-recent-row').evaluateAll(rows=>rows.map(row=>{
+    const rect=row.getBoundingClientRect();return {top:rect.top,bottom:rect.bottom,height:rect.height};
+  }));
+  assert(recentRects.every(row=>row.height>=44&&row.height<=56),'recent visits use compact, touch-friendly rows');
+  assert(recentRects[1].top-recentRects[0].bottom<=2,'recent rows must not stretch to fill the calendar height');
   assert.equal(await page.locator('.home-recent-row img').count(),0,'titles are text, not HTML');
   assert.equal(await page.locator('.home-recent-row').first().getAttribute('href'),'/notes?tab=notes&id=7');
   assert.equal(await page.locator('.home-recent-row').nth(1).getAttribute('href'),'/books/example/edit?doc=8');
