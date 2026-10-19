@@ -279,7 +279,7 @@ func TestAssistantStreamingProviders(t *testing.T) {
 							Session models.AssistantSession `json:"session"`
 						}
 						_ = json.Unmarshal(snapshot.Body.Bytes(), &final)
-						if len(final.Session.Drafts) != 1 || final.Session.Messages[1].Content != "你好，请确认草稿。" {
+						if len(final.Session.Drafts) != 1 || len(final.Session.Messages) != 0 || !strings.Contains(string(encoded), "你好，请确认草稿。") {
 							t.Fatal(string(encoded))
 						}
 						break

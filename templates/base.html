@@ -81,6 +81,12 @@ header.search-expanded .header-search-bar { display: flex; }
 	@media (max-width: 640px) { .nav-text { display: inline; } .nav-icon { margin-right: 3px !important; } header { touch-action: pan-y; } #main-nav { overflow: visible; flex-shrink: 1; min-width: 0; touch-action: pan-y; } #main-nav .nav-link { white-space: nowrap; } .nav-link { padding-left: 7px !important; padding-right: 7px !important; } .header-nav-trigger .fa-chevron-down { display: none; } html { overscroll-behavior-x: none; } }
 	@media (max-width: 640px) { header { min-height: 48px; height: auto !important; } .search-trigger { width: 40px; height: 40px; } .header-close-search { width: 40px; height: 40px; } #user-menu-trigger { min-height: 40px; } .header-lang-switcher, .header-theme-toggle { display: none !important; } .header-login-link { margin-left: auto; } .header-dropdown { position: fixed; top: 48px; left: 8px; right: 8px; min-width: 0; } .header-dropdown.align-right { left: 8px; right: 8px; } .header-dropdown-panel { border-radius: var(--radius-lg); } .header-menu-item { padding: 10px 12px; font-size: 14px; } }
 .page-sticky-header { position: sticky; top: 40px; z-index: 10; background: transparent; border-bottom: 1px solid transparent; box-shadow: none; margin-bottom: 16px; transition: background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease; }
+/* English menu names are longer; keep shared mobile navigation on one row. */
+@media (max-width: 640px) {
+    html[lang="en"] .header-nav-trigger .nav-text { display: none; }
+    html[lang="en"] .header-nav-trigger { min-width: 40px; min-height: 40px; justify-content: center; }
+    html[lang="en"] .header-nav-trigger .nav-icon { margin-right: 0 !important; }
+}
 .page-sticky-header.is-stuck { background: var(--color-bg); border-bottom: 1px solid var(--color-border); box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04); }
 @media (max-width: 640px) { .page-sticky-header { top: 48px; } }
 /* 页面标题统一样式 */
@@ -139,7 +145,7 @@ button:active:not(:disabled), .page-btn:active:not(:disabled) {
     <nav class="flex gap-1" id="main-nav">
         {{if .Account}}<a href="/home" class="nav-link header-home-link px-2 py-2.5 font-semibold {{if eq .Nav "home"}}active{{end}}"><i class="fa-solid fa-house nav-icon" aria-hidden="true"></i><span class="nav-text">{{call .T "home.nav"}}</span></a>{{end}}
         <div class="header-nav-group">
-            <a href="{{if .Account}}/notes{{else}}/bookmarks{{end}}" class="nav-link header-nav-trigger px-2 py-2.5 font-semibold {{if or (eq .Nav "notes") (eq .Nav "tasks") (eq .Nav "books") (eq .Nav "bookmarks")}}active{{end}}" data-nav-idx="0" data-header-menu-trigger data-header-menu-id="header-knowledge-menu" aria-haspopup="menu" aria-expanded="false">
+            <a href="{{if .Account}}/notes{{else}}/bookmarks{{end}}" class="nav-link header-nav-trigger px-2 py-2.5 font-semibold {{if or (eq .Nav "notes") (eq .Nav "tasks") (eq .Nav "books") (eq .Nav "bookmarks")}}active{{end}}" data-nav-idx="0" data-header-menu-trigger data-header-menu-id="header-knowledge-menu" aria-label="{{call .T "nav.knowledge"}}" aria-haspopup="menu" aria-expanded="false">
                 <i class="fa-solid fa-layer-group nav-icon"></i><span class="nav-text">{{call .T "nav.knowledge"}}</span><i class="fa-solid fa-chevron-down"></i>
             </a>
             <div id="header-knowledge-menu" class="header-dropdown hidden" role="menu">
@@ -154,7 +160,7 @@ button:active:not(:disabled), .page-btn:active:not(:disabled) {
         </div>
         {{if .Account}}
         <div class="header-nav-group">
-            <a href="/topics" class="nav-link header-nav-trigger px-2 py-2.5 font-semibold {{if or (eq .Nav "topics") (eq .Nav "labels")}}active{{end}}" data-nav-idx="1" data-header-menu-trigger data-header-menu-id="header-collections-menu" aria-haspopup="menu" aria-expanded="false">
+            <a href="/topics" class="nav-link header-nav-trigger px-2 py-2.5 font-semibold {{if or (eq .Nav "topics") (eq .Nav "labels")}}active{{end}}" data-nav-idx="1" data-header-menu-trigger data-header-menu-id="header-collections-menu" aria-label="{{call .T "nav.collections"}}" aria-haspopup="menu" aria-expanded="false">
                 <i class="fa-solid fa-box-archive nav-icon"></i><span class="nav-text">{{call .T "nav.collections"}}</span><i class="fa-solid fa-chevron-down"></i>
             </a>
             <div id="header-collections-menu" class="header-dropdown hidden" role="menu">
@@ -166,7 +172,7 @@ button:active:not(:disabled), .page-btn:active:not(:disabled) {
         </div>
         {{end}}
         <div class="header-nav-group">
-            <a href="/" class="nav-link header-nav-trigger px-2 py-2.5 font-semibold {{if or (eq .Nav "nav") (eq .Nav "assets")}}active{{end}}" data-nav-idx="2" data-header-menu-trigger data-header-menu-id="header-assets-menu" aria-haspopup="menu" aria-expanded="false">
+            <a href="/" class="nav-link header-nav-trigger px-2 py-2.5 font-semibold {{if or (eq .Nav "nav") (eq .Nav "assets")}}active{{end}}" data-nav-idx="2" data-header-menu-trigger data-header-menu-id="header-assets-menu" aria-label="{{call .T "nav.assets"}}" aria-haspopup="menu" aria-expanded="false">
                 <i class="fa-solid fa-server nav-icon"></i><span class="nav-text">{{call .T "nav.assets"}}</span><i class="fa-solid fa-chevron-down"></i>
             </a>
             <div id="header-assets-menu" class="header-dropdown hidden" role="menu">

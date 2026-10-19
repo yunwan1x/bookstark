@@ -27,6 +27,39 @@ func assistantTestDraft(t *testing.T, member int64, p AssistantPayload) (*Assist
 	return s, d
 }
 
+func TestAssistantConversationsAreNotPersisted(t *testing.T) {
+	initAssetTestDB(t)
+	ctx := context.Background()
+	s, err := GetAssistantSession(ctx, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lease := AssistantID()
+	if err = LockAssistant(ctx, 1, s.ID, lease); err != nil {
+		t.Fatal(err)
+	}
+	if err = SaveAssistantTurn(ctx, 1, s.ID, lease, []AssistantMessage{{Role: "user", Content: "PRIVATE_CHAT"}}, nil); err != nil {
+		t.Fatal(err)
+	}
+	var raw string
+	if err = DB.QueryRow(`SELECT messages FROM md_assistant_sessions WHERE member_id=1`).Scan(&raw); err != nil || raw != "[]" {
+		t.Fatalf("stored transcript: %q %v", raw, err)
+	}
+	if _, err = DB.Exec(`UPDATE md_assistant_sessions SET messages='[{"role":"user","content":"LEGACY_CHAT"}]'`); err != nil {
+		t.Fatal(err)
+	}
+	s, err = GetAssistantSession(ctx, 1)
+	if err != nil || len(s.Messages) != 0 {
+		t.Fatal("legacy history returned", err)
+	}
+	if err = createTables(); err != nil {
+		t.Fatal(err)
+	}
+	if err = DB.QueryRow(`SELECT messages FROM md_assistant_sessions WHERE member_id=1`).Scan(&raw); err != nil || raw != "[]" {
+		t.Fatalf("legacy transcript not purged: %q %v", raw, err)
+	}
+}
+
 func TestAssistantStrictOwnedSearch(t *testing.T) {
 	initAssetTestDB(t)
 	ctx := context.Background()

@@ -67,10 +67,7 @@ func GetAssistantSession(ctx context.Context, member int64) (*AssistantSession, 
 	s := &AssistantSession{Messages: []AssistantMessage{}, Drafts: []AssistantDraft{}}
 	var raw string
 	var busyUntil int64
-	if err = DB.QueryRowContext(ctx, `SELECT session_id,messages,busy_until FROM md_assistant_sessions WHERE member_id=?`, member).Scan(&s.ID, &raw, &busyUntil); err != nil {
-		return nil, err
-	}
-	if err = json.Unmarshal([]byte(raw), &s.Messages); err != nil {
+	if err = DB.QueryRowContext(ctx, `SELECT session_id,busy_until FROM md_assistant_sessions WHERE member_id=?`, member).Scan(&s.ID, &busyUntil); err != nil {
 		return nil, err
 	}
 	s.Busy = busyUntil > time.Now().Unix()
@@ -127,7 +124,9 @@ func SaveAssistantTurn(ctx context.Context, member int64, session, lease string,
 		return err
 	}
 	defer tx.Rollback()
-	r, err := tx.ExecContext(ctx, `UPDATE md_assistant_sessions SET messages=?,lease='',busy_until=0 WHERE member_id=? AND session_id=? AND lease=? AND busy_until>?`, string(raw), member, session, lease, time.Now().Unix())
+	// Conversation text lives only in the browser. Persist only the lease and
+	// draft receipts needed for authorized, idempotent confirmation.
+	r, err := tx.ExecContext(ctx, `UPDATE md_assistant_sessions SET messages='[]',lease='',busy_until=0 WHERE member_id=? AND session_id=? AND lease=? AND busy_until>?`, member, session, lease, time.Now().Unix())
 	if err != nil {
 		return err
 	}

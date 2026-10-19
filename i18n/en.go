@@ -81,7 +81,7 @@ var enMessages = map[string]string{
 	"footer.manage.empty_group":          "Add an entry or remove the empty group.",
 	"home.assistant.title":               "AI assistant",
 	"home.assistant.privacy":             "Questions and retrieved content are sent to your configured AI service.",
-	"home.assistant.disclosure":          "Search and summarize your text records, or draft notes and tasks. Your questions and retrieved content are sent to the configured AI service. Review drafts before confirming; AI may make mistakes. Protected content and server credentials are excluded.",
+	"home.assistant.disclosure":          "Chat stays temporarily in this browser tab, not in this site's database or synced to other devices. Closing the tab clears it (browser tab restoration may restore it). Questions, context and retrieved records are still sent to the configured AI service. Drafts and creation receipts are stored separately on the server. Review before confirming; AI may make mistakes. Protected content and server credentials are excluded.",
 	"home.assistant.refresh":             "Reload",
 	"home.assistant.reset":               "New conversation",
 	"home.assistant.reset_hint":          "Clear this conversation and cancel its unconfirmed drafts? Created records will remain.",

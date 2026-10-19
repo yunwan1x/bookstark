@@ -44,7 +44,11 @@ func assistantEnabled(c *gin.Context) bool {
 	return true
 }
 func assistantBind(c *gin.Context, v any) bool {
-	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 24*1024)
+	limit := int64(24 * 1024)
+	if c.Request.URL.Path == "/api/ai/assistant/chat" {
+		limit = 192 * 1024 // bounded browser-owned context, never persisted
+	}
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, limit)
 	dec := json.NewDecoder(c.Request.Body)
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(v); err != nil {
@@ -131,8 +135,9 @@ func AssistantChatAPI(c *gin.Context) {
 		return
 	}
 	var req struct {
-		Session string `json:"session_id"`
-		Message string `json:"message"`
+		Session string                    `json:"session_id"`
+		Message string                    `json:"message"`
+		History []models.AssistantMessage `json:"history"`
 	}
 	if !assistantBind(c, &req) {
 		return
@@ -141,6 +146,22 @@ func AssistantChatAPI(c *gin.Context) {
 	if req.Message == "" || len(req.Message) > 8000 {
 		assistantError(c, 400, "请输入问题，最多 8000 字节", "Enter a question (maximum 8000 bytes).")
 		return
+	}
+	// Client history is untrusted prose, not tool calls, system instructions or
+	// authorization. Sources are UI-only and never forwarded as server evidence.
+	if len(req.History) > 38 || len(req.History)%2 != 0 {
+		assistantDBError(c, models.ErrAssistantInput)
+		return
+	}
+	for i, m := range req.History {
+		expected := "user"
+		if i%2 == 1 {
+			expected = "assistant"
+		}
+		if m.Role != expected || strings.TrimSpace(m.Content) == "" || len(m.Content) > 24000 {
+			assistantDBError(c, models.ErrAssistantInput)
+			return
+		}
 	}
 	p := assistantProvider{Kind: models.GetSettingWithDefault("ai_provider", "openai"), BaseURL: strings.TrimSpace(models.GetSettingWithDefault("ai_base_url", "")), Key: strings.TrimSpace(models.GetSettingWithDefault("ai_api_key", "")), Model: strings.TrimSpace(models.GetSettingWithDefault("ai_model", "")), MaxTokens: 2048}
 	p.Kind = strings.ToLower(strings.TrimSpace(p.Kind))
@@ -166,6 +187,7 @@ func AssistantChatAPI(c *gin.Context) {
 		assistantDBError(c, err)
 		return
 	}
+	s.Messages = req.History
 	raw, _ := json.Marshal(s.Messages)
 	if len(s.Messages) >= 40 || len(raw) > 140*1024 {
 		assistantDBError(c, models.ErrAssistantInput)
@@ -237,9 +259,9 @@ func AssistantChatAPI(c *gin.Context) {
 	s.Drafts = append(s.Drafts, drafts...)
 	s.Busy = false
 	if stream != nil {
-		// The client reloads the committed snapshot. Do not repeat potentially
-		// large conversation/draft history inside a single SSE frame.
-		_ = stream.send("done", gin.H{"code": 0, "session_id": s.ID})
+		// Return only this turn, not the entire client-provided history. There is
+		// deliberately no server conversation snapshot to reload after completion.
+		_ = stream.send("done", gin.H{"code": 0, "session_id": s.ID, "messages": s.Messages[len(s.Messages)-2:], "drafts": drafts})
 		return
 	}
 	c.JSON(200, gin.H{"code": 0, "session": s})

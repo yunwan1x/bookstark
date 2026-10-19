@@ -7,7 +7,7 @@ const fs=require('node:fs'),assert=require('node:assert/strict');
  for(const lang of ['zh','en'])for(const [width,theme] of [[1440,'light'],[1280,'dark'],[768,'light'],[390,'light'],[320,'dark']]){
   if(process.env.HOME_TEST_LANG&&process.env.HOME_TEST_LANG!==lang)continue;
   if(process.env.HOME_TEST_WIDTH&&Number(process.env.HOME_TEST_WIDTH)!==width)continue;
-  const page=await browser.newPage({viewport:{width,height:1000}}),errors=[];
+  const page=await browser.newPage({viewport:{width,height:1000},hasTouch:width<=640,isMobile:width<=640}),errors=[];
   let calls=0,fail=false,lastQuery,release,cleared=false,clearCalls=0;
   const pending=new Promise(resolve=>release=resolve);
   page.on('pageerror',e=>errors.push(e.message));
@@ -39,6 +39,14 @@ const fs=require('node:fs'),assert=require('node:assert/strict');
   assert.equal(await page.locator('[data-home-range],#homeRangeForm,#homeHeatmap').count(),0);
   assert.equal(await page.locator('#homeSelectedDate').textContent(),lang==='zh'?'全部时间 · 最近内容':'All time · Recent content');
   assert(await page.locator('#homeCalendar').isVisible(),'monthly calendar visible on phones too');
+  const calendarFooter=await page.locator('.home-calendar-footer').evaluate(footer=>{
+    const legend=footer.querySelector('.home-calendar-legend').getBoundingClientRect();
+    const tabs=footer.querySelector('.home-calendar-view').getBoundingClientRect();
+    return {legendTop:legend.top,legendRight:legend.right,tabsTop:tabs.top,tabsLeft:tabs.left,height:tabs.height,width:tabs.width,hidden:!!footer.querySelector('.home-calendar-view').closest('[aria-hidden="true"]')};
+  });
+  assert(calendarFooter.height<=32&&calendarFooter.width<180,'calendar view uses compact buttons');
+  assert.equal(calendarFooter.hidden,false,'view buttons remain accessible beside decorative legend');
+  if(lang==='zh')assert(calendarFooter.tabsLeft>=calendarFooter.legendRight&&Math.abs(calendarFooter.tabsTop-calendarFooter.legendTop)<16,'view buttons follow legend on one row');
   assert.equal(await page.locator('.home-recent-row').count(),2);
   const recentRects=await page.locator('.home-recent-row').evaluateAll(rows=>rows.map(row=>{
     const rect=row.getBoundingClientRect();return {top:rect.top,bottom:rect.bottom,height:rect.height};
@@ -54,6 +62,31 @@ const fs=require('node:fs'),assert=require('node:assert/strict');
   if(width>=768){const rects=await page.evaluate(()=>['homeCalendar','homeRecent'].map(id=>document.getElementById(id).getBoundingClientRect().bottom));assert(Math.abs(rects[0]-rects[1])<2,'calendar/recent alignment');}
   const noOverflow=async()=>assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'overflow '+lang+' '+width);
   await noOverflow();
+  if(width<=640){
+   const sharedHeader=()=>page.locator('body>header').evaluate(header=>{
+    const selectors=['.logo-text','#main-nav','.header-home-link','.header-nav-group','.header-plaza-link','#searchTrigger','#user-menu-trigger'];
+    return selectors.map(selector=>{
+     const node=header.querySelector(selector),style=getComputedStyle(node),rect=node.getBoundingClientRect();
+     return {selector,display:style.display,width:rect.width,height:rect.height,left:rect.left};
+    });
+   });
+   const homeHeader=await sharedHeader();
+   await page.locator('body').evaluate(body=>body.classList.remove('home-body'));
+   assert.deepEqual(await sharedHeader(),homeHeader,'home header matches shared console header');
+   await page.locator('body').evaluate(body=>body.classList.add('home-body'));
+   assert.equal(await page.locator('header .logo-text').isVisible(),false);
+   assert(await page.locator('.home-bottom-nav').isVisible(),'keep home bottom shortcuts');
+   for(const id of ['knowledge','collections','assets']){
+    const trigger=page.locator('[data-header-menu-id="header-'+id+'-menu"]'),menu=page.locator('#header-'+id+'-menu');
+    await trigger.click();assert(await menu.isVisible());assert.equal(await trigger.getAttribute('aria-expanded'),'true');
+    const rect=await menu.boundingBox();assert(rect.x>=0&&rect.x+rect.width<=width,'dropdown stays within viewport');
+    await page.keyboard.press('Escape');
+    // Escape on the trigger closes its shared dropdown.
+    await trigger.focus();await page.keyboard.press('Escape');assert.equal(await menu.isVisible(),false);
+   }
+   await page.locator('#searchTrigger').click();assert(await page.locator('#headerSearchInput').isVisible());
+   await page.locator('#headerCloseSearch').click();assert(await page.locator('#main-nav').isVisible());
+  }
   await page.locator('#homeCalendarDays [data-date="2026-10-14"]').click();await ready();
   assert.equal(lastQuery.get('start'),null);assert.equal(lastQuery.get('end'),'2026-10-14','upper bound, not one-day range');
   assert((await page.locator('#homeSelectedDate').textContent()).includes('2026/10/14'));

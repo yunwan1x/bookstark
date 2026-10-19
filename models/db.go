@@ -468,6 +468,11 @@ func createTables() error {
 			return fmt.Errorf("exec %q: %w", s[:50], err)
 		}
 	}
+	// Conversation history is now browser-only. Remove legacy stored transcripts
+	// on upgrade; keep session leases and confirmation receipts intact.
+	if _, err := DB.Exec(`UPDATE md_assistant_sessions SET messages='[]' WHERE messages!='[]'`); err != nil {
+		return fmt.Errorf("clear legacy assistant conversations: %w", err)
+	}
 
 	return nil
 }

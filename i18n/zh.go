@@ -81,7 +81,7 @@ var zhMessages = map[string]string{
 	"footer.manage.empty_group":          "空分组不会展示，请添加条目或删除空分组",
 	"home.assistant.title":               "AI 助手",
 	"home.assistant.privacy":             "提问和检索内容将发送给已配置的 AI 服务",
-	"home.assistant.disclosure":          "搜索、总结你的文字资料，或起草笔记和待办。提问及检索到的内容会发送给已配置的 AI 服务。AI 可能出错，请核对草稿后确认；加密内容和服务器凭据不会提供给模型。",
+	"home.assistant.disclosure":          "对话仅暂存在当前浏览器标签页，不保存到本站数据库、不跨设备同步；关闭标签页后清除（浏览器恢复标签页时可能恢复）。提问、上下文及检索资料仍会发送给配置的 AI 服务。待确认草稿和创建结果单独保存到服务器；AI 可能出错，请核对后确认。加密内容和服务器凭据不提供给模型。",
 	"home.assistant.refresh":             "重新加载",
 	"home.assistant.reset":               "新会话",
 	"home.assistant.reset_hint":          "清空本次对话并取消未确认的草稿？已创建的记录不受影响。",

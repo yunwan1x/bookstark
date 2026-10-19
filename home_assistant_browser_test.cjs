@@ -37,7 +37,7 @@ async function serviceWorkerChecks() {
       await page.route('http://assistant.test/**',async route=>{
         const req=route.request(),url=new URL(req.url());
         if(url.pathname==='/api/home'){homeLoads++;return route.fulfill({json:{code:0,sections:[],layout:[]}});}
-        if(url.pathname==='/api/ai/assistant')return route.fulfill({json:{code:0,session}});
+        if(url.pathname==='/api/ai/assistant')return route.fulfill({json:{code:0,session:{...session,messages:[]}}});
         if(url.pathname==='/api/ai/assistant/chat'){
           chats++;assert.equal(req.postDataJSON().session_id,session.id);assert.equal(req.postDataJSON().message,'Draft a note');
           if(fail)return route.fulfill({status:502,json:{code:502,message:'AI unavailable'}});
@@ -54,7 +54,7 @@ async function serviceWorkerChecks() {
         if(url.pathname==='/api/ai/assistant/reset'){session={id:'session-2',messages:[],drafts:[],busy:false};return route.fulfill({json:{code:0,session}});}
         if(url.pathname.startsWith('/static/'))return route.fulfill({path:'.'+url.pathname});
         const translations=Object.fromEntries([...fs.readFileSync('i18n/'+lang+'.go','utf8').matchAll(/"([\w.]+)":\s*"([^"]*)"/g)].map(m=>[m[1],m[2]]));
-        let html=fs.readFileSync('templates/home.html','utf8').replace('{{template "assistant-widget" .}}',fs.readFileSync('templates/assistant.html','utf8')).replace(/\{\{call \.T "([^"]+)"\}\}/g,(_,k)=>translations[k]||k).replace(/\{\{[^}]*\}\}/g,'');
+        let html=fs.readFileSync('templates/home.html','utf8').replace('{{template "assistant-widget" .}}',fs.readFileSync('templates/assistant.html','utf8')).replace('var message = {{call .T "home.startup_failed"}};', 'var message = '+JSON.stringify(translations['home.startup_failed'])+';').replace(/\{\{call \.T "([^"]+)"\}\}/g,(_,k)=>translations[k]||k).replace(/\{\{[^}]*\}\}/g,'');
         html=html.replace('<head>','<head><script>window.csrfFetch=window.fetch; window.__currentLang="'+lang+'";document.documentElement.lang="'+lang+'";</script><link rel="stylesheet" href="/static/css/font-awesome.min.css"><link rel="stylesheet" href="/static/css/variables.css"><link rel="stylesheet" href="/static/css/components.css">');
         return route.fulfill({contentType:'text/html',body:html});
       });
@@ -93,6 +93,15 @@ async function serviceWorkerChecks() {
       if(width===1440)await page.screenshot({path:'/tmp/bookstark-assistant-desktop.png'});
       await page.locator('#homeAssistantClose').click();await page.locator('#homeAssistantOpen').click();
       await page.waitForSelector('[data-draft-id="draft-1"] a');assert.equal(saves,1);
+      await page.reload();await page.locator('#homeAssistantOpen').click();
+      await page.waitForFunction(()=>!document.querySelector('#homeAssistantSend').disabled);
+      assert.equal(await page.locator('.home-assistant-message').count(),2,'tab storage survives reload although GET returns no chat history');
+      assert.equal(await page.evaluate(()=>Object.keys(localStorage).some(k=>k.startsWith('bookstark-assistant-tab:'))),false,'no durable localStorage transcript');
+      await page.evaluate(()=>sessionStorage.removeItem('bookstark-assistant-tab:'));
+      await page.reload();await page.locator('#homeAssistantOpen').click();
+      await page.waitForFunction(()=>!document.querySelector('#homeAssistantSend').disabled);
+      assert.equal(await page.locator('.home-assistant-message').count(),0,'a browser without tab history cannot recover chat from the server');
+      assert.equal(await page.locator('[data-draft-id="draft-1"] a').count(),1,'creation receipt remains available without conversation text');
       await page.waitForFunction(()=>!document.querySelector('#homeAssistantReset').disabled);
       await page.locator('#homeAssistantReset').click();await page.locator('#homeAssistantResetCancel').click();
       assert.equal(await page.locator('[data-draft-id="draft-1"]').count(),1);
@@ -103,6 +112,7 @@ async function serviceWorkerChecks() {
       assert.equal(await page.locator('#homeAssistantRefresh').isVisible(),true);
       assert.equal(await page.locator('#homeAssistantInput').inputValue(),'Draft a note');assert.equal(chats,2);
       assert.equal(await page.locator('#homeAssistantSend').isEnabled(),true);
+      assert.equal(await page.evaluate(()=>JSON.parse(sessionStorage.getItem('bookstark-assistant-tab:')).messages.length),0,'reset clears tab history');
       // Delayed ReadableStream: assert that text paints BEFORE the done event,
       // including UTF-8 split byte-by-byte, CRLF and multi-line SSE data.
       await page.evaluate(()=>{
@@ -125,7 +135,7 @@ async function serviceWorkerChecks() {
               else if(mode==='done'){
                 event('delta',{text:'，完成'});
                 committed={id:'session-2',messages:[{role:'user',content:'Draft a note'},{role:'assistant',content:'你好，完成'}],drafts:[],busy:false};
-                event('done',{code:0,session_id:'session-2'});
+                event('done',{code:0,session_id:'session-2',messages:committed.messages,drafts:[]});
               }
               controller.close();
             };

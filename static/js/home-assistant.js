@@ -6,6 +6,21 @@
     function lt(zh, en) { return english ? en : zh; }
     function el(id) { return document.getElementById('homeAssistant' + id); }
     var session = null, active = null, poll = null;
+    var conversationKey = 'bookstark-assistant-tab:' + dialog.dataset.member;
+    function saveConversation() {
+        try { sessionStorage.setItem(conversationKey, JSON.stringify({id:session.id,messages:session.messages})); }
+        catch (_) { status.textContent = lt('浏览器临时存储不可用，对话仅在当前页面内保留。', 'Temporary storage unavailable. Conversation stays on this page only.'); }
+    }
+    function restoreConversation(next) {
+        var history = session && session.id === next.id ? session.messages : [];
+        if (!session) {
+            try {
+                var saved = JSON.parse(sessionStorage.getItem(conversationKey));
+                if (saved && saved.id === next.id && Array.isArray(saved.messages) && saved.messages.length <= 40 && saved.messages.every(function(m){return m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string' && (!m.sources || Array.isArray(m.sources));})) history = saved.messages;
+            } catch (_) {}
+        }
+        next.messages = history; session = next;
+    }
     var launcher = el('Open'), indicator = launcher.querySelector('.assistant-indicator'), unread = false;
     var status = el('Status'), input = el('Input'), messages = el('Messages'), drafts = el('Drafts');
     function node(tag, text, cls) { var n = document.createElement(tag); n.textContent = text; if (cls) n.className = cls; return n; }
@@ -101,9 +116,7 @@
         if (r.status === 401) { session = null; render(); throw new Error(lt('登录已失效，请重新登录', 'Session expired. Please sign in again.')); }
         if (onEvent && r.ok && (r.headers.get('Content-Type') || '').indexOf('text/event-stream') === 0) {
             var receipt = await readStream(r, onEvent);
-            var committed = await request('');
-            if (!committed.session || committed.session.id !== receipt.session_id) throw new Error(lt('会话已更新，请刷新查看结果', 'Conversation changed. Refresh to view the result.'));
-            return committed;
+            return {code:0, session:{id:receipt.session_id, messages:session.messages.concat(receipt.messages), drafts:session.drafts.concat(receipt.drafts), busy:false}};
         }
         var data; try { data = await r.json(); } catch (_) { throw new Error(lt('服务器未返回有效响应，请稍后刷新助手', 'Invalid server response. Refresh the assistant shortly.')); }
         if (!r.ok || data.code !== 0 || data.offlineQueued) throw new Error(data.message || lt('请求失败，请刷新后重试', 'Request failed. Refresh and retry.'));
@@ -121,7 +134,9 @@
                     var data = JSON.parse(lines.join('\n'));
                     if (event === 'error') throw new Error(data.message || lt('生成失败，请刷新查看结果', 'Generation failed. Refresh to check the result.'));
                     if (event === 'done') {
-                        if (data.code !== 0 || typeof data.session_id !== 'string' || !session || data.session_id !== session.id) throw invalidStream();
+                        if (data.code !== 0 || typeof data.session_id !== 'string' || !session || data.session_id !== session.id ||
+                            !Array.isArray(data.messages) || data.messages.length !== 2 || data.messages[0].role !== 'user' || data.messages[1].role !== 'assistant' ||
+                            data.messages.some(function(m){return typeof m.content !== 'string';}) || !Array.isArray(data.drafts)) throw invalidStream();
                         result = data;
                     } else onEvent(event, data);
                 }
@@ -143,7 +158,7 @@
                 if (buffer.length > 512 * 1024) throw invalidStream();
                 if (chunk.done) break;
             }
-            if (!result) throw new Error(lt('连接中断，回答尚未完成。请刷新查看最终结果，避免重复操作。', 'Connection interrupted; the answer is incomplete. Refresh to check the final result before retrying.'));
+            if (!result) throw new Error(lt('连接中断，未完成的回答不会保存。请重新加载核对草稿状态后重试。', 'Connection interrupted; incomplete answers are not saved. Reload to check draft status before retrying.'));
             return result;
         } catch (err) {
             if (err.name === 'SyntaxError' || err.name === 'TypeError') throw invalidStream();
@@ -156,12 +171,12 @@
         // Also bound the browser wait if a proxy never returns a response.
         var timeout = setTimeout(function () { if (active) active.abort(); }, 160000);
         try { await work(); }
-        catch (err) { el('Refresh').hidden = false; status.textContent = err.name === 'AbortError' ? lt('已停止等待。请重新加载查看最终结果，避免重复操作。', 'Stopped waiting. Reload to check the final result before retrying.') : err.message; }
+        catch (err) { el('Refresh').hidden = false; status.textContent = err.name === 'AbortError' ? lt('已停止等待，未完成的回答不会保存。请重新加载核对草稿状态。', 'Stopped waiting; incomplete answers are not saved. Reload to check draft status.') : err.message; }
         finally { clearTimeout(timeout); active = null; if (!dialog.open) unread = true; setBusy(); if (session && session.busy && dialog.open) poll = setTimeout(sync, 3000); }
     }
     async function sync() {
         return run(async function () {
-            var data = await request(''); session = data.session; render();
+            var data = await request(''); restoreConversation(data.session); render();
             status.textContent = session.busy ? lt('会话正在处理中，稍后自动刷新…', 'Conversation is busy. Refreshing shortly…') : '';
         }, lt('正在加载会话…', 'Loading conversation…'));
     }
@@ -213,7 +228,7 @@
     el('ResetCancel').onclick = function () { el('ResetCheck').hidden = true; };
     el('ResetConfirm').onclick = function () {
         if (!session) return;
-        run(async function () { var data = await request('/reset', { session_id: session.id }); session = data.session; render(); el('ResetCheck').hidden = true; status.textContent = ''; }, lt('正在新建会话…', 'Starting a new conversation…'));
+        run(async function () { var data = await request('/reset', { session_id: session.id }); session = data.session; saveConversation(); render(); el('ResetCheck').hidden = true; status.textContent = ''; }, lt('正在新建会话…', 'Starting a new conversation…'));
     };
     el('Form').onsubmit = function (e) {
         e.preventDefault(); var text = input.value.trim();
@@ -225,7 +240,7 @@
             var partial = node('article', '', 'home-assistant-message'), label = node('strong', lt('AI 助手 · 生成中，尚未完成', 'AI assistant · Generating, not complete'));
             partial.dataset.role = 'assistant'; partial.dataset.streaming = 'true'; var output = node('div', '', 'home-assistant-text'); partial.append(messageHeader('assistant', Date.now() / 1000, label), output); messages.appendChild(partial);
             try {
-                var data = await request('/chat', { session_id: session.id, message: text }, function (event, data) {
+                var data = await request('/chat', { session_id: session.id, message: text, history:session.messages.map(function(m){return {role:m.role,content:m.content,created_at:m.created_at};}) }, function (event, data) {
                     var scroll = el('Scroll'), follow = scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight < 100;
                     if (event === 'round') { output.textContent = ''; status.textContent = lt('正在生成回答…', 'Generating a response…'); }
                     if (event === 'delta' && typeof data.text === 'string') {
@@ -238,7 +253,7 @@
                     }
                     if (follow) scroll.scrollTop = scroll.scrollHeight;
                 });
-                session = data.session; render();
+                session = data.session; saveConversation(); render();
             } catch (err) {
                 label.textContent = lt('AI 助手 · 未完成（不作为执行结果）', 'AI assistant · Incomplete (not an execution result)');
                 partial.dataset.streaming = 'incomplete'; throw err;
