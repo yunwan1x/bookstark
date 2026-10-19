@@ -57,7 +57,36 @@
   <p id="homeLayoutStatus" role="status" aria-live="polite"></p>
   <div class="home-layout-actions"><button id="homeLayoutReset" class="home-button">{{call .T "home.layout.reset"}}</button><button id="homeLayoutSave" class="home-button home-primary">{{call .T "home.layout.save"}}</button></div>
 </dialog>
-<script async src="/static/js/home.js?v={{assetVer "/static/js/home.js"}}"></script>
+<script>
+// Inline so even a stale/broken cached home.js cannot leave a permanent skeleton.
+(function () {
+  var grid = document.getElementById('homeGrid');
+  var message = {{call .T "home.startup_failed"}};
+  function failed() {
+    if (grid.getAttribute('aria-busy') !== 'true') return;
+    grid.replaceChildren(); grid.setAttribute('aria-busy', 'false');
+    var status = document.getElementById('homeStatus');
+    status.hidden = false; status.textContent = message;
+    document.getElementById('homeRecentList').textContent = message;
+    document.getElementById('homeRecent').setAttribute('aria-busy', 'false');
+    var retry = document.getElementById('homeRetry');
+    retry.hidden = false; retry.onclick = function () { window.location.reload(); };
+  }
+  window.addEventListener('error', function (event) {
+    if ((event.filename || '').indexOf('/static/js/home.js') !== -1 ||
+        (event.target && event.target.id === 'homeScript')) failed();
+  }, true);
+  // API requests already have a 60s deadline and one retry. Also bound startup.
+  var timer = setTimeout(failed, 130000);
+  var observer = new MutationObserver(function () {
+    if (grid.getAttribute('aria-busy') === 'false') {
+      clearTimeout(timer); observer.disconnect();
+    }
+  });
+  observer.observe(grid, { attributes: true, attributeFilter: ['aria-busy'] });
+})();
+</script>
+<script id="homeScript" async src="/static/js/home.js?v={{assetVer "/static/js/home.js"}}"></script>
 {{template "footer" .}}
 </body>
 </html>

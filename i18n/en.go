@@ -137,6 +137,7 @@ var enMessages = map[string]string{
 	"home.created":                       "Recently created",
 	"home.loading":                       "Loading recent records…",
 	"home.retry":                         "Retry",
+	"home.startup_failed":                "Could not load your home page. Reload to retry. If this persists, clear this site's cache.",
 	"home.noscript":                      "Enable JavaScript to load your home page. You can still access sections through the navigation menu.",
 	"home.mobile_nav":                    "Mobile navigation",
 	"home.more":                          "More",

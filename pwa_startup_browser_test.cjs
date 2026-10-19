@@ -46,6 +46,20 @@ const path = require('node:path');
     assert.ok(!requests.some(p => /excalidraw|univer|pptist|webfonts/.test(p)), 'no optional editor/font downloads during install');
     await page.reload();
     assert.equal(await page.locator('h1').textContent(), 'Private account dashboard');
+    // Old assets may remain in both the current and another release's cache.
+    // A new version must hit the network; exact-version assets remain offline-safe.
+    await page.evaluate(async () => {
+      const key = (await caches.keys()).find(k => k.startsWith('bookstark-static-'));
+      await (await caches.open(key)).put('/static/js/home.js?v=old', new Response('stale script'));
+      await (await caches.open('bookstark-static-legacy-test')).put('/static/js/home.js?v=new', new Response('wrong release'));
+    });
+    const fresh = await page.evaluate(() => fetch('/static/js/home.js?v=new').then(r => r.text()));
+    assert.ok(fresh.includes('function renderCalendar()'), 'new version bypasses stale/current and foreign caches');
+    await page.evaluate(async () => {
+      const key = (await caches.keys()).find(k => k.startsWith('bookstark-static-') && !k.endsWith('legacy-test'));
+      await (await caches.open(key)).put('/static/js/home.js?v=exact', new Response('exact version'));
+    });
+    assert.equal(await page.evaluate(() => fetch('/static/js/home.js?v=exact').then(r => r.text())), 'exact version');
     await page.evaluate(() => fetch('/api/home'));
     const cached = await page.evaluate(async () => {
       const all = [];

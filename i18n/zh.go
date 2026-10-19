@@ -137,6 +137,7 @@ var zhMessages = map[string]string{
 	"home.created":                       "最近创建",
 	"home.loading":                       "正在加载最近的记录…",
 	"home.retry":                         "重新加载",
+	"home.startup_failed":                "首页加载失败，请重新加载。若仍失败，请清除本站缓存后重试。",
 	"home.noscript":                      "请启用 JavaScript 以加载首页。你仍可通过顶部菜单访问各模块。",
 	"home.mobile_nav":                    "手机快捷导航",
 	"home.more":                          "更多",

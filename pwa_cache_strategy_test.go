@@ -80,7 +80,7 @@ func TestServiceWorkerLogicParticipatesInBuildHash(t *testing.T) {
 	}
 }
 
-func TestServiceWorkerIgnoresStaticAssetVersionQuery(t *testing.T) {
+func TestServiceWorkerMatchesExactStaticAssetVersion(t *testing.T) {
 	sw, err := os.ReadFile("static/sw.js")
 	if err != nil {
 		t.Fatalf("ReadFile(static/sw.js) error = %v", err)
@@ -89,7 +89,7 @@ func TestServiceWorkerIgnoresStaticAssetVersionQuery(t *testing.T) {
 	for _, required := range []string{
 		"matchStaticAsset(event.request)",
 		"function matchStaticAsset(request)",
-		"caches.match(request, { ignoreSearch: true })",
+		"return cache.match(request);",
 		"function matchOfflinePage()",
 		"caches.match('/static/offline.html', { ignoreSearch: true })",
 		"matchOfflinePage().then(function(offlinePage)",
@@ -97,6 +97,9 @@ func TestServiceWorkerIgnoresStaticAssetVersionQuery(t *testing.T) {
 		if !strings.Contains(text, required) {
 			t.Fatalf("service worker static asset version fallback missing %q", required)
 		}
+	}
+	if strings.Contains(text, "caches.match(request, { ignoreSearch: true })") {
+		t.Fatal("static scripts/styles must never fall back to a different version")
 	}
 	if strings.Contains(text, "caches.match('/static/offline.html').then") {
 		t.Fatalf("offline page fallback should ignore version query")

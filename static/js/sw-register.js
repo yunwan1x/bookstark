@@ -162,7 +162,7 @@
   if (!('serviceWorker' in navigator)) return;
 
   function registerAfterLoad() {
-  navigator.serviceWorker.register('/sw.js').then(function(reg) {
+  navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then(function(reg) {
     // register already performs an update check; do not immediately repeat it.
     reg.addEventListener('updatefound', function() {
       var newWorker = reg.installing;
