@@ -9,7 +9,7 @@
 <link rel="icon" type="image/svg+xml" href="/static/favicon.svg?v={{assetVer "/static/favicon.svg"}}">
 <link rel="icon" type="image/x-icon" href="/static/favicon.ico?v={{assetVer "/static/favicon.ico"}}">
 <link rel="apple-touch-icon" href="/static/apple-touch-icon.png?v={{assetVer "/static/apple-touch-icon.png"}}">
-<script>(function(){var k='bookstark-theme',s={light:'light',dark:'dark','notion-pro':'light','scholar-paper':'light','linear-saas':'dark','apple-minimal':'light'},t=localStorage.getItem(k);if(!s[t])t=window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';document.documentElement.setAttribute('data-theme',s[t]);document.documentElement.setAttribute('data-theme-style',t);})();</script>
+<script>(function(){var k='bookstark-theme',s={light:'light',nvidia:'dark',apple:'light'},t='light';try{var saved=localStorage.getItem(k);if(Object.prototype.hasOwnProperty.call(s,saved))t=saved;else if(saved)localStorage.setItem(k,t);}catch(_){}document.documentElement.setAttribute('data-theme',s[t]);document.documentElement.setAttribute('data-theme-style',t);})();</script>
 {{if ne .Nav "home"}}<link rel="preload" href="/static/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/static/webfonts/fa-regular-400.woff2" as="font" type="font/woff2" crossorigin>{{end}}<link href="/static/css/font-awesome.min.css?v={{assetVer "/static/css/font-awesome.min.css"}}" rel="stylesheet" {{if eq .Nav "home"}}media="print" onload="this.media='all'"{{end}}>
 <link rel="stylesheet" href="/static/css/variables.css?v={{assetVer "/static/css/variables.css"}}">
 <link rel="stylesheet" href="/static/css/components.css?v={{assetVer "/static/css/components.css"}}">

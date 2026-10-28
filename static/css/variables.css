@@ -1,4 +1,5 @@
 /* BookStark Design Tokens — single source of truth */
+/* Independent NVIDIA and Apple theme tokens are defined at the end of this file. */
 :root {
   /* Primary */
   --color-primary: #2563eb;
@@ -237,39 +238,6 @@ body { color: var(--color-text); background: var(--color-bg); }
 [data-theme="dark"] .bookstark-science-bg::after { background: linear-gradient(180deg, rgba(15, 23, 42, 0.12), rgba(15, 23, 42, 0.56) 58%, rgba(15, 23, 42, 0.78)); }
 [data-theme="dark"] .bookstark-science-formula { color: rgba(103, 232, 249, 0.32); text-shadow: 0 0 18px rgba(34, 211, 238, 0.24); }
 [data-theme="dark"] .bookstark-science-hud { border-color: rgba(125, 211, 252, 0.24); box-shadow: inset 0 0 36px rgba(14, 165, 233, 0.14), 0 0 52px rgba(16, 185, 129, 0.12); }
-[data-theme-style="scholar-paper"] .bookstark-science-bg { color: rgba(91, 111, 84, 0.24); opacity: 0.62; --science-curve-primary: rgba(91, 111, 84, 0.2); --science-curve-secondary: rgba(154, 106, 47, 0.16); --science-curve-accent: rgba(37, 99, 89, 0.12); }
-[data-theme-style="scholar-paper"] .bookstark-science-bg::before {
-  background:
-    radial-gradient(circle at 16% 16%, rgba(154, 106, 47, 0.1), transparent 30%),
-    radial-gradient(circle at 88% 26%, rgba(91, 111, 84, 0.12), transparent 28%),
-    linear-gradient(rgba(91, 111, 84, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(91, 111, 84, 0.04) 1px, transparent 1px);
-  background-size: auto, auto, 44px 44px, 44px 44px;
-}
-[data-theme-style="scholar-paper"] .bookstark-science-formula { color: rgba(91, 111, 84, 0.28); text-shadow: none; }
-[data-theme-style="scholar-paper"] .bookstark-science-hud { border-color: rgba(154, 106, 47, 0.14); box-shadow: inset 0 0 30px rgba(154, 106, 47, 0.06), 0 0 44px rgba(91, 111, 84, 0.08); }
-[data-theme-style="linear-saas"] .bookstark-science-bg::before {
-  background:
-    radial-gradient(circle at 16% 16%, rgba(124, 58, 237, 0.2), transparent 30%),
-    radial-gradient(circle at 88% 26%, rgba(56, 189, 248, 0.14), transparent 28%),
-    linear-gradient(rgba(167, 139, 250, 0.055) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(167, 139, 250, 0.045) 1px, transparent 1px);
-  background-size: auto, auto, 44px 44px, 44px 44px;
-}
-[data-theme-style="linear-saas"] .bookstark-science-bg { --science-curve-primary: rgba(167, 139, 250, 0.26); --science-curve-secondary: rgba(56, 189, 248, 0.2); --science-curve-accent: rgba(45, 212, 191, 0.14); }
-[data-theme-style="linear-saas"] .bookstark-science-formula { color: rgba(196, 181, 253, 0.32); text-shadow: 0 0 18px rgba(124, 58, 237, 0.28); }
-[data-theme-style="linear-saas"] .bookstark-science-hud { border-color: rgba(167, 139, 250, 0.26); box-shadow: inset 0 0 36px rgba(124, 58, 237, 0.16), 0 0 52px rgba(56, 189, 248, 0.12); }
-[data-theme-style="apple-minimal"] .bookstark-science-bg { opacity: 0.48; --science-curve-primary: rgba(71, 85, 105, 0.16); --science-curve-secondary: rgba(14, 165, 233, 0.13); --science-curve-accent: rgba(168, 85, 247, 0.1); }
-[data-theme-style="apple-minimal"] .bookstark-science-bg::before {
-  background:
-    radial-gradient(circle at 18% 12%, rgba(125, 211, 252, 0.18), transparent 30%),
-    radial-gradient(circle at 86% 18%, rgba(196, 181, 253, 0.16), transparent 30%),
-    linear-gradient(rgba(71, 85, 105, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(71, 85, 105, 0.035) 1px, transparent 1px);
-  background-size: auto, auto, 44px 44px, 44px 44px;
-}
-[data-theme-style="apple-minimal"] .bookstark-science-formula { color: rgba(71, 85, 105, 0.22); text-shadow: none; }
-[data-theme-style="apple-minimal"] .bookstark-science-hud { border-color: rgba(100, 116, 139, 0.12); box-shadow: inset 0 0 30px rgba(148, 163, 184, 0.08), 0 0 42px rgba(125, 211, 252, 0.08); }
 @media (max-width: 640px) {
   .bookstark-science-bg { opacity: 0.58; }
   .bookstark-function-canvas { opacity: 0.7; }
@@ -361,245 +329,6 @@ body { color: var(--color-text); background: var(--color-bg); }
   --color-text-muted: #64748b;
   --color-text-placeholder: #64748b;
 }
-
-/* ========== Named Local Themes ========== */
-[data-theme-style="light"] {
-  --theme-style-name: light;
-}
-
-[data-theme-style="dark"] {
-  --theme-style-name: dark;
-}
-
-[data-theme-style="notion-pro"] {
-  --color-primary: #2563eb;
-  --color-primary-hover: #1d4ed8;
-  --color-primary-light: #eff6ff;
-  --color-primary-lighter: #dbeafe;
-  --color-primary-border: #bfdbfe;
-  --color-primary-bg: #eff6ff;
-  --color-primary-ring: rgba(37, 99, 235, 0.24);
-  --color-border: #e2e8f0;
-  --color-border-light: #f1f5f9;
-  --color-bg: #f8fafc;
-  --color-bg-card: #ffffff;
-  --color-bg-hover: #f1f5f9;
-  --color-text: #172033;
-  --color-text-secondary: #64748b;
-  --color-text-muted: #94a3b8;
-  --color-gray-50: #f8fafc;
-  --color-gray-100: #f1f5f9;
-  --color-gray-200: #e2e8f0;
-  --color-gray-300: #cbd5e1;
-  --color-gray-400: #94a3b8;
-  --color-gray-500: #64748b;
-  --color-gray-600: #475569;
-  --color-gray-700: #334155;
-  --color-gray-800: #1e293b;
-  --color-gray-900: #0f172a;
-  --logo-grad-start: #3b82f6;
-  --logo-grad-end: #1d4ed8;
-  --logo-shadow-color: rgba(37, 99, 235, 0.28);
-}
-
-[data-theme-style="scholar-paper"] {
-  --color-primary: #5b6f54;
-  --color-primary-hover: #43523e;
-  --color-primary-light: #eef3e7;
-  --color-primary-lighter: #dde8d1;
-  --color-primary-border: #c6d7b7;
-  --color-primary-bg: #eef3e7;
-  --color-primary-ring: rgba(91, 111, 84, 0.24);
-  --color-focus: #5b6f54;
-  --color-focus-ring: rgba(91, 111, 84, 0.24);
-  --color-border: #e6d7c2;
-  --color-border-light: #f0e6d7;
-  --color-border-hover: #9a6a2f;
-  --color-bg: #f7f0e6;
-  --color-bg-card: #fffaf2;
-  --color-bg-hover: #f1e6d5;
-  --color-white: #fffaf2;
-  --color-text: #2f2a23;
-  --color-text-secondary: #6f6251;
-  --color-text-muted: #a08e75;
-  --color-text-placeholder: #a08e75;
-  --color-gray-50: #fbf7ef;
-  --color-gray-100: #f1e6d5;
-  --color-gray-200: #e6d7c2;
-  --color-gray-300: #d6c2a6;
-  --color-gray-400: #a08e75;
-  --color-gray-500: #7c6b58;
-  --color-gray-600: #5f5244;
-  --color-gray-700: #473d33;
-  --color-gray-800: #2f2a23;
-  --color-gray-900: #1f1b17;
-  --color-danger-light: #fff1ed;
-  --color-success-light: #edf7ed;
-  --color-warning-light: #fff4d8;
-  --color-info-light: #edf4f7;
-  --color-heat-0: #f8f1e6;
-  --color-heat-1: #dce8d1;
-  --color-heat-2: #a9c798;
-  --color-heat-3: #6f8a62;
-  --color-heat-4: #43523e;
-  --logo-grad-start: #8a6339;
-  --logo-grad-end: #5b6f54;
-  --logo-shadow-color: rgba(91, 111, 84, 0.24);
-}
-
-[data-theme-style="linear-saas"] {
-  --color-primary: #7c3aed;
-  --color-primary-hover: #a78bfa;
-  --color-primary-light: #2e1065;
-  --color-primary-lighter: #3b1a78;
-  --color-primary-border: #5b21b6;
-  --color-primary-bg: #2e1065;
-  --color-primary-text: #c4b5fd;
-  --color-primary-ring: rgba(124, 58, 237, 0.38);
-  --color-focus: #8b5cf6;
-  --color-focus-ring: rgba(139, 92, 246, 0.36);
-  --color-bg: #0b1020;
-  --color-bg-card: #111827;
-  --color-bg-hover: #1e293b;
-  --color-gray-50: #0b1020;
-  --color-gray-100: #111827;
-  --color-gray-200: #1e293b;
-  --color-gray-300: #334155;
-  --color-gray-400: #64748b;
-  --color-gray-500: #94a3b8;
-  --color-gray-600: #cbd5e1;
-  --color-gray-700: #e2e8f0;
-  --color-gray-800: #f1f5f9;
-  --color-gray-900: #f8fafc;
-  --color-border: #283244;
-  --color-border-light: #172033;
-  --color-border-hover: #7c3aed;
-  --color-text: #eef2ff;
-  --color-text-secondary: #a8b3cf;
-  --color-text-muted: #64748b;
-  --color-text-placeholder: #64748b;
-  --color-indigo: #8b5cf6;
-  --color-info: #38bdf8;
-  --color-info-light: #082f49;
-  --color-heat-0: #111827;
-  --color-heat-1: #2e1065;
-  --color-heat-2: #5b21b6;
-  --color-heat-3: #7c3aed;
-  --color-heat-4: #a78bfa;
-  --logo-grad-start: #a78bfa;
-  --logo-grad-end: #38bdf8;
-  --logo-shadow-color: rgba(124, 58, 237, 0.42);
-}
-
-[data-theme-style="apple-minimal"] {
-  --color-primary: #111827;
-  --color-primary-hover: #374151;
-  --color-primary-light: #eef2f7;
-  --color-primary-lighter: #e5eaf2;
-  --color-primary-border: #cbd5e1;
-  --color-primary-bg: #eef2f7;
-  --color-primary-ring: rgba(17, 24, 39, 0.18);
-  --color-focus: #111827;
-  --color-focus-ring: rgba(17, 24, 39, 0.18);
-  --color-border: #d8dee8;
-  --color-border-light: #edf1f7;
-  --color-border-hover: #111827;
-  --color-bg: #f3f6fb;
-  --color-bg-card: rgba(255, 255, 255, 0.86);
-  --color-bg-hover: rgba(226, 232, 240, 0.72);
-  --color-white: rgba(255, 255, 255, 0.9);
-  --color-text: #111827;
-  --color-text-secondary: #536173;
-  --color-text-muted: #8b98aa;
-  --color-text-placeholder: #8b98aa;
-  --color-gray-50: #f8fafc;
-  --color-gray-100: #eef2f7;
-  --color-gray-200: #d8dee8;
-  --color-gray-300: #c4ccd8;
-  --color-gray-400: #8b98aa;
-  --color-gray-500: #64748b;
-  --color-gray-600: #475569;
-  --color-gray-700: #334155;
-  --color-gray-800: #1f2937;
-  --color-gray-900: #111827;
-  --logo-grad-start: #111827;
-  --logo-grad-end: #475569;
-  --logo-shadow-color: rgba(15, 23, 42, 0.18);
-}
-
-/* Named light themes — Tailwind utility overrides */
-[data-theme-style="notion-pro"] .bg-white,
-[data-theme-style="scholar-paper"] .bg-white,
-[data-theme-style="apple-minimal"] .bg-white { background-color: var(--color-bg-card) !important; }
-
-[data-theme-style="notion-pro"] .bg-slate-50,
-[data-theme-style="scholar-paper"] .bg-slate-50,
-[data-theme-style="apple-minimal"] .bg-slate-50 { background-color: var(--color-bg) !important; }
-
-[data-theme-style="notion-pro"] .bg-slate-100,
-[data-theme-style="scholar-paper"] .bg-slate-100,
-[data-theme-style="apple-minimal"] .bg-slate-100 { background-color: var(--color-gray-100) !important; }
-
-[data-theme-style="notion-pro"] .bg-slate-200,
-[data-theme-style="scholar-paper"] .bg-slate-200,
-[data-theme-style="apple-minimal"] .bg-slate-200 { background-color: var(--color-gray-200) !important; }
-
-[data-theme-style="scholar-paper"] .bg-blue-50,
-[data-theme-style="scholar-paper"] .bg-indigo-50,
-[data-theme-style="scholar-paper"] .bg-purple-50,
-[data-theme-style="scholar-paper"] .bg-sky-50,
-[data-theme-style="scholar-paper"] .bg-emerald-50,
-[data-theme-style="apple-minimal"] .bg-blue-50,
-[data-theme-style="apple-minimal"] .bg-indigo-50,
-[data-theme-style="apple-minimal"] .bg-purple-50,
-[data-theme-style="apple-minimal"] .bg-sky-50,
-[data-theme-style="apple-minimal"] .bg-emerald-50 {
-  background-color: var(--color-primary-light) !important;
-}
-
-[data-theme-style="scholar-paper"] .bg-blue-600,
-[data-theme-style="apple-minimal"] .bg-blue-600 { background-color: var(--color-primary) !important; }
-[data-theme-style="scholar-paper"] .hover\:bg-blue-700:hover,
-[data-theme-style="apple-minimal"] .hover\:bg-blue-700:hover { background-color: var(--color-primary-hover) !important; }
-
-[data-theme-style="notion-pro"] .border-slate-100,
-[data-theme-style="scholar-paper"] .border-slate-100,
-[data-theme-style="apple-minimal"] .border-slate-100 { border-color: var(--color-border-light) !important; }
-[data-theme-style="notion-pro"] .border-slate-200,
-[data-theme-style="scholar-paper"] .border-slate-200,
-[data-theme-style="apple-minimal"] .border-slate-200 { border-color: var(--color-border) !important; }
-[data-theme-style="notion-pro"] .border-slate-300,
-[data-theme-style="scholar-paper"] .border-slate-300,
-[data-theme-style="apple-minimal"] .border-slate-300 { border-color: var(--color-gray-300) !important; }
-
-[data-theme-style="notion-pro"] .text-slate-300,
-[data-theme-style="scholar-paper"] .text-slate-300,
-[data-theme-style="apple-minimal"] .text-slate-300 { color: var(--color-gray-300) !important; }
-[data-theme-style="notion-pro"] .text-slate-400,
-[data-theme-style="scholar-paper"] .text-slate-400,
-[data-theme-style="apple-minimal"] .text-slate-400 { color: var(--color-gray-400) !important; }
-[data-theme-style="notion-pro"] .text-slate-500,
-[data-theme-style="scholar-paper"] .text-slate-500,
-[data-theme-style="apple-minimal"] .text-slate-500 { color: var(--color-gray-500) !important; }
-[data-theme-style="notion-pro"] .text-slate-600,
-[data-theme-style="scholar-paper"] .text-slate-600,
-[data-theme-style="apple-minimal"] .text-slate-600 { color: var(--color-gray-600) !important; }
-[data-theme-style="notion-pro"] .text-slate-700,
-[data-theme-style="scholar-paper"] .text-slate-700,
-[data-theme-style="apple-minimal"] .text-slate-700 { color: var(--color-gray-700) !important; }
-[data-theme-style="notion-pro"] .text-slate-800,
-[data-theme-style="scholar-paper"] .text-slate-800,
-[data-theme-style="apple-minimal"] .text-slate-800 { color: var(--color-gray-800) !important; }
-
-[data-theme-style="scholar-paper"] .text-blue-500,
-[data-theme-style="scholar-paper"] .text-blue-600,
-[data-theme-style="apple-minimal"] .text-blue-500,
-[data-theme-style="apple-minimal"] .text-blue-600 { color: var(--color-primary) !important; }
-
-[data-theme-style="scholar-paper"] .focus\:border-blue-600:focus,
-[data-theme-style="apple-minimal"] .focus\:border-blue-600:focus { border-color: var(--color-focus) !important; }
-[data-theme-style="scholar-paper"] .focus\:ring-blue-600\/20:focus,
-[data-theme-style="apple-minimal"] .focus\:ring-blue-600\/20:focus { box-shadow: 0 0 0 2px var(--color-focus-ring) !important; }
 
 /* ========== Dark Theme — Tailwind Utility Overrides ========== */
 [data-theme="dark"] .bg-white { background-color: var(--color-bg-card) !important; }
@@ -723,23 +452,237 @@ body { color: var(--color-text); background: var(--color-bg); }
   --logo-grad-end: #3b82f6;
   --logo-shadow-color: rgba(96, 165, 250, 0.4);
 }
-[data-theme-style="notion-pro"] {
-  --logo-grad-start: #3b82f6;
-  --logo-grad-end: #1d4ed8;
-  --logo-shadow-color: rgba(37, 99, 235, 0.28);
+
+/* NVIDIA — angular engineering surfaces and a single green action accent.
+ * Sources and adaptation decisions: docs/site-themes.md.
+ * Brand values belong here; components consume semantic variables only.
+ */
+[data-theme-style="nvidia"] {
+  color-scheme: dark;
+  --color-primary: #76b900;
+  --color-primary-hover: #8ccb20;
+  --color-on-primary: #000000;
+  --color-primary-light: #202b14;
+  --color-primary-lighter: #2d3c1b;
+  --color-primary-border: #465e27;
+  --color-primary-bg: #202b14;
+  --color-primary-text: #b4e566;
+  --color-primary-ring: rgba(118, 185, 0, 0.28);
+  --color-focus: #a3d957;
+  --color-focus-ring: rgba(163, 217, 87, 0.28);
+  --color-bg: #000000;
+  --color-bg-card: #1a1a1a;
+  --color-bg-hover: #29292d;
+  --color-white: #1a1a1a;
+  --color-border: #36363b;
+  --color-border-light: #29292e;
+  --color-border-hover: #76b900;
+  --color-text: #f5f5f7;
+  --color-text-secondary: #c0c0c8;
+  --color-text-muted: #a2a2ac;
+  --color-text-placeholder: #a2a2ac;
+  --color-gray-50: #101012;
+  --color-gray-100: #1c1c1f;
+  --color-gray-200: #29292e;
+  --color-gray-300: #484850;
+  --color-gray-400: #92929d;
+  --color-gray-500: #a2a2ac;
+  --color-gray-600: #c0c0c8;
+  --color-gray-700: #dcdce2;
+  --color-gray-800: #eeeef2;
+  --color-gray-900: #f5f5f7;
+  --color-success: #8bd15c;
+  --color-success-hover: #a3df7c;
+  --color-success-light: #1e301b;
+  --color-warning: #f0b55a;
+  --color-warning-light: #342818;
+  --color-danger: #ff8585;
+  --color-danger-hover: #ffaaaa;
+  --color-danger-light: #391e23;
+  --color-info: #93bfff;
+  --color-info-light: #1d2a3b;
+  --color-indigo: #bdacf1;
+  --color-heat-0: #222226;
+  --color-heat-1: #30451e;
+  --color-heat-2: #456927;
+  --color-heat-3: #76b900;
+  --color-heat-4: #a3d957;
+  --radius-sm: 4px;
+  --radius-md: 4px;
+  --radius-lg: 4px;
+  --radius-xl: 4px;
+  --surface-radius: var(--radius-xl);
+  --surface-shadow-hover: none;
+  --theme-header-bg: #000000;
+  --theme-font: Arial, Helvetica, "PingFang SC", "Microsoft YaHei", sans-serif;
+  --logo-grad-start: #f5f5f7;
+  --logo-grad-end: #f5f5f7;
+  --logo-shadow-color: transparent;
 }
-[data-theme-style="scholar-paper"] {
-  --logo-grad-start: #8a6339;
-  --logo-grad-end: #5b6f54;
-  --logo-shadow-color: rgba(91, 111, 84, 0.24);
+[data-theme-style="nvidia"] body { font-family: var(--theme-font); }
+[data-theme-style="nvidia"] body > header,
+[data-theme-style="nvidia"] .home-bottom-nav {
+  background: var(--theme-header-bg) !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
 }
-[data-theme-style="linear-saas"] {
-  --logo-grad-start: #a78bfa;
-  --logo-grad-end: #38bdf8;
-  --logo-shadow-color: rgba(124, 58, 237, 0.42);
+[data-theme-style="nvidia"] :is(.page-title, .home-welcome h1, .home-card h2) {
+  font-weight: 700;
+  letter-spacing: normal;
 }
-[data-theme-style="apple-minimal"] {
-  --logo-grad-start: #111827;
-  --logo-grad-end: #475569;
-  --logo-shadow-color: rgba(15, 23, 42, 0.18);
+[data-theme-style="nvidia"] :is(.home-card, .home-heading-card, .list-row, .book-card, .bk-card) {
+  border-color: var(--color-border);
+  border-radius: var(--surface-radius);
+  box-shadow: none;
+}
+[data-theme-style="nvidia"] .home-card { --home-accent: var(--color-primary) !important; }
+[data-theme-style="nvidia"] :is(.home-card-icon, .home-recent-icon) {
+  background: var(--color-primary-light);
+  color: var(--color-primary-text);
+}
+[data-theme-style="nvidia"] .home-card-head::before {
+  content: "";
+  width: var(--spacing-md);
+  height: var(--spacing-md);
+  background: var(--color-primary);
+  flex-shrink: 0;
+}
+/* Explicit primary surfaces: never put white text on the bright green CTA. */
+[data-theme-style="nvidia"] :is(.bg-blue-600, .bg-blue-500, .home-primary, .ai-dlg-btn-go, .ai-dlg-btn-append, .home-new-icon, .calendar-day.selected) {
+  background-color: var(--color-primary) !important;
+  color: var(--color-on-primary) !important;
+}
+[data-theme-style="nvidia"] :is(.bg-blue-600, .bg-blue-500) .text-white { color: var(--color-on-primary) !important; }
+[data-theme-style="nvidia"] .calendar-day.selected .calendar-day-num { color: var(--color-on-primary) !important; }
+[data-theme-style="nvidia"] :is(.hover\:bg-blue-700, .hover\:bg-blue-600):hover {
+  background-color: var(--color-primary-hover) !important;
+}
+[data-theme-style="nvidia"] :is(.text-blue-500, .text-blue-600, .text-blue-700, .home-card-all, .home-row:hover) {
+  color: var(--color-primary-text) !important;
+}
+[data-theme-style="nvidia"] :is(.bg-blue-50, .bg-blue-100) {
+  background-color: var(--color-primary-light) !important;
+}
+[data-theme-style="nvidia"] :is(.border-blue-200, .border-blue-300, .border-blue-600) { border-color: var(--color-primary-border) !important; }
+[data-theme-style="nvidia"] .focus\:border-blue-600:focus { border-color: var(--color-focus) !important; }
+[data-theme-style="nvidia"] .focus\:ring-blue-600\/20:focus { box-shadow: 0 0 0 2px var(--color-focus-ring) !important; }
+[data-theme-style="nvidia"] .bookstark-science-bg {
+  opacity: 0.4;
+  --science-curve-primary: rgba(118, 185, 0, 0.2);
+  --science-curve-secondary: rgba(190, 190, 200, 0.12);
+  --science-curve-accent: rgba(118, 185, 0, 0.12);
+}
+[data-theme-style="nvidia"] .bookstark-science-bg::before { background: none; }
+[data-theme-style="nvidia"] .bookstark-science-bg::after { background: var(--color-bg); opacity: 0.6; }
+[data-theme-style="nvidia"] .bookstark-science-formula { color: var(--color-primary-text); text-shadow: none; }
+[data-theme-style="nvidia"] .bookstark-science-hud { border-color: var(--color-primary-border); box-shadow: none; }
+@media (max-width: 640px) {
+  [data-theme-style="nvidia"] body > header,
+  [data-theme-style="nvidia"] .home-bottom-nav {
+    background: var(--color-bg-card) !important;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* Apple — independent light theme: parchment canvas, Action Blue and soft chrome. */
+[data-theme-style="apple"] {
+  color-scheme: light;
+  --color-primary: #0066cc;
+  --color-primary-hover: #005bb5;
+  --color-on-primary: #ffffff;
+  --color-primary-light: #edf5ff;
+  --color-primary-lighter: #d9eaff;
+  --color-primary-border: #b4d5f7;
+  --color-primary-bg: #edf5ff;
+  --color-primary-text: #0066cc;
+  --color-primary-ring: rgba(0, 102, 204, 0.24);
+  --color-focus: #0071e3;
+  --color-focus-ring: rgba(0, 113, 227, 0.24);
+  --color-bg: #f5f5f7;
+  --color-bg-card: #ffffff;
+  --color-bg-hover: #f0f0f2;
+  --color-white: #ffffff;
+  --color-border: #d9d9df;
+  --color-border-light: #ededf0;
+  --color-border-hover: #0071e3;
+  --color-text: #1d1d1f;
+  --color-text-secondary: #515154;
+  --color-text-muted: #66666c;
+  --color-text-placeholder: #66666c;
+  --color-gray-50: #fafafc;
+  --color-gray-100: #f0f0f2;
+  --color-gray-200: #d9d9df;
+  --color-gray-300: #c5c5ce;
+  --color-gray-400: #86868b;
+  --color-gray-500: #66666c;
+  --color-gray-600: #515154;
+  --color-gray-700: #333336;
+  --color-gray-800: #1d1d1f;
+  --color-gray-900: #101012;
+  --color-heat-0: #f5f5f7;
+  --color-heat-1: #d9eaff;
+  --color-heat-2: #8ec1f4;
+  --color-heat-3: #0066cc;
+  --color-heat-4: #004b98;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+  --surface-radius: var(--radius-xl);
+  --surface-shadow-hover: none;
+  --theme-font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --theme-header-bg: rgba(250, 250, 252, 0.92);
+  --logo-grad-start: #1d1d1f;
+  --logo-grad-end: #1d1d1f;
+  --logo-shadow-color: transparent;
+}
+[data-theme-style="apple"] body { font-family: var(--theme-font); }
+[data-theme-style="apple"] body > header,
+[data-theme-style="apple"] .home-bottom-nav {
+  background: var(--theme-header-bg) !important;
+  backdrop-filter: saturate(180%) blur(16px);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  box-shadow: none;
+}
+[data-theme-style="apple"] :is(.page-title, .home-welcome h1, .home-card h2) { font-weight: 600; letter-spacing: -0.02em; }
+[data-theme-style="apple"] .home-card { --home-accent: var(--color-primary) !important; }
+[data-theme-style="apple"] :is(.home-card-icon, .home-recent-icon) { background: var(--color-primary-light); color: var(--color-primary); }
+[data-theme-style="apple"] :is(.home-card, .home-heading-card, .list-row, .book-card, .bk-card) {
+  background: var(--color-bg-card);
+  border-color: var(--color-border);
+  border-radius: var(--surface-radius);
+  box-shadow: none;
+}
+[data-theme-style="apple"] :is(.home-primary, .bg-blue-600, .bg-blue-500, .ai-dlg-btn-go, .ai-dlg-btn-append, .home-new-icon, .calendar-day.selected) {
+  background-color: var(--color-primary) !important;
+  color: var(--color-on-primary) !important;
+}
+[data-theme-style="apple"] :is(.home-primary, .ai-dlg-btn-go, .ai-dlg-btn-append) { border-radius: var(--radius-full); }
+[data-theme-style="nvidia"] :is(.home-button, .main-tabs, .dialog-input, .ai-dlg-btn-go, .ai-dlg-btn-append, .bg-blue-600) { border-radius: var(--radius-sm); }
+[data-theme-style="apple"] :is(.hover\:bg-blue-700, .hover\:bg-blue-600):hover { background-color: var(--color-primary-hover) !important; }
+[data-theme-style="apple"] :is(.text-blue-500, .text-blue-600, .text-blue-700, .home-card-all, .home-row:hover) { color: var(--color-primary) !important; }
+[data-theme-style="apple"] :is(.bg-blue-50, .bg-blue-100) { background-color: var(--color-primary-light) !important; }
+[data-theme-style="apple"] :is(.border-blue-200, .border-blue-300, .border-blue-600) { border-color: var(--color-primary-border) !important; }
+[data-theme-style="apple"] .focus\:border-blue-600:focus { border-color: var(--color-focus) !important; }
+[data-theme-style="apple"] .focus\:ring-blue-600\/20:focus { box-shadow: 0 0 0 2px var(--color-focus-ring) !important; }
+[data-theme-style="apple"] .bg-white { background-color: var(--color-bg-card) !important; }
+[data-theme-style="apple"] .bg-slate-50 { background-color: var(--color-bg) !important; }
+[data-theme-style="apple"] :is(.bg-slate-100, .bg-slate-200) { background-color: var(--color-gray-100) !important; }
+[data-theme-style="apple"] :is(.text-slate-400, .text-slate-500) { color: var(--color-text-muted) !important; }
+[data-theme-style="apple"] :is(.text-slate-600, .text-slate-700) { color: var(--color-text-secondary) !important; }
+[data-theme-style="apple"] .text-slate-800 { color: var(--color-text) !important; }
+[data-theme-style="apple"] .calendar-day.selected .calendar-day-num { color: var(--color-on-primary) !important; }
+[data-theme-style="apple"] .bookstark-science-bg { opacity: 0.35; }
+[data-theme-style="apple"] .bookstark-science-bg::before { background: none; }
+[data-theme-style="apple"] .bookstark-science-formula { color: var(--color-text-muted); text-shadow: none; }
+[data-theme-style="apple"] .bookstark-science-hud { border-color: var(--color-border); box-shadow: none; }
+@media (max-width: 640px) {
+  [data-theme-style="apple"] body > header,
+  [data-theme-style="apple"] .home-bottom-nav {
+    background: var(--color-bg-card) !important;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
 }

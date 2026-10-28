@@ -1,4 +1,37 @@
 /**
+ * NVIDIA overrides use the application's tokens, not an independent palette.
+ */
+[data-theme-style="nvidia"] .cherry.theme__dark {
+  --cherry-color: var(--color-text);
+  --cherry-bg-color: var(--color-bg-card);
+  --base-editor-bg: var(--color-bg-card);
+  --base-previewer-bg: var(--color-bg-card);
+  --base-font-color: var(--color-text);
+  --base-border-color: var(--color-border);
+  --toolbar-bg: var(--color-bg);
+  --toolbar-btn-color: var(--color-text-secondary);
+  --toolbar-btn-hover-color: var(--color-text);
+  --toolbar-btn-hover-bg: var(--color-bg-hover);
+  --primary-color: var(--color-primary-text);
+  --secondary-color: var(--color-primary-light);
+  --md-heading-color: var(--color-text);
+  --md-link-color: var(--color-primary-text);
+  --editor-link-color: var(--color-primary-text);
+  --editor-cursor-color: var(--color-text);
+  --editor-selection-bg: var(--color-primary-ring);
+}
+[data-theme-style="nvidia"] .cherry.theme__dark :is(.cherry-editor, .cherry-previewer, .cm-editor) {
+  background-color: var(--color-bg-card);
+  color: var(--color-text);
+}
+[data-theme-style="nvidia"] .cherry.theme__dark :is(.cherry-toolbar, .cm-gutters, .cm-activeLine) {
+  background-color: var(--color-bg);
+  border-color: var(--color-border);
+}
+[data-theme-style="nvidia"] .cherry.theme__dark :is(.cm-content, .cm-line) { color: var(--color-text); }
+[data-theme-style="nvidia"] .cherry.theme__dark .cherry-previewer { background-color: var(--color-bg-card) !important; }
+[data-theme-style="nvidia"] .cherry.theme__dark .cherry-previewer a { color: var(--color-primary-text); }
+/**
  * Cherry Markdown - Dark Theme
  * Based on GitHub dark mode colors (github-markdown-css dark)
  * Adapted for Cherry Markdown's .cherry-previewer

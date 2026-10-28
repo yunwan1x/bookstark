@@ -6,18 +6,15 @@
     var MUSIC_STORAGE_KEY = 'bookstark-background-music';
     var MUSIC_VOLUME_STORAGE_KEY = 'bookstark-background-music-volume';
     var DEFAULT_LIGHT_THEME = 'light';
-    var DEFAULT_DARK_THEME = 'dark';
+    var DEFAULT_DARK_THEME = 'nvidia';
     var THEMES = {
         light: { scheme: 'light' },
-        dark: { scheme: 'dark' },
-        'notion-pro': { scheme: 'light' },
-        'scholar-paper': { scheme: 'light' },
-        'linear-saas': { scheme: 'dark' },
-        'apple-minimal': { scheme: 'light' }
+        'nvidia': { scheme: 'dark' },
+        apple: { scheme: 'light' }
     };
 
     function normalizeTheme(theme) {
-        return THEMES[theme] ? theme : DEFAULT_LIGHT_THEME;
+        return Object.prototype.hasOwnProperty.call(THEMES, theme) ? theme : DEFAULT_LIGHT_THEME;
     }
 
     function isDarkTheme(theme) {
@@ -31,8 +28,12 @@
 
     function getPreferredTheme() {
         var stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) return normalizeTheme(stored);
-        return window.matchMedia('(prefers-color-scheme: dark)').matches ? DEFAULT_DARK_THEME : DEFAULT_LIGHT_THEME;
+        if (stored) {
+            var next = normalizeTheme(stored);
+            if (next !== stored) localStorage.setItem(STORAGE_KEY, next);
+            return next;
+        }
+        return DEFAULT_LIGHT_THEME;
     }
 
     function applyTheme(theme) {
@@ -40,6 +41,8 @@
         var scheme = themeScheme(next);
         document.documentElement.setAttribute('data-theme', scheme);
         document.documentElement.setAttribute('data-theme-style', next);
+        var select = document.getElementById('profile-theme');
+        if (select) select.value = next;
         updateToggleIcon(next);
         syncCherryTheme(next);
         if (window.BookStarkExcalidraw) { window.BookStarkExcalidraw.setTheme(scheme); }
@@ -108,12 +111,7 @@
         applyTheme(next);
     }
 
-    // Listen for system preference changes
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
-        if (!localStorage.getItem(STORAGE_KEY)) {
-            applyTheme(e.matches ? DEFAULT_DARK_THEME : DEFAULT_LIGHT_THEME);
-        }
-    });
+    // Theme choices are explicit; OS dark mode must not replace the default.
 
     // Observe Cherry Markdown theme changes to sync when user uses Cherry's own toggle
     var cherryObserver = null;
@@ -1073,7 +1071,9 @@
     }
 
     window.addEventListener('storage', function(e) {
-        if (e.key === BACKGROUND_STORAGE_KEY) {
+        if (e.key === STORAGE_KEY) {
+            applyTheme(normalizeTheme(e.newValue));
+        } else if (e.key === BACKGROUND_STORAGE_KEY) {
             initScienceBackground();
         } else if (e.key === MUSIC_STORAGE_KEY) {
             if (!getMusicEnabled()) stopBackgroundMusic();
