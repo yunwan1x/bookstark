@@ -21,11 +21,13 @@ automatically resolve divergent history; reconcile it explicitly before retrying
 Use `DEPLOY_TRANSPORT=ssh ./deploy.sh [version]` when Docker Hub push access is
 unavailable; this transfers the image with `docker save/load` over SSH. The
 default `registry` transport uses push/pull.
-It serializes deployments and builds Go with systemd limits (850 MiB maximum,
+It serializes deployments and, when Go is installed, builds with systemd limits (850 MiB maximum,
 700 MiB pressure threshold, 1 GiB swap maximum, one CPU), `-p=1`, and
 `GOMEMLIMIT=300MiB` before
-building/pushing the runtime image. Run from a host with Go, Python, Docker and
-permission to create system systemd units. Build limits can be overridden using
+building/pushing the runtime image. When Go is unavailable it falls back to the
+repository's multi-stage Dockerfile; both paths embed and label the same commit.
+Run from a host with Python, Docker and SSH; the native path also requires Go and
+permission to create systemd units. Build limits can be overridden using
 `BUILD_MEMORY_MAX`, `BUILD_MEMORY_HIGH`, `BUILD_SWAP_MAX`, `BUILD_CPU_QUOTA`,
 `BUILD_GO_MEMORY`.
 Do not run tests or another build concurrently with deployment on this host.

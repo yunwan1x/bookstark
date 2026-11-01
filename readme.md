@@ -198,7 +198,7 @@ DEPLOY_TRANSPORT=ssh ./deploy.sh <版本号>
 
 脚本要求工作区完全干净，并依次执行：推送并核对当前 Git commit → 从该 commit 的临时快照受限编译 → 构建并传输带 revision 标签的镜像 → 更新远端 Compose 服务并核对运行镜像的 commit。脚本不会自动提交源码，也不会创建或上传源码压缩包。
 
-运行需要 Linux/systemd、Go、Python 3、Docker、Git、SSH，以及对应权限和凭据。默认编译限制为单核、850 MiB 内存上限、700 MiB 内存压力阈值和 1 GiB swap 上限；swap 上限不代表会自动创建 swap。
+运行需要 Docker、Git、SSH，以及对应权限和凭据。有 Go、Python 3 和 systemd 时优先使用受限本机构建，默认限制为单核、850 MiB 内存上限、700 MiB 内存压力阈值和 1 GiB swap 上限；没有 Go 时自动使用项目的多阶段 Dockerfile 构建。swap 上限不代表会自动创建 swap。
 
 发布前必须先提交预期改动，并确认 `git status` 为空；任何已暂存、未暂存或未跟踪文件都会阻止部署。未显式指定版本号时，脚本优先使用恰好指向当前 commit 的标签，否则使用 `git-<commit前12位>`，不会复用旧标签或 `latest`。Git 推送或 commit 核对失败时不会开始构建，远端镜像 revision 不一致时部署会报错。部署期间不要并行运行测试或其他编译任务。
 

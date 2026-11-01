@@ -20,13 +20,20 @@ BUILD_SWAP_MAX="${BUILD_SWAP_MAX:-1G}"
 BUILD_CPU_QUOTA="${BUILD_CPU_QUOTA:-100%}"
 BUILD_GO_MEMORY="${BUILD_GO_MEMORY:-300MiB}"
 # systemd enforces the hard limit on the compiler and all its children.
-for tool in systemd-run docker git python3 ssh tar; do
+for tool in docker git ssh tar; do
     command -v "$tool" >/dev/null || { echo "Missing tool: $tool" >&2; exit 1; }
 done
 if ! command -v go >/dev/null && [ -x /usr/local/go/bin/go ]; then
     export PATH="/usr/local/go/bin:$PATH"
 fi
-command -v go >/dev/null || { echo "Go is required for the limited local build." >&2; exit 1; }
+if command -v go >/dev/null; then
+    BUILD_MODE="native"
+    for tool in systemd-run python3; do
+        command -v "$tool" >/dev/null || { echo "Missing tool for native build: $tool" >&2; exit 1; }
+    done
+else
+    BUILD_MODE="docker"
+fi
 
 # Deploy only a clean, named branch with a configured source remote.
 GIT_REMOTE="${GIT_REMOTE:-origin}"
@@ -89,34 +96,44 @@ git archive --format=tar "${COMMIT}" | tar -xf - -C "${SOURCE_DIR}"
 
 # 2. Build the binary and image from that exact snapshot.
 echo ""
-echo "[2/4] Building image from ${COMMIT}..."
-# Do not compile in docker build: BuildKit does not inherit this shell's cgroup.
-# --wait propagates build/OOM failure, so no upload or deployment follows failure.
-systemd-run --quiet --wait --pipe --collect \
-    --unit="bookstark-deploy-build" \
-    --working-directory="${SOURCE_DIR}" \
-    --property="MemoryMax=${BUILD_MEMORY_MAX}" \
-    --property="MemoryHigh=${BUILD_MEMORY_HIGH}" \
-    --property="MemorySwapMax=${BUILD_SWAP_MAX}" \
-    --property="CPUQuota=${BUILD_CPU_QUOTA}" \
-    --setenv="PATH=$PATH" \
-    --setenv="GOPATH=$(go env GOPATH)" \
-    --setenv="GOCACHE=$(go env GOCACHE)" \
-    --setenv="GOPROXY=$(go env GOPROXY)" \
-    --setenv="GOFLAGS=-p=1" \
-    --setenv="GOMAXPROCS=1" \
-    --setenv="GOMEMLIMIT=${BUILD_GO_MEMORY}" \
-    --setenv="CGO_ENABLED=0" \
-    --setenv="COMMIT=${COMMIT}" \
-    python3 -u build.py --build --tags timetzdata --output "${ARTIFACT_DIR}/bookstark"
+echo "[2/4] Building image from ${COMMIT} (${BUILD_MODE})..."
+if [ "$BUILD_MODE" = native ]; then
+    # Do not compile in docker build: BuildKit does not inherit this shell's
+    # systemd cgroup. --wait propagates build/OOM failure.
+    systemd-run --quiet --wait --pipe --collect \
+        --unit="bookstark-deploy-build" \
+        --working-directory="${SOURCE_DIR}" \
+        --property="MemoryMax=${BUILD_MEMORY_MAX}" \
+        --property="MemoryHigh=${BUILD_MEMORY_HIGH}" \
+        --property="MemorySwapMax=${BUILD_SWAP_MAX}" \
+        --property="CPUQuota=${BUILD_CPU_QUOTA}" \
+        --setenv="PATH=$PATH" \
+        --setenv="GOPATH=$(go env GOPATH)" \
+        --setenv="GOCACHE=$(go env GOCACHE)" \
+        --setenv="GOPROXY=$(go env GOPROXY)" \
+        --setenv="GOFLAGS=-p=1" \
+        --setenv="GOMAXPROCS=1" \
+        --setenv="GOMEMLIMIT=${BUILD_GO_MEMORY}" \
+        --setenv="CGO_ENABLED=0" \
+        --setenv="COMMIT=${COMMIT}" \
+        python3 -u build.py --build --tags timetzdata --output "${ARTIFACT_DIR}/bookstark"
 
-# The Docker stage only copies the finished binary; no second compilation.
-cp /etc/ssl/certs/ca-certificates.crt "${ARTIFACT_DIR}/ca-certificates.crt"
-docker build \
-    --build-arg "COMMIT=${COMMIT}" \
-    -f "${PWD}/Dockerfile.release" \
-    -t "${FULL_IMAGE}" \
-    "${ARTIFACT_DIR}"
+    # The Docker stage only copies the finished binary; no second compilation.
+    cp /etc/ssl/certs/ca-certificates.crt "${ARTIFACT_DIR}/ca-certificates.crt"
+    docker build \
+        --build-arg "COMMIT=${COMMIT}" \
+        -f "${PWD}/Dockerfile.release" \
+        -t "${FULL_IMAGE}" \
+        "${ARTIFACT_DIR}"
+else
+    # Hosts without Go can still produce the same revision-labelled image via
+    # the repository's multi-stage build. The source snapshot remains exact.
+    docker build \
+        --build-arg "COMMIT=${COMMIT}" \
+        -f "${SOURCE_DIR}/Dockerfile" \
+        -t "${FULL_IMAGE}" \
+        "${SOURCE_DIR}"
+fi
 
 echo ""
 echo "[3/4] Transferring image (${DEPLOY_TRANSPORT})..."

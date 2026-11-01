@@ -15,6 +15,8 @@ RUN python3 build.py --build --tags timetzdata \
 
 # Stage 2: Runtime
 FROM alpine:latest
+ARG COMMIT=unknown
+LABEL org.opencontainers.image.revision="${COMMIT}"
 COPY --from=builder /src/bookstark /bookstark
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 EXPOSE 8089
