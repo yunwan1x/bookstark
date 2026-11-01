@@ -30,6 +30,8 @@ Run from a host with Python, Docker and SSH; the native path also requires Go an
 permission to create systemd units. Build limits can be overridden using
 `BUILD_MEMORY_MAX`, `BUILD_MEMORY_HIGH`, `BUILD_SWAP_MAX`, `BUILD_CPU_QUOTA`,
 `BUILD_GO_MEMORY`.
+Set `DOCKER_GO_IMAGE` to an explicitly trusted compatible builder image when
+the host cannot reach Docker Hub; the default is `golang:1.25-alpine`.
 Do not run tests or another build concurrently with deployment on this host.
 
 ## Build & Run

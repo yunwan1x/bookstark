@@ -19,6 +19,7 @@ BUILD_MEMORY_HIGH="${BUILD_MEMORY_HIGH:-700M}"
 BUILD_SWAP_MAX="${BUILD_SWAP_MAX:-1G}"
 BUILD_CPU_QUOTA="${BUILD_CPU_QUOTA:-100%}"
 BUILD_GO_MEMORY="${BUILD_GO_MEMORY:-300MiB}"
+DOCKER_GO_IMAGE="${DOCKER_GO_IMAGE:-golang:1.25-alpine}"
 # systemd enforces the hard limit on the compiler and all its children.
 for tool in docker git ssh tar; do
     command -v "$tool" >/dev/null || { echo "Missing tool: $tool" >&2; exit 1; }
@@ -130,6 +131,7 @@ else
     # the repository's multi-stage build. The source snapshot remains exact.
     docker build \
         --build-arg "COMMIT=${COMMIT}" \
+        --build-arg "GO_BUILDER_IMAGE=${DOCKER_GO_IMAGE}" \
         -f "${SOURCE_DIR}/Dockerfile" \
         -t "${FULL_IMAGE}" \
         "${SOURCE_DIR}"

@@ -1,5 +1,6 @@
 # Stage 1: Build (production mode embeds static/templates/conf into binary)
-FROM --platform=$BUILDPLATFORM golang:1.25-alpine AS builder
+ARG GO_BUILDER_IMAGE=golang:1.25-alpine
+FROM --platform=$BUILDPLATFORM ${GO_BUILDER_IMAGE} AS builder
 WORKDIR /src
 RUN apk add --no-cache python3
 COPY go.mod go.sum ./
