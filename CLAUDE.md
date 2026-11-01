@@ -5,22 +5,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Deployment
 
 Use `./deploy.sh [version]` for remote deployments. Do not bypass it with manual
-binary uploads: after building/transferring the image, the script commits and
-pushes the source (including regenerated assets) to Git before remote restart.
-It no longer creates or uploads `/root/bookstark.tgz`; Git is the source archive.
+binary uploads. The script requires a clean worktree, pushes the current commit,
+builds from an immutable archive of that commit, then verifies the deployed
+image's `org.opencontainers.image.revision` label before reporting success.
+It never commits source changes and no longer creates or uploads
+`/root/bookstark.tgz`; Git is the source archive.
 The configured `origin` is `https://github.com/yunwan1x/bookstark.git`.
 The current branch is pushed (normally `main`); `GIT_REMOTE` defaults to `origin`.
-Review all local changes before deploying: `git add -A` includes all non-ignored
-files and deletions, including previously staged changes. Keep credentials,
-databases and build artifacts ignored; never force-add them. Credentials must
-remain outside the repository and must not be embedded in remote URLs.
-No empty commit is created when unchanged, but existing commits are still pushed.
-Set `DEPLOY_COMMIT_MESSAGE` to override the default `Deploy BookStark <version>`.
-Git failures stop deployment before remote restart. Never force-push or
+Commit intended source and generated asset changes before deploying; any staged,
+unstaged or untracked file stops the deployment. Build-time regeneration runs in
+a temporary source snapshot and cannot mutate the checkout. Credentials must
+remain outside the repository and must not be embedded in remote URLs. Git
+failures or a remote revision mismatch stop deployment before the build. Never force-push or
 automatically resolve divergent history; reconcile it explicitly before retrying.
 Use `DEPLOY_TRANSPORT=ssh ./deploy.sh [version]` when Docker Hub push access is
-unavailable; this transfers the image with `docker save/load` over SSH and still
-commits/pushes the source to Git. The default `registry` transport uses push/pull.
+unavailable; this transfers the image with `docker save/load` over SSH. The
+default `registry` transport uses push/pull.
 It serializes deployments and builds Go with systemd limits (850 MiB maximum,
 700 MiB pressure threshold, 1 GiB swap maximum, one CPU), `-p=1`, and
 `GOMEMLIMIT=300MiB` before

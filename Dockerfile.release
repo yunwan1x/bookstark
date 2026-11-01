@@ -1,5 +1,7 @@
 # Used by deploy.sh after the resource-limited Go build.
 FROM alpine:latest
+ARG COMMIT=unknown
+LABEL org.opencontainers.image.revision="${COMMIT}"
 COPY bookstark /bookstark
 COPY ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 EXPOSE 8089
