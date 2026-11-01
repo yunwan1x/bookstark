@@ -2,7 +2,12 @@
 ARG GO_BUILDER_IMAGE=golang:1.25-alpine
 FROM --platform=$BUILDPLATFORM ${GO_BUILDER_IMAGE} AS builder
 WORKDIR /src
-RUN apk add --no-cache python3
+ARG ALPINE_MIRROR=
+ARG GOPROXY=https://proxy.golang.org,direct
+RUN if [ -n "$ALPINE_MIRROR" ]; then \
+        sed -i "s|https://dl-cdn.alpinelinux.org/alpine|${ALPINE_MIRROR%/}|g" /etc/apk/repositories; \
+    fi && \
+    apk add --no-cache python3
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .

@@ -20,6 +20,8 @@ BUILD_SWAP_MAX="${BUILD_SWAP_MAX:-1G}"
 BUILD_CPU_QUOTA="${BUILD_CPU_QUOTA:-100%}"
 BUILD_GO_MEMORY="${BUILD_GO_MEMORY:-300MiB}"
 DOCKER_GO_IMAGE="${DOCKER_GO_IMAGE:-golang:1.25-alpine}"
+DOCKER_ALPINE_MIRROR="${DOCKER_ALPINE_MIRROR:-}"
+DOCKER_GOPROXY="${DOCKER_GOPROXY:-https://proxy.golang.org,direct}"
 # systemd enforces the hard limit on the compiler and all its children.
 for tool in docker git ssh tar; do
     command -v "$tool" >/dev/null || { echo "Missing tool: $tool" >&2; exit 1; }
@@ -132,6 +134,8 @@ else
     docker build \
         --build-arg "COMMIT=${COMMIT}" \
         --build-arg "GO_BUILDER_IMAGE=${DOCKER_GO_IMAGE}" \
+        --build-arg "ALPINE_MIRROR=${DOCKER_ALPINE_MIRROR}" \
+        --build-arg "GOPROXY=${DOCKER_GOPROXY}" \
         -f "${SOURCE_DIR}/Dockerfile" \
         -t "${FULL_IMAGE}" \
         "${SOURCE_DIR}"

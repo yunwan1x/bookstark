@@ -32,6 +32,8 @@ permission to create systemd units. Build limits can be overridden using
 `BUILD_GO_MEMORY`.
 Set `DOCKER_GO_IMAGE` to an explicitly trusted compatible builder image when
 the host cannot reach Docker Hub; the default is `golang:1.25-alpine`.
+`DOCKER_ALPINE_MIRROR` optionally replaces Alpine's package mirror, and
+`DOCKER_GOPROXY` overrides the container build's Go module proxy.
 Do not run tests or another build concurrently with deployment on this host.
 
 ## Build & Run
