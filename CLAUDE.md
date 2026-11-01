@@ -36,6 +36,23 @@ the host cannot reach Docker Hub; the default is `golang:1.25-alpine`.
 `DOCKER_GOPROXY` overrides the container build's Go module proxy.
 Do not run tests or another build concurrently with deployment on this host.
 
+## Production Backup Constraint
+
+Production backups are pulled by the Feiniu NAS timer
+`bookstark-production-backup.timer` into
+`/vol1/1000/wy/backups/bookstark`. The backup set has fixed names and overwrites
+the previous successful set: `bookstark.db`, `bookstark-webdav.db`,
+`share_comments.db`, `uploads.tar.gz`, `bookstark-compose.yml`, and
+`manifest.txt`. Do not create dated production copies or retain archives on the
+deployment server unless the user explicitly changes this policy.
+
+The production export must use SQLite's online backup API and `PRAGMA
+quick_check`; never copy a live database file without its WAL. The NAS receiver
+must download into a staging directory, validate every database and archive,
+then replace the fixed names, moving `manifest.txt` last. Keep the dedicated SSH
+key restricted to `/usr/local/sbin/bookstark-backup-export` on the production
+server.
+
 ## Build & Run
 
 ```bash

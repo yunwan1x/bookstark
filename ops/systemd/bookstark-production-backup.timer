@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily BookStark production backup to Feiniu NAS
+
+[Timer]
+OnCalendar=*-*-* 03:30:00 Asia/Shanghai
+Persistent=true
+Unit=bookstark-production-backup.service
+
+[Install]
+WantedBy=timers.target
+

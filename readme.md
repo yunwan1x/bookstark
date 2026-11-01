@@ -204,6 +204,19 @@ DEPLOY_TRANSPORT=ssh ./deploy.sh <版本号>
 
 ## 数据与备份
 
+生产环境由飞牛 NAS 上的 `bookstark-production-backup.timer` 每天北京时间
+03:30 主动拉取备份，固定保存到
+`/vol1/1000/wy/backups/bookstark`。文件名固定为 `bookstark.db`、
+`bookstark-webdav.db`、`share_comments.db`、`uploads.tar.gz`、
+`bookstark-compose.yml` 和 `manifest.txt`；每次完整校验成功后覆盖上一组，
+不在部署服务器长期保留备份归档。
+
+备份通过 SQLite online backup API 生成一致性快照，并在服务器端和 NAS
+端分别执行 `PRAGMA quick_check`。NAS 先写入临时目录，全部验证通过后才替换
+固定文件名，避免网络中断破坏上一组有效备份。相关脚本位于
+`scripts/bookstark-backup-export.sh` 和
+`scripts/backup-production-to-nas.sh`。
+
 完整备份至少应覆盖：
 
 - `DB_PATH` 指定的主数据库。
