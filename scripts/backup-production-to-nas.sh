@@ -8,7 +8,8 @@ SSH_KEY="${BOOKSTARK_BACKUP_KEY:-/root/.ssh/bookstark_production_backup_ed25519}
 DEST_DIR="${BOOKSTARK_BACKUP_DEST:-/vol1/1000/wy/backups/bookstark}"
 BACKUP_OWNER="${BOOKSTARK_BACKUP_OWNER:-wy:Users}"
 LOCK_FILE="${BOOKSTARK_BACKUP_LOCK:-/run/lock/bookstark-production-backup.lock}"
-REQUIRED=(bookstark.db bookstark-webdav.db share_comments.db uploads.tar.gz bookstark-compose.yml manifest.txt)
+STANDBY_UPDATER="${BOOKSTARK_STANDBY_UPDATER:-/vol1/1000/wy/bookstark/scripts/update-nas-standby.sh}"
+REQUIRED=(bookstark.db bookstark-webdav.db share_comments.db uploads.tar.gz bookstark-image.tar.gz bookstark-compose.yml manifest.txt)
 
 umask 077
 exec 9>"${LOCK_FILE}"
@@ -58,10 +59,11 @@ for name in ("bookstark.db", "bookstark-webdav.db", "share_comments.db"):
         connection.close()
 PY
 tar -tzf "${PAYLOAD}/uploads.tar.gz" >/dev/null
+gzip -t "${PAYLOAD}/bookstark-image.tar.gz"
 
 # All payloads are now complete and verified. Replace the fixed names, with the
 # manifest moved last so its timestamp marks a fully published backup set.
-for name in bookstark.db bookstark-webdav.db share_comments.db uploads.tar.gz bookstark-compose.yml; do
+for name in bookstark.db bookstark-webdav.db share_comments.db uploads.tar.gz bookstark-image.tar.gz bookstark-compose.yml; do
     chmod 600 "${PAYLOAD}/${name}"
     chown "${BACKUP_OWNER}" "${PAYLOAD}/${name}"
     mv -f -- "${PAYLOAD}/${name}" "${DEST_DIR}/${name}"
@@ -71,4 +73,4 @@ chown "${BACKUP_OWNER}" "${PAYLOAD}/manifest.txt"
 mv -f -- "${PAYLOAD}/manifest.txt" "${DEST_DIR}/manifest.txt"
 
 echo "BookStark production backup updated: ${DEST_DIR}"
-
+"${STANDBY_UPDATER}"

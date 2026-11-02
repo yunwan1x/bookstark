@@ -1,5 +1,5 @@
 [Unit]
-Description=Pull and verify the BookStark production backup
+Description=Synchronize the BookStark production backup and NAS standby
 Wants=network-online.target
 After=network-online.target
 
@@ -8,4 +8,3 @@ Type=oneshot
 ExecStart=/vol1/1000/wy/bookstark/scripts/backup-production-to-nas.sh
 Nice=10
 IOSchedulingClass=idle
-

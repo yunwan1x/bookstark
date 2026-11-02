@@ -53,6 +53,12 @@ fi
 install -m 600 "${COMPOSE_FILE}" "${WORK_DIR}/bookstark-compose.yml"
 IMAGE="$(docker inspect bookstark --format '{{.Config.Image}}' 2>/dev/null || true)"
 REVISION="$(docker inspect bookstark --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' 2>/dev/null || true)"
+if [ -z "${IMAGE}" ] || [ -z "${REVISION}" ]; then
+    echo "Unable to identify the running BookStark image and revision." >&2
+    exit 1
+fi
+docker image save "${IMAGE}" | gzip -1 > "${WORK_DIR}/bookstark-image.tar.gz"
+gzip -t "${WORK_DIR}/bookstark-image.tar.gz"
 {
     echo "generated_at_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     echo "source_host=$(hostname)"
@@ -66,6 +72,6 @@ tar -C "${WORK_DIR}" -cf - \
     bookstark-webdav.db \
     share_comments.db \
     uploads.tar.gz \
+    bookstark-image.tar.gz \
     bookstark-compose.yml \
     manifest.txt | gzip -1
-
