@@ -175,9 +175,12 @@ if compose "${CURRENT_DIR}" up -d --remove-orphans; then
 import sys
 import urllib.request
 
-with urllib.request.urlopen(sys.argv[1], timeout=3) as response:
-    if response.status < 200 or response.status >= 400:
-        raise SystemExit(1)
+try:
+    with urllib.request.urlopen(sys.argv[1], timeout=3) as response:
+        if response.status < 200 or response.status >= 400:
+            raise SystemExit(1)
+except Exception:
+    raise SystemExit(1)
 PY
         then
             HEALTHY=1
