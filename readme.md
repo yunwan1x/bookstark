@@ -206,7 +206,7 @@ DEPLOY_TRANSPORT=ssh ./deploy.sh <版本号>
 
 生产环境由飞牛 NAS 上的 `bookstark-production-backup.timer` 每天北京时间
 03:30 主动拉取备份，固定保存到
-`/vol1/1000/wy/backups/bookstark`。文件名固定为 `bookstark.db`、
+`/vol1/1000/wy/services/bookstark/backup`。文件名固定为 `bookstark.db`、
 `bookstark-webdav.db`、`share_comments.db`、`uploads.tar.gz`、
 `bookstark-image.tar.gz`、`bookstark-compose.yml` 和 `manifest.txt`；每次完整校验成功后覆盖上一组，
 不在部署服务器长期保留备份归档。
@@ -219,7 +219,7 @@ DEPLOY_TRANSPORT=ssh ./deploy.sh <版本号>
 
 同一任务随后调用 `scripts/update-nas-standby.sh`，加载固定镜像归档并核对
 `manifest.txt` 指定的 revision，将已验证的数据恢复到
-`/vol1/1000/wy/services/bookstark-standby/current`，再在 NAS 的 `8089`
+`/vol1/1000/wy/services/bookstark/current`，再在 NAS 的 `8089`
 端口启动热备实例并执行 HTTP 健康检查。替换实例启动失败时会自动恢复上一份
 运行目录。备份文件和运行目录相互独立，容器不会直接修改固定备份文件。
 

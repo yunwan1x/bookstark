@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BACKUP_DIR="${BOOKSTARK_BACKUP_DEST:-/vol1/1000/wy/backups/bookstark}"
-STANDBY_ROOT="${BOOKSTARK_STANDBY_ROOT:-/vol1/1000/wy/services/bookstark-standby}"
+BACKUP_DIR="${BOOKSTARK_BACKUP_DEST:-/vol1/1000/wy/services/bookstark/backup}"
+STANDBY_ROOT="${BOOKSTARK_STANDBY_ROOT:-/vol1/1000/wy/services/bookstark}"
 STANDBY_OWNER="${BOOKSTARK_STANDBY_OWNER:-wy:Users}"
 CONTAINER_NAME="${BOOKSTARK_STANDBY_CONTAINER:-bookstark-standby}"
 BIND_ADDRESS="${BOOKSTARK_STANDBY_BIND:-0.0.0.0}"
