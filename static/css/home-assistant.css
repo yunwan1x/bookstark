@@ -44,3 +44,5 @@
   .home-assistant-dialog form .home-assistant-controls span { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .assistant-launcher[data-busy="true"] .assistant-indicator { animation: none; } }
+
+.home-assistant-text.note-content { white-space: normal; min-width: 0; overflow-x: auto; }

@@ -1,6 +1,7 @@
 {{define "assistant-widget"}}
 {{if and .Account .AIEnabled}}
 <link rel="stylesheet" href="/static/css/home-assistant.css?v={{assetVer "/static/css/home-assistant.css"}}">
+<link rel="stylesheet" href="/static/css/notes.css?v={{assetVer "/static/css/notes.css"}}">
 <button id="homeAssistantOpen" class="assistant-launcher ai-dlg-btn-go" aria-label="{{call .T "home.assistant.title"}}" aria-haspopup="dialog" aria-controls="homeAssistant" aria-expanded="false"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i><span class="assistant-indicator" hidden></span></button>
 <dialog class="home-assistant-dialog" id="homeAssistant" data-member="{{.MemberID}}" aria-labelledby="homeAssistantTitle">
   <div class="assistant-panel-head"><h2 id="homeAssistantTitle">{{call .T "home.assistant.title"}}</h2><button id="homeAssistantInfo" class="row-action" aria-label="{{call .T "home.assistant.privacy"}}" aria-expanded="false" aria-controls="homeAssistantDisclosure"><i class="fa-solid fa-circle-info" aria-hidden="true"></i></button><button id="homeAssistantClose" aria-label="{{call .T "common.close"}}">×</button></div>
@@ -11,6 +12,7 @@
   <div id="homeAssistantResetCheck" hidden><p>{{call .T "home.assistant.reset_hint"}}</p><button id="homeAssistantResetConfirm" class="ai-dlg-btn ai-dlg-btn-cancel">{{call .T "common.confirm"}}</button><button id="homeAssistantResetCancel" class="ai-dlg-btn ai-dlg-btn-cancel">{{call .T "common.cancel"}}</button></div>
   <form id="homeAssistantForm"><label for="homeAssistantInput">{{call .T "home.assistant.input"}}</label><textarea id="homeAssistantInput" class="dialog-input" rows="3" maxlength="8000" required placeholder="{{call .T "home.assistant.placeholder"}}"></textarea><div class="home-assistant-controls"><span>{{call .T "home.assistant.shortcut"}}</span><button id="homeAssistantStop" type="button" class="ai-dlg-btn ai-dlg-btn-cancel" hidden>{{call .T "home.assistant.stop"}}</button><button id="homeAssistantReset" type="button" class="ai-dlg-btn ai-dlg-btn-cancel">{{call .T "home.assistant.reset"}}</button><button id="homeAssistantSend" class="ai-dlg-btn ai-dlg-btn-go" type="submit">{{call .T "home.assistant.send"}}</button></div></form>
 </dialog>
+<script defer src="/static/js/marked.min.js?v={{assetVer "/static/js/marked.min.js"}}"></script>
 <script defer src="/static/js/home-assistant.js?v={{assetVer "/static/js/home-assistant.js"}}"></script>
 {{end}}
 {{end}}

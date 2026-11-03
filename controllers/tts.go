@@ -155,7 +155,7 @@ func (s *ttsService) serve(c *gin.Context) {
 }
 
 // NDJSON framing makes an upstream failure distinguishable from a complete MP3.
-// The browser never plays an incomplete segment and never writes audio to disk.
+// Streaming clients may play audio immediately and stop on an error frame.
 type ttsFrameWriter struct {
 	ctx     context.Context
 	c       *gin.Context

@@ -45,7 +45,7 @@ async function serviceWorkerChecks() {
         if(url.pathname==='/api/ai/assistant/chat'){
           chats++;assert.equal(req.postDataJSON().session_id,session.id);assert.equal(req.postDataJSON().message,'Draft a note');
           if(fail)return route.fulfill({status:502,json:{code:502,message:'AI unavailable'}});
-          session.messages=[{role:'user',content:'Draft a note',created_at:1791791800},{role:'assistant',created_at:1791791810,content:'<img src=x onerror="window.xss=1"> Please review.',sources:[{title:'Source',url:'/notes?id=1'},{title:'Unsafe',url:'javascript:alert(1)'}]}];
+          session.messages=[{role:'user',content:'Draft a note',created_at:1791791800},{role:'assistant',created_at:1791791810,content:'<img src=x onerror="window.xss=1"> **Please review.**',sources:[{title:'Source',url:'/notes?id=1'},{title:'Unsafe',url:'javascript:alert(1)'}]}];
           session.drafts=[{id:'draft-1',payload:{kind:'note',title:'My note',content:'<script>window.xss=1</script>\n# Learning'},status:'pending',url:''}];
           return route.fulfill({json:{code:0,session}});
         }
@@ -56,10 +56,12 @@ async function serviceWorkerChecks() {
           return route.fulfill({json:{code:0,draft:session.drafts[0]}});
         }
         if(url.pathname==='/api/ai/assistant/reset'){session={id:'session-2',messages:[],drafts:[],busy:false};return route.fulfill({json:{code:0,session}});}
+        // Load the shared renderer utilities; network behavior is mocked below.
+        if(url.pathname==='/static/js/utils.js')return route.fulfill({contentType:'text/javascript',body:fs.readFileSync('static/js/utils.js','utf8').split('// Read the live cookie')[0]});
         if(url.pathname.startsWith('/static/'))return route.fulfill({path:'.'+url.pathname});
         const translations=Object.fromEntries([...fs.readFileSync('i18n/'+lang+'.go','utf8').matchAll(/"([\w.]+)":\s*"([^"]*)"/g)].map(m=>[m[1],m[2]]));
         let html=fs.readFileSync('templates/home.html','utf8').replace('{{template "assistant-widget" .}}',fs.readFileSync('templates/assistant.html','utf8')).replace('var message = {{call .T "home.startup_failed"}};', 'var message = '+JSON.stringify(translations['home.startup_failed'])+';').replace(/\{\{call \.T "([^"]+)"\}\}/g,(_,k)=>translations[k]||k).replace(/\{\{[^}]*\}\}/g,'');
-        html=html.replace('<head>','<head><link rel="stylesheet" href="/static/css/ai-speech.css"><script defer src="/static/js/ai-speech.js"></script><script>window.csrfFetch=window.fetch; window.__currentLang="'+lang+'";document.documentElement.lang="'+lang+'";</script><link rel="stylesheet" href="/static/css/font-awesome.min.css"><link rel="stylesheet" href="/static/css/variables.css"><link rel="stylesheet" href="/static/css/components.css">');
+        html=html.replace('<head>','<head><link rel="stylesheet" href="/static/css/ai-speech.css"><script defer src="/static/js/ai-speech.js"></script><script defer src="/static/js/utils.js"></script><script>window.csrfFetch=window.fetch; window.__currentLang="'+lang+'";document.documentElement.lang="'+lang+'";</script><link rel="stylesheet" href="/static/css/font-awesome.min.css"><link rel="stylesheet" href="/static/css/variables.css"><link rel="stylesheet" href="/static/css/components.css">');
         return route.fulfill({contentType:'text/html',body:html});
       });
       await page.goto('http://assistant.test/home');
@@ -83,8 +85,9 @@ async function serviceWorkerChecks() {
       await page.locator('.home-assistant-copy').first().click();
       assert.equal(await page.evaluate(()=>window.copiedAssistantText),'Draft a note');
       await page.locator('.home-assistant-copy').nth(1).click();
-      assert.equal(await page.evaluate(()=>window.copiedAssistantText),'<img src=x onerror="window.xss=1"> Please review.');
+      assert.equal(await page.evaluate(()=>window.copiedAssistantText),'<img src=x onerror="window.xss=1"> **Please review.**');
       assert.equal(await page.locator('#homeAssistantMessages img, #homeAssistantDrafts script').count(),0);
+      assert.equal(await page.locator('#homeAssistantMessages .note-content strong').textContent(), 'Please review.');
       assert.equal(await page.evaluate(()=>window.xss),undefined);
       assert.equal(await page.locator('.home-assistant-sources a').count(),1);
       assert.equal(await page.locator('.home-assistant-sources a').getAttribute('rel'),'noopener noreferrer');
@@ -150,7 +153,7 @@ async function serviceWorkerChecks() {
       });
       for(const mode of ['done','cut','error','invalid','abort']){
         await page.locator('#homeAssistantInput').fill('Draft a note');await page.locator('#homeAssistantSend').click();
-        await page.waitForFunction(()=>document.querySelector('[data-streaming="true"] .home-assistant-text')?.textContent==='你好');
+        await page.waitForFunction(()=>document.querySelector('[data-streaming="true"] .home-assistant-text')?.textContent.trim()==='你好');
         assert.equal(await page.locator('#homeAssistantSend').isEnabled(),false);
         assert.equal(await page.locator('#homeAssistantDrafts button').count(),0);
         if(mode==='done') {

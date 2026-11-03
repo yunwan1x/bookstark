@@ -56,7 +56,7 @@
     if (state.url) { URL.revokeObjectURL(state.url); state.url = null; }
     clearHighlight(state.owner); paint(state.owner);
   }
-  async function fetchSegment(state, text) {
+  async function fetchSegment(state, text, onPart) {
     var response = await (global.csrfFetch || global.fetch)('/api/ai/tts/stream', {method: 'POST', credentials: 'same-origin', cache: 'no-store', signal: state.controller.signal, headers: {'Content-Type': 'application/json', 'X-BookStark-Offline-Policy': 'reject'}, body: JSON.stringify({text: text, voice: state.owner.voice.value})});
     if (!response.ok || !response.headers.get('Content-Type') || response.headers.get('Content-Type').indexOf('application/x-ndjson') !== 0) {
       throw Error(response.status === 401 ? tr('登录已失效，请重新登录', 'Session expired. Please sign in again') : response.status === 429 ? tr('朗读请求较多，请稍后再试', 'Too many speech requests. Please retry shortly') : tr('语音合成失败，请稍后重试', 'Speech synthesis failed. Please retry'));
@@ -69,7 +69,7 @@
       if (msg.event === 'done') { if (!bytes || msg.bytes !== bytes) throw Error('Incomplete speech stream'); complete = true; return; }
       if (msg.event !== 'audio' || typeof msg.data !== 'string' || msg.data.length > 24000) throw Error('Invalid speech stream');
       var raw = atob(msg.data); bytes += raw.length; if (bytes > MAX_AUDIO) throw Error('Audio too large');
-      var part = new Uint8Array(raw.length); for (var i = 0; i < raw.length; i++) part[i] = raw.charCodeAt(i); parts.push(part);
+      var part = new Uint8Array(raw.length); for (var i = 0; i < raw.length; i++) part[i] = raw.charCodeAt(i); if (onPart) onPart(part); else parts.push(part);
     }
     try {
       while (true) {
@@ -86,7 +86,7 @@
   async function waitIfPaused(state) { if (state.paused) await new Promise(function (resolve) { state.resume = resolve; }); state.resume = null; }
   async function playBlob(state, blob) {
     await waitIfPaused(state); if (active !== state) return;
-    state.url = URL.createObjectURL(blob); state.audio.src = state.url; state.loading = false; highlight(state.owner, state.chunks[state.index]); paint(state.owner);
+    state.url = typeof blob === 'string' ? blob : URL.createObjectURL(blob); state.audio.src = state.url; state.loading = false; highlight(state.owner, state.chunks[state.index]); paint(state.owner);
     try {
       await new Promise(function (resolve, reject) {
         function cleanup() { state.audio.onended = state.audio.onerror = null; state.controller.signal.removeEventListener('abort', aborted); }
@@ -100,6 +100,49 @@
         });
       });
     } finally { if (state.url) URL.revokeObjectURL(state.url); state.url = null; }
+  }
+  function canStream() {
+    return global.MediaSource && MediaSource.isTypeSupported('audio/mpeg');
+  }
+  async function playStream(state, text) {
+    await waitIfPaused(state); if (active !== state) return;
+    var media = new MediaSource(), url = URL.createObjectURL(media);
+    var rejectStream, buffer, queue = [], finished = false;
+    var sourceError = new Promise(function (_, reject) { rejectStream = reject; });
+    // Attach rejection handling before starting either network or playback.
+    sourceError.catch(function () {});
+    function pump() {
+      if (!buffer || buffer.updating || media.readyState !== 'open') return;
+      try {
+        if (queue.length) buffer.appendBuffer(queue.shift());
+        else if (finished) media.endOfStream();
+      } catch (err) { rejectStream(err); }
+    }
+    var opened = new Promise(function (resolve, reject) {
+      function aborted() { reject(new DOMException('Stopped', 'AbortError')); }
+      state.controller.signal.addEventListener('abort', aborted, {once: true});
+      media.addEventListener('sourceopen', function () {
+        state.controller.signal.removeEventListener('abort', aborted);
+        try {
+          buffer = media.addSourceBuffer('audio/mpeg');
+          buffer.addEventListener('updateend', pump);
+          buffer.addEventListener('error', function () { rejectStream(Error(tr('音频播放失败，请重试', 'Audio playback failed. Please retry'))); });
+          resolve();
+        } catch (err) { reject(err); }
+      }, {once: true});
+    });
+    // playBlob attaches this URL to the audio element so sourceopen can fire.
+    var playback = playBlob(state, url);
+    try {
+      await Promise.race([Promise.all([playback, (async function () {
+        await opened;
+        await fetchSegment(state, text, function (part) { queue.push(part); pump(); });
+        finished = true; pump();
+      })()]), sourceError]);
+    } finally {
+      if (buffer) buffer.removeEventListener('updateend', pump);
+      URL.revokeObjectURL(url);
+    }
   }
   function toggle(owner) {
     if (active && active.owner === owner) {
@@ -121,9 +164,12 @@
     paint(owner);
     (async function () {
       try {
-        var next = prepared(state, chunks[0]); await prime;
+        var streaming = canStream();
+        var next = streaming ? null : prepared(state, chunks[0]); await prime;
         for (var i = 0; i < chunks.length && active === state; i++) {
-          state.index = i; state.loading = true; paint(owner); var result = await next;
+          state.index = i; state.loading = true; paint(owner);
+          if (streaming) { await playStream(state, chunks[i]); continue; }
+          var result = await next;
           if (active !== state) break; if (result.error) throw result.error;
           if (i + 1 < chunks.length) next = prepared(state, chunks[i + 1]);
           await playBlob(state, result.blob);

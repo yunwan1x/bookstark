@@ -34,8 +34,7 @@
         el('ResetConfirm').disabled = busy;
     }
     function safeLink(url, title) {
-        // Only server-generated local record links are interactive; model prose
-        // remains plain text (no markdown HTML, remote images, or unsafe links).
+        // Reference records only link to supported local record pages.
         if (typeof url !== 'string' || !/^\/(notes\?|books\/|bookmarks\?|topics\?)/.test(url) || /[\\\r\n]/.test(url)) return null;
         var a = node('a', title); a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer'; return a;
     }
@@ -62,13 +61,22 @@
         copy.onclick = async function () {
             var body = copy.closest('.home-assistant-message').querySelector('.home-assistant-text');
             try {
-                await navigator.clipboard.writeText(body.textContent);
+                await navigator.clipboard.writeText(body.dataset.markdown || body.textContent);
                 glyph.className = 'fa-solid fa-check'; copy.setAttribute('aria-label', lt('已复制', 'Copied'));
                 setTimeout(function () { glyph.className = 'fa-regular fa-copy'; copy.setAttribute('aria-label', copy.title); }, 1500);
             } catch (_) { BSDialog.toast(lt('复制失败，请手动选择文字复制', 'Copy failed. Select the text and copy manually.'), 'error'); }
         };
         head.appendChild(copy);
         return head;
+    }
+    function markdown(body, text) {
+        body.dataset.markdown = text;
+        body.classList.add('note-content');
+        if (window.marked && window.sanitizeRenderedHTML) {
+            body.innerHTML = sanitizeRenderedHTML(marked.parse(text, {breaks: true, gfm: true}));
+            // Model-supplied images must not trigger remote requests.
+            body.querySelectorAll('img').forEach(function (image) { image.remove(); });
+        } else body.textContent = text;
     }
     function render() {
         if (window.AISpeech) AISpeech.stopWithin(dialog);
@@ -78,7 +86,9 @@
         session.messages.forEach(function (m) {
             var box = node('article', '', 'home-assistant-message'); box.dataset.role = m.role;
             box.appendChild(messageHeader(m.role, m.created_at));
-            box.appendChild(node('div', m.content, 'home-assistant-text'));
+            var body = node('div', m.content, 'home-assistant-text');
+            if (m.role === 'assistant') markdown(body, m.content);
+            box.appendChild(body);
             if (m.sources && m.sources.length) {
                 var links = node('div', '', 'home-assistant-sources');
                 links.appendChild(node('span', lt('参考记录：', 'Referenced records:')));
@@ -240,14 +250,15 @@
             var question = node('article', '', 'home-assistant-message'); question.dataset.role = 'user';
             question.appendChild(messageHeader('user', Date.now() / 1000)); question.appendChild(node('div', text, 'home-assistant-text')); messages.appendChild(question);
             var partial = node('article', '', 'home-assistant-message'), label = node('strong', lt('AI 助手 · 生成中，尚未完成', 'AI assistant · Generating, not complete'));
+            var partialText = '';
             partial.dataset.role = 'assistant'; partial.dataset.streaming = 'true'; var output = node('div', '', 'home-assistant-text'); partial.append(messageHeader('assistant', Date.now() / 1000, label), output); messages.appendChild(partial);
             try {
                 var data = await request('/chat', { session_id: session.id, message: text, history:session.messages.map(function(m){return {role:m.role,content:m.content,created_at:m.created_at};}) }, function (event, data) {
                     var scroll = el('Scroll'), follow = scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight < 100;
-                    if (event === 'round') { output.textContent = ''; status.textContent = lt('正在生成回答…', 'Generating a response…'); }
+                    if (event === 'round') { partialText = ''; markdown(output, partialText); status.textContent = lt('正在生成回答…', 'Generating a response…'); }
                     if (event === 'delta' && typeof data.text === 'string') {
-                        if (output.textContent.length + data.text.length > 24000) throw new Error(lt('回答超出长度限制，请缩小问题范围', 'Answer too long. Narrow the request.'));
-                        output.appendChild(document.createTextNode(data.text));
+                        if (partialText.length + data.text.length > 24000) throw new Error(lt('回答超出长度限制，请缩小问题范围', 'Answer too long. Narrow the request.'));
+                        partialText += data.text; markdown(output, partialText);
                     }
                     if (event === 'progress') {
                         var steps = {search:lt('正在检索资料…', 'Searching records…'), read:lt('正在读取资料…', 'Reading records…'), draft_note:lt('正在准备笔记草稿…', 'Preparing a note draft…'), draft_task:lt('正在准备待办草稿…', 'Preparing a task draft…')};

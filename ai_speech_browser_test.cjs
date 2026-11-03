@@ -10,6 +10,7 @@ const assert=require('node:assert/strict');
  await page.route('http://speech.test/**',r=>r.fulfill({body:'<!doctype html><html lang="'+lang+'"><body><article id="a"><p>你好，欢迎使用。</p></article><article id="b">Second answer</article></body></html>',contentType:'text/html'}));
  await page.goto('http://speech.test/');await page.addStyleTag({path:'static/css/ai-speech.css'});
  await page.evaluate(()=>{
+ window.MediaSource = undefined; // Exercise the buffered compatibility path.
  window.test={requests:[],aborted:0,played:0,revoked:0,mode:'ok',audios:[]};
  const original=URL.revokeObjectURL;URL.revokeObjectURL=function(u){test.revoked++;original.call(URL,u)};
  window.Audio=function(){const a={src:'',playbackRate:1,removeAttribute(k){this[k]=''}};test.audios.push(a);a.play=()=>{if(a.src.startsWith('blob:'))test.played++;return Promise.resolve()};a.pause=()=>{};a.load=()=>{};return a};
