@@ -456,6 +456,9 @@ func Setup() *gin.Engine {
 		auth.POST("/api/trash/batch-delete", controllers.BatchDeleteTrashAPI)
 		auth.DELETE("/api/trash/purge", controllers.PurgeTrashAPI)
 
+		auth.GET("/api/ai/tts/voices", controllers.AITTSVoices)
+		auth.POST("/api/ai/tts/stream", controllers.AITTSStream)
+
 		// AI assistant (streaming SSE)
 		auth.POST("/api/ai/complete", controllers.AIComplete)
 		auth.GET("/api/ai/assistant", controllers.AssistantSessionAPI)

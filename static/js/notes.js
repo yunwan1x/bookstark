@@ -1901,6 +1901,7 @@ NotesApp.prototype._runInlineAI = function() {
     this._aiFloating.popover.classList.remove('is-open');
     this._unlockInlineAIScroll();
     this._hideAIStreamStatus(composer);
+    if (window.AISpeech) AISpeech.result(this._getAIStreamStatusEl(composer), '');
     this._setAIStreamStatus(composer, 'streaming', 0);
     this._aiStreamCtrl = AIHelper.complete({
         messages: AIHelper.buildMessages(aiOpts.systemPrompt || window.AI_SYSTEM_PROMPT_MD || window.__('note.ai.dialog.system'), userMsg),
@@ -1914,7 +1915,8 @@ NotesApp.prototype._runInlineAI = function() {
             writtenChars += chunk.length;
             self._setAIStreamStatus(composer, 'streaming', writtenChars);
         },
-        onDone: function() {
+        onDone: function(full) {
+            if (window.AISpeech) AISpeech.result(self._getAIStreamStatusEl(composer), full);
             self._aiStreamCtrl = null;
             if (self._aiFloating) {
                 self._aiFloating.status.classList.remove('is-streaming');

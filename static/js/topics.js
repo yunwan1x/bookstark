@@ -3554,6 +3554,8 @@
       document.body.classList.remove('note-ai-mobile-open');
       if (window.BookStarkScrollLock) BookStarkScrollLock.unlock('topic-summary-ai');
       if (this.topicSummaryAIActiveKind !== 'comment') this.setSummaryDraftType('ai');
+      var speechAnchor = byId(this.topicSummaryAIActiveStatusID || 'topicSummaryAIStreamStatus');
+      if (window.AISpeech) AISpeech.result(speechAnchor, '');
       this.setTopicSummaryAIStreamStatus('streaming', 0);
       this.topicSummaryAIStreamCtrl = AIHelper.complete({
         messages: AIHelper.buildMessages(window.AI_SYSTEM_PROMPT_MD || '你是 BookStark 的知识整理助手，擅长把专题内容提炼成清晰、可保存的 Markdown 小结。', userMsg),
@@ -3582,7 +3584,8 @@
           if (self.topicSummaryAIActiveKind === 'comment') self.updateTopicCommentPreview();
           else self.updateTopicSummaryPreview();
         },
-        onDone: function() {
+        onDone: function(full) {
+          if (window.AISpeech) AISpeech.result(speechAnchor, full);
           self.topicSummaryAIStreamCtrl = null;
           ui.status.classList.remove('is-streaming');
           ui.status.textContent = '';

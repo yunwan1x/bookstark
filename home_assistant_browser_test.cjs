@@ -22,6 +22,10 @@ async function serviceWorkerChecks() {
   handlers.fetch(event('/api/ai/assistant')); await assert.rejects(response,/offline/);
   handlers.fetch(event('/api/ai/assistant/chat','POST')); await assert.rejects(response,/offline/);
   assert.equal(network,4);
+  handlers.fetch(event('/api/ai/tts/voices')); await assert.rejects(response,/offline/);
+  handlers.fetch(event('/api/ai/tts/stream','POST')); await assert.rejects(response,/offline/);
+  assert.equal(network,6);
+  assert.equal(sandbox.isOfflineQueueableMutation(new URL(origin+'/api/ai/tts/stream'),'POST'),false);
   assert.equal(sandbox.isOfflineQueueableMutation(new URL(origin+'/api/ai/assistant/chat'),'POST'),false);
   console.log('PASS assistant service worker: network-only reads, no offline replay, cache invalidation');
 }
@@ -55,7 +59,7 @@ async function serviceWorkerChecks() {
         if(url.pathname.startsWith('/static/'))return route.fulfill({path:'.'+url.pathname});
         const translations=Object.fromEntries([...fs.readFileSync('i18n/'+lang+'.go','utf8').matchAll(/"([\w.]+)":\s*"([^"]*)"/g)].map(m=>[m[1],m[2]]));
         let html=fs.readFileSync('templates/home.html','utf8').replace('{{template "assistant-widget" .}}',fs.readFileSync('templates/assistant.html','utf8')).replace('var message = {{call .T "home.startup_failed"}};', 'var message = '+JSON.stringify(translations['home.startup_failed'])+';').replace(/\{\{call \.T "([^"]+)"\}\}/g,(_,k)=>translations[k]||k).replace(/\{\{[^}]*\}\}/g,'');
-        html=html.replace('<head>','<head><script>window.csrfFetch=window.fetch; window.__currentLang="'+lang+'";document.documentElement.lang="'+lang+'";</script><link rel="stylesheet" href="/static/css/font-awesome.min.css"><link rel="stylesheet" href="/static/css/variables.css"><link rel="stylesheet" href="/static/css/components.css">');
+        html=html.replace('<head>','<head><link rel="stylesheet" href="/static/css/ai-speech.css"><script defer src="/static/js/ai-speech.js"></script><script>window.csrfFetch=window.fetch; window.__currentLang="'+lang+'";document.documentElement.lang="'+lang+'";</script><link rel="stylesheet" href="/static/css/font-awesome.min.css"><link rel="stylesheet" href="/static/css/variables.css"><link rel="stylesheet" href="/static/css/components.css">');
         return route.fulfill({contentType:'text/html',body:html});
       });
       await page.goto('http://assistant.test/home');
@@ -70,6 +74,8 @@ async function serviceWorkerChecks() {
       await page.locator('#homeAssistantInput').fill('Draft a note');
       await page.locator('#homeAssistantSend').click();
       await page.waitForSelector('[data-draft-id="draft-1"]');assert.equal(saves,0);
+      assert.equal(await page.locator('.home-assistant-message[data-role=assistant] .ai-speech-controls').count(),1);
+      assert.equal(await page.locator('.home-assistant-message[data-role=user] .ai-speech-controls').count(),0);
       assert.equal(await page.locator('.home-assistant-avatar .fa-user').count(),1);
       assert.equal(await page.locator('.home-assistant-avatar .fa-robot').count(),1);
       assert.equal(await page.locator('.home-assistant-message-head time[datetime]').count(),2);

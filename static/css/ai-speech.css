@@ -1,0 +1,10 @@
+/* Uses shared controls and theme tokens; no standalone dialog/button system. */
+.ai-speech-controls { display:flex; flex-wrap:wrap; align-items:center; gap:var(--space-2, 8px); margin-top:var(--space-2, 8px); padding-top:var(--space-2, 8px); border-top:1px solid var(--color-border); }
+.ai-speech-controls[hidden], .ai-speech-controls [hidden] { display:none; }
+.ai-speech-controls .dialog-input { width:auto; max-width:140px; padding:4px 8px; font-size:12px; }
+.ai-speech-controls .row-action { flex-shrink:0; }
+.ai-speech-progress { font-size:12px; color:var(--color-text-muted); }
+.ai-speech-active { outline:1px solid var(--color-primary); outline-offset:2px; }
+.ai-speech-reading { background:var(--color-focus-ring); border-radius:var(--radius-sm, 4px); }
+.ai-speech-controls select:focus-visible { outline:2px solid var(--color-focus); outline-offset:2px; }
+@media (max-width:640px) { .ai-speech-controls { gap:4px; } .ai-speech-controls .dialog-input { max-width:115px; min-height:32px; } }

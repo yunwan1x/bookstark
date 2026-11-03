@@ -1195,6 +1195,7 @@
   }
 
   function closeMarkdownPreviewAI() {
+    if (window.AISpeech && previewAIState.panel) AISpeech.stopWithin(previewAIState.panel);
     if (previewAIState.ctrl) {
       try { previewAIState.ctrl.abort(); } catch(e) {}
       previewAIState.ctrl = null;
@@ -1657,6 +1658,7 @@
       var sel = getMarkdownPreviewSelection();
       if (sel) setPreviewAIContext('selection', sel.text, sel.range);
     }
+    if (window.AISpeech) AISpeech.stopWithin(panel);
     appendPreviewAIMessage('user', prompt);
     input.value = '';
     var aiMsg = appendPreviewAIMessage('ai', '思考中...');
@@ -1676,6 +1678,7 @@
         previewAIState.ctrl = null;
         generated = full || generated;
         updatePreviewAIMessage(aiMsg, generated.trim() || '没有生成内容');
+        if (generated.trim() && window.AISpeech) AISpeech.mount(aiMsg, generated);
         setPreviewAIRunning(false);
       },
       onError: function(msg) {
@@ -3013,6 +3016,7 @@
     var toggleBtn = root.querySelector('.drawing-ai-toggle');
     var maxBtn = root.querySelector('.drawing-ai-maximize');
     var ctxStatus = root.querySelector('.markdown-ai-context-status');
+    var writingSpeech = document.createElement('div'); ctxStatus.after(writingSpeech);
     var quickRow = root.querySelector('.markdown-ai-quick-row');
     var ctrl = null;
     var generated = '';
@@ -3222,6 +3226,8 @@
       }
       if (!prepareLiveApply(applyMode)) return;
       generated = '';
+      if (window.AISpeech) AISpeech.stopWithin(writingSpeech);
+      writingSpeech.replaceChildren();
       ctxStatus.textContent = '模型生成中...';
       setRunning(true);
       ctrl = AIHelper.complete({
@@ -3235,6 +3241,7 @@
         onDone: function(full) {
           generated = full || generated;
           applyLiveFull(generated);
+          if (generated.trim() && window.AISpeech) AISpeech.mount(writingSpeech, generated);
           ctrl = null;
           setRunning(false);
           if (!generated.trim()) {
@@ -3480,6 +3487,7 @@
     var countEl = root.querySelector('#_bkAICount');
     var styleEl = root.querySelector('#_bkAIStyle');
     var preview = root.querySelector('#_bkAIPreview');
+    var outlineSpeech = document.createElement('div'); preview.after(outlineSpeech);
     var genBtn = root.querySelector('#_bkAIGen');
     var stopBtn = root.querySelector('#_bkAIStop');
     var createBtn = root.querySelector('#_bkAICreate');
@@ -3571,6 +3579,8 @@
       }
       var n = Math.max(2, Math.min(30, parseInt(countEl.value, 10) || (inSub ? 5 : 8)));
       var style = (styleEl.value || '').trim();
+      if (window.AISpeech) AISpeech.stopWithin(outlineSpeech);
+      outlineSpeech.replaceChildren();
       preview.value = '';
       createBtn.style.display = 'none';
       setRunning(true);
@@ -3591,7 +3601,7 @@
         messages: AIHelper.buildMessages(sys, user),
         scene: inSub ? 'book_sub_outline' : 'book_outline',
         onChunk: function(_chunk, full) { preview.value = full; preview.scrollTop = preview.scrollHeight; },
-        onDone: function() { setRunning(false); if ((preview.value||'').trim()) createBtn.style.display = ''; },
+        onDone: function() { setRunning(false); if ((preview.value||'').trim()) { createBtn.style.display = ''; if (window.AISpeech) AISpeech.mount(outlineSpeech, preview.value); } },
         onError: function(msg) { setRunning(false); preview.value = msg || (t('note.ai.toast.error', 'AI 调用失败')); }
       });
     }

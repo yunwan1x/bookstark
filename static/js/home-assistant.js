@@ -71,6 +71,7 @@
         return head;
     }
     function render() {
+        if (window.AISpeech) AISpeech.stopWithin(dialog);
         messages.replaceChildren(); drafts.replaceChildren();
         if (!session) { setBusy(); return; }
         if (!session.messages.length) messages.appendChild(node('p', lt('可以问：最近有哪些待办？帮我总结学习相关的笔记。', 'Try: What are my recent tasks? Summarize my notes about learning.')));
@@ -84,6 +85,7 @@
                 m.sources.forEach(function (s) { var a = safeLink(s.url, s.title); if (a) links.appendChild(a); });
                 box.appendChild(links);
             }
+            if (m.role === 'assistant' && window.AISpeech) AISpeech.mount(box, m.content);
             messages.appendChild(box);
         });
         if (session.drafts.length) drafts.appendChild(node('h3', lt('草稿与执行结果', 'Drafts and results')));
@@ -197,7 +199,7 @@
         input.focus();
     };
     el('Close').onclick = function () { dialog.close(); };
-    dialog.addEventListener('close', function () { clearTimeout(poll); launcher.setAttribute('aria-expanded', 'false'); el('ResetCheck').hidden = true; el('Open').focus(); });
+    dialog.addEventListener('close', function () { if (window.AISpeech) AISpeech.stopWithin(dialog); clearTimeout(poll); launcher.setAttribute('aria-expanded', 'false'); el('ResetCheck').hidden = true; el('Open').focus(); });
     dialog.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); dialog.close(); } });
     // Drag the launcher to either edge; persist geometry only, never conversation data.
     var dragged = false, pointer = null, position = null;

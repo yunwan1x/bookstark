@@ -64,8 +64,7 @@
       function pump() {
         return reader.read().then(function(r) {
           if (r.done) {
-            if (opts.onDone) opts.onDone(fullText);
-            return;
+            throw new Error(String(global.__currentLang || '').indexOf('en') === 0 ? 'Answer interrupted. Please retry.' : '回复中断，请重试');
           }
           buf += dec.decode(r.value, { stream: true });
           var out = _parseSSEChunk(buf, function(t) {
@@ -199,6 +198,7 @@
 
     var promptEl = root.querySelector('.ai-dlg-prompt');
     var outputEl = root.querySelector('.ai-dlg-output');
+    var speechEl = document.createElement('div'); outputEl.after(speechEl);
     var goBtn = root.querySelector('.ai-dlg-btn-go');
     var stopBtn = root.querySelector('.ai-dlg-btn-stop');
     var replaceBtn = root.querySelector('.ai-dlg-btn-replace');
@@ -219,6 +219,7 @@
       appendBtn.style.display = on ? '' : 'none';
     }
     function close() {
+      if (window.AISpeech) AISpeech.stopWithin(root);
       if (ctrl) { try { ctrl.abort(); } catch(e) {} ctrl = null; }
       try { document.body.removeChild(root); } catch(e) {}
       if (window.BookStarkScrollLock) BookStarkScrollLock.unlock('ai-compose-dialog');
@@ -231,6 +232,8 @@
         promptEl.focus();
         return;
       }
+      if (window.AISpeech) AISpeech.stopWithin(speechEl);
+      speechEl.replaceChildren();
       generated = '';
       outputEl.textContent = '';
       outputEl.classList.add('ai-dlg-output-active');
@@ -251,7 +254,7 @@
         onDone: function(full) {
           generated = full;
           setRunning(false);
-          if (generated.trim()) setHasResult(true);
+          if (generated.trim()) { setHasResult(true); if (window.AISpeech) AISpeech.mount(speechEl, generated); }
         },
         onError: function(msg) {
           setRunning(false);

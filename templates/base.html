@@ -1,4 +1,6 @@
 {{define "head-assets"}}
+<link rel="stylesheet" href="/static/css/ai-speech.css?v={{assetVer "/static/css/ai-speech.css"}}">
+<script defer src="/static/js/ai-speech.js?v={{assetVer "/static/js/ai-speech.js"}}"></script>
 <meta name="csrf-token" content="{{.CSRFToken}}">
 <script>window.BookStarkAppearance = {{.Background}};</script>
 <link rel="stylesheet" href="/static/css/background.css?v={{assetVer "/static/css/background.css"}}">

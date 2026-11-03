@@ -440,6 +440,7 @@
         var sel = config.getSelection();
         if (sel) setContext(sel.kind || 'selection', sel.text, sel.range);
       }
+      if (window.AISpeech) AISpeech.stopWithin(panel);
       appendMessage('user', prompt);
       input.value = '';
       var aiMsg = appendMessage('ai', '思考中...');
@@ -461,6 +462,7 @@
           state.ctrl = null;
           generated = full || generated;
           updateMessage(aiMsg, generated.trim() || '没有生成内容');
+          if (generated.trim() && window.AISpeech) AISpeech.mount(aiMsg, generated);
           setRunning(false);
         },
         onError: function(msg) {
@@ -625,6 +627,7 @@
     }
 
     function close() {
+      if (window.AISpeech && state.panel) AISpeech.stopWithin(state.panel);
       if (state.ctrl) {
         try { state.ctrl.abort(); } catch(e) {}
         state.ctrl = null;
