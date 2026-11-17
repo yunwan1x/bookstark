@@ -204,28 +204,6 @@ DEPLOY_TRANSPORT=ssh ./deploy.sh <版本号>
 
 ## 数据与备份
 
-生产环境由飞牛 NAS 上的 `bookstark-production-backup.timer` 每天北京时间
-03:30 主动拉取备份，固定保存到
-`/vol1/1000/wy/services/bookstark/backup`。文件名固定为 `bookstark.db`、
-`bookstark-webdav.db`、`share_comments.db`、`uploads.tar.gz`、
-`bookstark-image.tar.gz`、`bookstark-compose.yml` 和 `manifest.txt`；每次完整校验成功后覆盖上一组，
-不在部署服务器长期保留备份归档。
-
-备份通过 SQLite online backup API 生成一致性快照，并在服务器端和 NAS
-端分别执行 `PRAGMA quick_check`。NAS 先写入临时目录，全部验证通过后才替换
-固定文件名，避免网络中断破坏上一组有效备份。相关脚本位于
-`scripts/bookstark-backup-export.sh` 和
-`scripts/backup-production-to-nas.sh`。
-
-同一任务随后调用 `scripts/update-nas-standby.sh`，加载固定镜像归档并核对
-`manifest.txt` 指定的 revision，将已验证的数据恢复到
-`/vol1/1000/wy/services/bookstark/current`，再在 NAS 的 `8089`
-端口启动热备实例并执行 HTTP 健康检查。替换实例启动失败时会自动恢复上一份
-运行目录。备份文件和运行目录相互独立，容器不会直接修改固定备份文件。
-
-NAS 热备是单向的生产数据镜像，不是双向复制。在热备中产生的写入会在下一次
-成功同步时被生产数据覆盖，因此它只适合作为局域网只读副本或故障接管入口。
-
 完整备份至少应覆盖：
 
 - `DB_PATH` 指定的主数据库。

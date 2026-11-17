@@ -36,34 +36,6 @@ the host cannot reach Docker Hub; the default is `golang:1.25-alpine`.
 `DOCKER_GOPROXY` overrides the container build's Go module proxy.
 Do not run tests or another build concurrently with deployment on this host.
 
-## Production Backup Constraint
-
-Production backups are pulled by the Feiniu NAS timer
-`bookstark-production-backup.timer` into
-`/vol1/1000/wy/services/bookstark/backup`. The backup set has fixed names and overwrites
-the previous successful set: `bookstark.db`, `bookstark-webdav.db`,
-`share_comments.db`, `uploads.tar.gz`, `bookstark-image.tar.gz`,
-`bookstark-compose.yml`, and `manifest.txt`. Do not create dated production
-copies or retain archives on the
-deployment server unless the user explicitly changes this policy.
-
-The production export must use SQLite's online backup API and `PRAGMA
-quick_check`; never copy a live database file without its WAL. The NAS receiver
-must download into a staging directory, validate every database and archive,
-then replace the fixed names, moving `manifest.txt` last. Keep the dedicated SSH
-key restricted to `/usr/local/sbin/bookstark-backup-export` on the production
-server.
-
-After publishing a verified backup set, the same timer must refresh the NAS
-standby at `/vol1/1000/wy/services/bookstark/current`: load the fixed
-image archive and verify the revision named by `manifest.txt`, build a fresh runtime data directory,
-stop the previous NAS container only when the replacement is ready, start it on
-port 8089, and require an HTTP health check. Roll back to the previous runtime
-directory if the replacement does not become healthy. The standby is a
-production-data mirror, not a bidirectional replica; any writes made to it are
-discarded by the next successful synchronization. Do not run the container
-directly from the fixed backup files.
-
 ## Build & Run
 
 ```bash
