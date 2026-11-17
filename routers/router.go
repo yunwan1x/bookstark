@@ -14,6 +14,7 @@ import (
 	"bookstark/controllers"
 	"bookstark/middleware"
 	"bookstark/models"
+	"bookstark/services/cctvlive"
 )
 
 // EmbedFS is set by main package in embed mode; nil in dev mode
@@ -169,6 +170,10 @@ func Setup() *gin.Engine {
 			c.File("static/favicon.svg")
 		}
 	})
+
+	// Anonymous CCTV metadata only; playlists and video stay browser-direct.
+	cctvLive := cctvlive.NewHandler()
+	r.Any("/api/cctv-live/resolve", gin.WrapH(cctvLive))
 
 	// Favicon proxy (public, no auth required)
 	r.GET("/api/favicon", controllers.FaviconProxy)
