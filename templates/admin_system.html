@@ -401,6 +401,33 @@
                                 <summary class="ai-action-summary"><span class="ai-action-summary-title"><i class="fa-solid fa-chevron-right"></i>央视频频道编号</span></summary>
                                 <div class="ai-action-body">
                                     {{if .LiveMappingError}}<p role="alert">频道编号读取失败，请刷新后重试。</p>{{else}}
+                                    <details class="mt-2 mb-3" id="ysp-help">
+                                        <summary class="cursor-pointer"><strong>操作帮助：去哪里找频道编号和播放源？</strong></summary>
+                                        <ol class="list-decimal pl-6 space-y-2 mt-2">
+                                            <li>打开<a class="underline" href="https://www.yangshipin.cn/tv/home" target="_blank" rel="noopener">央视频 → 电视</a>，选要更新的台，核对台名和台标。例如「新疆卫视」。记下本页原有的两个编号，方便改回。</li>
+                                            <li><a class="underline" href="https://capi.yangshipin.cn/api/oms/pc/page/PG00000004" target="_blank" rel="noopener">下载官方电视频道列表</a>。如果浏览器显示乱码，用「另存为」保存文件。列表采用 Protobuf 二进制格式，文件没有扩展名也可以读取。</li>
+                                            <li><label for="ysp-list-file">选择刚下载的频道列表文件</label>，在下表按台名查找。复制<strong>同一行</strong>的 PID 和 streamId。读取文件只会显示编号。</li>
+                                        </ol>
+                                        <input type="file" id="ysp-list-file" class="my-2 max-w-full">
+                                        <p role="status" aria-live="polite" id="ysp-list-result"></p>
+                                        <div id="ysp-list-box" hidden>
+                                            <label for="ysp-list-filter">按频道名查找</label>
+                                            <input id="ysp-list-filter" type="search" class="setting-input" placeholder="例如：新疆">
+                                            <div style="max-height:16rem;overflow:auto">
+                                                <table class="text-sm"><thead><tr><th scope="col">官方台名</th><th scope="col">频道编号 PID</th><th scope="col">流编号 streamId</th></tr></thead><tbody id="ysp-list-rows"></tbody></table>
+                                            </div>
+                                        </div>
+                                        <ol start="4" class="list-decimal pl-6 space-y-2 mt-2">
+                                            <li>在本页下方「频道」选择同一个台，把两串数字分别填入 PID 和 streamId，点「保存该频道编号」。例如核对本次官方列表时，新疆卫视的 PID 是 <code>600152138</code>，streamId 是 <code>2050898603</code>。以后以你刚下载的列表为准。</li>
+                                            <li>点「检查已保存编号能否取址」。成功后打开<a class="underline" href="/shares/superlive-web" target="_blank" rel="noopener">电视直播</a>，选同一频道的「央视频官方线路」，核对台标和画面。若播成其他台，重新核对两个编号；要撤销可填回先前记下的值，或点「恢复该频道默认编号」还原内置值。</li>
+                                        </ol>
+                                        <details class="mt-2">
+                                            <summary class="cursor-pointer">列表链接变了，或想在浏览器里直接查编号？</summary>
+                                            <p>在电脑 Chrome 或 Edge 打开央视频「电视」，按 F12，点「网络（Network）」并刷新。导航请求 <code>GET /api/oms/pc/navigation/home_top_nav</code> 给出「电视」的页面 ID。筛选 <code>/api/oms/pc/page/</code>，找打开「电视」时加载的频道列表请求（本次为 <code>GET /api/oms/pc/page/PG00000004</code>），右键在新标签页打开并保存，再回到上面读取。</p>
+                                            <p class="mt-2">也可以在「网络」筛选 <code>get_live_info</code>，再点击目标台播放。点最新的 <code>POST /v1/player/get_live_info</code>，进入「载荷（Payload）」：<code>livepid</code> 对应本页 PID，<code>cnlid</code> 对应 streamId。如果没看到请求，保持网络面板打开，切到别台再切回来。</p>
+                                            <p class="mt-2">频道列表提供的是编号。播放时 BookStark 用这两个编号取当前地址，播放器再连接视频 CDN。响应里的 <code>playurl</code> 可能过期，这里的两个框只填数字。</p>
+                                        </details>
+                                    </details>
                                     <label for="ysp-channel">频道</label>
                                     <select id="ysp-channel" class="setting-input" style="width:auto">
                                         {{range .OfficialChannels}}{{$saved := index $.LiveChannelIDs .Key}}
@@ -1123,7 +1150,8 @@
         </div>
     </main>
     {{template "footer" .}}
-    <script>
+    <script src="/static/js/ysp-directory-help.js" defer></script>
+<script>
     var memberPage = 1;
     var memberPageSize = 20;
     var memberTotalPages = 1;
