@@ -7,7 +7,7 @@ ARG GOPROXY=https://proxy.golang.org,direct
 RUN if [ -n "$ALPINE_MIRROR" ]; then \
         sed -i "s|https://dl-cdn.alpinelinux.org/alpine|${ALPINE_MIRROR%/}|g" /etc/apk/repositories; \
     fi && \
-    apk add --no-cache python3
+    apk add --no-cache python3 upx
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
@@ -16,7 +16,7 @@ ARG TARGETOS
 ARG TARGETARCH
 # Inject version for cache busting (git commit, fallback to build timestamp)
 # timetzdata tag embeds timezone database into the binary
-RUN python3 build.py --build --tags timetzdata \
+RUN python3 build.py --build --upx --tags timetzdata \
     --goos "$TARGETOS" --goarch "$TARGETARCH" --output bookstark
 
 # Stage 2: Runtime

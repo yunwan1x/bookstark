@@ -29,7 +29,7 @@ done
 if ! command -v go >/dev/null && [ -x /usr/local/go/bin/go ]; then
     export PATH="/usr/local/go/bin:$PATH"
 fi
-if command -v go >/dev/null; then
+if command -v go >/dev/null && command -v upx >/dev/null; then
     BUILD_MODE="native"
     for tool in systemd-run python3; do
         command -v "$tool" >/dev/null || { echo "Missing tool for native build: $tool" >&2; exit 1; }
@@ -119,7 +119,7 @@ if [ "$BUILD_MODE" = native ]; then
         --setenv="GOMEMLIMIT=${BUILD_GO_MEMORY}" \
         --setenv="CGO_ENABLED=0" \
         --setenv="COMMIT=${COMMIT}" \
-        python3 -u build.py --build --tags timetzdata --output "${ARTIFACT_DIR}/bookstark"
+        python3 -u build.py --build --upx --tags timetzdata --output "${ARTIFACT_DIR}/bookstark"
 
     # The Docker stage only copies the finished binary; no second compilation.
     cp /etc/ssl/certs/ca-certificates.crt "${ARTIFACT_DIR}/ca-certificates.crt"
@@ -129,7 +129,7 @@ if [ "$BUILD_MODE" = native ]; then
         -t "${FULL_IMAGE}" \
         "${ARTIFACT_DIR}"
 else
-    # Hosts without Go can still produce the same revision-labelled image via
+    # Hosts without Go or UPX can still produce the same revision-labelled image via
     # the repository's multi-stage build. The source snapshot remains exact.
     docker build \
         --build-arg "COMMIT=${COMMIT}" \

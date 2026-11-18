@@ -5,6 +5,8 @@ import os
 import subprocess
 import re
 import hashlib
+import shutil
+import tempfile
 
 
 def file_md5(filepath):
@@ -152,7 +154,7 @@ def patch_swjs(sw_path, static_hash, assets):
     return len(assets)
 
 
-def main(build_only=False, extra_args=None, output=None, goos=None, goarch=None):
+def main(build_only=False, extra_args=None, output=None, goos=None, goarch=None, pack=False):
     # Version info
     built = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8))).strftime('%Y%m%d%H%M%S')
     commit = os.environ.get('COMMIT', '').strip()
@@ -172,6 +174,14 @@ def main(build_only=False, extra_args=None, output=None, goos=None, goarch=None)
     # 交叉编译目标：未显式传参时回退到当前进程环境，再不济交给 go 自己判断。
     target_goos = goos or os.environ.get('GOOS', '')
     target_goarch = goarch or os.environ.get('GOARCH', '')
+
+    if pack:
+        os_name = target_goos or subprocess.check_output(['go', 'env', 'GOOS'], text=True).strip()
+        if os_name != 'linux':
+            raise ValueError('--upx currently supports Linux targets only')
+        upx = shutil.which('upx')
+        if not upx:
+            raise SystemExit('--upx requires the upx executable on PATH')
 
     # 输出文件名：默认本机 ./bookstark；指定平台时按 bookstark-<goos>-<goarch>[.exe]
     if not output:
@@ -214,8 +224,9 @@ def main(build_only=False, extra_args=None, output=None, goos=None, goarch=None)
     # Go build
     # -s -w 去掉符号表与 DWARF 调试信息，二进制可瘦身约 25%
     ldflags = f'-s -w -X main.buildTime={built} -X main.gitCommit={commit} -X main.goVersion={go_ver} -X main.assetHash={static_hash}'
-    build_cmd = ['go', 'build', '-trimpath', '-ldflags', ldflags] + (extra_args or []) + ['-o', output, '.']
-    print(f'  cmd: {" ".join(build_cmd)}')
+    build_cmd = ['go', 'build', '-trimpath', '-ldflags', ldflags] + (extra_args or [])
+
+    print(f'  cmd: {" ".join(build_cmd)} -o {output} .')
     env = os.environ.copy()
     if target_goos:
         env['GOOS'] = target_goos
@@ -226,7 +237,19 @@ def main(build_only=False, extra_args=None, output=None, goos=None, goarch=None)
     env.setdefault('GOFLAGS', '-p=1')
     env.setdefault('GOMAXPROCS', '1')
     env.setdefault('GOMEMLIMIT', '300MiB')
-    subprocess.check_call(build_cmd, env=env)
+    if pack:
+        # Keep the previous artifact intact until the new packed executable passes its check.
+        with tempfile.TemporaryDirectory(dir=out_dir or '.', prefix='.bookstark-build-') as tmp:
+            raw = os.path.join(tmp, 'bookstark')
+            packed = os.path.join(tmp, 'bookstark.upx')
+            subprocess.check_call(build_cmd + ['-o', raw, '.'], env=env)
+            subprocess.check_call([upx, '--lzma', '-o', packed, raw])
+            subprocess.check_call([upx, '-t', packed])
+            before, after = os.path.getsize(raw), os.path.getsize(packed)
+            os.replace(packed, output)
+            print(f'  UPX: {before:,} -> {after:,} bytes ({100 * (1 - after / before):.1f}% smaller)')
+    else:
+        subprocess.check_call(build_cmd + ['-o', output, '.'], env=env)
     size = os.path.getsize(output)
     if size >= 1024 * 1024:
         size_str = f'{size / 1024 / 1024:.0f}M'
@@ -251,6 +274,7 @@ if __name__ == '__main__':
                         help='GOARCH for cross-compile (amd64/arm64). Empty=host.')
     parser.add_argument('--output', dest='output', default='',
                         help='Output binary path. Default: bookstark or bookstark-<goos>-<goarch>[.exe]')
+    parser.add_argument('--upx', action='store_true', help='Compress the Linux executable using UPX/LZMA')
     args = parser.parse_args()
     extra = []
     if args.go_tags:
@@ -259,4 +283,5 @@ if __name__ == '__main__':
          extra_args=extra if extra else None,
          output=args.output or None,
          goos=args.goos or None,
-         goarch=args.goarch or None)
+         goarch=args.goarch or None,
+         pack=args.upx)

@@ -90,6 +90,14 @@ python3 build.py
 python3 build.py --build --tags timetzdata
 ```
 
+Linux 可执行文件支持 UPX/LZMA 压缩。安装 UPX 后运行：
+
+```bash
+python3 build.py --build --tags timetzdata --upx
+```
+
+构建始终使用 `-trimpath` 和 `-ldflags="-s -w"`。启用 `--upx` 后会校验压缩产物，再替换输出文件。Dockerfile 和 deploy.sh 默认启用压缩，直接运行 build.py 时可按需开启。进程启动时要解压，具体耗时取决于机器。
+
 需要从磁盘读取模板和静态资源进行开发时：
 
 ```bash
