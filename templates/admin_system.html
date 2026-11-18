@@ -397,6 +397,28 @@
                                     <textarea id="live-channel-lines" name="live_channel_lines" rows="5" class="w-full font-mono" placeholder='{"10001":["10001-official-volc","10001-3"]}'>{{range .Settings}}{{if eq .Key "live_channel_lines"}}{{.Value}}{{end}}{{end}}</textarea>
                                 </div>
                             </details>
+                            <details class="ai-action-section" id="official-channel-settings">
+                                <summary class="ai-action-summary"><span class="ai-action-summary-title"><i class="fa-solid fa-chevron-right"></i>央视频频道编号</span></summary>
+                                <div class="ai-action-body">
+                                    {{if .LiveMappingError}}<p role="alert">频道编号读取失败，请刷新后重试。</p>{{else}}
+                                    <label for="ysp-channel">频道</label>
+                                    <select id="ysp-channel" class="setting-input" style="width:auto">
+                                        {{range .OfficialChannels}}{{$saved := index $.LiveChannelIDs .Key}}
+                                        <option value="{{.Key}}" data-default-pid="{{.Default.PID}}" data-default-stream="{{.Default.StreamID}}" data-pid="{{if $saved.PID}}{{$saved.PID}}{{else}}{{.Default.PID}}{{end}}" data-stream="{{if $saved.StreamID}}{{$saved.StreamID}}{{else}}{{.Default.StreamID}}{{end}}">{{.Name}}</option>
+                                        {{end}}
+                                    </select>
+                                    <div class="setting-row"><label for="ysp-pid">央视频频道编号（PID）</label><input id="ysp-pid" type="text" inputmode="numeric" maxlength="19" class="setting-input" style="width:14em"></div>
+                                    <div class="setting-row"><label for="ysp-stream">流编号（streamId）</label><input id="ysp-stream" type="text" inputmode="numeric" maxlength="19" class="setting-input" style="width:14em"></div>
+                                    <p class="text-xs text-slate-500" id="ysp-defaults"></p>
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <button type="button" id="ysp-save" class="save-btn">保存该频道编号</button>
+                                        <button type="button" id="ysp-reset">恢复该频道默认编号</button>
+                                        <button type="button" id="ysp-check">检查已保存编号能否取址</button>
+                                    </div>
+                                    <p id="ysp-status" role="status" aria-live="polite"></p>
+                                    {{end}}
+                                </div>
+                            </details>
                             <!-- 缓存设置 -->
                             <details class="ai-action-section">
                                 <summary class="ai-action-summary">
@@ -1567,6 +1589,60 @@
     document.getElementById('invite_code_enabled').addEventListener('change', function() {
         document.getElementById('invite-code-row').style.display = this.checked ? '' : 'none';
     });
+
+    (() => {
+        const select = document.getElementById('ysp-channel');
+        if (!select) return;
+        const el = id => document.getElementById('ysp-' + id);
+        const controls = ['save','reset','check','pid','stream'].map(el);
+        function display() {
+            const d = select.selectedOptions[0].dataset;
+            el('pid').value = d.pid;
+            el('stream').value = d.stream;
+            el('defaults').textContent = '内置默认：PID ' + d.defaultPid + '，streamId ' + d.defaultStream;
+            el('status').textContent = '';
+        }
+        async function update(action) {
+            const option = select.selectedOptions[0];
+            const ids = {pid:el('pid').value.trim(),streamId:el('stream').value.trim()};
+            const check = action === 'check';
+            if (action === 'save' && !Object.values(ids).every(v => /^[1-9][0-9]{0,18}$/.test(v))) {
+                el('status').textContent = '请填写有效的数字编号。';
+                return;
+            }
+            if (check && (ids.pid !== option.dataset.pid || ids.streamId !== option.dataset.stream)) {
+                el('status').textContent = '请先保存修改后的编号，再检查取址。';
+                return;
+            }
+            [select,...controls].forEach(node => node.disabled = true);
+            el('status').textContent = check ? '正在向央视频取址…' : '正在保存…';
+            try {
+                const key = encodeURIComponent(option.value);
+                const res = check
+                    ? await fetch('/api/cctv-live/resolve?channel='+key,{cache:'no-store'})
+                    : await csrfFetch('/api/admin/settings/live-channel-ids/'+key, action === 'reset'
+                        ? {method:'DELETE'}
+                        : {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(ids)});
+                const result = await res.json();
+                if (!res.ok || (check ? !result.url : result.code !== 0)) throw Error(result.message || '操作失败');
+                if (check) {
+                    el('status').textContent = '取址成功。请到直播页选此频道核对台标和画面。';
+                } else {
+                    option.dataset.pid = result.data.pid;
+                    option.dataset.stream = result.data.streamId;
+                    display();
+                    el('status').textContent = '已保存，下次使用该频道的央视频线路时生效。';
+                }
+            } catch (err) {
+                el('status').textContent = err.message || '请求失败，请重试。';
+            } finally {
+                [select,...controls].forEach(node => node.disabled = false);
+            }
+        }
+        select.addEventListener('change',display);
+        ['save','reset','check'].forEach(action=>el(action).addEventListener('click',()=>update(action)));
+        display();
+    })();
 
     async function saveSettings(e) {
         e.preventDefault();

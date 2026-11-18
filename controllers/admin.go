@@ -24,6 +24,10 @@ func AdminSystemPage(c *gin.Context) {
 	data := commonData(c, "admin")
 	data["SMTPPasswordConfigured"] = models.GetSetting("smtp_password") != ""
 	data["Settings"] = redactAdminSettings(settings)
+	mappings, mappingErr := models.LiveMappings()
+	data["LiveMappingError"] = mappingErr != nil
+	data["LiveChannelIDs"] = mappings
+	data["OfficialChannels"] = cctvlive.OfficialChannels()
 	sections, tagsErr := models.PublicTagSections()
 	if tagsErr != nil {
 		log.Printf("PublicTagSections: %v", tagsErr)
@@ -183,6 +187,10 @@ func UpdateSettings(c *gin.Context) {
 
 	// Validate numeric settings
 	for k, v := range req {
+		if k == models.LiveMappingSetting {
+			apiError(c, http.StatusBadRequest, "请通过央视频频道编号设置保存")
+			return
+		}
 		if k == cctvlive.LinesSetting {
 			if _, err := cctvlive.Catalog(v); err != nil {
 				apiError(c, http.StatusBadRequest, err.Error())

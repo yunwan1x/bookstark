@@ -173,7 +173,7 @@ func Setup() *gin.Engine {
 
 	// Anonymous CCTV metadata only; playlists and video stay browser-direct.
 	r.GET("/api/cctv-live/channels", controllers.LiveChannelCatalog)
-	cctvLive := cctvlive.NewHandler()
+	cctvLive := cctvlive.NewHandler(models.LookupLiveIDs)
 	r.Any("/api/cctv-live/resolve", gin.WrapH(cctvLive))
 
 	// Favicon proxy (public, no auth required)
@@ -484,6 +484,8 @@ func Setup() *gin.Engine {
 			admin.GET("/friend-links", controllers.ListFriendLinks)
 			admin.PUT("/friend-links", controllers.ReplaceFriendLinks)
 			admin.GET("/settings", controllers.GetSettings)
+			admin.PUT("/settings/live-channel-ids/:key", controllers.AdminLiveIDs)
+			admin.DELETE("/settings/live-channel-ids/:key", controllers.AdminLiveIDs)
 			admin.PUT("/settings", controllers.UpdateSettings)
 			admin.POST("/settings/ai/reset", controllers.ResetAISetting)
 			admin.POST("/settings/ai/test", controllers.TestAIConnection)

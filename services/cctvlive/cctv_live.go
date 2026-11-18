@@ -148,18 +148,24 @@ func ticket(pid, guid, rnd string, ts int64) string {
 
 // NewResolver uses only fixed official metadata endpoints, with no proxy or redirect.
 func NewResolver() func(context.Context, string) (Result, error) {
+	resolve := resolver(officialClient())
+	return func(ctx context.Context, key string) (Result, error) {
+		ids := DefaultIDs(key)
+		if !ids.Valid() {
+			return Result{}, errAPI(400, "UNSUPPORTED_CHANNEL")
+		}
+		return resolve(ctx, ids)
+	}
+}
+func officialClient() *http.Client {
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 	transport.Proxy = nil
 	client := &http.Client{Transport: transport, Timeout: 15 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return errors.New("redirect rejected") }}
-	return resolver(client)
+	return client
 }
-func resolver(client *http.Client) func(context.Context, string) (Result, error) {
-	return func(ctx context.Context, channel string) (Result, error) {
-		ids, ok := channels[channel]
-		if !ok {
-			return Result{}, errAPI(400, "UNSUPPORTED_CHANNEL")
-		}
-		cnlid, pid := ids[0], ids[1]
+func resolver(client *http.Client) func(context.Context, OfficialIDs) (Result, error) {
+	return func(ctx context.Context, ids OfficialIDs) (Result, error) {
+		cnlid, pid := ids.StreamID, ids.PID
 		a, e := random(8, "abcdefghijklmnopqrstuvwxyz0123456789")
 		if e != nil {
 			return Result{}, e
@@ -316,17 +322,26 @@ type cached struct {
 	err    error
 	until  time.Time
 }
+type lookupKey struct {
+	channel string
+	ids     OfficialIDs
+}
 type Handler struct {
+	lookup  func(string) (OfficialIDs, error)
 	mu      sync.Mutex
-	pending map[string]*call
-	cache   map[string]cached
-	resolve func(context.Context, string) (Result, error)
+	pending map[lookupKey]*call
+	cache   map[lookupKey]cached
+	resolve func(context.Context, OfficialIDs) (Result, error)
 	timeout time.Duration
 }
 
-func NewHandler() *Handler { return newHandler(NewResolver(), 15*time.Second) }
-func newHandler(resolve func(context.Context, string) (Result, error), timeout time.Duration) *Handler {
-	return &Handler{pending: map[string]*call{}, cache: map[string]cached{}, resolve: resolve, timeout: timeout}
+func NewHandler(lookup func(string) (OfficialIDs, error)) *Handler {
+	h := newHandler(resolver(officialClient()), 15*time.Second)
+	h.lookup = lookup
+	return h
+}
+func newHandler(resolve func(context.Context, OfficialIDs) (Result, error), timeout time.Duration) *Handler {
+	return &Handler{lookup: func(key string) (OfficialIDs, error) { return DefaultIDs(key), nil }, pending: map[lookupKey]*call{}, cache: map[lookupKey]cached{}, resolve: resolve, timeout: timeout}
 }
 func reply(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -371,13 +386,19 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		reply(w, 400, map[string]string{"error": "UNSUPPORTED_CHANNEL"})
 		return
 	}
+	ids, err := h.lookup(channel)
+	if err != nil || !ids.Valid() {
+		reply(w, 500, map[string]string{"error": "INVALID_CHANNEL_MAPPING"})
+		return
+	}
+	key := lookupKey{channel, ids}
 	h.mu.Lock()
-	if c, ok := h.cache[channel]; ok && time.Now().Before(c.until) {
+	if c, ok := h.cache[key]; ok && time.Now().Before(c.until) {
 		h.mu.Unlock()
 		respond(w, c.result, c.err)
 		return
 	}
-	c := h.pending[channel]
+	c := h.pending[key]
 	if c != nil && c.ctx.Err() != nil {
 		h.mu.Unlock()
 		reply(w, 429, map[string]string{"error": "BUSY"})
@@ -391,9 +412,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), h.timeout)
 		c = &call{ctx: ctx, cancel: cancel, done: make(chan struct{})}
-		h.pending[channel] = c
+		h.pending[key] = c
 		go func() {
-			result, err := h.resolve(ctx, channel)
+			result, err := h.resolve(ctx, ids)
 			if ctx.Err() != nil {
 				err = ctx.Err()
 			}
@@ -404,9 +425,14 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				ttl = 5 * time.Second
 			}
 			if !errors.Is(err, context.Canceled) {
-				h.cache[channel] = cached{result, err, time.Now().Add(ttl)}
+				for old, entry := range h.cache {
+					if !time.Now().Before(entry.until) {
+						delete(h.cache, old)
+					}
+				}
+				h.cache[key] = cached{result, err, time.Now().Add(ttl)}
 			}
-			delete(h.pending, channel)
+			delete(h.pending, key)
 			close(c.done)
 			h.mu.Unlock()
 			cancel()
@@ -417,7 +443,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		h.mu.Lock()
 		c.users--
-		if c.users == 0 && h.pending[channel] == c {
+		if c.users == 0 && h.pending[key] == c {
 			c.cancel()
 		}
 		h.mu.Unlock()

@@ -73,7 +73,7 @@ func TestOfficialFlow(t *testing.T) {
 				}
 				return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(response)), Header: make(http.Header)}, nil
 			})}
-			result, e := resolver(client)(context.Background(), "cctv164k")
+			result, e := resolver(client)(context.Background(), DefaultIDs("cctv164k"))
 			if region {
 				var ae *apiError
 				if !errors.As(e, &ae) || ae.status != 403 {
@@ -95,7 +95,7 @@ func req(h http.Handler, target string) *httptest.ResponseRecorder {
 }
 func TestValidationAndCache(t *testing.T) {
 	var calls atomic.Int32
-	h := newHandler(func(context.Context, string) (Result, error) {
+	h := newHandler(func(context.Context, OfficialIDs) (Result, error) {
 		calls.Add(1)
 		return Result{"https://cdn.test/live.m3u8", "ysp-tea"}, nil
 	}, time.Second)
@@ -129,7 +129,7 @@ func TestSharedRequestAndCancellation(t *testing.T) {
 	started := make(chan struct{})
 	cancelled := make(chan struct{})
 	var calls atomic.Int32
-	h := newHandler(func(ctx context.Context, _ string) (Result, error) {
+	h := newHandler(func(ctx context.Context, _ OfficialIDs) (Result, error) {
 		calls.Add(1)
 		close(started)
 		<-ctx.Done()
@@ -151,7 +151,7 @@ func TestSharedRequestAndCancellation(t *testing.T) {
 	deadline := time.After(time.Second)
 	for {
 		h.mu.Lock()
-		n := h.pending["cctv8k"].users
+		n := h.pending[lookupKey{"cctv8k", DefaultIDs("cctv8k")}].users
 		h.mu.Unlock()
 		if n == 2 {
 			break
@@ -182,14 +182,34 @@ func TestSharedRequestAndCancellation(t *testing.T) {
 	}
 }
 func TestTimeoutAndRegionSanitization(t *testing.T) {
-	h := newHandler(func(ctx context.Context, _ string) (Result, error) { <-ctx.Done(); return Result{}, ctx.Err() }, 10*time.Millisecond)
+	h := newHandler(func(ctx context.Context, _ OfficialIDs) (Result, error) { <-ctx.Done(); return Result{}, ctx.Err() }, 10*time.Millisecond)
 	if w := req(h, "/api/cctv-live/resolve?channel=cctv8k"); w.Code != 504 {
 		t.Fatal(w.Code)
 	}
-	h = newHandler(func(context.Context, string) (Result, error) {
+	h = newHandler(func(context.Context, OfficialIDs) (Result, error) {
 		return Result{}, errAPI(403, "REGION_OR_COPYRIGHT_RESTRICTED")
 	}, time.Second)
 	if w := req(h, "/api/cctv-live/resolve?channel=cctv164k"); w.Code != 403 || strings.Contains(w.Body.String(), "token") {
 		t.Fatal(w.Code)
 	}
+}
+
+func TestChangedIDsSkipCachedResult(t *testing.T) {
+	ids := DefaultIDs("xjws")
+	h := newHandler(func(_ context.Context, upstream OfficialIDs) (Result, error) {
+		return Result{URL: "https://example.org/" + upstream.PID + "/" + upstream.StreamID}, nil
+	}, time.Second)
+	h.lookup = func(string) (OfficialIDs, error) { return ids, nil }
+	check := func() {
+		w := req(h, "/api/cctv-live/resolve?channel=xjws")
+		var result Result
+		if e := json.Unmarshal(w.Body.Bytes(), &result); e != nil || result.URL != "https://example.org/"+ids.PID+"/"+ids.StreamID {
+			t.Fatal(w.Body.String())
+		}
+	}
+	check()
+	ids.StreamID = "1234567890"
+	check()
+	ids.PID = "654321789"
+	check()
 }
