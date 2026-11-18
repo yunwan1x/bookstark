@@ -13,6 +13,7 @@ import (
 	"bookstark/conf"
 	"bookstark/middleware"
 	"bookstark/models"
+	"bookstark/services/cctvlive"
 )
 
 func AdminSystemPage(c *gin.Context) {
@@ -182,6 +183,13 @@ func UpdateSettings(c *gin.Context) {
 
 	// Validate numeric settings
 	for k, v := range req {
+		if k == cctvlive.LinesSetting {
+			if _, err := cctvlive.Catalog(v); err != nil {
+				apiError(c, http.StatusBadRequest, err.Error())
+				return
+			}
+		}
+
 		if strings.HasPrefix(k, "public_feed_tags_") {
 			kind := strings.TrimPrefix(k, "public_feed_tags_")
 			if (kind != "article" && kind != "note" && kind != "book" && kind != "bookmark") || models.ValidatePublicTagConfig(v) != nil {

@@ -1,0 +1,1505 @@
+{
+  "version": "3.6.1",
+  "defaultChannelId": "10001",
+  "groups": [
+    {
+      "id": "standard",
+      "name": "CCTV 电视频道",
+      "enName": "CCTV channels"
+    },
+    {
+      "id": "uhd",
+      "name": "超高清频道",
+      "enName": "Ultra HD channels"
+    },
+    {
+      "id": "satellite",
+      "name": "卫视频道",
+      "enName": "Satellite channels"
+    }
+  ],
+  "channels": [
+    {
+      "id": "10001",
+      "name": "CCTV-1 综合",
+      "enName": "CCTV-1 General",
+      "pinyin": "cctv1",
+      "number": 1,
+      "groupIds": [
+        "standard"
+      ],
+      "sources": [
+        {
+          "id": "10001-official-volc",
+          "label": "央视网官方线路",
+          "protocol": "https",
+          "original": "https://ldncctvwbcdbyte.volcfcdn.com/ldncctvwbcd/cdrmldcctv1_1/index.m3u8?b=200-2100",
+          "url": "https://ldncctvwbcdbyte.volcfcdn.com/ldncctvwbcd/cdrmldcctv1_1/index.m3u8?b=200-2100",
+          "capability": "direct",
+          "verified": true
+        },
+        {
+          "id": "10001-2",
+          "label": "官方CDN",
+          "protocol": "https",
+          "original": "https://ldncctvwbcdcnc.v.wscdns.com/ldncctvwbcd/cdrmldcctv1_1_720P/playlist.m3u8?wsApp=HLS",
+          "capability": "direct",
+          "url": "https://ldncctvwbcdcnc.v.wscdns.com/ldncctvwbcd/cdrmldcctv1_1_720P/playlist.m3u8?wsApp=HLS"
+        },
+        {
+          "id": "10001-3",
+          "label": "央视网",
+          "protocol": "cctv",
+          "original": "cctv://cctv1",
+          "capability": "resolver",
+          "verified": true
+        }
+      ],
+      "preferredSourceId": "10001-official-volc",
+      "shortCode": "CCTV-1",
+      "displayName": "综合",
+      "epgCode": "cctv1"
+    },
+    {
+      "id": "10002",
+      "name": "CCTV-2 财经",
+      "enName": "CCTV-2 Finance",
+      "pinyin": "cctv2",
+      "number": 2,
+      "groupIds": [
+        "standard"
+      ],
+      "sources": [
+        {
+          "id": "10002-official-volc",
+          "label": "央视网官方线路",
+          "protocol": "https",
+          "url": "https://ldncctvwbcdbyte.volcfcdn.com/ldncctvwbcd/cdrmldcctv2_1/index.m3u8?b=200-2100",
+          "original": "https://ldncctvwbcdbyte.volcfcdn.com/ldncctvwbcd/cdrmldcctv2_1/index.m3u8?b=200-2100",
+          "capability": "direct"
+        },
+        {
+          "id": "10002-2",
+          "label": "官方CDN",
+          "protocol": "https",
+          "original": "https://ldocctvwbcdbd.a.bdydns.com/ldocctvwbcd/cdrmldcctv2_1/index.m3u8?BR=td",
+          "capability": "direct",
+          "url": "https://ldocctvwbcdbd.a.bdydns.com/ldocctvwbcd/cdrmldcctv2_1/index.m3u8?BR=td"
+        },
+        {
+          "id": "10002-3",
+          "label": "央视网",
+          "protocol": "cctv",
+          "original": "cctv://cctv2",
+          "capability": "resolver",
+          "verified": true
+        }
+      ],
+      "shortCode": "CCTV-2",
+      "displayName": "财经",
+      "epgCode": "cctv2",
+      "preferredSourceId": "10002-2"
+    },
+    {
+      "id": "10003",
+      "name": "CCTV-3 综艺",
+      "enName": "CCTV-3 Variety",
+      "pinyin": "cctv3",
+      "number": 3,
+      "groupIds": [
+        "standard"
+      ],
+      "sources": [
+        {
+          "id": "10003-2",
+          "label": "官方CDN",
+          "protocol": "https",
+          "original": "https://ldocctvwbcdbd.a.bdydns.com/ldocctvwbcd/cdrmldcctv3_1/index.m3u8?BR=td",
+          "capability": "direct",
+          "url": "https://ldocctvwbcdbd.a.bdydns.com/ldocctvwbcd/cdrmldcctv3_1/index.m3u8?BR=td",
+          "verified": true
+        }
+      ],
+      "shortCode": "CCTV-3",
+      "displayName": "综艺",
+      "epgCode": "cctv3",
+      "preferredSourceId": "10003-2"
+    },
+    {
+      "id": "10004",
+      "name": "CCTV-4 中文国际",
+      "enName": "CCTV-4 International",
+      "pinyin": "cctv4",
+      "number": 4,
+      "groupIds": [
+        "standard"
+      ],
+      "sources": [
+        {
+          "id": "10004-2",
+          "label": "官方CDN",
+          "protocol": "https",
+          "original": "https://ldocctvwbcdks.v.kcdnvip.com/ldocctvwbcd/cdrmldcctv4_1/index.m3u8?BR=td",
+          "capability": "direct",
+          "url": "https://ldocctvwbcdks.v.kcdnvip.com/ldocctvwbcd/cdrmldcctv4_1/index.m3u8?BR=td"
+        },
+        {
+          "id": "10004-3",
+          "label": "央视网",
+          "protocol": "cctv",
+          "original": "cctv://cctv4",
+          "capability": "resolver",
+          "verified": true
+        }
+      ],
+      "shortCode": "CCTV-4",
+      "displayName": "中文国际",
+      "epgCode": "cctv4",
+      "preferredSourceId": "10004-3"
+    },
+    {
+      "id": "10005",
+      "name": "CCTV-5 体育",
+      "enName": "CCTV-5 Sports",
+      "pinyin": "cctv5",
+      "number": 5,
+      "groupIds": [
+        "standard"
+      ],
+      "sources": [
+        {
+          "id": "10005-2",
+          "label": "官方CDN",
+          "protocol": "https",
+          "original": "https://ldcctvwbcdks.v.kcdnvip.com/ldcctvwbcd/cdrmldcctv5_1/index.m3u8?BR=td",
+          "capability": "direct",
+          "url": "https://ldcctvwbcdks.v.kcdnvip.com/ldcctvwbcd/cdrmldcctv5_1/index.m3u8?BR=td",
+          "verified": true
+        }
+      ],
+      "shortCode": "CCTV-5",
+      "displayName": "体育",
+      "epgCode": "cctv5",
+      "preferredSourceId": "10005-2"
+    },
+    {
+      "id": "10261",
+      "name": "CCTV-5+ 体育赛事",
+      "enName": "CCTV-5+ Plus",
+      "pinyin": "cctv5jia",
+      "number": 323,
+      "groupIds": [
+        "standard"
+      ],
+      "sources": [
+        {
+          "id": "10261-2",
+          "label": "https",
+          "protocol": "https",
+          "original": "https://ldcctvwbcdks.v.kcdnvip.com/ldcctvwbcd/cdrmldcctv5plus_1/index.m3u8",
+          "capability": "direct",
+          "url": "https://ldcctvwbcdks.v.kcdnvip.com/ldcctvwbcd/cdrmldcctv5plus_1/index.m3u8"
+        }
+      ],
+      "shortCode": "CCTV-5+",
+      "displayName": "体育赛事",
+      "epgCode": "cctv5plus",
+      "preferredSourceId": "10261-2"
+    },
+    {
+      "id": "10006",
+      "name": "CCTV-6 电影",
+      "enName": "CCTV-6 Movies",
+      "pinyin": "cctv6",
+      "number": 6,
+      "groupIds": [
+        "standard"
+      ],
+      "sources": [
+        {
+          "id": "10006-2",
+          "label": "官方CDN",
+          "protocol": "https",
+          "original": "https://ldocctvwbcdbd.a.bdydns.com/ldocctvwbcd/cdrmldcctv6_1/index.m3u8?BR=td",
+          "capability": "direct",
+          "url": "https://ldocctvwbcdbd.a.bdydns.com/ldocctvwbcd/cdrmldcctv6_1/index.m3u8?BR=td",
+          "verified": true
+        }
+      ],
+      "shortCode": "CCTV-6",
+      "displayName": "电影",
+      "epgCode": "cctv6",
+      "preferredSourceId": "10006-2"
+    },
+    {
+      "id": "10007",
+      "name": "CCTV-7 国防军事",
+      "enName": "CCTV-7 Military",
+      "pinyin": "cctv7",
+      "number": 7,
+      "groupIds": [
+        "standard"
+      ],
+      "sources": [
+        {
+          "id": "10007-2",
+          "label": "官方CDN",
+          "protocol": "https",
+          "original": "https://ldocctvwbcdtxy.liveplay.myqcloud.com/ldocctvwbcd/cdrmldcctv7_1_td.m3u8",
+          "capability": "direct",
+          "url": "https://ldocctvwbcdtxy.liveplay.myqcloud.com/ldocctvwbcd/cdrmldcctv7_1_td.m3u8"
+        },
+        {
+          "id": "10007-3",
+          "label": "央视网",
+          "protocol": "cctv",
+          "original": "cctv://cctv7",
+          "capability": "resolver",
+          "verified": true
+        }
+      ],
+      "shortCode": "CCTV-7",
+      "displayName": "国防军事",
+      "epgCode": "cctv7",
+      "preferredSourceId": "10007-3"
+    },
+    {
+      "id": "10008",
+      "name": "CCTV-8 电视剧",
+      "enName": "CCTV-8 TV Drama",
+      "pinyin": "cctv8",
+      "number": 8,
+      "groupIds": [
+        "standard"
+      ],
+      "sources": [
+        {
+          "id": "10008-2",
+          "label": "官方CDN",
+          "protocol": "https",
+          "original": "https://ldocctvwbcdbd.a.bdydns.com/ldocctvwbcd/cdrmldcctv8_1/index.m3u8?BR=td",
+          "capability": "direct",
+          "url": "https://ldocctvwbcdbd.a.bdydns.com/ldocctvwbcd/cdrmldcctv8_1/index.m3u8?BR=td",
+          "verified": true
+        }
+      ],
+      "shortCode": "CCTV-8",
+      "displayName": "电视剧",
+      "epgCode": "cctv8",
+      "preferredSourceId": "10008-2"
+    },
+    {
+      "id": "10009",
+      "name": "CCTV-9 纪录",
+      "enName": "CCTV-9 Documentary",
+      "pinyin": "cctv9",
+      "number": 9,
+      "groupIds": [
+        "standard"
+      ],
+      "sources": [
+        {
+          "id": "10009-2",
+          "label": "官方CDN",
+          "protocol": "https",
+          "original": "https://ldocctvwbcdtxy.liveplay.myqcloud.com/ldocctvwbcd/cdrmldcctv9_1_td.m3u8",
+          "capability": "direct",
+          "url": "https://ldocctvwbcdtxy.liveplay.myqcloud.com/ldocctvwbcd/cdrmldcctv9_1_td.m3u8"
+        },
+        {
+          "id": "10009-3",
+          "label": "央视网",
+          "protocol": "cctv",
+          "original": "cctv://cctv9",
+          "capability": "resolver",
+          "verified": true
+        }
+      ],
+      "shortCode": "CCTV-9",
+      "displayName": "纪录",
+      "epgCode": "cctvjilu",
+      "preferredSourceId": "10009-3"
+    },
+    {
+      "id": "10010",
+      "name": "CCTV-10 科教",
+      "enName": "CCTV-10 Education",
+      "pinyin": "cctv10",
+      "number": 10,
+      "groupIds": [
+        "standard"
+      ],
+      "sources": [
+        {
+          "id": "10010-0",
+          "label": "央视网",
+          "protocol": "cctv",
+          "original": "cctv://cctv10",
+          "capability": "resolver",
+          "verified": true
+        },
+        {
+          "id": "10010-1",
+          "label": "官方CDN",
+          "protocol": "https",
+          "original": "https://ldocctvwbcdks.v.kcdnvip.com/ldocctvwbcd/cdrmldcctv10_1/index.m3u8?BR=td",
+          "capability": "direct",
+          "url": "https://ldocctvwbcdks.v.kcdnvip.com/ldocctvwbcd/cdrmldcctv10_1/index.m3u8?BR=td"
+        }
+      ],
+      "shortCode": "CCTV-10",
+      "displayName": "科教",
+      "epgCode": "cctv10",
+      "preferredSourceId": "10010-0"
+    },
+    {
+      "id": "10011",
+      "name": "CCTV-11 戏曲",
+      "enName": "CCTV-11 Opera",
+      "pinyin": "cctv11",
+      "number": 11,
+      "groupIds": [
+        "standard"
+      ],
+      "sources": [
+        {
+          "id": "10011-bd-mirror",
+          "label": "官方CDN备用",
+          "protocol": "https",
+          "original": "https://ldocctvwbcdbd.a.bdydns.com/ldocctvwbcd/cdrmldcctv11_1/index.m3u8?BR=td",
+          "url": "https://ldocctvwbcdbd.a.bdydns.com/ldocctvwbcd/cdrmldcctv11_1/index.m3u8?BR=td",
+          "capability": "direct",
+          "verified": true
+        },
+        {
+          "id": "10011-2",
+          "label": "官方CDN",
+          "protocol": "https",
+          "original": "https://ldocctvwbcdcnc.v.wscdns.com/ldocctvwbcd/cdrmldcctv11_1_720P/playlist.m3u8?wsApp=HLS",
+          "capability": "direct",
+          "url": "https://ldocctvwbcdcnc.v.wscdns.com/ldocctvwbcd/cdrmldcctv11_1_720P/playlist.m3u8?wsApp=HLS"
+        }
+      ],
+      "shortCode": "CCTV-11",
+      "displayName": "戏曲",
+      "epgCode": "cctv11",
+      "preferredSourceId": "10011-bd-mirror"
+    },
+    {
+      "id": "10012",
+      "name": "CCTV-12 社会与法",
+      "enName": "CCTV-12 Society & Law",
+      "pinyin": "cctv12",
+      "number": 12,
+      "groupIds": [
+        "standard"
+      ],
+      "sources": [
+        {
+          "id": "10012-2",
+          "label": "官方CDN",
+          "protocol": "https",
+          "original": "https://ldocctvwbcdks.v.kcdnvip.com/ldocctvwbcd/cdrmldcctv12_1/index.m3u8?BR=td",
+          "capability": "direct",
+          "url": "https://ldocctvwbcdks.v.kcdnvip.com/ldocctvwbcd/cdrmldcctv12_1/index.m3u8?BR=td"
+        },
+        {
+          "id": "10012-3",
+          "label": "央视网",
+          "protocol": "cctv",
+          "original": "cctv://cctv12",
+          "capability": "resolver",
+          "verified": true
+        }
+      ],
+      "shortCode": "CCTV-12",
+      "displayName": "社会与法",
+      "epgCode": "cctv12",
+      "preferredSourceId": "10012-3"
+    },
+    {
+      "id": "10013",
+      "name": "CCTV-13 新闻",
+      "enName": "CCTV-13 News",
+      "pinyin": "cctv13",
+      "number": 13,
+      "groupIds": [
+        "standard"
+      ],
+      "sources": [
+        {
+          "id": "10013-official-volc",
+          "label": "央视网官方线路",
+          "protocol": "https",
+          "url": "https://ldncctvwbcdbyte.volcfcdn.com/ldncctvwbcd/cdrmldcctv13_1/index.m3u8?b=200-2100",
+          "original": "https://ldncctvwbcdbyte.volcfcdn.com/ldncctvwbcd/cdrmldcctv13_1/index.m3u8?b=200-2100",
+          "capability": "direct"
+        },
+        {
+          "id": "10013-2",
+          "label": "官方CDN",
+          "protocol": "https",
+          "original": "https://ldncctvwbcdks.v.kcdnvip.com/ldncctvwbcd/cdrmldcctv13_1/index.m3u8?BR=td",
+          "capability": "direct",
+          "url": "https://ldncctvwbcdks.v.kcdnvip.com/ldncctvwbcd/cdrmldcctv13_1/index.m3u8?BR=td"
+        },
+        {
+          "id": "10013-3",
+          "label": "央视网",
+          "protocol": "cctv",
+          "original": "cctv://cctv13",
+          "capability": "resolver",
+          "verified": true
+        }
+      ],
+      "shortCode": "CCTV-13",
+      "displayName": "新闻",
+      "epgCode": "cctv13",
+      "preferredSourceId": "10013-official-volc"
+    },
+    {
+      "id": "10014",
+      "name": "CCTV-14 少儿",
+      "enName": "CCTV-14 Kids",
+      "pinyin": "cctv14",
+      "number": 14,
+      "groupIds": [
+        "standard"
+      ],
+      "sources": [
+        {
+          "id": "10014-2",
+          "label": "官方CDN",
+          "protocol": "https",
+          "original": "https://ldocctvwbcdbd.a.bdydns.com/ldocctvwbcd/cdrmldcctv14_1/index.m3u8?BR=td",
+          "capability": "direct",
+          "url": "https://ldocctvwbcdbd.a.bdydns.com/ldocctvwbcd/cdrmldcctv14_1/index.m3u8?BR=td",
+          "verified": true
+        }
+      ],
+      "shortCode": "CCTV-14",
+      "displayName": "少儿",
+      "epgCode": "cctvchild",
+      "preferredSourceId": "10014-2"
+    },
+    {
+      "id": "10015",
+      "name": "CCTV-15 音乐",
+      "enName": "CCTV-15 Music",
+      "pinyin": "cctv15",
+      "number": 15,
+      "groupIds": [
+        "standard"
+      ],
+      "sources": [
+        {
+          "id": "10015-2",
+          "label": "官方CDN",
+          "protocol": "https",
+          "original": "https://ldocctvwbcdbd.a.bdydns.com/ldocctvwbcd/cdrmldcctv15_1/index.m3u8?BR=td",
+          "capability": "direct",
+          "url": "https://ldocctvwbcdbd.a.bdydns.com/ldocctvwbcd/cdrmldcctv15_1/index.m3u8?BR=td",
+          "verified": true
+        }
+      ],
+      "shortCode": "CCTV-15",
+      "displayName": "音乐",
+      "epgCode": "cctv15",
+      "preferredSourceId": "10015-2"
+    },
+    {
+      "id": "10016",
+      "name": "CCTV-16 奥林匹克",
+      "enName": "CCTV-16 Olympic",
+      "pinyin": "cctv16",
+      "number": 16,
+      "groupIds": [
+        "standard"
+      ],
+      "sources": [
+        {
+          "id": "10016-2",
+          "label": "官方CDN",
+          "protocol": "https",
+          "original": "https://ldcctvwbcdks.v.kcdnvip.com/ldcctvwbcd/cdrmldcctv16_1/index.m3u8?BR=td",
+          "capability": "direct",
+          "url": "https://ldcctvwbcdks.v.kcdnvip.com/ldcctvwbcd/cdrmldcctv16_1/index.m3u8?BR=td"
+        }
+      ],
+      "shortCode": "CCTV-16",
+      "displayName": "奥林匹克",
+      "epgCode": "cctv16",
+      "preferredSourceId": "10016-2"
+    },
+    {
+      "id": "10017",
+      "name": "CCTV-17 农业",
+      "enName": "CCTV-17 Agriculture",
+      "pinyin": "cctv17",
+      "number": 17,
+      "groupIds": [
+        "standard"
+      ],
+      "sources": [
+        {
+          "id": "10017-2",
+          "label": "官方CDN",
+          "protocol": "https",
+          "original": "https://ldocctvwbcdbd.a.bdydns.com/ldocctvwbcd/cdrmldcctv17_1/index.m3u8?BR=td",
+          "capability": "direct",
+          "url": "https://ldocctvwbcdbd.a.bdydns.com/ldocctvwbcd/cdrmldcctv17_1/index.m3u8?BR=td"
+        },
+        {
+          "id": "10017-3",
+          "label": "央视网",
+          "protocol": "cctv",
+          "original": "cctv://cctv17",
+          "capability": "resolver",
+          "verified": true
+        }
+      ],
+      "shortCode": "CCTV-17",
+      "displayName": "农业",
+      "epgCode": "cctv17",
+      "preferredSourceId": "10017-3"
+    },
+    {
+      "id": "10105",
+      "name": "CCTV-4K",
+      "enName": "CCTV-4K",
+      "pinyin": "cctv4k",
+      "number": 105,
+      "groupIds": [
+        "uhd"
+      ],
+      "sources": [
+        {
+          "id": "10105-2",
+          "label": "央视网",
+          "protocol": "cctv",
+          "original": "cctv://cctv4k",
+          "capability": "resolver",
+          "verified": true
+        }
+      ],
+      "shortCode": "CCTV-4K",
+      "displayName": "超高清",
+      "epgCode": "cctv4k",
+      "preferredSourceId": "10105-2",
+      "note": "频道名称为 CCTV-4K；当前可用线路实测输出 1080p，画面内显示实际分辨率。"
+    },
+    {
+      "id": "10106",
+      "name": "CCTV-8K 超高清",
+      "enName": "CCTV-8K",
+      "pinyin": "cctv8k",
+      "number": 106,
+      "groupIds": [
+        "uhd"
+      ],
+      "sources": [],
+      "shortCode": "CCTV-8K",
+      "displayName": "超高清",
+      "epgCode": null,
+      "externalOnly": true,
+      "preferredSourceId": null,
+      "officialUrl": "https://www.yangshipin.cn/tv/home?pid=600156816",
+      "note": "本站暂未提供此频道的页内播放，请前往央视频官网观看。"
+    },
+    {
+      "id": "10107",
+      "name": "CCTV-16 4K 奥林匹克",
+      "enName": "CCTV-16 4K",
+      "pinyin": "cctv164k",
+      "number": 107,
+      "groupIds": [
+        "uhd"
+      ],
+      "sources": [],
+      "shortCode": "CCTV-16 4K",
+      "displayName": "奥林匹克",
+      "epgCode": "cctv16",
+      "externalOnly": true,
+      "preferredSourceId": null,
+      "officialUrl": "https://www.yangshipin.cn/tv/home?pid=600099502",
+      "note": "本站暂未提供此频道的页内播放，请前往央视频官网观看。"
+    },
+    {
+      "id": "10023",
+      "name": "浙江卫视",
+      "enName": "Zhejiang TV",
+      "pinyin": "zjws",
+      "number": 23,
+      "groupIds": [
+        "satellite"
+      ],
+      "sources": [
+        {
+          "id": "10023-station-official",
+          "label": "电视台官方线路",
+          "protocol": "https",
+          "original": "https://ali-xwl.cztv.com/live/channel011080Plxw.m3u8",
+          "capability": "direct",
+          "url": "https://ali-xwl.cztv.com/live/channel011080Plxw.m3u8"
+        },
+        {
+          "id": "10023-ysp-official",
+          "label": "央视频官方线路",
+          "protocol": "cctv-live",
+          "original": "cctvlive://zjws",
+          "capability": "resolver"
+        }
+      ],
+      "shortCode": "浙江",
+      "displayName": "浙江卫视",
+      "epgCode": null,
+      "note": "",
+      "preferredSourceId": "10023-station-official"
+    },
+    {
+      "id": "10025",
+      "name": "湖南卫视",
+      "enName": "Hunan TV",
+      "pinyin": "hunan",
+      "number": 25,
+      "groupIds": [
+        "satellite"
+      ],
+      "sources": [
+        {
+          "id": "10025-ysp-official",
+          "label": "央视频官方线路",
+          "protocol": "cctv-live",
+          "original": "cctvlive://hnws",
+          "capability": "resolver"
+        }
+      ],
+      "shortCode": "湖南",
+      "displayName": "湖南卫视",
+      "epgCode": null,
+      "note": "",
+      "preferredSourceId": "10025-ysp-official"
+    },
+    {
+      "id": "10033",
+      "name": "江苏卫视",
+      "enName": "Jiangsu TV",
+      "pinyin": "jiangsu",
+      "number": 33,
+      "groupIds": [
+        "satellite"
+      ],
+      "sources": [
+        {
+          "id": "10033-ysp-official",
+          "label": "央视频官方线路",
+          "protocol": "cctv-live",
+          "original": "cctvlive://jsws",
+          "capability": "resolver"
+        }
+      ],
+      "shortCode": "江苏",
+      "displayName": "江苏卫视",
+      "epgCode": null,
+      "note": "",
+      "preferredSourceId": "10033-ysp-official"
+    },
+    {
+      "id": "10034",
+      "name": "东方卫视",
+      "enName": "Dragon TV",
+      "pinyin": "dfws",
+      "number": 34,
+      "groupIds": [
+        "satellite"
+      ],
+      "sources": [
+        {
+          "id": "10034-ysp-official",
+          "label": "央视频官方线路",
+          "protocol": "cctv-live",
+          "original": "cctvlive://dfws",
+          "capability": "resolver"
+        }
+      ],
+      "shortCode": "东方",
+      "displayName": "东方卫视",
+      "epgCode": null,
+      "note": "",
+      "preferredSourceId": "10034-ysp-official"
+    },
+    {
+      "id": "10076",
+      "name": "北京卫视",
+      "enName": "BRTV Beijing",
+      "pinyin": "bjws",
+      "number": 76,
+      "groupIds": [
+        "satellite"
+      ],
+      "sources": [
+        {
+          "id": "10076-ysp-official",
+          "label": "央视频官方线路",
+          "protocol": "cctv-live",
+          "original": "cctvlive://bjws",
+          "capability": "resolver"
+        }
+      ],
+      "shortCode": "北京",
+      "displayName": "北京卫视",
+      "epgCode": null,
+      "note": "",
+      "preferredSourceId": "10076-ysp-official"
+    },
+    {
+      "id": "10077",
+      "name": "湖北卫视",
+      "enName": "Hubei TV",
+      "pinyin": "hubei",
+      "number": 77,
+      "groupIds": [
+        "satellite"
+      ],
+      "sources": [
+        {
+          "id": "10077-ysp-official",
+          "label": "央视频官方线路",
+          "protocol": "cctv-live",
+          "original": "cctvlive://hbws",
+          "capability": "resolver"
+        }
+      ],
+      "shortCode": "湖北",
+      "displayName": "湖北卫视",
+      "epgCode": null,
+      "note": "",
+      "preferredSourceId": "10077-ysp-official"
+    },
+    {
+      "id": "10078",
+      "name": "广东卫视",
+      "enName": "Guangdong TV",
+      "pinyin": "guangdong",
+      "number": 78,
+      "groupIds": [
+        "satellite"
+      ],
+      "sources": [
+        {
+          "id": "10078-ysp-official",
+          "label": "央视频官方线路",
+          "protocol": "cctv-live",
+          "original": "cctvlive://gdws",
+          "capability": "resolver"
+        }
+      ],
+      "shortCode": "广东",
+      "displayName": "广东卫视",
+      "epgCode": null,
+      "note": "",
+      "preferredSourceId": "10078-ysp-official"
+    },
+    {
+      "id": "10079",
+      "name": "广西卫视",
+      "enName": "Guangxi TV",
+      "pinyin": "guangxi",
+      "number": 79,
+      "groupIds": [
+        "satellite"
+      ],
+      "sources": [
+        {
+          "id": "10079-ysp-official",
+          "label": "央视频官方线路",
+          "protocol": "cctv-live",
+          "original": "cctvlive://gxws",
+          "capability": "resolver"
+        }
+      ],
+      "shortCode": "广西",
+      "displayName": "广西卫视",
+      "epgCode": null,
+      "note": "",
+      "preferredSourceId": "10079-ysp-official"
+    },
+    {
+      "id": "10080",
+      "name": "黑龙江卫视",
+      "enName": "Heilongjiang TV",
+      "pinyin": "heilongjiang",
+      "number": 80,
+      "groupIds": [
+        "satellite"
+      ],
+      "sources": [
+        {
+          "id": "10080-ysp-official",
+          "label": "央视频官方线路",
+          "protocol": "cctv-live",
+          "original": "cctvlive://hljws",
+          "capability": "resolver"
+        }
+      ],
+      "shortCode": "黑龙江",
+      "displayName": "黑龙江卫视",
+      "epgCode": null,
+      "note": "",
+      "preferredSourceId": "10080-ysp-official"
+    },
+    {
+      "id": "10081",
+      "name": "海南卫视",
+      "enName": "Hainan TV",
+      "pinyin": "hainan",
+      "number": 81,
+      "groupIds": [
+        "satellite"
+      ],
+      "sources": [
+        {
+          "id": "10081-station-official",
+          "label": "电视台官方线路",
+          "protocol": "hnntv",
+          "original": "hnntv://hnws",
+          "capability": "resolver"
+        },
+        {
+          "id": "10081-ysp-official",
+          "label": "央视频官方线路",
+          "protocol": "cctv-live",
+          "original": "cctvlive://hnws2",
+          "capability": "resolver"
+        }
+      ],
+      "shortCode": "海南",
+      "displayName": "海南卫视",
+      "epgCode": null,
+      "note": "",
+      "preferredSourceId": "10081-station-official"
+    },
+    {
+      "id": "10082",
+      "name": "重庆卫视",
+      "enName": "Chongqing TV",
+      "pinyin": "chongqing",
+      "number": 82,
+      "groupIds": [
+        "satellite"
+      ],
+      "sources": [
+        {
+          "id": "10082-ysp-official",
+          "label": "央视频官方线路",
+          "protocol": "cctv-live",
+          "original": "cctvlive://cqws",
+          "capability": "resolver"
+        }
+      ],
+      "shortCode": "重庆",
+      "displayName": "重庆卫视",
+      "epgCode": null,
+      "note": "",
+      "preferredSourceId": "10082-ysp-official"
+    },
+    {
+      "id": "10083",
+      "name": "深圳卫视",
+      "enName": "Shenzhen TV",
+      "pinyin": "shenzhen",
+      "number": 83,
+      "groupIds": [
+        "satellite"
+      ],
+      "sources": [
+        {
+          "id": "10083-ysp-official",
+          "label": "央视频官方线路",
+          "protocol": "cctv-live",
+          "original": "cctvlive://szws",
+          "capability": "resolver"
+        }
+      ],
+      "shortCode": "深圳",
+      "displayName": "深圳卫视",
+      "epgCode": null,
+      "note": "",
+      "preferredSourceId": "10083-ysp-official"
+    },
+    {
+      "id": "10084",
+      "name": "四川卫视",
+      "enName": "Sichuan TV",
+      "pinyin": "sichuan",
+      "number": 84,
+      "groupIds": [
+        "satellite"
+      ],
+      "sources": [
+        {
+          "id": "10084-ysp-official",
+          "label": "央视频官方线路",
+          "protocol": "cctv-live",
+          "original": "cctvlive://scws",
+          "capability": "resolver"
+        }
+      ],
+      "shortCode": "四川",
+      "displayName": "四川卫视",
+      "epgCode": null,
+      "note": "",
+      "preferredSourceId": "10084-ysp-official"
+    },
+    {
+      "id": "10085",
+      "name": "河南卫视",
+      "enName": "Henan TV",
+      "pinyin": "henan",
+      "number": 85,
+      "groupIds": [
+        "satellite"
+      ],
+      "sources": [
+        {
+          "id": "10085-ysp-official",
+          "label": "央视频官方线路",
+          "protocol": "cctv-live",
+          "original": "cctvlive://henanws",
+          "capability": "resolver"
+        }
+      ],
+      "shortCode": "河南",
+      "displayName": "河南卫视",
+      "epgCode": null,
+      "note": "",
+      "preferredSourceId": "10085-ysp-official"
+    },
+    {
+      "id": "10086",
+      "name": "东南卫视",
+      "enName": "Southeast TV",
+      "pinyin": "dongnan",
+      "number": 86,
+      "groupIds": [
+        "satellite"
+      ],
+      "sources": [
+        {
+          "id": "10086-ysp-official",
+          "label": "央视频官方线路",
+          "protocol": "cctv-live",
+          "original": "cctvlive://fjdnhz",
+          "capability": "resolver"
+        }
+      ],
+      "shortCode": "东南",
+      "displayName": "东南卫视",
+      "epgCode": null,
+      "note": "",
+      "preferredSourceId": "10086-ysp-official"
+    },
+    {
+      "id": "10087",
+      "name": "贵州卫视",
+      "enName": "Guizhou TV",
+      "pinyin": "guizhou",
+      "number": 87,
+      "groupIds": [
+        "satellite"
+      ],
+      "sources": [
+        {
+          "id": "10087-ysp-official",
+          "label": "央视频官方线路",
+          "protocol": "cctv-live",
+          "original": "cctvlive://gzhws",
+          "capability": "resolver"
+        },
+        {
+          "id": "10087-station-official",
+          "label": "电视台官方线路",
+          "protocol": "gzstv",
+          "original": "gzstv://gzws",
+          "capability": "resolver"
+        }
+      ],
+      "shortCode": "贵州",
+      "displayName": "贵州卫视",
+      "epgCode": null,
+      "note": "",
+      "preferredSourceId": "10087-ysp-official"
+    },
+    {
+      "id": "10088",
+      "name": "江西卫视",
+      "enName": "Jiangxi TV",
+      "pinyin": "jiangxi",
+      "number": 88,
+      "groupIds": [
+        "satellite"
+      ],
+      "sources": [
+        {
+          "id": "10088-ysp-official",
+          "label": "央视频官方线路",
+          "protocol": "cctv-live",
+          "original": "cctvlive://jxws",
+          "capability": "resolver"
+        }
+      ],
+      "shortCode": "江西",
+      "displayName": "江西卫视",
+      "epgCode": null,
+      "note": "",
+      "preferredSourceId": "10088-ysp-official"
+    },
+    {
+      "id": "10089",
+      "name": "辽宁卫视",
+      "enName": "Liaoning TV",
+      "pinyin": "liaoning",
+      "number": 89,
+      "groupIds": [
+        "satellite"
+      ],
+      "sources": [
+        {
+          "id": "10089-ysp-official",
+          "label": "央视频官方线路",
+          "protocol": "cctv-live",
+          "original": "cctvlive://lnws",
+          "capability": "resolver"
+        }
+      ],
+      "shortCode": "辽宁",
+      "displayName": "辽宁卫视",
+      "epgCode": null,
+      "note": "",
+      "preferredSourceId": "10089-ysp-official"
+    },
+    {
+      "id": "10090",
+      "name": "安徽卫视",
+      "enName": "Anhui TV",
+      "pinyin": "anhui",
+      "number": 90,
+      "groupIds": [
+        "satellite"
+      ],
+      "sources": [
+        {
+          "id": "10090-ysp-official",
+          "label": "央视频官方线路",
+          "protocol": "cctv-live",
+          "original": "cctvlive://ahws",
+          "capability": "resolver"
+        }
+      ],
+      "shortCode": "安徽",
+      "displayName": "安徽卫视",
+      "epgCode": null,
+      "note": "",
+      "preferredSourceId": "10090-ysp-official"
+    },
+    {
+      "id": "10091",
+      "name": "河北卫视",
+      "enName": "Hebei TV",
+      "pinyin": "hebei",
+      "number": 91,
+      "groupIds": [
+        "satellite"
+      ],
+      "sources": [
+        {
+          "id": "10091-ysp-official",
+          "label": "央视频官方线路",
+          "protocol": "cctv-live",
+          "original": "cctvlive://hbws2",
+          "capability": "resolver"
+        }
+      ],
+      "shortCode": "河北",
+      "displayName": "河北卫视",
+      "epgCode": null,
+      "note": "",
+      "preferredSourceId": "10091-ysp-official"
+    },
+    {
+      "id": "10092",
+      "name": "山东卫视",
+      "enName": "Shandong TV",
+      "pinyin": "shandong",
+      "number": 92,
+      "groupIds": [
+        "satellite"
+      ],
+      "sources": [
+        {
+          "id": "10092-ysp-official",
+          "label": "央视频官方线路",
+          "protocol": "cctv-live",
+          "original": "cctvlive://sdws",
+          "capability": "resolver"
+        }
+      ],
+      "shortCode": "山东",
+      "displayName": "山东卫视",
+      "epgCode": null,
+      "note": "",
+      "preferredSourceId": "10092-ysp-official"
+    },
+    {
+      "id": "10093",
+      "name": "天津卫视",
+      "enName": "Tianjin TV",
+      "pinyin": "tianjin",
+      "number": 93,
+      "groupIds": [
+        "satellite"
+      ],
+      "sources": [
+        {
+          "id": "10093-ysp-official",
+          "label": "央视频官方线路",
+          "protocol": "cctv-live",
+          "original": "cctvlive://tjws",
+          "capability": "resolver"
+        }
+      ],
+      "shortCode": "天津",
+      "displayName": "天津卫视",
+      "epgCode": null,
+      "note": "",
+      "preferredSourceId": "10093-ysp-official"
+    },
+    {
+      "id": "10094",
+      "name": "吉林卫视",
+      "enName": "Jilin TV",
+      "pinyin": "jilin",
+      "number": 94,
+      "groupIds": [
+        "satellite"
+      ],
+      "sources": [
+        {
+          "id": "10094-ysp-official",
+          "label": "央视频官方线路",
+          "protocol": "cctv-live",
+          "original": "cctvlive://jlws",
+          "capability": "resolver"
+        }
+      ],
+      "shortCode": "吉林",
+      "displayName": "吉林卫视",
+      "epgCode": null,
+      "note": "",
+      "preferredSourceId": "10094-ysp-official"
+    },
+    {
+      "id": "10095",
+      "name": "陕西卫视",
+      "enName": "Shaanxi TV",
+      "pinyin": "shaanxi",
+      "number": 95,
+      "groupIds": [
+        "satellite"
+      ],
+      "sources": [
+        {
+          "id": "10095-ysp-official",
+          "label": "央视频官方线路",
+          "protocol": "cctv-live",
+          "original": "cctvlive://shanxiws",
+          "capability": "resolver"
+        }
+      ],
+      "shortCode": "陕西",
+      "displayName": "陕西卫视",
+      "epgCode": null,
+      "note": "",
+      "preferredSourceId": "10095-ysp-official"
+    },
+    {
+      "id": "10096",
+      "name": "宁夏卫视",
+      "enName": "Ningxia TV",
+      "pinyin": "nxws",
+      "number": 96,
+      "groupIds": [
+        "satellite"
+      ],
+      "sources": [
+        {
+          "id": "10096-ysp-official",
+          "label": "央视频官方线路",
+          "protocol": "cctv-live",
+          "original": "cctvlive://nxws",
+          "capability": "resolver"
+        }
+      ],
+      "shortCode": "宁夏",
+      "displayName": "宁夏卫视",
+      "epgCode": null,
+      "note": "",
+      "preferredSourceId": "10096-ysp-official"
+    },
+    {
+      "id": "10097",
+      "name": "内蒙古卫视",
+      "enName": "Inner Mongolia TV",
+      "pinyin": "neimenggu",
+      "number": 97,
+      "groupIds": [
+        "satellite"
+      ],
+      "sources": [
+        {
+          "id": "10097-ysp-official",
+          "label": "央视频官方线路",
+          "protocol": "cctv-live",
+          "original": "cctvlive://nmgws",
+          "capability": "resolver"
+        }
+      ],
+      "shortCode": "内蒙古",
+      "displayName": "内蒙古卫视",
+      "epgCode": null,
+      "note": "",
+      "preferredSourceId": "10097-ysp-official"
+    },
+    {
+      "id": "10098",
+      "name": "云南卫视",
+      "enName": "Yunnan TV",
+      "pinyin": "yunnan",
+      "number": 98,
+      "groupIds": [
+        "satellite"
+      ],
+      "sources": [
+        {
+          "id": "10098-ysp-official",
+          "label": "央视频官方线路",
+          "protocol": "cctv-live",
+          "original": "cctvlive://ynws",
+          "capability": "resolver"
+        }
+      ],
+      "shortCode": "云南",
+      "displayName": "云南卫视",
+      "epgCode": null,
+      "note": "",
+      "preferredSourceId": "10098-ysp-official"
+    },
+    {
+      "id": "10099",
+      "name": "山西卫视",
+      "enName": "Shanxi TV",
+      "pinyin": "shanxi",
+      "number": 99,
+      "groupIds": [
+        "satellite"
+      ],
+      "sources": [
+        {
+          "id": "10099-ysp-official",
+          "label": "央视频官方线路",
+          "protocol": "cctv-live",
+          "original": "cctvlive://shanxiws2",
+          "capability": "resolver"
+        },
+        {
+          "id": "10099-station-official",
+          "label": "电视台官方线路",
+          "protocol": "sxrtv",
+          "original": "sxrtv://sxws",
+          "capability": "resolver"
+        }
+      ],
+      "shortCode": "山西",
+      "displayName": "山西卫视",
+      "epgCode": null,
+      "note": "",
+      "preferredSourceId": "10099-ysp-official"
+    },
+    {
+      "id": "10100",
+      "name": "青海卫视",
+      "enName": "Qinghai TV",
+      "pinyin": "qinghai",
+      "number": 100,
+      "groupIds": [
+        "satellite"
+      ],
+      "sources": [
+        {
+          "id": "10100-ysp-official",
+          "label": "央视频官方线路",
+          "protocol": "cctv-live",
+          "original": "cctvlive://qhws",
+          "capability": "resolver"
+        }
+      ],
+      "shortCode": "青海",
+      "displayName": "青海卫视",
+      "epgCode": null,
+      "note": "",
+      "preferredSourceId": "10100-ysp-official"
+    },
+    {
+      "id": "10101",
+      "name": "甘肃卫视",
+      "enName": "Gansu TV",
+      "pinyin": "gansu",
+      "number": 101,
+      "groupIds": [
+        "satellite"
+      ],
+      "sources": [
+        {
+          "id": "10101-station-official",
+          "label": "电视台官方线路",
+          "protocol": "https",
+          "original": "https://live.gstv.com.cn/live/oxfhvoy.m3u8",
+          "capability": "direct",
+          "url": "https://live.gstv.com.cn/live/oxfhvoy.m3u8"
+        },
+        {
+          "id": "10101-ysp-official",
+          "label": "央视频官方线路",
+          "protocol": "cctv-live",
+          "original": "cctvlive://gsws",
+          "capability": "resolver"
+        }
+      ],
+      "shortCode": "甘肃",
+      "displayName": "甘肃卫视",
+      "epgCode": null,
+      "note": "",
+      "preferredSourceId": "10101-station-official"
+    },
+    {
+      "id": "10102",
+      "name": "兵团卫视",
+      "enName": "Bingtuan TV",
+      "pinyin": "bingtuan",
+      "number": 102,
+      "groupIds": [
+        "satellite"
+      ],
+      "sources": [
+        {
+          "id": "10102-ysp-official",
+          "label": "央视频官方线路",
+          "protocol": "cctv-live",
+          "original": "cctvlive://btws",
+          "capability": "resolver"
+        }
+      ],
+      "shortCode": "兵团",
+      "displayName": "兵团卫视",
+      "epgCode": null,
+      "note": "",
+      "preferredSourceId": "10102-ysp-official"
+    },
+    {
+      "id": "10103",
+      "name": "西藏卫视",
+      "enName": "Xizang TV",
+      "pinyin": "xizang",
+      "number": 103,
+      "groupIds": [
+        "satellite"
+      ],
+      "sources": [
+        {
+          "id": "10103-ysp-official",
+          "label": "央视频官方线路",
+          "protocol": "cctv-live",
+          "original": "cctvlive://xzws",
+          "capability": "resolver"
+        }
+      ],
+      "shortCode": "西藏",
+      "displayName": "西藏卫视",
+      "epgCode": null,
+      "note": "",
+      "preferredSourceId": "10103-ysp-official"
+    },
+    {
+      "id": "10104",
+      "name": "新疆卫视",
+      "enName": "Xinjiang TV",
+      "pinyin": "xinjiang",
+      "number": 104,
+      "groupIds": [
+        "satellite"
+      ],
+      "sources": [
+        {
+          "id": "10104-ysp-official",
+          "label": "央视频官方线路",
+          "protocol": "cctv-live",
+          "original": "cctvlive://xjws",
+          "capability": "resolver"
+        }
+      ],
+      "shortCode": "新疆",
+      "displayName": "新疆卫视",
+      "epgCode": null,
+      "note": "",
+      "preferredSourceId": "10104-ysp-official"
+    },
+    {
+      "id": "10233",
+      "name": "三沙卫视",
+      "enName": "Sansha TV",
+      "pinyin": "ssws",
+      "number": 295,
+      "groupIds": [
+        "satellite"
+      ],
+      "sources": [
+        {
+          "id": "10233-station-official",
+          "label": "电视台官方线路",
+          "protocol": "hnntv",
+          "original": "hnntv://ssws",
+          "capability": "resolver"
+        }
+      ],
+      "shortCode": "三沙",
+      "displayName": "三沙卫视",
+      "epgCode": null,
+      "note": "",
+      "preferredSourceId": "10233-station-official"
+    },
+    {
+      "id": "10234",
+      "name": "海峡卫视",
+      "enName": "Straits TV",
+      "pinyin": "hxws",
+      "number": 296,
+      "groupIds": [
+        "satellite"
+      ],
+      "sources": [
+        {
+          "id": "10234-station-official",
+          "label": "电视台官方线路",
+          "protocol": "fjtv",
+          "original": "fjtv://hxws",
+          "capability": "resolver"
+        }
+      ],
+      "shortCode": "海峡",
+      "displayName": "海峡卫视",
+      "epgCode": null,
+      "note": "",
+      "preferredSourceId": "10234-station-official"
+    }
+  ]
+}

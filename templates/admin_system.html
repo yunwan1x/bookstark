@@ -388,6 +388,15 @@
                                 </div>
                                 </div>
                             </details>
+                            <details class="ai-action-section">
+                                <summary class="ai-action-summary"><span class="ai-action-summary-title"><i class="fa-solid fa-chevron-right"></i>电视直播线路</span></summary>
+                                <div class="ai-action-body">
+                                    <label for="live-channel-lines">频道线路配置（JSON）</label>
+                                    <p class="text-xs text-slate-500">按频道 ID 填写首选和备用线路，可使用该频道的默认线路 ID 或浏览器能直接播放的 HTTPS 地址。配置对观众公开。删除某个频道的配置即可恢复默认线路。</p>
+                                    <a href="/api/cctv-live/channels?defaults=1" target="_blank" rel="noopener">查看默认频道及线路 ID</a>
+                                    <textarea id="live-channel-lines" name="live_channel_lines" rows="5" class="w-full font-mono" placeholder='{"10001":["10001-official-volc","10001-3"]}'>{{range .Settings}}{{if eq .Key "live_channel_lines"}}{{.Value}}{{end}}{{end}}</textarea>
+                                </div>
+                            </details>
                             <!-- 缓存设置 -->
                             <details class="ai-action-section">
                                 <summary class="ai-action-summary">

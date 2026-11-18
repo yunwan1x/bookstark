@@ -172,6 +172,7 @@ func Setup() *gin.Engine {
 	})
 
 	// Anonymous CCTV metadata only; playlists and video stay browser-direct.
+	r.GET("/api/cctv-live/channels", controllers.LiveChannelCatalog)
 	cctvLive := cctvlive.NewHandler()
 	r.Any("/api/cctv-live/resolve", gin.WrapH(cctvLive))
 
