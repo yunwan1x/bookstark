@@ -485,6 +485,7 @@ func Setup() *gin.Engine {
 			admin.PUT("/friend-links", controllers.ReplaceFriendLinks)
 			admin.GET("/settings", controllers.GetSettings)
 			admin.GET("/tv/channels", controllers.AdminTVChannels)
+			admin.GET("/tv/official-directory", controllers.TVOfficialDirectory)
 			admin.PUT("/tv/channels/:id", controllers.SaveTVChannel)
 			admin.POST("/tv/channels/:id/preview", controllers.PreviewTVChannel)
 			admin.PUT("/settings/live-channel-ids/:key", controllers.AdminLiveIDs)
