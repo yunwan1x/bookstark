@@ -24,10 +24,6 @@ func AdminSystemPage(c *gin.Context) {
 	data := commonData(c, "admin")
 	data["SMTPPasswordConfigured"] = models.GetSetting("smtp_password") != ""
 	data["Settings"] = redactAdminSettings(settings)
-	mappings, mappingErr := models.LiveMappings()
-	data["LiveMappingError"] = mappingErr != nil
-	data["LiveChannelIDs"] = mappings
-	data["OfficialChannels"] = cctvlive.OfficialChannels()
 	sections, tagsErr := models.PublicTagSections()
 	if tagsErr != nil {
 		log.Printf("PublicTagSections: %v", tagsErr)

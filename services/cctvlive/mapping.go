@@ -19,6 +19,7 @@ func (ids OfficialIDs) Valid() bool {
 }
 
 type OfficialChannel struct {
+	ID      string
 	Key     string
 	Name    string
 	Default OfficialIDs
@@ -34,6 +35,7 @@ func OfficialChannels() []OfficialChannel {
 	var catalog struct {
 		Channels []struct {
 			Name    string
+			ID      string
 			Sources []struct{ Original string }
 		}
 	}
@@ -45,7 +47,7 @@ func OfficialChannels() []OfficialChannel {
 		for _, s := range ch.Sources {
 			key, ok := strings.CutPrefix(s.Original, "cctvlive://")
 			if ok && DefaultIDs(key).Valid() {
-				list = append(list, OfficialChannel{key, ch.Name, DefaultIDs(key)})
+				list = append(list, OfficialChannel{ch.ID, key, ch.Name, DefaultIDs(key)})
 				break
 			}
 		}

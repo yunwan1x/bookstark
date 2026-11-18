@@ -157,6 +157,14 @@ func NewResolver() func(context.Context, string) (Result, error) {
 		return resolve(ctx, ids)
 	}
 }
+
+// PreviewIDs resolves a single unsaved mapping for an authenticated administrator.
+func PreviewIDs(ctx context.Context, ids OfficialIDs) (Result, error) {
+	if !ids.Valid() {
+		return Result{}, errAPI(400, "INVALID_CHANNEL_MAPPING")
+	}
+	return resolver(officialClient())(ctx, ids)
+}
 func officialClient() *http.Client {
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 	transport.Proxy = nil

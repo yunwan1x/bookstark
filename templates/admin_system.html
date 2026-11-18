@@ -225,13 +225,14 @@
         box-shadow: 0 0 0 2px var(--color-focus-ring);
     }
     </style>
+<link rel="stylesheet" href="/static/css/admin-tv.css">
 {{template "head-assets" .}}
 </head>
 <body class="bg-slate-50 min-h-screen flex flex-col">
     {{template "header" .}}
     <main class="admin-system-page flex-1" role="main">
         <div class="admin-system-content px-4 sm:px-6 md:px-8 py-6">
-            <div class="mx-auto" style="width:100%;max-width:960px;">
+            <div class="mx-auto" style="width:100%;max-width:var(--admin-content-width,960px);">
 
                 <!-- Tabs -->
                 <div role="tablist" class="admin-tabs flex bg-slate-100 rounded-t-lg p-1 gap-1">
@@ -244,6 +245,7 @@
                     <button role="tab" aria-selected="false" aria-controls="panel-settings" id="tab-settings" onclick="switchTab('settings')" class="tab-btn flex-1">
                         <i class="fa-solid fa-sliders" style="margin-right:4px"></i>{{call .T "admin.tab.settings"}}
                     </button>
+                    <button role="tab" aria-selected="false" aria-controls="panel-tv" id="tab-tv" onclick="switchTab('tv')" class="tab-btn flex-1"><i class="fa-solid fa-tv"></i> 电视直播</button>
                     <button role="tab" aria-selected="false" aria-controls="panel-ai" id="tab-ai" onclick="switchTab('ai')" class="tab-btn flex-1">
                         <i class="fa-solid fa-wand-magic-sparkles" style="margin-right:4px"></i>{{call .T "admin.tab.ai"}}
                     </button>
@@ -287,6 +289,44 @@
                 </div>
 
                 <!-- 系统参数 -->
+                <section id="panel-tv" role="tabpanel" aria-labelledby="tab-tv" class="hidden">
+                    <div class="tv-work"><aside class="tv-side"><div class="tv-heading"><h2>频道</h2><small id="tv-count"></small></div>
+                        <input id="tv-search" type="search" placeholder="搜索台名或拼音" aria-label="搜索频道">
+                        <div id="tv-filters"></div><div id="tv-list" aria-label="频道列表"></div></aside>
+                        <section class="tv-editor"><small id="tv-group"></small><div class="tv-heading"><h2 id="tv-name">频道设置</h2><small id="tv-kind"></small></div>
+                            <div class="tv-section"><div class="tv-heading"><div><h3>播放线路</h3><small>排在第一位的是首选线路。</small></div><button type="button" id="tv-add">＋ 添加直链</button></div>
+                            <div id="tv-lines"></div></div>
+                            <div id="tv-guide" hidden><details class="mt-2 mb-3" id="ysp-help">
+                                        <summary class="cursor-pointer"><strong>操作帮助：去哪里找频道编号和播放源？</strong></summary>
+                                        <ol class="list-decimal pl-6 space-y-2 mt-2">
+                                            <li>打开<a class="underline" href="https://www.yangshipin.cn/tv/home" target="_blank" rel="noopener">央视频 → 电视</a>，选要更新的台，核对台名和台标。例如「新疆卫视」。记下本页原有的两个编号，方便改回。</li>
+                                            <li><a class="underline" href="https://capi.yangshipin.cn/api/oms/pc/page/PG00000004" target="_blank" rel="noopener">下载官方电视频道列表</a>。如果浏览器显示乱码，用「另存为」保存文件。列表采用 Protobuf 二进制格式，文件没有扩展名也可以读取。</li>
+                                            <li><label for="ysp-list-file">选择刚下载的频道列表文件</label>，在下表按台名查找。复制<strong>同一行</strong>的 PID 和 streamId。读取文件只会显示编号。</li>
+                                        </ol>
+                                        <input type="file" id="ysp-list-file" class="my-2 max-w-full">
+                                        <p role="status" aria-live="polite" id="ysp-list-result"></p>
+                                        <div id="ysp-list-box" hidden>
+                                            <label for="ysp-list-filter">按频道名查找</label>
+                                            <input id="ysp-list-filter" type="search" class="setting-input" placeholder="例如：新疆">
+                                            <div style="max-height:16rem;overflow:auto">
+                                                <table class="text-sm"><thead><tr><th scope="col">官方台名</th><th scope="col">频道编号 PID</th><th scope="col">流编号 streamId</th></tr></thead><tbody id="ysp-list-rows"></tbody></table>
+                                            </div>
+                                        </div>
+                                        <ol start="4" class="list-decimal pl-6 space-y-2 mt-2">
+                                            <li>在左侧选择同一个台，展开「央视频官方线路」，把两串数字分别填入 PID 和 streamId，点「保存此频道」。例如核对本次官方列表时，新疆卫视的 PID 是 <code>600152138</code>，streamId 是 <code>2050898603</code>。以后以你刚下载的列表为准。</li>
+                                            <li>保存前点这条线路的「验证」，确认画面和台标。保存后也可以打开<a class="underline" href="/shares/superlive-web" target="_blank" rel="noopener">电视直播</a>，选同一频道的「央视频官方线路」，核对台标和画面。若播成其他台，重新核对两个编号；要撤销可填回先前记下的值，或点「恢复内置线路」并保存还原内置值。</li>
+                                        </ol>
+                                        <details class="mt-2">
+                                            <summary class="cursor-pointer">列表链接变了，或想在浏览器里直接查编号？</summary>
+                                            <p>在电脑 Chrome 或 Edge 打开央视频「电视」，按 F12，点「网络（Network）」并刷新。导航请求 <code>GET /api/oms/pc/navigation/home_top_nav</code> 给出「电视」的页面 ID。筛选 <code>/api/oms/pc/page/</code>，找打开「电视」时加载的频道列表请求（本次为 <code>GET /api/oms/pc/page/PG00000004</code>），右键在新标签页打开并保存，再回到上面读取。</p>
+                                            <p class="mt-2">也可以在「网络」筛选 <code>get_live_info</code>，再点击目标台播放。点最新的 <code>POST /v1/player/get_live_info</code>，进入「载荷（Payload）」：<code>livepid</code> 对应本页 PID，<code>cnlid</code> 对应 streamId。如果没看到请求，保持网络面板打开，切到别台再切回来。</p>
+                                            <p class="mt-2">频道列表提供的是编号。播放时 BookStark 用这两个编号取当前地址，播放器再连接视频 CDN。响应里的 <code>playurl</code> 可能过期，这里的两个框只填数字。</p>
+                                        </details>
+                                    </details></div>
+                            <p id="tv-status" role="status" aria-live="polite">正在读取频道…</p><div id="tv-preview"></div>
+                            <div class="tv-footer"><small id="tv-dirty"></small><div><button type="button" id="tv-reset">恢复内置线路</button><button type="button" class="tv-primary" id="tv-save">保存此频道</button></div></div>
+                        </section></div>
+                </section>
                 <div id="panel-settings" role="tabpanel" aria-labelledby="tab-settings" class="bg-white rounded-b-lg shadow-sm p-4 sm:p-5 hidden">
                     <form id="settingsForm" onsubmit="saveSettings(event)">
                         <div class="ai-action-sections">
@@ -386,64 +426,6 @@
                                         <span class="text-xs text-slate-500">{{call .T "admin.settings.unit.seconds"}}</span>
                                     </div>
                                 </div>
-                                </div>
-                            </details>
-                            <details class="ai-action-section">
-                                <summary class="ai-action-summary"><span class="ai-action-summary-title"><i class="fa-solid fa-chevron-right"></i>电视直播线路</span></summary>
-                                <div class="ai-action-body">
-                                    <label for="live-channel-lines">频道线路配置（JSON）</label>
-                                    <p class="text-xs text-slate-500">按频道 ID 填写首选和备用线路，可使用该频道的默认线路 ID 或浏览器能直接播放的 HTTPS 地址。配置对观众公开。删除某个频道的配置即可恢复默认线路。</p>
-                                    <a href="/api/cctv-live/channels?defaults=1" target="_blank" rel="noopener">查看默认频道及线路 ID</a>
-                                    <textarea id="live-channel-lines" name="live_channel_lines" rows="5" class="w-full font-mono" placeholder='{"10001":["10001-official-volc","10001-3"]}'>{{range .Settings}}{{if eq .Key "live_channel_lines"}}{{.Value}}{{end}}{{end}}</textarea>
-                                </div>
-                            </details>
-                            <details class="ai-action-section" id="official-channel-settings">
-                                <summary class="ai-action-summary"><span class="ai-action-summary-title"><i class="fa-solid fa-chevron-right"></i>央视频频道编号</span></summary>
-                                <div class="ai-action-body">
-                                    {{if .LiveMappingError}}<p role="alert">频道编号读取失败，请刷新后重试。</p>{{else}}
-                                    <details class="mt-2 mb-3" id="ysp-help">
-                                        <summary class="cursor-pointer"><strong>操作帮助：去哪里找频道编号和播放源？</strong></summary>
-                                        <ol class="list-decimal pl-6 space-y-2 mt-2">
-                                            <li>打开<a class="underline" href="https://www.yangshipin.cn/tv/home" target="_blank" rel="noopener">央视频 → 电视</a>，选要更新的台，核对台名和台标。例如「新疆卫视」。记下本页原有的两个编号，方便改回。</li>
-                                            <li><a class="underline" href="https://capi.yangshipin.cn/api/oms/pc/page/PG00000004" target="_blank" rel="noopener">下载官方电视频道列表</a>。如果浏览器显示乱码，用「另存为」保存文件。列表采用 Protobuf 二进制格式，文件没有扩展名也可以读取。</li>
-                                            <li><label for="ysp-list-file">选择刚下载的频道列表文件</label>，在下表按台名查找。复制<strong>同一行</strong>的 PID 和 streamId。读取文件只会显示编号。</li>
-                                        </ol>
-                                        <input type="file" id="ysp-list-file" class="my-2 max-w-full">
-                                        <p role="status" aria-live="polite" id="ysp-list-result"></p>
-                                        <div id="ysp-list-box" hidden>
-                                            <label for="ysp-list-filter">按频道名查找</label>
-                                            <input id="ysp-list-filter" type="search" class="setting-input" placeholder="例如：新疆">
-                                            <div style="max-height:16rem;overflow:auto">
-                                                <table class="text-sm"><thead><tr><th scope="col">官方台名</th><th scope="col">频道编号 PID</th><th scope="col">流编号 streamId</th></tr></thead><tbody id="ysp-list-rows"></tbody></table>
-                                            </div>
-                                        </div>
-                                        <ol start="4" class="list-decimal pl-6 space-y-2 mt-2">
-                                            <li>在本页下方「频道」选择同一个台，把两串数字分别填入 PID 和 streamId，点「保存该频道编号」。例如核对本次官方列表时，新疆卫视的 PID 是 <code>600152138</code>，streamId 是 <code>2050898603</code>。以后以你刚下载的列表为准。</li>
-                                            <li>点「检查已保存编号能否取址」。成功后打开<a class="underline" href="/shares/superlive-web" target="_blank" rel="noopener">电视直播</a>，选同一频道的「央视频官方线路」，核对台标和画面。若播成其他台，重新核对两个编号；要撤销可填回先前记下的值，或点「恢复该频道默认编号」还原内置值。</li>
-                                        </ol>
-                                        <details class="mt-2">
-                                            <summary class="cursor-pointer">列表链接变了，或想在浏览器里直接查编号？</summary>
-                                            <p>在电脑 Chrome 或 Edge 打开央视频「电视」，按 F12，点「网络（Network）」并刷新。导航请求 <code>GET /api/oms/pc/navigation/home_top_nav</code> 给出「电视」的页面 ID。筛选 <code>/api/oms/pc/page/</code>，找打开「电视」时加载的频道列表请求（本次为 <code>GET /api/oms/pc/page/PG00000004</code>），右键在新标签页打开并保存，再回到上面读取。</p>
-                                            <p class="mt-2">也可以在「网络」筛选 <code>get_live_info</code>，再点击目标台播放。点最新的 <code>POST /v1/player/get_live_info</code>，进入「载荷（Payload）」：<code>livepid</code> 对应本页 PID，<code>cnlid</code> 对应 streamId。如果没看到请求，保持网络面板打开，切到别台再切回来。</p>
-                                            <p class="mt-2">频道列表提供的是编号。播放时 BookStark 用这两个编号取当前地址，播放器再连接视频 CDN。响应里的 <code>playurl</code> 可能过期，这里的两个框只填数字。</p>
-                                        </details>
-                                    </details>
-                                    <label for="ysp-channel">频道</label>
-                                    <select id="ysp-channel" class="setting-input" style="width:auto">
-                                        {{range .OfficialChannels}}{{$saved := index $.LiveChannelIDs .Key}}
-                                        <option value="{{.Key}}" data-default-pid="{{.Default.PID}}" data-default-stream="{{.Default.StreamID}}" data-pid="{{if $saved.PID}}{{$saved.PID}}{{else}}{{.Default.PID}}{{end}}" data-stream="{{if $saved.StreamID}}{{$saved.StreamID}}{{else}}{{.Default.StreamID}}{{end}}">{{.Name}}</option>
-                                        {{end}}
-                                    </select>
-                                    <div class="setting-row"><label for="ysp-pid">央视频频道编号（PID）</label><input id="ysp-pid" type="text" inputmode="numeric" maxlength="19" class="setting-input" style="width:14em"></div>
-                                    <div class="setting-row"><label for="ysp-stream">流编号（streamId）</label><input id="ysp-stream" type="text" inputmode="numeric" maxlength="19" class="setting-input" style="width:14em"></div>
-                                    <p class="text-xs text-slate-500" id="ysp-defaults"></p>
-                                    <div class="flex flex-wrap items-center gap-2">
-                                        <button type="button" id="ysp-save" class="save-btn">保存该频道编号</button>
-                                        <button type="button" id="ysp-reset">恢复该频道默认编号</button>
-                                        <button type="button" id="ysp-check">检查已保存编号能否取址</button>
-                                    </div>
-                                    <p id="ysp-status" role="status" aria-live="polite"></p>
-                                    {{end}}
                                 </div>
                             </details>
                             <!-- 缓存设置 -->
@@ -1150,6 +1132,7 @@
         </div>
     </main>
     {{template "footer" .}}
+    <script defer src="/static/js/admin-tv.js"></script>
     <script src="/static/js/ysp-directory-help.js" defer></script>
 <script>
     var memberPage = 1;
@@ -1162,7 +1145,7 @@
     function switchTab(tab, opts) {
         opts = opts || {};
         if (opts.updateUrl !== false && window.BookStarkTabURL) window.BookStarkTabURL.set('tab', tab);
-        var tabs = ['members', 'comments', 'settings', 'ai', 'data'];
+        var tabs = ['members', 'comments', 'settings', 'tv', 'ai', 'data'];
         tabs.forEach(function(t) {
             var panel = document.getElementById('panel-' + t);
             var btn = document.getElementById('tab-' + t);
@@ -1175,6 +1158,8 @@
                 }
             }
         });
+        document.querySelector('.admin-system-content').style.setProperty('--admin-content-width',tab==='tv'?'1220px':'960px');
+        window.dispatchEvent(new CustomEvent('admin-tab',{detail:tab}));
         if (tab === 'data') {
             loadApprovedMembers();
             checkCleanupStatusOnLoad();
@@ -1618,60 +1603,6 @@
         document.getElementById('invite-code-row').style.display = this.checked ? '' : 'none';
     });
 
-    (() => {
-        const select = document.getElementById('ysp-channel');
-        if (!select) return;
-        const el = id => document.getElementById('ysp-' + id);
-        const controls = ['save','reset','check','pid','stream'].map(el);
-        function display() {
-            const d = select.selectedOptions[0].dataset;
-            el('pid').value = d.pid;
-            el('stream').value = d.stream;
-            el('defaults').textContent = '内置默认：PID ' + d.defaultPid + '，streamId ' + d.defaultStream;
-            el('status').textContent = '';
-        }
-        async function update(action) {
-            const option = select.selectedOptions[0];
-            const ids = {pid:el('pid').value.trim(),streamId:el('stream').value.trim()};
-            const check = action === 'check';
-            if (action === 'save' && !Object.values(ids).every(v => /^[1-9][0-9]{0,18}$/.test(v))) {
-                el('status').textContent = '请填写有效的数字编号。';
-                return;
-            }
-            if (check && (ids.pid !== option.dataset.pid || ids.streamId !== option.dataset.stream)) {
-                el('status').textContent = '请先保存修改后的编号，再检查取址。';
-                return;
-            }
-            [select,...controls].forEach(node => node.disabled = true);
-            el('status').textContent = check ? '正在向央视频取址…' : '正在保存…';
-            try {
-                const key = encodeURIComponent(option.value);
-                const res = check
-                    ? await fetch('/api/cctv-live/resolve?channel='+key,{cache:'no-store'})
-                    : await csrfFetch('/api/admin/settings/live-channel-ids/'+key, action === 'reset'
-                        ? {method:'DELETE'}
-                        : {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(ids)});
-                const result = await res.json();
-                if (!res.ok || (check ? !result.url : result.code !== 0)) throw Error(result.message || '操作失败');
-                if (check) {
-                    el('status').textContent = '取址成功。请到直播页选此频道核对台标和画面。';
-                } else {
-                    option.dataset.pid = result.data.pid;
-                    option.dataset.stream = result.data.streamId;
-                    display();
-                    el('status').textContent = '已保存，下次使用该频道的央视频线路时生效。';
-                }
-            } catch (err) {
-                el('status').textContent = err.message || '请求失败，请重试。';
-            } finally {
-                [select,...controls].forEach(node => node.disabled = false);
-            }
-        }
-        select.addEventListener('change',display);
-        ['save','reset','check'].forEach(action=>el(action).addEventListener('click',()=>update(action)));
-        display();
-    })();
-
     async function saveSettings(e) {
         e.preventDefault();
         const form = document.getElementById('settingsForm');
@@ -1770,9 +1701,10 @@
     // Initial load
     (function() {
         if (!window.BookStarkTabURL) return;
-        var tab = window.BookStarkTabURL.get('tab', ['members', 'comments', 'settings', 'ai', 'data'], '');
+        var tab = window.BookStarkTabURL.get('tab', ['members', 'comments', 'settings', 'tv', 'ai', 'data'], '');
         var aiTab = window.BookStarkTabURL.get('aiTab', ['base', 'prompts', 'actions'], '');
         if (aiTab && tab !== 'ai') tab = 'ai';
+        if (location.hash==='#official-channel-settings') tab='tv';
         if (tab) switchTab(tab, { updateUrl: false });
         if (aiTab) switchAITab(aiTab, { updateUrl: false });
     })();

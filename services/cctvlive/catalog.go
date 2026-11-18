@@ -15,8 +15,9 @@ var defaultCatalog []byte
 const LinesSetting = "live_channel_lines"
 
 type catalogChannel struct {
-	ID      string            `json:"id"`
-	Sources []json.RawMessage `json:"sources"`
+	ExternalOnly bool              `json:"externalOnly"`
+	ID           string            `json:"id"`
+	Sources      []json.RawMessage `json:"sources"`
 }
 
 // Catalog applies only administrator-selected lines. All other channel fields
@@ -52,6 +53,20 @@ func Catalog(config string) ([]byte, error) {
 		delete(overrides, channel.ID)
 		if len(lines) == 0 || len(lines) > 16 {
 			return nil, fmt.Errorf("频道 %s 需配置 1 至 16 条线路", channel.ID)
+		}
+		if len(lines) == 1 && strings.HasPrefix(lines[0], "official:") {
+			address := strings.TrimPrefix(lines[0], "official:")
+			u, err := url.ParseRequestURI(address)
+			if !channel.ExternalOnly || err != nil || u.Scheme != "https" || u.Host != "www.yangshipin.cn" || u.User != nil || u.Path != "/tv/home" || !decimalID.MatchString(u.Query().Get("pid")) {
+				return nil, fmt.Errorf("请输入含 pid 的央视频官方电视频道页地址")
+			}
+			var fields map[string]json.RawMessage
+			if err := json.Unmarshal(raw, &fields); err != nil {
+				return nil, err
+			}
+			fields["officialUrl"], _ = json.Marshal(address)
+			channels[i], _ = json.Marshal(fields)
+			continue
 		}
 		known := map[string]json.RawMessage{}
 		for _, s := range channel.Sources {
