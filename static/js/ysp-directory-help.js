@@ -54,35 +54,59 @@
         }
         return entries;
     }
+    const dialog = document.getElementById('tv-directory');
+    let revision = 0;
+    let choose;
     function render() {
         body.replaceChildren();
         const query = filter.value.trim().toLowerCase();
         const matches = channels.filter(ch => ch.name.toLowerCase().includes(query));
-        for (const {name,pid,stream} of matches) {
+        for (const ch of matches) {
             const row = body.insertRow();
-            for (const value of [name,pid,stream]) row.insertCell().textContent = value;
+            for (const value of [ch.name,ch.pid,ch.stream]) row.insertCell().textContent = value;
+            const action = document.createElement('button');
+            action.type = 'button';
+            action.textContent = '选用';
+            action.onclick = () => { choose(ch); dialog.close(); };
+            row.insertCell().append(action);
         }
-        status.textContent = matches.length ? '显示 ' + matches.length + ' 条频道记录。' : '没有匹配的台名，请换个关键词。';
+        status.textContent = matches.length ? matches.length + ' 个频道' : '没有匹配的频道';
     }
-    input.addEventListener('change', async () => {
-        const file = input.files[0];
+    async function load(readBytes) {
+        const request = ++revision;
         channels = [];
-        body.replaceChildren();
         box.hidden = true;
-        status.textContent = '';
-        if (!file) return;
+        status.textContent = '正在读取官方列表…';
         try {
-            if (file.size > 2 * 1024 * 1024) throw Error('size');
-            const bytes = new Uint8Array(await file.arrayBuffer());
-            if (input.files[0] !== file) return;
-            channels = read(bytes);
-            if (!channels.length) throw Error('empty');
-            filter.value = '';
+            const rows = read(new Uint8Array(await readBytes()));
+            if (request !== revision) return;
+            if (!rows.length) throw Error('empty');
+            channels = rows;
             render();
             box.hidden = false;
         } catch {
-            if (input.files[0] === file) status.textContent = '未读到电视频道。请选择官方频道列表原文件（最多 2 MB）；若官方格式已变，可用下方的浏览器方法查编号。';
+            if (request === revision) status.textContent = '读取失败，可手动导入官方列表。';
         }
-    });
-    filter.addEventListener('input', render);
+    }
+    window.openTVDirectory = onChoose => {
+        choose = onChoose;
+        filter.value = '';
+        input.value = '';
+        dialog.showModal();
+        filter.focus();
+        load(async () => {
+            const r = await fetch('/api/admin/tv/official-directory', {cache:'no-store'});
+            if (!r.ok) throw Error('directory unavailable');
+            return r.arrayBuffer();
+        });
+    };
+    input.onchange = () => {
+        const file = input.files[0];
+        if (file) load(async () => {
+            if (file.size > 2 * 1024 * 1024) throw Error('size');
+            return file.arrayBuffer();
+        });
+    };
+    filter.oninput = () => { if (channels.length) render(); };
+    dialog.onclose = () => { revision++; choose = null; };
 })();

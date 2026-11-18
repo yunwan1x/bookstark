@@ -225,7 +225,7 @@
         box-shadow: 0 0 0 2px var(--color-focus-ring);
     }
     </style>
-<link rel="stylesheet" href="/static/css/admin-tv.css">
+<link rel="stylesheet" href="/static/css/admin-tv.css?v=2">
 {{template "head-assets" .}}
 </head>
 <body class="bg-slate-50 min-h-screen flex flex-col">
@@ -290,42 +290,38 @@
 
                 <!-- 系统参数 -->
                 <section id="panel-tv" role="tabpanel" aria-labelledby="tab-tv" class="hidden">
-                    <div class="tv-work"><aside class="tv-side"><div class="tv-heading"><h2>频道</h2><small id="tv-count"></small></div>
-                        <input id="tv-search" type="search" placeholder="搜索台名或拼音" aria-label="搜索频道">
-                        <div id="tv-filters"></div><div id="tv-list" aria-label="频道列表"></div></aside>
-                        <section class="tv-editor"><small id="tv-group"></small><div class="tv-heading"><h2 id="tv-name">频道设置</h2><small id="tv-kind"></small></div>
-                            <div class="tv-section"><div class="tv-heading"><div><h3>播放线路</h3><small>排在第一位的是首选线路。</small></div><button type="button" id="tv-add">＋ 添加直链</button></div>
-                            <div id="tv-lines"></div></div>
-                            <div id="tv-guide" hidden><details class="mt-2 mb-3" id="ysp-help">
-                                        <summary class="cursor-pointer"><strong>操作帮助：去哪里找频道编号和播放源？</strong></summary>
-                                        <ol class="list-decimal pl-6 space-y-2 mt-2">
-                                            <li>打开<a class="underline" href="https://www.yangshipin.cn/tv/home" target="_blank" rel="noopener">央视频 → 电视</a>，选要更新的台，核对台名和台标。例如「新疆卫视」。记下本页原有的两个编号，方便改回。</li>
-                                            <li><a class="underline" href="https://capi.yangshipin.cn/api/oms/pc/page/PG00000004" target="_blank" rel="noopener">下载官方电视频道列表</a>。如果浏览器显示乱码，用「另存为」保存文件。列表采用 Protobuf 二进制格式，文件没有扩展名也可以读取。</li>
-                                            <li><label for="ysp-list-file">选择刚下载的频道列表文件</label>，在下表按台名查找。复制<strong>同一行</strong>的 PID 和 streamId。读取文件只会显示编号。</li>
-                                        </ol>
-                                        <input type="file" id="ysp-list-file" class="my-2 max-w-full">
-                                        <p role="status" aria-live="polite" id="ysp-list-result"></p>
-                                        <div id="ysp-list-box" hidden>
-                                            <label for="ysp-list-filter">按频道名查找</label>
-                                            <input id="ysp-list-filter" type="search" class="setting-input" placeholder="例如：新疆">
-                                            <div style="max-height:16rem;overflow:auto">
-                                                <table class="text-sm"><thead><tr><th scope="col">官方台名</th><th scope="col">频道编号 PID</th><th scope="col">流编号 streamId</th></tr></thead><tbody id="ysp-list-rows"></tbody></table>
-                                            </div>
-                                        </div>
-                                        <ol start="4" class="list-decimal pl-6 space-y-2 mt-2">
-                                            <li>在左侧选择同一个台，展开「央视频官方线路」，把两串数字分别填入 PID 和 streamId，点「保存此频道」。例如核对本次官方列表时，新疆卫视的 PID 是 <code>600152138</code>，streamId 是 <code>2050898603</code>。以后以你刚下载的列表为准。</li>
-                                            <li>保存前点这条线路的「验证」，确认画面和台标。保存后也可以打开<a class="underline" href="/shares/superlive-web" target="_blank" rel="noopener">电视直播</a>，选同一频道的「央视频官方线路」，核对台标和画面。若播成其他台，重新核对两个编号；要撤销可填回先前记下的值，或点「恢复内置线路」并保存还原内置值。</li>
-                                        </ol>
-                                        <details class="mt-2">
+                    <div class="tv-page-head"><h2>电视直播</h2><button type="button" class="tv-link" id="tv-help"><i class="fa-solid fa-book-open"></i> 配置帮助</button></div>
+                    <div class="tv-work">
+                        <aside class="tv-side">
+                            <label class="tv-search"><i class="fa-solid fa-magnifying-glass"></i><input id="tv-search" type="search" placeholder="搜索频道" aria-label="搜索频道名称或拼音"></label>
+                            <div id="tv-filters" aria-label="频道分类"></div><div id="tv-list" aria-label="频道列表"></div>
+                        </aside>
+                        <section class="tv-editor">
+                            <header class="tv-title"><i class="fa-solid fa-tv" aria-hidden="true"></i><h3 id="tv-name">频道设置</h3></header>
+                            <div class="tv-section"><div class="tv-heading"><h4>播放线路</h4><button type="button" class="tv-link" id="tv-add" disabled>＋ 添加线路</button></div><div id="tv-lines"></div></div>
+                            <div class="tv-validation"><div id="tv-preview"></div><p id="tv-status" role="status" aria-live="polite">正在读取频道…</p><button type="button" id="tv-verify" disabled>验证线路</button></div>
+                        </section>
+                        <footer class="tv-footer"><button type="button" id="tv-reset" disabled>恢复该频道默认设置</button><small id="tv-dirty"></small><button type="button" class="tv-primary" id="tv-save" disabled>保存更改</button></footer>
+                    </div>
+                    <dialog id="tv-help-dialog" aria-labelledby="tv-help-title"><div class="tv-heading"><h3 id="tv-help-title">配置帮助</h3><form method="dialog"><button aria-label="关闭">×</button></form></div>
+                        <p>选择频道，展开要更新的线路。排在第一位的是首选，其余按顺序备用。</p>
+                        <h4>更新央视频频道编号</h4><p>在央视频线路点「从官方列表选择」，按台名找到频道，点「选用」同时填入 PID 和 streamId。你也可以手动输入两个编号。</p>
+                        <h4>添加播放地址</h4><p>点「添加线路」，填写浏览器可直接播放的 HTTPS 地址。在「线路操作」里可以调整顺序或移除线路。</p>
+                        <h4>核对并保存</h4><p>点「验证线路」核对画面和台标，再点「保存更改」。保存只影响当前频道。</p>
+                        <details class="mt-2">
                                             <summary class="cursor-pointer">列表链接变了，或想在浏览器里直接查编号？</summary>
                                             <p>在电脑 Chrome 或 Edge 打开央视频「电视」，按 F12，点「网络（Network）」并刷新。导航请求 <code>GET /api/oms/pc/navigation/home_top_nav</code> 给出「电视」的页面 ID。筛选 <code>/api/oms/pc/page/</code>，找打开「电视」时加载的频道列表请求（本次为 <code>GET /api/oms/pc/page/PG00000004</code>），右键在新标签页打开并保存，再回到上面读取。</p>
                                             <p class="mt-2">也可以在「网络」筛选 <code>get_live_info</code>，再点击目标台播放。点最新的 <code>POST /v1/player/get_live_info</code>，进入「载荷（Payload）」：<code>livepid</code> 对应本页 PID，<code>cnlid</code> 对应 streamId。如果没看到请求，保持网络面板打开，切到别台再切回来。</p>
                                             <p class="mt-2">频道列表提供的是编号。播放时 BookStark 用这两个编号取当前地址，播放器再连接视频 CDN。响应里的 <code>playurl</code> 可能过期，这里的两个框只填数字。</p>
                                         </details>
-                                    </details></div>
-                            <p id="tv-status" role="status" aria-live="polite">正在读取频道…</p><div id="tv-preview"></div>
-                            <div class="tv-footer"><small id="tv-dirty"></small><div><button type="button" id="tv-reset">恢复内置线路</button><button type="button" class="tv-primary" id="tv-save">保存此频道</button></div></div>
-                        </section></div>
+                    </dialog>
+                    <dialog id="tv-directory" aria-labelledby="tv-directory-title"><div class="tv-heading"><h3 id="tv-directory-title">从官方列表选择</h3><form method="dialog"><button aria-label="关闭">×</button></form></div>
+                        <input id="ysp-list-filter" type="search" placeholder="搜索官方台名" aria-label="搜索官方台名">
+                        <p id="ysp-list-result" role="status"></p>
+                        <div id="ysp-list-box" hidden><table><thead><tr><th>频道</th><th>PID</th><th>streamId</th><th></th></tr></thead><tbody id="ysp-list-rows"></tbody></table></div>
+                        <details><summary>手动导入官方列表</summary><p><a href="https://capi.yangshipin.cn/api/oms/pc/page/PG00000004" target="_blank" rel="noopener">下载官方列表</a>后选择原文件。</p><input type="file" id="ysp-list-file" aria-label="官方频道列表文件"></details>
+                    </dialog>
+                </section></div>
                 </section>
                 <div id="panel-settings" role="tabpanel" aria-labelledby="tab-settings" class="bg-white rounded-b-lg shadow-sm p-4 sm:p-5 hidden">
                     <form id="settingsForm" onsubmit="saveSettings(event)">
@@ -1132,8 +1128,8 @@
         </div>
     </main>
     {{template "footer" .}}
-    <script defer src="/static/js/admin-tv.js"></script>
-    <script src="/static/js/ysp-directory-help.js" defer></script>
+    <script defer src="/static/js/admin-tv.js?v=2"></script>
+    <script src="/static/js/ysp-directory-help.js?v=2" defer></script>
 <script>
     var memberPage = 1;
     var memberPageSize = 20;

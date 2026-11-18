@@ -24,34 +24,34 @@
     }
     function group(channel){return channel.groupIds.includes('satellite')?'卫视':'央视'}
     function changed(item){return !equal(item.saved,item.draft)}
-    function message(text){el('status').textContent=text}
+    function message(text,state=''){el('status').textContent=text;el('status').dataset.state=state}
     function stop(){
         run++;controller?.abort();controller=null;frame=null;el('preview').replaceChildren();
     }
     function list(){
         const query=el('search').value.trim().toLowerCase();
         const show=[...entries.values()].filter(({channel})=>(filter==='全部'||group(channel)===filter)&&(channel.name+channel.pinyin).toLowerCase().includes(query));
-        el('count').textContent=show.length+' 个';
         const host=el('list');host.replaceChildren();
         for(const category of ['央视','卫视']){
             const subset=show.filter(i=>group(i.channel)===category);
-            if(subset.length)host.append(element('small',category));
             for(const i of subset){
                 const b=button(i.channel.name,()=>select(i.channel.id),selected===i.channel.id?'active':'');
                 b.dataset.channel=i.channel.id;b.setAttribute('aria-current',String(selected===i.channel.id));
-                if(changed(i))b.append(element('span','草稿'));host.append(b);
+                const parts=/^(CCTV-\S+)\s+(.+)$/.exec(i.channel.name);
+                if(parts)b.replaceChildren(element('b',parts[1]),element('span',parts[2]));
+                if(changed(i))b.append(element('small','草稿'));host.append(b);
             }
         }
         if(!show.length)host.append(element('small','没有找到这个频道'));
     }
     function select(id){
-        stop();selected=id;opened=0;render();message('选择一条线路，点「验证」即可试播。');
+        stop();selected=id;opened=0;render();message('尚未验证');
     }
     function resetPreview(){stop();message('草稿已修改，可验证当前线路。');footer();list()}
     function footer(){
         const dirty=changed(current());
         el('save').disabled=!dirty || saving;
-        el('dirty').textContent=dirty?'有未保存的修改 · 仅此频道':'正在使用已保存的配置';
+        el('dirty').textContent=dirty?'有未保存的修改':'';
     }
     function field(host,label,value,onChange,numeric=false){
         const l=element('label',label,'tv-field'),input=document.createElement('input');
@@ -70,21 +70,31 @@
     }
     function render(){
         const item=current(),draft=item.draft,lines=draft.lines;
-        list();el('group').textContent=group(item.channel)+' / 频道设置';el('name').textContent=item.channel.name;
-        el('kind').textContent=isWeb(lines[0])?'前往官网观看':'网页内播放';
-        el('lines').replaceChildren();el('guide').hidden=lines[opened]?.protocol!=='cctv-live';
+        list();el('name').textContent=item.channel.name;
+        el('lines').replaceChildren();
+        el('verify').disabled=el('add').disabled=el('reset').disabled=false;
+        el('verify').textContent=isWeb(lines[Math.max(0,opened)])?'打开官网核对':'验证线路';
         lines.forEach((line,i)=>{
             const card=element('div',undefined,'tv-line'+(i===opened?' open':''));
-            const h=element('div',undefined,'tv-line-head');card.append(h);
-            h.append(element('span',i?'备用 '+i:'首选','tv-badge'+(!i?' first':'')),element('strong',line.label),
-                button(i===opened?'收起':'编辑',()=>{opened=i===opened?-1:i;render()}),
-                button(isWeb(line)?'打开核对':'验证',()=>verify(i)));
+            const h=button('',()=>{
+                opened=i===opened?-1:i;stop();render();message('尚未验证');
+                el('lines').querySelectorAll('.tv-line-head')[i]?.focus();
+            },'tv-line-head');
+            h.setAttribute('aria-expanded',String(i===opened));
+            const caret=element('i',undefined,'fa-solid fa-chevron-'+(i===opened?'up':'down'));
+            caret.setAttribute('aria-hidden','true');
+            h.append(element('strong',line.label),element('span',i?'备用':'首选','tv-badge'+(!i?' first':'')),caret);
+            card.append(h);
             if(i===opened){
                 const e=element('div',undefined,'tv-details');card.append(e);
                 if(line.protocol==='cctv-live'){
                     const pair=element('div',undefined,'tv-pair');e.append(pair);
-                    field(pair,'央视频频道编号（PID）',draft.ids.pid,v=>draft.ids.pid=v,true);
-                    field(pair,'流编号（streamId）',draft.ids.streamId,v=>draft.ids.streamId=v,true);
+                    field(pair,'频道编号 PID',draft.ids.pid,v=>draft.ids.pid=v,true);
+                    field(pair,'流编号 streamId',draft.ids.streamId,v=>draft.ids.streamId=v,true);
+                    e.append(button('从官方列表选择',()=>window.openTVDirectory(ch=>{
+                        draft.ids={pid:ch.pid,streamId:ch.stream};handleChange(i);
+                        message('已填入「'+ch.name+'」的编号，验证后可保存。');
+                    }),'tv-link tv-pick'));
                 }else if(line.protocol==='https'||isWeb(line)){
                     field(e,isWeb(line)?'央视频官网频道页（HTTPS）':'播放地址（HTTPS）',line.url,v=>line.url=v);
                 }else e.append(element('small','内置取址线路。播放时自动获取地址，可以调整顺序或添加备用直链。'));
@@ -92,7 +102,10 @@
                 if(i>0)tools.append(button('设为首选',()=>{lines.unshift(lines.splice(i,1)[0]);handleChange(0)}));
                 if(i<lines.length-1)tools.append(button('下移',()=>{[lines[i],lines[i+1]]=[lines[i+1],lines[i]];handleChange(i+1)}));
                 if(lines.length>1)tools.append(button('移除线路',()=>{lines.splice(i,1);handleChange(Math.min(i,lines.length-1))}));
-                e.append(tools);
+                if(tools.childElementCount){
+                    const menu=element('details',undefined,'tv-line-menu');
+                    menu.append(element('summary','线路操作'),tools);e.append(menu);
+                }
             }
             el('lines').append(card);
         });
@@ -122,11 +135,12 @@
             f.onload=()=>{if(seq===run)f.contentWindow.postMessage({type:'tv-preview',source:{protocol:line.protocol,url:line.protocol==='https'?line.url:undefined,original:line.url},resolved},location.origin)};
             f.src='/static/tv-preview/player.html';
             el('preview').append(f,button('关闭试播',()=>{stop();message('试播已关闭。')}));
-        }catch(e){if(seq===run)message(e.message||'试播失败')}
+        }catch(e){if(seq===run)message('验证失败：'+(e.message||'试播失败'),'error')}
     }
     window.addEventListener('message',e=>{
         if(!frame||e.source!==frame.contentWindow||e.origin!==location.origin||e.data?.type!=='tv-preview-result')return;
-        message((e.data.ok?'验证通过：':'验证失败：')+e.data.message);
+        const i=Math.max(0,opened);
+        message(e.data.ok?(i?'备用':'首选')+'线路可播放':('验证失败：'+e.data.message),e.data.ok?'ok':'error');
     });
     function serialize(item){
         return item.draft.lines.map(line=>{
@@ -162,8 +176,8 @@
                 const saved={lines:linesOf(channel),ids:source?(mappings?.[source.Key]||source.Default):null};
                 entries.set(channel.id,{channel,defaults:def,saved,draft:clone(saved)});
             }
-            const first=entries.has('10023')?'10023':catalog.defaultChannelId;
-            select(first);opened=current().draft.lines.findIndex(l=>l.protocol==='cctv-live');if(opened<0)opened=0;render();
+            const first=catalog.defaultChannelId;
+            select(entries.has(first)?first:entries.keys().next().value);
             const l=el('list'),active=l.querySelector('.active');if(active)l.scrollTop+=active.getBoundingClientRect().top-l.getBoundingClientRect().top-32;
         }catch(e){message('读取频道失败：'+e.message);el('status').append(button('重试',load))}
         finally{loading=false}
@@ -172,6 +186,8 @@
         const b=button(name,()=>{filter=name;for(const n of el('filters').children)n.classList.toggle('active',n===b);list()},name==='全部'?'active':'');el('filters').append(b);
     }
     el('search').oninput=list;
+    el('help').onclick=()=>el('help-dialog').showModal();
+    el('verify').onclick=()=>{if(current())verify(Math.max(0,opened))};
     el('save').onclick=save;
     el('reset').onclick=()=>{if(!current())return;current().draft=clone(current().defaults);handleChange(0);message('已把内置配置放入草稿，保存后生效。')};
     el('add').onclick=()=>{if(!current())return;const lines=current().draft.lines;if(lines.length>=16)return message('每个频道最多 16 条线路');if(lines.some(isWeb))lines.length=0;lines.push({id:'',protocol:'https',label:'自定义直链',url:''});handleChange(lines.length-1)};
