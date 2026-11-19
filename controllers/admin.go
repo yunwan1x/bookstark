@@ -183,6 +183,10 @@ func UpdateSettings(c *gin.Context) {
 
 	// Validate numeric settings
 	for k, v := range req {
+		if k == "world_tv_state" {
+			apiError(c, http.StatusBadRequest, "请在电视直播的世界电视页保存配置")
+			return
+		}
 		if k == models.LiveMappingSetting {
 			apiError(c, http.StatusBadRequest, "请通过央视频频道编号设置保存")
 			return

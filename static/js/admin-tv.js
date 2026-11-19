@@ -193,5 +193,6 @@
     el('add').onclick=()=>{if(!current())return;const lines=current().draft.lines;if(lines.length>=16)return message('每个频道最多 16 条线路');if(lines.some(isWeb))lines.length=0;lines.push({id:'',protocol:'https',label:'自定义直链',url:''});handleChange(lines.length-1)};
     window.addEventListener('admin-tab',e=>{if(e.detail==='tv')load();else if(frame||controller){stop();message('试播已关闭。')}});
     window.addEventListener('pagehide',stop);
+    window.addEventListener('tv-subtab',e=>{if(e.detail==='world'){stop();message('试播已关闭。')}});
     if(!document.getElementById('panel-tv').classList.contains('hidden'))load();
 })();

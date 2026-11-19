@@ -225,7 +225,7 @@
         box-shadow: 0 0 0 2px var(--color-focus-ring);
     }
     </style>
-<link rel="stylesheet" href="/static/css/admin-tv.css?v=2">
+<link rel="stylesheet" href="/static/css/admin-tv.css?v={{assetVer "/static/css/admin-tv.css"}}">
 {{template "head-assets" .}}
 </head>
 <body class="bg-slate-50 min-h-screen flex flex-col">
@@ -291,6 +291,11 @@
                 <!-- 系统参数 -->
                 <section id="panel-tv" role="tabpanel" aria-labelledby="tab-tv" class="hidden">
                     <div class="tv-page-head"><h2>电视直播</h2><button type="button" class="tv-link" id="tv-help"><i class="fa-solid fa-book-open"></i> 配置帮助</button></div>
+                    <div class="tv-subtabs" role="tablist" aria-label="直播类型">
+                        <button id="tv-domestic-tab" role="tab" aria-selected="true" aria-controls="tv-domestic" class="chosen">央视 / 卫视</button>
+                        <button id="tv-world-tab" role="tab" aria-selected="false" aria-controls="tv-world" tabindex="-1">世界电视</button>
+                    </div>
+                    <div id="tv-domestic" role="tabpanel" aria-labelledby="tv-domestic-tab">
                     <div class="tv-work">
                         <aside class="tv-side">
                             <label class="tv-search"><i class="fa-solid fa-magnifying-glass"></i><input id="tv-search" type="search" placeholder="搜索频道" aria-label="搜索频道名称或拼音"></label>
@@ -303,8 +308,11 @@
                         </section>
                         <footer class="tv-footer"><button type="button" id="tv-reset" disabled>恢复该频道默认设置</button><small id="tv-dirty"></small><button type="button" class="tv-primary" id="tv-save" disabled>保存更改</button></footer>
                     </div>
+                    </div>
+                    {{template "admin-world-tv" .}}
                     <dialog id="tv-help-dialog" aria-labelledby="tv-help-title"><div class="tv-heading"><h3 id="tv-help-title">配置帮助</h3><form method="dialog"><button aria-label="关闭">×</button></form></div>
                         <p>选择频道，展开要更新的线路。排在第一位的是首选，其余按顺序备用。</p>
+                        <h4>世界电视</h4><p>在世界电视子页保存公网 HTTPS 订阅地址和拉取周期，然后点「立即拉取」。左侧可搜索频道、按国家或地区筛选，右侧查看来源并试播。关闭页面不影响服务器定时执行。拉取失败保留已有列表。</p>
                         <h4>更新央视频频道编号</h4><p>在央视频线路点「从官方列表选择」，按台名找到频道，点「选用」同时填入 PID 和 streamId。你也可以手动输入两个编号。</p>
                         <h4>添加播放地址</h4><p>点「添加线路」，填写浏览器可直接播放的 HTTPS 地址。在「线路操作」里可以调整顺序或移除线路。</p>
                         <h4>核对并保存</h4><p>点「验证线路」核对画面和台标，再点「保存更改」。保存只影响当前频道。</p>
@@ -321,7 +329,6 @@
                         <div id="ysp-list-box" hidden><table><thead><tr><th>频道</th><th>PID</th><th>streamId</th><th></th></tr></thead><tbody id="ysp-list-rows"></tbody></table></div>
                         <details><summary>手动导入官方列表</summary><p><a href="https://capi.yangshipin.cn/api/oms/pc/page/PG00000004" target="_blank" rel="noopener">下载官方列表</a>后选择原文件。</p><input type="file" id="ysp-list-file" aria-label="官方频道列表文件"></details>
                     </dialog>
-                </section></div>
                 </section>
                 <div id="panel-settings" role="tabpanel" aria-labelledby="tab-settings" class="bg-white rounded-b-lg shadow-sm p-4 sm:p-5 hidden">
                     <form id="settingsForm" onsubmit="saveSettings(event)">
@@ -1128,7 +1135,8 @@
         </div>
     </main>
     {{template "footer" .}}
-    <script defer src="/static/js/admin-tv.js?v=2"></script>
+    <script defer src="/static/js/admin-world-tv.js?v={{assetVer "/static/js/admin-world-tv.js"}}"></script>
+    <script defer src="/static/js/admin-tv.js?v={{assetVer "/static/js/admin-tv.js"}}"></script>
     <script src="/static/js/ysp-directory-help.js?v=2" defer></script>
 <script>
     var memberPage = 1;

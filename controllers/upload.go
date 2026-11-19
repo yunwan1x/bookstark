@@ -55,7 +55,11 @@ func ServeUploadFile(c *gin.Context) {
 		return
 	}
 
-	c.Header("Cache-Control", "public, max-age=31536000")
+	if filepath.Clean(fp) == "/worldtv/channels.json" || filepath.Clean(fp) == "worldtv/channels.json" {
+		c.Header("Cache-Control", "no-store")
+	} else {
+		c.Header("Cache-Control", "public, max-age=31536000")
+	}
 
 	if strings.HasSuffix(strings.ToLower(fp), ".svg") {
 		c.Header("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'")

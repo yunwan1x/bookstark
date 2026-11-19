@@ -1,0 +1,82 @@
+{{define "admin-world-tv"}}
+<section id="tv-world" hidden role="tabpanel" aria-labelledby="tv-world-tab">
+<form class="world-config" id="wtv-world-form">
+<div class="tv-heading">
+<h3>订阅与自动拉取</h3>
+<small>配置保存到后端，由服务器执行</small>
+</div>
+<div class="source-row">
+<label for="wtv-source" style="font-size:13px;white-space:nowrap">订阅地址</label>
+<input id="wtv-source" type="url" required aria-label="订阅地址" maxlength="4096" placeholder="https://…/playlist.m3u8" disabled>
+<button type="button" class="w-btn" id="wtv-pull" disabled>立即拉取</button>
+</div>
+<div class="schedule-row">
+<label>
+<input type="checkbox" id="wtv-auto" disabled> 启用定时拉取</label>
+<select id="wtv-period" disabled aria-label="拉取间隔">
+<option>每 6 小时</option>
+<option>每 12 小时</option>
+<option>每 24 小时</option>
+</select>
+<span class="w-muted">失败时保留上次成功列表</span>
+<span id="wtv-saved" class="w-muted" style="margin-left:auto">正在读取…</span>
+<button class="w-btn w-primary" id="wtv-save" type="submit" disabled>保存拉取配置</button>
+</div>
+<div class="w-status" role="status" aria-live="polite">
+<span id="wtv-pull-status">尚未拉取</span>
+<span id="wtv-last">上次：—</span>
+<span id="wtv-next">下次：—</span>
+<span id="wtv-duration">
+</span>
+</div>
+<p id="wtv-error" role="alert" hidden>
+</p>
+</form>
+<div class="tv-work world-work">
+<aside class="tv-side">
+<label class="tv-search">
+<span>⌕</span>
+<input id="wtv-world-search" style="width:100%;min-width:0;border:0;background:transparent" placeholder="搜索频道名称" aria-label="搜索世界频道">
+</label>
+<select id="wtv-country" class="country" aria-label="按国家或地区筛选">
+<option value="">全部国家 / 地区</option>
+</select>
+<div class="list-count" id="wtv-count">
+</div>
+<div class="w-list" id="wtv-world-list">
+</div>
+</aside>
+<section class="tv-editor" id="wtv-detail">
+<header class="tv-title">
+<h3 id="wtv-channel-name">请选择频道</h3>
+<span class="tv-badge" style="margin-left:auto">订阅频道</span>
+</header>
+<div class="w-metadata">
+<span id="wtv-channel-country">
+</span>
+<span id="wtv-channel-group">
+</span>
+<span id="wtv-channel-language">
+</span>
+</div>
+<div class="tv-heading">
+<h4 style="font-weight:700">播放来源</h4>
+<span class="tv-badge" id="wtv-protocol">
+</span>
+</div>
+<div class="w-address" id="wtv-channel-url">
+</div>
+<div style="display:flex;gap:10px">
+<button type="button" class="w-btn" id="wtv-try" disabled>试播频道</button>
+<a class="w-btn" id="wtv-open" hidden target="_blank" rel="noopener noreferrer">打开来源</a>
+</div>
+<div class="preview-box" id="wtv-preview-world">
+<b>选择频道后可试播</b>
+<span>视频由浏览器直连来源，部分频道可能有地区或跨域限制</span>
+</div>
+<p class="w-muted" style="margin-top:16px">频道信息来自订阅列表，下次拉取时自动更新。</p>
+</section>
+<footer class="w-bottom">世界电视与央视 / 卫视独立管理，拉取不会覆盖已有的央视 / 卫视频道设置。</footer>
+</div>
+</section>
+{{end}}

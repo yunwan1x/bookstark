@@ -27,7 +27,7 @@ func TestPWAHomeBrowser(t *testing.T) {
 	runIsolatedBrowser(t, "pwa_production_smoke_test.cjs")
 }
 
-func runIsolatedBrowser(t *testing.T, script string) {
+func runIsolatedBrowser(t *testing.T, script string, setup ...func(*testing.T)) {
 	if os.Getenv("BOOKSTARK_BROWSER_TEST") != "1" {
 		t.Skip("set BOOKSTARK_BROWSER_TEST=1 and make playwright available to Node")
 	}
@@ -55,6 +55,9 @@ func runIsolatedBrowser(t *testing.T, script string) {
 	routers.EmbedFS.StaticFS = EmbedFS.StaticFS
 	routers.EmbedFS.TemplateFS = EmbedFS.TemplateFS
 	routers.EmbedFS.ConfFS = EmbedFS.ConfFS
+	for _, prepare := range setup {
+		prepare(t)
+	}
 	server := httptest.NewServer(routers.Setup())
 	defer server.Close()
 	cmd := exec.Command("node", filepath.Join(repo, script))

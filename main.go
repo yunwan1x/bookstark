@@ -117,6 +117,8 @@ func main() {
 	r := routers.Setup()
 	notificationService := services.StartNotificationService()
 	defer notificationService.Stop()
+	stopWorldTV := services.WorldTV().Start(func(err error) { log.Printf("world television sync: %v", err) })
+	defer stopWorldTV()
 
 	addr := fmt.Sprintf(":%s", conf.App.Port)
 	log.Printf("BookStark %s (commit: %s, go: %s, built: %s)", "dev", gitCommit, goVersion, buildTime)
