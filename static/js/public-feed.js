@@ -87,7 +87,7 @@
       closeShareNoteViewer();closeShareImageLightbox();
       content.replaceWith(next);content=next;hydrate(content,state);
       renderedURL=url.pathname+url.search+url.hash;
-      const y=options.pop?Number(options.scrollY)||0:options.replace?previousY:Math.max(0,content.getBoundingClientRect().top+window.scrollY-60);
+      const y=options.pop?Number(options.scrollY)||0:options.replace?previousY:0;
       if(options.pop||options.replace)history.replaceState({...history.state,publicFeed:true,scrollY:y},'',renderedURL);
       else history.pushState({publicFeed:true,scrollY:y},'',renderedURL);
       window.scrollTo({top:y,behavior:'instant'});

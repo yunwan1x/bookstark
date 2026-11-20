@@ -159,6 +159,21 @@ const origin=process.env.BOOKSTARK_TEST_ORIGIN;
 
   // One live audio element must survive every left-column transition.
   await page.goto(origin+'/shares?type=article');fail=false;
+  // Normal transitions use the actual page top; history keeps reading positions.
+  for(const width of [1440,390]){
+    await page.setViewportSize({width,height:700});
+    await page.evaluate(()=>scrollTo(0,120));await page.waitForTimeout(200);
+    const articleY=await page.evaluate(()=>scrollY);assert.ok(articleY>0);
+    await update(()=>page.locator('.public-nav a').nth(3).evaluate(a=>a.click()));
+    assert.equal(await page.evaluate(()=>scrollY),0,'tab returns to actual top');
+    await page.evaluate(()=>scrollTo(0,80));await page.waitForTimeout(200);
+    const bookY=await page.evaluate(()=>scrollY);assert.ok(bookY>0);
+    await update(()=>page.goBack());assert.equal(await page.evaluate(()=>scrollY),articleY);
+    await update(()=>page.goForward());assert.equal(await page.evaluate(()=>scrollY),bookY);
+    await update(()=>page.locator('.public-nav a').nth(1).evaluate(a=>a.click()));
+    assert.equal(await page.evaluate(()=>scrollY),0);
+  }
+  await page.setViewportSize({width:1440,height:1050});
   const longWav=Buffer.alloc(44+8000*2*120);wav.copy(longWav,0,0,44);longWav.writeUInt32LE(longWav.length-8,4);longWav.writeUInt32LE(longWav.length-44,40);
   await page.route('https://stream.srg-ssr.ch/**',route=>route.fulfill({contentType:'audio/wav',body:longWav}));
   await page.locator('#publicRadioStation').selectOption('rsj');await page.locator('#publicRadioPlay').click();await page.waitForFunction(()=>!document.getElementById('publicRadioAudio').paused);
