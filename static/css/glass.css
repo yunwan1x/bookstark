@@ -112,3 +112,8 @@
 /* Review pass 2: public feed and topic summary use the same material as the home cards. */
 [data-theme-style="glass"] :is(.public-feed,.public-info section,.topic-overview-stat,.topic-comments-panel) { background:var(--glass-panel),var(--color-bg-card)!important; box-shadow:var(--glass-shadow); border-color:var(--color-border)!important; backdrop-filter:blur(18px); }
 [data-theme-style="glass"] :is(.topic-primary-btn,.public-radio-play) { background:var(--glass-selected)!important; color:var(--color-text)!important; box-shadow:var(--glass-shadow); }
+/* Review pass 3: dialogs need a denser surface; list and storage panels retain a visible glass edge. */
+[data-theme-style="glass"] :is(.asset-modal,.book-modal,.dav-modal,.bs-dialog-panel) { background:var(--glass-panel),#18223de8!important; border-color:var(--color-border)!important; box-shadow:var(--glass-shadow); backdrop-filter:blur(24px); }
+[data-theme-style="glass"] :is(.asset-modal-head,.asset-modal-body,.asset-modal-foot) { background:transparent!important; }
+[data-theme-style="glass"] :is(.stat-card,.list-row,.task-item,.tasks-stats,.dav-connection,.dav-table-wrap,.asset-table-wrap) { background:var(--glass-panel),var(--color-bg-card)!important; border-color:var(--color-border)!important; box-shadow:var(--glass-shadow); backdrop-filter:blur(16px); }
+[data-theme-style="glass"] :is(.asset-tab.active,.tasks-btn-primary) { background:var(--glass-selected)!important; color:var(--color-on-primary)!important; box-shadow:var(--glass-shadow); }
