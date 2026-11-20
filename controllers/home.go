@@ -4,7 +4,6 @@ import (
 	"bookstark/i18n"
 	"bookstark/middleware"
 	"bookstark/models"
-	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
@@ -15,33 +14,6 @@ import (
 func PersonalHomePage(c *gin.Context) {
 	c.Header("Cache-Control", "private, no-store")
 	data := commonData(c, "home")
-	layout, err := models.GetHomeLayout(middleware.GetMemberID(c))
-	if err != nil {
-		log.Printf("home loading layout: %v", err)
-	}
-	layout, _ = models.NormalizeHomeLayout(layout)
-	// Render fixed headers in the initial HTML, before JavaScript or summaries load.
-	definitions := map[string][3]string{
-		"notes":     {"nav.notes", "note-sticky", "/notes"},
-		"articles":  {"note.tab.articles", "file-lines", "/notes?tab=articles"},
-		"tasks":     {"nav.todos", "list-check", "/notes?tab=tasks"},
-		"books":     {"nav.books", "book-open", "/books"},
-		"bookmarks": {"nav.bookmarks", "link", "/bookmarks"},
-		"topics":    {"nav.topics", "layer-group", "/topics"},
-		"nav":       {"nav.home", "compass", "/nav"},
-		"shares":    {"nav.shares", "users", "/shares"},
-		"assets":    {"home.module_assets", "server", "/admin/assets"},
-	}
-	cards := []gin.H{}
-	for _, item := range layout {
-		if item.Hidden || (item.Key == "assets" && !isAdmin(c)) {
-			continue
-		}
-		m := definitions[item.Key]
-		cards = append(cards, gin.H{"Key": item.Key, "Width": item.Width, "Title": i18n.T(i18n.GetLang(c), m[0]), "Icon": m[1], "URL": m[2]})
-	}
-	raw, _ := json.Marshal(layout)
-	data["HomeLoadingLayout"], data["HomeLoadingCards"] = string(raw), cards
 	c.HTML(http.StatusOK, "home.html", data)
 }
 
@@ -86,12 +58,6 @@ func HomeSummary(c *gin.Context) {
 		apiError(c, http.StatusInternalServerError, "首页加载失败，请重试")
 		return
 	}
-	layout, err := models.GetHomeLayout(middleware.GetMemberID(c))
-	if err != nil {
-		log.Printf("home layout: %v", err)
-		apiError(c, http.StatusInternalServerError, "首页加载失败，请重试")
-		return
-	}
 	activity := map[string]int{}
 	for _, section := range sections {
 		// Navigation and shares reference resources already counted above.
@@ -114,28 +80,5 @@ func HomeSummary(c *gin.Context) {
 		apiError(c, http.StatusInternalServerError, "首页加载失败，请重试")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"stats": stats, "code": 0, "sections": sections, "layout": layout, "start": start, "end": end, "limit": limit, "activity": activity, "activity_start": activityStart, "activity_end": activityEnd, "recent": recent})
-}
-
-func SaveHomeLayout(c *gin.Context) {
-	c.Header("Cache-Control", "private, no-store")
-	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 8192)
-	var req struct {
-		Layout []models.HomeLayoutItem `json:"layout"`
-	}
-	if err := c.ShouldBindJSON(&req); err != nil || req.Layout == nil {
-		apiError(c, http.StatusBadRequest, "Invalid home layout")
-		return
-	}
-	layout, err := models.NormalizeHomeLayout(req.Layout)
-	if err != nil {
-		apiError(c, http.StatusBadRequest, "Invalid home layout")
-		return
-	}
-	if err = models.SaveHomeLayout(middleware.GetMemberID(c), layout); err != nil {
-		log.Printf("save home layout: %v", err)
-		apiError(c, http.StatusInternalServerError, "Could not save home layout")
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"code": 0, "layout": layout})
+	c.JSON(http.StatusOK, gin.H{"stats": stats, "code": 0, "sections": sections, "start": start, "end": end, "limit": limit, "activity": activity, "activity_start": activityStart, "activity_end": activityEnd, "recent": recent})
 }

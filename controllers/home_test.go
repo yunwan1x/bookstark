@@ -175,7 +175,7 @@ func TestPersonalHomeEnglishTemplate(t *testing.T) {
 	if w.Code != 200 {
 		t.Fatalf("home response: %d", w.Code)
 	}
-	for _, expected := range []string{`<html lang="en">`, `<h1 class="page-title">A clear space for your ideas.</h1>`, `Recently updated`, `Customize sections`, `New Note`, `Mobile navigation`, `All sections`, `Capture an idea`, `Date range`, `Per section`, `Latest 10`} {
+	for _, expected := range []string{`<html lang="en">`, `<h1 class="page-title">A clear space for your ideas.</h1>`, `Recently updated`, `New Note`, `Mobile navigation`, `All sections`, `Capture an idea`, `Date range`, `Per section`, `Latest 10`} {
 		if !strings.Contains(w.Body.String(), expected) {
 			t.Errorf("missing translation: %s", expected)
 		}
@@ -387,76 +387,25 @@ func TestHomeCalendarViewWindowsAndBoundaries(t *testing.T) {
 	}
 }
 
-func TestHomeLayoutPersistenceValidationAndIsolation(t *testing.T) {
+func TestHomeSingleSectionAndRemovedLayout(t *testing.T) {
 	router, token := initAssetControllerTest(t)
-	other := &models.Member{Account: "layout-other", Password: "test-only", Role: 1}
-	if err := other.Insert(); err != nil {
-		t.Fatal(err)
-	}
-	otherToken, err := models.CreateApiToken(other.MemberID, "layout-test")
-	if err != nil {
-		t.Fatal(err)
-	}
-	readLayout := func(token string) []models.HomeLayoutItem {
-		t.Helper()
-		w := adminAssetRequest(router, token, "GET", "/api/home", nil)
-		if w.Code != 200 {
-			t.Fatalf("read failed: %s", w.Body.String())
-		}
-		var result struct {
-			Layout []models.HomeLayoutItem `json:"layout"`
-		}
-		if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
-			t.Fatal(err)
-		}
-		return result.Layout
-	}
-	if readLayout(token) != nil {
-		t.Fatal("new account should have no saved layout")
-	}
-	w := adminAssetRequest(router, token, "PUT", "/api/home/layout", map[string]any{"layout": []models.HomeLayoutItem{
-		{Key: "articles", Width: 2}, {Key: "notes", Width: 3}, {Key: "tasks", Width: 1, Hidden: true},
-	}})
-	if w.Code != 200 {
-		t.Fatalf("save failed: %s", w.Body.String())
-	}
-	saved := readLayout(token)
-	if len(saved) != 9 || saved[0].Key != "articles" || saved[0].Width != 2 || saved[1].Width != 3 || !saved[2].Hidden {
-		t.Fatalf("incorrect layout: %+v", saved)
-	}
-	if readLayout(otherToken.Token) != nil {
-		t.Fatal("layout leaked to another account")
-	}
 	page := adminAssetRequest(router, token, "GET", "/home", nil)
 	body := page.Body.String()
-	if page.Code != 200 || !strings.Contains(body, `data-section="articles" data-width="2"`) || !strings.Contains(body, `data-section="notes" data-width="3"`) || strings.Contains(body, `data-section="tasks"`) {
-		t.Fatal("initial skeleton headers must respect saved layout")
+	if page.Code != 200 || strings.Count(body, `data-section=`) != 1 || !strings.Contains(body, `data-section="notes"`) {
+		t.Fatal("initial page must render only the first section")
 	}
-	if strings.Index(body, `data-section="articles"`) > strings.Index(body, `data-section="notes"`) || strings.Contains(body, "ZgotmplZ") || strings.Contains(body, "home-skeleton-heading") {
-		t.Fatal("initial headers have invalid order, styles or title placeholders")
-	}
-	page = adminAssetRequest(router, otherToken.Token, "GET", "/home", nil)
-	if strings.Contains(page.Body.String(), `data-section="assets"`) {
-		t.Fatal("non-admin loading state exposes an admin-only module")
-	}
-	for _, input := range []any{
-		nil,
-		[]models.HomeLayoutItem{{Key: "unknown", Width: 1}},
-		[]models.HomeLayoutItem{{Key: "notes", Width: 4}},
-		[]models.HomeLayoutItem{{Key: "notes", Width: 0}},
-		[]models.HomeLayoutItem{{Key: "notes", Width: 1}, {Key: "notes", Width: 2}},
-	} {
-		w = adminAssetRequest(router, token, "PUT", "/api/home/layout", map[string]any{"layout": input})
-		if w.Code != 400 {
-			t.Fatalf("invalid layout accepted: %v", input)
+	for _, obsolete := range []string{"homeCustomize", "homeLayout", "data-loading-layout"} {
+		if strings.Contains(body, obsolete) {
+			t.Fatal("obsolete customization markup", obsolete)
 		}
 	}
-	if readLayout(token)[0].Key != "articles" {
-		t.Fatal("invalid save overwrote preferences")
+	summary := adminAssetRequest(router, token, "GET", "/api/home", nil)
+	if summary.Code != 200 || strings.Contains(summary.Body.String(), `"layout"`) {
+		t.Fatal("summary still exposes layout")
 	}
-	w = httptest.NewRecorder()
-	router.ServeHTTP(w, httptest.NewRequest("PUT", "/api/home/layout", strings.NewReader(`{"layout":[]}`)))
-	if w.Code != 401 {
-		t.Fatalf("anonymous save: %d", w.Code)
+	removed := adminAssetRequest(router, token, "PUT", "/api/home/layout", map[string]any{"layout": []any{}})
+	// Unmatched routes use the shared redirect fallback.
+	if removed.Code != http.StatusFound && removed.Code != http.StatusNotFound {
+		t.Fatal("layout endpoint must be removed", removed.Code)
 	}
 }

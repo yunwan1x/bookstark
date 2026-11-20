@@ -17,7 +17,7 @@
 <main class="home-page">
   <section class="home-welcome">
     <div><div class="home-eyebrow">{{call .T "home.eyebrow"}}</div><h1 class="page-title">{{call .T "home.greeting"}}</h1><p>{{call .T "home.subtitle"}}</p></div>
-    <div class="home-actions"><time id="homeToday"></time><div><button class="home-button" data-home-dialog="homeCustomize"><i class="fa-solid fa-sliders" aria-hidden="true"></i> {{call .T "home.layout.title"}}</button><button class="home-button home-primary" data-home-dialog="homeCreate"><i class="fa-solid fa-plus" aria-hidden="true"></i> {{call .T "home.new"}}</button></div></div>
+    <div class="home-actions"><time id="homeToday"></time><div><button class="home-button home-primary" data-home-dialog="homeCreate"><i class="fa-solid fa-plus" aria-hidden="true"></i> {{call .T "home.new"}}</button></div></div>
   </section>
   <form class="home-search" action="/search" method="get" role="search"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><input type="search" name="q" required id="homeSearch" aria-label="{{call .T "home.search"}}" placeholder="{{call .T "home.search"}}"><button class="home-button" type="submit">{{call .T "home.search_action"}} <span aria-hidden="true">↵</span></button></form>
   <div class="home-workspace"><div class="home-main">
@@ -36,7 +36,7 @@
   <div id="homeFilters" class="home-filters" role="group" aria-label="{{call .T "home.modules"}}"></div>
   <p id="homeStatus" role="status" aria-live="polite">{{call .T "home.loading"}}</p>
   <button id="homeRetry" class="home-button" hidden>{{call .T "home.retry"}}</button>
-  <div class="home-grid" id="homeGrid" aria-busy="true" data-loading-layout="{{.HomeLoadingLayout}}">{{range .HomeLoadingCards}}<section class="home-card home-loading-card" data-section="{{.Key}}" data-width="{{.Width}}" aria-labelledby="home-title-{{.Key}}"><div class="home-card-head"><span class="home-card-icon"><i class="fa-solid fa-{{.Icon}}" aria-hidden="true"></i></span><div><h2 id="home-title-{{.Key}}">{{.Title}}</h2></div><a class="home-card-all" href="{{.URL}}">{{call $.T "home.view_all"}} →</a></div>{{template "home-loading-lines"}}</section>{{end}}</div>
+  <div class="home-grid" id="homeGrid" aria-busy="true"><section class="home-card home-loading-card" data-section="notes" aria-labelledby="home-title-notes"><div class="home-card-head"><span class="home-card-icon"><i class="fa-solid fa-note-sticky" aria-hidden="true"></i></span><div><h2 id="home-title-notes">{{call .T "nav.notes"}}</h2></div><a class="home-card-all" href="/notes">{{call .T "home.view_all"}} →</a></div>{{template "home-loading-lines"}}</section></div>
   <noscript>{{call .T "home.noscript"}}</noscript>
   </div><aside class="home-sidebar"><div class="home-date-layout">
   <section class="calendar-card home-calendar" aria-label="{{call .T "home.calendar"}}" id="homeCalendar">
@@ -56,15 +56,7 @@
 <nav class="home-bottom-nav" aria-label="{{call .T "home.mobile_nav"}}"><a href="/home" aria-current="page"><i class="fa-solid fa-house" aria-hidden="true"></i><span>{{call .T "home.nav"}}</span></a><a href="/notes"><i class="fa-regular fa-note-sticky" aria-hidden="true"></i><span>{{call .T "nav.notes"}}</span></a><button data-home-dialog="homeCreate"><i class="fa-solid fa-plus home-new-icon" aria-hidden="true"></i><span>{{call .T "home.new"}}</span></button><a href="/notes?tab=tasks"><i class="fa-solid fa-list-check" aria-hidden="true"></i><span>{{call .T "nav.todos"}}</span></a><button data-home-dialog="homeMore"><i class="fa-solid fa-bars" aria-hidden="true"></i><span>{{call .T "home.more"}}</span></button></nav>
 <dialog class="home-dialog" id="homeMore" aria-labelledby="homeMoreTitle"><div class="home-dialog-head"><h2 id="homeMoreTitle">{{call .T "home.modules"}}</h2><button data-home-close aria-label="{{call .T "common.close"}}">×</button></div><h3>{{call .T "nav.knowledge"}}</h3><div class="home-menu-grid"><a href="/notes">{{call .T "nav.notes"}}</a><a href="/notes?tab=articles">{{call .T "note.tab.articles"}}</a><a href="/notes?tab=tasks">{{call .T "nav.todos"}}</a><a href="/books">{{call .T "nav.books"}}</a><a href="/bookmarks">{{call .T "nav.bookmarks"}}</a></div><h3>{{call .T "nav.collections"}}</h3><div class="home-menu-grid"><a href="/topics">{{call .T "nav.topics"}}</a>{{if .IsAdmin}}<a href="/labels">{{call .T "user.menu.labels"}}</a>{{end}}</div><h3>{{call .T "nav.assets"}}</h3><div class="home-menu-grid"><a href="/nav">{{call .T "nav.home"}}</a><a href="/shares">{{call .T "nav.shares"}}</a>{{if .IsAdmin}}<a href="/admin/assets">{{call .T "page.assets.title"}}</a>{{end}}<a href="/images">{{call .T "user.menu.images"}}</a></div></dialog>
 <dialog class="home-dialog" id="homeCreate" aria-labelledby="homeCreateTitle"><div class="home-dialog-head"><h2 id="homeCreateTitle">{{call .T "home.create_title"}}</h2><button data-home-close aria-label="{{call .T "common.close"}}">×</button></div><p>{{call .T "home.create_hint"}}</p><div class="home-menu-grid"><a href="/notes?command=new-note">{{call .T "nav.create_note"}}</a><a href="/notes?command=new-article">{{call .T "nav.create_article"}}</a><a href="/notes?tab=tasks&command=new-task">{{call .T "nav.create_task"}}</a><a href="/books?command=new-book">{{call .T "nav.create_book"}}</a><a href="/bookmarks?command=new-bookmark">{{call .T "nav.create_bookmark"}}</a><a href="/topics?command=new-topic">{{call .T "nav.create_topic"}}</a></div></dialog>
-<dialog class="home-dialog home-layout-dialog" id="homeCustomize" aria-labelledby="homeCustomizeTitle">
-  <div class="home-dialog-head"><h2 id="homeCustomizeTitle">{{call .T "home.layout.title"}}</h2><button data-home-close aria-label="{{call .T "common.close"}}">×</button></div>
-  <p>{{call .T "home.layout.hint"}}</p>
-  <div id="homePreferences" class="home-menu-grid"></div>
-  <h3>{{call .T "home.layout.preview"}}</h3>
-  <div id="homeLayoutPreview" class="home-layout-preview"></div>
-  <p id="homeLayoutStatus" role="status" aria-live="polite"></p>
-  <div class="home-layout-actions"><button id="homeLayoutReset" class="home-button">{{call .T "home.layout.reset"}}</button><button id="homeLayoutSave" class="home-button home-primary">{{call .T "home.layout.save"}}</button></div>
-</dialog>
+
 <script>
 // Inline so even a stale/broken cached home.js cannot leave a permanent skeleton.
 (function () {

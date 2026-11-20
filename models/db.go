@@ -276,10 +276,6 @@ func createTables() error {
 			description VARCHAR(200) NOT NULL DEFAULT '',
 			update_time DATETIME
 		)`,
-		`CREATE TABLE IF NOT EXISTS md_home_layouts (
-			member_id INTEGER PRIMARY KEY,
-			layout TEXT NOT NULL
-		)`,
 		`CREATE TABLE IF NOT EXISTS md_assistant_sessions (
 			member_id INTEGER PRIMARY KEY, session_id TEXT NOT NULL,
 			messages TEXT NOT NULL DEFAULT '[]', lease TEXT NOT NULL DEFAULT '', busy_until INTEGER NOT NULL DEFAULT 0

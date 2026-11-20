@@ -279,7 +279,6 @@ func Setup() *gin.Engine {
 		// Pages
 		auth.GET("/home", controllers.PersonalHomePage)
 		auth.GET("/api/home", controllers.HomeSummary)
-		auth.PUT("/api/home/layout", controllers.SaveHomeLayout)
 		auth.DELETE("/api/home/recent", controllers.ClearHomeRecent)
 		auth.GET("/books", controllers.IndexPage)
 		auth.GET("/books/:identify/edit", controllers.EditorPage)

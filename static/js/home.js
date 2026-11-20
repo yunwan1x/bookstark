@@ -14,13 +14,8 @@
     var grid = document.getElementById('homeGrid');
     var status = document.getElementById('homeStatus');
     var retry = document.getElementById('homeRetry');
-    var key = 'bookstark-home:' + document.body.dataset.homeMember;
-    var hidden = [], sections = [], sort = 'updated', sequence = 0, activeRequest;
-    var activeFilter = 'all';
-    var layout = [], draft = [], saving = false, dragging = null;
-    try { layout = JSON.parse(grid.dataset.loadingLayout || '[]'); } catch (_) {}
-    var layoutDialog = document.getElementById('homeCustomize');
-    var layoutStatus = document.getElementById('homeLayoutStatus');
+    var sections = [], sort = 'updated', sequence = 0, activeRequest;
+    var activeFilter = 'notes';
     var english = document.documentElement.lang.indexOf('en') === 0;
     function lt(zh, en) { return english ? en : zh; }
     var moduleEnglish = {notes:'Notes',articles:'Articles',tasks:'Tasks',books:'Books',bookmarks:'Bookmarks',topics:'Topics',nav:'Navigation',shares:'Community',assets:'Assets'};
@@ -36,19 +31,22 @@
     }
     function renderFilters() {
         var box = document.getElementById('homeFilters'); box.replaceChildren();
-        var visible = layout.filter(function(item) { return !item.hidden && available(item); });
-        if (!visible.some(function(item) { return item.key === activeFilter; })) activeFilter = 'all';
-        [{key:'all'}].concat(visible).forEach(function(item) {
-            var button = el('button','home-filter',item.key === 'all' ? lt('全部','All') : moduleName(item.key));
-            button.type = 'button'; button.dataset.homeFilter = item.key;
-            button.setAttribute('aria-pressed',String(activeFilter === item.key));
-            button.onclick = function() { activeFilter = item.key; render(); document.querySelector('[data-home-filter="' + activeFilter + '"]').focus(); };
+        if (!sections.some(function(s) { return s.key === activeFilter; }) && sections.length) activeFilter = sections[0].key;
+        sections.forEach(function(section) {
+            if (!modules[section.key]) return;
+            var button = el('button','home-filter',moduleName(section.key));
+            button.type = 'button'; button.dataset.homeFilter = section.key;
+            button.setAttribute('aria-pressed',String(activeFilter === section.key));
+            button.onclick = function() {
+                activeFilter = section.key;
+                if (grid.getAttribute('aria-busy') === 'true') { renderFilters(); renderSkeleton(); }
+                else render();
+                document.querySelector('[data-home-filter="' + activeFilter + '"]').focus();
+            };
             box.append(button);
         });
     }
-    function defaultLayout() { return Object.keys(modules).map(function(k) {return {key:k,width:1,hidden:false};}); }
-    function available(item) { return sections.some(function(s) {return s.key === item.key;}); }
-    try { var saved = JSON.parse(localStorage.getItem(key)); if (Array.isArray(saved)) hidden = saved; } catch (_) {}
+
     var now = new Date();
     function dateKey(date) { return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0'); }
     function parseDate(value) { return new Date(value+'T12:00:00'); }
@@ -174,32 +172,20 @@
     }
     function renderSkeleton() {
         grid.replaceChildren();
-        var pending = layout;
-        if (!pending.length) {
-            try { pending = JSON.parse(localStorage.getItem(key + ':layout')) || []; } catch (_) {}
-        }
-        if (!Array.isArray(pending) || !pending.length) pending = defaultLayout().filter(function(item) { return !hidden.includes(item.key); });
-        pending.forEach(function(item) {
-            if (!item || !modules[item.key] || item.hidden || (item.key === 'assets' && !document.querySelector('#homeMore a[href="/admin/assets"]'))) return;
-            var card = el('section','home-card home-loading-card');
-            card.dataset.width = [1,2,3].includes(item.width) ? String(item.width) : '1';
-            appendCardHeader(card, item.key);
-            var lines = el('div'); lines.setAttribute('aria-hidden','true');
-            for (var i = 0; i < Math.min(limit, 10); i++) lines.append(el('div','skeleton home-skeleton-line'));
-            card.append(lines);
-            grid.append(card);
-        });
+        var card = el('section','home-card home-loading-card');
+        appendCardHeader(card, activeFilter);
+        var lines = el('div'); lines.setAttribute('aria-hidden','true');
+        for (var i = 0; i < Math.min(limit, 10); i++) lines.append(el('div','skeleton home-skeleton-line'));
+        card.append(lines); grid.append(card);
     }
     function render() {
         renderFilters();
         grid.replaceChildren();
-        layout.forEach(function (item) {
-            var s = sections.find(function(s) {return s.key === item.key;});
-            if (!s || item.hidden || (activeFilter !== 'all' && activeFilter !== item.key)) return;
+        sections.forEach(function (s) {
+            if (s.key !== activeFilter) return;
             var m = modules[s.key];
             if (!m) return;
             var card = el('section', 'home-card'); appendCardHeader(card, s.key);
-            card.dataset.width = String(item.width);
             var list = el('ul', 'home-list'); list.id = 'home-list-' + s.key;
             s.items.forEach(function (item) {
                 var li = el('li'); var a = el('a', 'home-row');
@@ -227,92 +213,8 @@
             grid.append(card);
         });
         status.hidden = grid.childElementCount > 0;
-        if (!grid.childElementCount) status.textContent = lt('所有板块已隐藏，可在“自定义板块”中重新开启。','All sections are hidden. Enable them in Customize sections.');
+        if (!grid.childElementCount) status.textContent = lt('暂无可用板块。','No sections available.');
     }
-    function preferences() {
-        var box = document.getElementById('homePreferences'); box.replaceChildren();
-        sections.forEach(function (s) {
-            var item = draft.find(function(item) {return item.key === s.key;});
-            var label = el('label'); var input = el('input'); input.type = 'checkbox'; input.checked = !item.hidden;
-            input.id = 'home-layout-visible-' + s.key; label.htmlFor = input.id;
-            input.onchange = function () {
-                item.hidden = !input.checked;
-                preview();
-            };
-            label.append(input,el('span','',moduleName(s.key))); box.append(label);
-        });
-        if (!sections.length) box.append(el('p','',lt('请先加载首页数据。','Load the home page first.')));
-        document.getElementById('homeLayoutSave').disabled = !sections.length;
-        document.getElementById('homeLayoutReset').disabled = !sections.length;
-        preview();
-    }
-    function move(key, target) {
-        var from = draft.findIndex(function(i) {return i.key === key;});
-        var to = draft.findIndex(function(i) {return i.key === target;});
-        if (from < 0 || to < 0 || from === to) return;
-        draft.splice(to, 0, draft.splice(from, 1)[0]);
-        preview();
-        layoutStatus.textContent = lt('已调整位置：','Position updated: ') + moduleName(key);
-        var handle = document.getElementById('home-layout-drag-' + key); if (handle) handle.focus();
-    }
-    function preview() {
-        var box = document.getElementById('homeLayoutPreview'); box.replaceChildren();
-        var visible = draft.filter(function(i) {return available(i) && !i.hidden;});
-        visible.forEach(function(item, index) {
-            var card = el('div','home-layout-card'); card.dataset.width = String(item.width); card.dataset.key = item.key;
-            var head = el('div','home-layout-card-head');
-            var handle = el('button','home-button','⠿'); handle.type = 'button'; handle.draggable = true;
-            handle.id = 'home-layout-drag-' + item.key;
-            handle.setAttribute('aria-label',lt('拖动排序：','Drag to reorder: ') + moduleName(item.key));
-            handle.ondragstart = function(e) {dragging = item.key; e.dataTransfer.setData('text/plain',item.key); e.dataTransfer.effectAllowed = 'move';};
-            handle.ondragend = function() {dragging = null; box.querySelectorAll('.is-drop-target').forEach(function(c) {c.classList.remove('is-drop-target');});};
-            head.append(handle,el('span','',moduleName(item.key))); card.append(head);
-            var label = el('label','home-layout-width',lt('宽度','Width')); var select = el('select','dialog-input');
-            select.id = 'home-layout-width-' + item.key; label.htmlFor = select.id;
-            [lt('1格','1 column'),lt('2格','2 columns'),lt('整行','Full row')].forEach(function(text,i) {var option = el('option','',text); option.value = String(i+1); select.append(option);});
-            select.value = String(item.width);
-            select.onchange = function() {item.width = Number(select.value); card.dataset.width = select.value;};
-            label.append(select); card.append(label);
-            var actions = el('div','home-layout-move');
-            [-1,1].forEach(function(delta) {
-                var text = delta < 0 ? lt('上移','Move up') : lt('下移','Move down');
-                var button = el('button','home-button',delta < 0 ? '↑' : '↓'); button.type = 'button';
-                button.title = text; button.setAttribute('aria-label',text + ' ' + moduleName(item.key));
-                button.disabled = !visible[index + delta];
-                button.onclick = function() {move(item.key,visible[index + delta].key);}; actions.append(button);
-            }); card.append(actions);
-            card.ondragover = function(e) {if (dragging && dragging !== item.key) {e.preventDefault(); card.classList.add('is-drop-target');}};
-            card.ondragleave = function() {card.classList.remove('is-drop-target');};
-            card.ondrop = function(e) {e.preventDefault(); card.classList.remove('is-drop-target'); if (dragging) move(dragging,item.key); dragging = null;};
-            box.append(card);
-        });
-        if (!visible.length) box.append(el('p','',lt('请选择要显示的板块。','Select sections to display.')));
-    }
-    document.getElementById('homeLayoutReset').onclick = function() {
-        draft = defaultLayout(); preferences(); layoutStatus.textContent = lt('已恢复默认，保存后生效。','Defaults restored. Save to apply.');
-    };
-    layoutDialog.addEventListener('cancel',function(e) {if (saving) e.preventDefault();});
-    document.getElementById('homeLayoutSave').onclick = async function() {
-        if (saving || !sections.length) return;
-        saving = true;
-        layoutDialog.querySelectorAll('button,input,select').forEach(function(n) {n.disabled = true;});
-        layoutStatus.textContent = lt('正在保存…','Saving…');
-        try {
-            var response = await csrfFetch('/api/home/layout',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({layout:draft})});
-            var data = await response.json();
-            if (!response.ok || data.code !== 0 || !Array.isArray(data.layout)) throw new Error('save failed');
-            layout = data.layout; render();
-            try {localStorage.setItem(key + ':layout',JSON.stringify(layout));} catch (_) {}
-            try {localStorage.removeItem(key);} catch (_) {}
-            layoutDialog.close();
-        } catch (_) {
-            layoutStatus.textContent = lt('保存失败，请检查网络或登录状态后重试。','Could not save. Check your connection or sign-in status and retry.');
-        } finally {
-            saving = false;
-            layoutDialog.querySelectorAll('button,input,select').forEach(function(n) {n.disabled = false;});
-            preferences();
-        }
-    };
     async function requestSummary(ticket) {
         for (var attempt = 0; attempt < 2; attempt++) {
             var controller = new AbortController(); activeRequest = controller;
@@ -346,17 +248,14 @@
             renderStats(data.stats);
             activityCounts=data.activity||{};activityReady=true;renderCalendar();
             renderRecent(Array.isArray(data.recent)?data.recent:[]);
-            layout = Array.isArray(data.layout) ? data.layout : defaultLayout().map(function(item) {item.hidden = hidden.includes(item.key); return item;});
-            try { localStorage.setItem(key + ':layout',JSON.stringify(layout)); } catch (_) {}
             render();
-            if (!layoutDialog.open) {draft = layout.map(function(i) {return Object.assign({},i);}); preferences();}
         } catch (err) {
             if (ticket !== sequence) return;
             console.warn('Home load failed:',err);
             grid.replaceChildren();
             renderStats(null); document.getElementById('homeFilters').replaceChildren();
             activityCounts={};activityReady=false;renderCalendar();renderRecent([],true);
-            sections = []; preferences(); status.hidden = false; status.textContent = err.name === 'AbortError' ? lt('请求超时，请重试','Request timed out. Please retry.') : lt('首页加载失败，请检查网络后重试。','Could not load your home page. Check your connection and retry.'); retry.hidden = false;
+            sections = []; status.hidden = false; status.textContent = err.name === 'AbortError' ? lt('请求超时，请重试','Request timed out. Please retry.') : lt('首页加载失败，请检查网络后重试。','Could not load your home page. Check your connection and retry.'); retry.hidden = false;
         } finally { if (ticket === sequence) grid.setAttribute('aria-busy','false'); }
     }
     document.querySelectorAll('[data-home-sort]').forEach(function (button) { button.onclick = function () {
@@ -365,11 +264,10 @@
         document.querySelectorAll('[data-home-sort]').forEach(function (b) { b.setAttribute('aria-pressed',String(b === button)); b.classList.toggle('active',b === button); }); load();
     }; });
     document.querySelectorAll('[data-home-dialog]').forEach(function (b) { b.onclick = function () {
-        if (b.dataset.homeDialog === 'homeCustomize') {draft = layout.map(function(i) {return Object.assign({},i);}); layoutStatus.textContent = ''; preferences();}
         document.getElementById(b.dataset.homeDialog).showModal();
     }; });
-    document.querySelectorAll('[data-home-close]').forEach(function (b) { b.onclick = function () { if (!saving) b.closest('dialog').close(); }; });
-    document.querySelectorAll('.home-dialog').forEach(function (d) { d.addEventListener('click',function(e) { if (!saving && e.target === d) { var r=d.getBoundingClientRect(); if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)d.close(); } }); });
+    document.querySelectorAll('[data-home-close]').forEach(function (b) { b.onclick = function () { b.closest('dialog').close(); }; });
+    document.querySelectorAll('.home-dialog').forEach(function (d) { d.addEventListener('click',function(e) { if (e.target === d) { var r=d.getBoundingClientRect(); if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)d.close(); } }); });
     retry.onclick = load;
     window.addEventListener('pageshow',function(e) { if(e.persisted) load(); });
     window.addEventListener('bookstark:assistant-created',load);
