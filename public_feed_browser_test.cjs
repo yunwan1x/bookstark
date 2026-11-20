@@ -140,6 +140,13 @@ const assert=require('node:assert/strict');
     await page.locator('[data-note-action="comments"]').click();assert(await comments.isVisible());
     await page.locator('[data-note-action="comments"]').click();assert.equal(await comments.isVisible(),false);
    }
+   if(kind==='book') {
+    await page.locator('#publicRadioDiscovery summary').click();
+    assert.ok(await page.locator('#publicRadioQuery').isVisible());
+    assert.equal(await page.locator('#publicRadioGenre option').count(),11);
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'radio search overflow');
+    assert.ok(!(await page.locator('.public-radio').innerText()).includes('public.radio_'),'missing radio translation');
+   }
    assert.deepEqual(errors,[]);
    await page.screenshot({path:'/tmp/bookstark-public-'+kind+'-'+width+'.png',fullPage:true});
    console.log('PASS '+kind+' '+width+' '+lang+' '+theme+' '+(signedIn?'authenticated':'guest')+' layout, navigation and controls');await page.close();

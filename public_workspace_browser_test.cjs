@@ -96,6 +96,40 @@ const origin=process.env.BOOKSTARK_TEST_ORIGIN;
   await page.reload();assert.equal(await page.locator('#publicRadioStation').inputValue(),'rsj');assert.equal(await page.locator('#publicRadioVolume').inputValue(),'0.25');
   fail=true;await page.locator('#publicRadioPlay').click();await page.waitForFunction(()=>document.getElementById('publicRadioStatus').textContent.includes('失败'));
   assert.equal(await page.locator('#publicRadioPlay').getAttribute('aria-pressed'),'false');
+
+  // Directory results are untrusted; keep controls independent from the page search.
+  let directoryCalls=0, directoryMode='results', requested;
+  const directoryStation={name:'<img src=x onerror=alert(1)> Test Jazz',url_resolved:'https://test-radio.example/jazz.mp3',countrycode:'US',tags:'jazz,smooth',codec:'MP3',hls:0,homepage:'javascript:alert(1)'};
+  await page.route('https://*.api.radio-browser.info/**',async route=>{
+   directoryCalls++;requested=new URL(route.request().url());
+   if(directoryMode==='failover'&&requested.hostname.startsWith('de1'))return route.fulfill({status:503,body:''});
+   if(directoryMode==='error')return route.fulfill({status:503,body:''});
+   if(directoryMode==='stale'&&requested.searchParams.get('name')==='old'){await new Promise(r=>setTimeout(r,200));return route.fulfill({json:[{...directoryStation,name:'OLD RESULT'}]}).catch(()=>{});}
+   if(directoryMode==='empty')return route.fulfill({json:[]});
+   if(directoryMode==='paged')return route.fulfill({json:requested.searchParams.get('offset')==='0'?Array.from({length:40},(_,i)=>({...directoryStation,name:'Station '+i,url_resolved:'https://test-radio.example/'+i+'.mp3'})):[]});
+   return route.fulfill({json:[directoryStation,directoryStation,{...directoryStation,url_resolved:'http://insecure.example/a'}, {name:'bad',url_resolved:'javascript:alert(1)'}]});
+  });
+  await page.route('https://test-radio.example/**',route=>route.fulfill({contentType:'audio/wav',body:wav}));
+  await page.reload();assert.equal(directoryCalls,0,'directory must be lazy');
+  await page.locator('#publicRadioDiscovery summary').click();assert.equal(directoryCalls,0);
+  directoryMode='failover';await page.locator('#publicRadioGenre').selectOption('jazz');
+  await page.waitForFunction(()=>document.querySelectorAll('.public-radio-result').length===1);
+  assert.equal(requested.searchParams.get('tag'),'jazz');assert.ok(directoryCalls>=2,'mirror failover');
+  assert.equal(await page.locator('.public-radio-result img').count(),0,'station title must be text');
+  await page.locator('.public-radio-result').click();await page.waitForFunction(()=>!document.getElementById('publicRadioAudio').paused);
+  assert.equal(await page.locator('#publicRadioSource').getAttribute('href'),'https://www.radio-browser.info/');
+  await page.locator('#publicRadioPlay').click();await page.reload();
+  assert.ok((await page.locator('#publicRadioStation').inputValue()).includes('test-radio.example'));
+  assert.equal(await page.locator('#publicRadioPlay').getAttribute('aria-pressed'),'false','restore must not autoplay');
+  await page.locator('#publicRadioDiscovery summary').click();
+  directoryMode='empty';await page.locator('#publicRadioQuery').fill('none');await page.locator('#publicRadioSearch button').click();
+  await page.waitForFunction(()=>document.getElementById('publicRadioSearchStatus').textContent.includes('没有匹配'));
+  directoryMode='error';await page.locator('#publicRadioSearch button').click();await page.waitForFunction(()=>document.getElementById('publicRadioSearchStatus').textContent.includes('暂时不可用'));
+  directoryMode='stale';await page.locator('#publicRadioQuery').fill('old');await page.locator('#publicRadioSearch button').click();await page.locator('#publicRadioQuery').fill('new');await page.locator('#publicRadioSearch button').click();
+  await page.waitForFunction(()=>document.querySelectorAll('.public-radio-result').length===1);await page.waitForTimeout(250);
+  assert.ok(!(await page.locator('#publicRadioResults').innerText()).includes('OLD RESULT'));
+  directoryMode='paged';await page.locator('#publicRadioSearch button').click();await page.locator('#publicRadioMore').waitFor({state:'visible'});await page.locator('#publicRadioMore').click();await page.locator('#publicRadioMore').waitFor({state:'hidden'});assert.equal(requested.searchParams.get('offset'),'40');
+  for(const width of [320,390,1440]){await page.setViewportSize({width,height:1050});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));}
   await page.goto(origin+'/shares?type=article&keyword=Workspace%20article%2003');
   await page.locator('.public-manage summary').click();
   await page.locator('[data-public-action=pin]').click();await page.locator('.public-pinned').waitFor();
@@ -105,6 +139,6 @@ const origin=process.env.BOOKSTARK_TEST_ORIGIN;
   await page.locator('.public-empty').waitFor();
   await context.clearCookies();await page.reload();assert.equal(await page.locator('.public-entry').count(),0);
   assert.deepEqual(errors,[]);
-  console.log('PASS real server: tabs, pagination, search, category/sort retention, empty state, login return, account menu, note viewer, bookmark domain, pin/unpublish, 320–1440px.');
+  console.log('PASS real server: tabs, pagination, search, category/sort retention, empty state, login return, account menu, note viewer, bookmark domain, pin/unpublish, radio search/genres/paging/failover/persistence/safe rendering, 320–1440px.');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1});

@@ -10,6 +10,18 @@
  <p class="public-widget-caption">{{call $.T "public.trend"}}</p><p class="public-widget-footnote">{{call $.T "public.visits_note"}}</p>
  {{else}}<p>{{call .T "public.unavailable"}}</p>{{end}}</section>
  <section class="public-radio"><h2><i class="fa-solid fa-headphones" aria-hidden="true"></i>Radio</h2>
+ <details class="public-radio-discovery" id="publicRadioDiscovery"><summary><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>{{call .T "public.radio_discover"}}</summary>
+ <form id="publicRadioSearch" role="search" aria-label="{{call .T "public.radio_discover"}}">
+ <div class="public-radio-query"><input id="publicRadioQuery" type="search" maxlength="100" placeholder="{{call .T "public.radio_search_name"}}" aria-label="{{call .T "public.radio_search_name"}}"><button type="submit" aria-label="{{call .T "public.search_action"}}"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></button></div>
+ <label class="sr-only" for="publicRadioGenre">{{call .T "public.radio_genre"}}</label>
+ <select id="publicRadioGenre"><option value="">{{call .T "public.radio_all_genres"}}</option>
+ <option value="classical">{{call .T "public.radio_classical"}}</option><option value="jazz">{{call .T "public.radio_jazz"}}</option><option value="pop">{{call .T "public.radio_pop"}}</option><option value="rock">{{call .T "public.radio_rock"}}</option><option value="electronic">{{call .T "public.radio_electronic"}}</option><option value="ambient">{{call .T "public.radio_ambient"}}</option><option value="news">{{call .T "public.radio_news"}}</option><option value="talk">{{call .T "public.radio_talk"}}</option><option value="folk">{{call .T "public.radio_folk"}}</option><option value="country">{{call .T "public.radio_country"}}</option></select>
+ </form>
+ <p id="publicRadioSearchStatus" role="status" class="public-widget-caption">{{call .T "public.radio_search_hint"}}</p>
+ <div id="publicRadioResults" class="public-radio-results"></div>
+ <button id="publicRadioMore" type="button" hidden>{{call .T "public.radio_more"}}</button>
+ <p class="public-widget-footnote"><a href="https://www.radio-browser.info/" target="_blank" rel="noopener noreferrer">Radio Browser ↗</a> · {{call .T "public.radio_secure"}}</p>
+ </details>
  <label class="sr-only" for="publicRadioStation">{{call .T "public.radio_station"}}</label>
  <select id="publicRadioStation"><option value="rsc_de">{{call .T "public.radio_classical"}} · Swiss Classic</option><option value="rsj">{{call .T "public.radio_jazz"}} · Swiss Jazz</option><option value="rsp">{{call .T "public.radio_pop"}} · Swiss Pop</option></select>
  <div class="public-radio-controls"><button id="publicRadioPlay" type="button" aria-label="{{call .T "public.radio_play"}}" aria-pressed="false"><i class="fa-solid fa-play" aria-hidden="true"></i></button><span id="publicRadioStatus" role="status">{{call .T "public.radio_idle"}}</span></div>

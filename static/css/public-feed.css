@@ -260,3 +260,20 @@
 
 .public-cover-compact { box-sizing:content-box; width:2em; font-size:22px; }
 @media (max-width:640px) { .public-cover-compact { font-size:20px; } }
+.public-radio-discovery { margin-bottom:var(--spacing-md); border-bottom:1px solid var(--color-border); padding-bottom:var(--spacing-md); }
+.public-radio-discovery summary { display:flex; align-items:center; gap:var(--spacing-sm); cursor:pointer; color:var(--color-primary); font-size:12px; list-style:none; }
+.public-radio-discovery summary::-webkit-details-marker { display:none; }
+.public-radio-discovery summary::after { content:'+'; margin-left:auto; }
+.public-radio-discovery[open] summary::after { content:'−'; }
+#publicRadioSearch { display:flex; flex-direction:column; gap:var(--spacing-sm); margin-top:var(--spacing-md); }
+.public-radio-query { display:flex; border:1px solid var(--color-border); border-radius:var(--radius-lg); overflow:hidden; }
+.public-radio-query input { min-width:0; width:100%; border:0; background:var(--color-bg-card); color:var(--color-text); padding:var(--spacing-sm); font-size:12px; }
+.public-radio-query button { border:0; padding:var(--spacing-sm) var(--spacing-md); color:var(--color-primary); background:var(--color-primary-light); cursor:pointer; }
+.public-radio-results { max-height:260px; overflow-y:auto; overscroll-behavior:contain; }
+.public-radio-result { position:relative; width:100%; display:flex; flex-direction:column; gap:var(--spacing-xs); text-align:left; border:0; border-bottom:1px solid var(--color-border-light); background:transparent; color:var(--color-text); padding:var(--spacing-md) var(--spacing-xl) var(--spacing-md) 0; cursor:pointer; }
+.public-radio-result:hover { background:var(--color-bg-hover); }
+.public-radio-result strong { font-size:12px; font-weight:500; overflow-wrap:anywhere; }
+.public-radio-result small { font-size:10px; color:var(--color-text-secondary); max-width:100%; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.public-radio-result i { position:absolute; right:var(--spacing-xs); top:var(--spacing-md); color:var(--color-primary); font-size:10px; }
+#publicRadioMore { padding:var(--spacing-sm); border:0; background:var(--color-primary-light); color:var(--color-primary); border-radius:var(--radius-md); font-size:12px; cursor:pointer; }
+.public-radio-footer a { max-width:100%; overflow-wrap:anywhere; }
