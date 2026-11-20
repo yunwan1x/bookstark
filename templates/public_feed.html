@@ -5,10 +5,10 @@
 <title>BookStark · {{call .T "public.title"}}</title>
 <link rel="stylesheet" href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}">
 {{template "head-assets" .}}
-{{if eq .Type "bookmark"}}<link rel="stylesheet" href="/static/css/bookmarks.css?v={{assetVer "/static/css/bookmarks.css"}}">{{end}}
+<link rel="stylesheet" href="/static/css/bookmarks.css?v={{assetVer "/static/css/bookmarks.css"}}">
 <link rel="stylesheet" href="/static/css/selection-controls.css?v={{assetVer "/static/css/selection-controls.css"}}">
 <link rel="stylesheet" href="/static/css/public-feed.css?v={{assetVer "/static/css/public-feed.css"}}">
-{{if eq .Type "note"}}<link rel="stylesheet" href="/static/css/share-note-reader.css?v={{assetVer "/static/css/share-note-reader.css"}}">{{end}}
+<link rel="stylesheet" href="/static/css/share-note-reader.css?v={{assetVer "/static/css/share-note-reader.css"}}">
 </head>
 <body class="public-feed-body" data-public-account="{{.Account}}">
 {{if .Account}}{{template "header" .}}{{else}}
@@ -21,7 +21,23 @@
  <section class="public-intro">
   <h1 class="page-title public-page-title">{{call .T "public.title"}}</h1><p>{{call .T "public.intro"}}</p>
  </section>
- <div class="public-content">
+ {{template "public-feed-content" .}}
+ {{template "public-widgets" .}}
+</main>
+{{template "footer" .}}
+{{template "share-note-reader" .}}
+<script src="/static/js/marked.min.js?v={{assetVer "/static/js/marked.min.js"}}"></script>
+<script src="/static/js/share-note-reader.js?v={{assetVer "/static/js/share-note-reader.js"}}"></script>
+<script src="/static/js/share-comments.js?v={{assetVer "/static/js/share-comments.js"}}"></script>
+<script src="/static/js/selection-controls.js?v={{assetVer "/static/js/selection-controls.js"}}"></script>
+<script src="/static/js/public-widgets.js?v={{assetVer "/static/js/public-widgets.js"}}"></script>
+<script src="/static/js/public-feed.js?v={{assetVer "/static/js/public-feed.js"}}"></script>
+</body></html>
+
+{{define "public-feed-content"}}
+ <div class="public-content" data-login-url="{{.LoginURL}}">
+ <script type="application/json" class="public-feed-state">{{.PublicFeedStateJSON}}</script>
+ <p class="public-load-status" role="status" hidden></p>
  <nav class="public-nav" aria-label="{{call .T "public.navigation"}}">
   <a href="{{index .TypeURLs "article"}}" {{if eq .Type "article"}}aria-current="page"{{end}}><i class="fa-solid fa-pen-nib" aria-hidden="true"></i> {{call .T "public.articles"}}</a>
   <a href="{{index .TypeURLs "note"}}" {{if eq .Type "note"}}aria-current="page"{{end}}><i class="fa-solid fa-note-sticky" aria-hidden="true"></i> {{call .T "public.notes"}}</a>
@@ -86,17 +102,4 @@
   <nav class="public-pagination" aria-label="{{call .T "public.pagination"}}">{{if .PrevURL}}<a class="page-btn" href="{{.PrevURL}}">{{call .T "public.prev"}}</a>{{end}}<span>{{.Page}}</span>{{if .NextURL}}<a class="page-btn" href="{{.NextURL}}">{{call .T "public.next"}}</a>{{end}}</nav>
  </section>
  </div>
- {{template "public-widgets" .}}
-</main>
-{{template "footer" .}}
-{{if eq .Type "note"}}
-{{template "share-note-reader" .}}
-<script>window.__PUBLIC_NOTES__={{.PublicNotesJSON}};window.__SHARE_COMMENTS_ENABLED__={{.ShareCommentsEnabled}};window.__SHARE_COMMENT_ACCOUNT__={{jsonJS .Account}};window.__SHARE_COMMENT_GUEST_NAME__={{jsonJS .ShareCommentGuestName}};window.__SHARE_COMMENT_MAX_LENGTH__={{.ShareCommentMaxLength}};</script>
-<script src="/static/js/marked.min.js?v={{assetVer "/static/js/marked.min.js"}}"></script>
-<script src="/static/js/share-note-reader.js?v={{assetVer "/static/js/share-note-reader.js"}}"></script>
-<script src="/static/js/share-comments.js?v={{assetVer "/static/js/share-comments.js"}}"></script>
 {{end}}
-<script src="/static/js/selection-controls.js?v={{assetVer "/static/js/selection-controls.js"}}"></script>
-<script src="/static/js/public-widgets.js?v={{assetVer "/static/js/public-widgets.js"}}"></script>
-<script src="/static/js/public-feed.js?v={{assetVer "/static/js/public-feed.js"}}"></script>
-</body></html>

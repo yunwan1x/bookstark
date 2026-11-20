@@ -1,24 +1,104 @@
 /* One public reading surface for guests and signed-in readers. */
 (function () {
   'use strict';
-  document.getElementById('publicSort')?.addEventListener('change', e => { location.href = e.target.value; });
-  document.querySelectorAll('.public-items-bookmark .bm-row-favicon').forEach(icon => {
-    let timer;
-    function fallback() {
-      clearTimeout(timer);
-      if (!icon.isConnected) return;
-      icon.insertAdjacentHTML('beforebegin', bookmarkFaviconFallback(icon.dataset.title, icon.dataset.url));
-      icon.remove();
-    }
-    if (icon.hasAttribute('data-favicon-missing') || (icon.complete && !icon.naturalWidth)) { fallback(); return; }
-    if (icon.complete && icon.naturalWidth) return;
-    icon.addEventListener('error', fallback, {once: true});
-    icon.addEventListener('load', () => clearTimeout(timer), {once: true});
-    timer = setTimeout(fallback, 5000);
+  let content = document.querySelector('.public-content');
+  function readState(root) { return JSON.parse(root.querySelector('.public-feed-state').textContent); }
+  function hydrate(root, state) {
+    window.__PUBLIC_NOTES__ = state.notes || {};
+    window.__SHARE_COMMENTS_ENABLED__ = state.commentsEnabled;
+    window.__SHARE_COMMENT_ACCOUNT__ = state.account || '';
+    window.__SHARE_COMMENT_GUEST_NAME__ = state.guestName || '';
+    window.__SHARE_COMMENT_MAX_LENGTH__ = state.commentMaxLength;
+    resetShareNoteStore();
+    const login=document.querySelector('.public-login');if(login)login.href=root.dataset.loginUrl;
+
+    root.querySelectorAll('.public-items-bookmark .bm-row-favicon').forEach(icon => {
+      let timer;
+      function fallback() {
+        clearTimeout(timer);
+        if (!icon.isConnected) return;
+        icon.insertAdjacentHTML('beforebegin', bookmarkFaviconFallback(icon.dataset.title, icon.dataset.url));
+        icon.remove();
+      }
+      if (icon.hasAttribute('data-favicon-missing') || (icon.complete && !icon.naturalWidth)) { fallback(); return; }
+      if (icon.complete && icon.naturalWidth) return;
+      icon.addEventListener('error', fallback, {once: true});
+      icon.addEventListener('load', () => clearTimeout(timer), {once: true});
+      timer = setTimeout(fallback, 5000);
+    });
+    root.querySelectorAll('[data-bookmark-url]').forEach(node => {
+      try { node.textContent = new URL(node.dataset.bookmarkUrl).hostname; } catch (_) {}
+    });
+    Object.entries(window.__PUBLIC_NOTES__).forEach(([key, note]) => {
+      registerShareNote(key, {title: note.title, content: note.content || '', author: note.author, time: note.share_time, labels: note.labels});
+    });
+    root.querySelectorAll('.public-note-card').forEach(row => {
+      const note = shareNoteStore[row.dataset.noteKey], body = row.querySelector('[data-note-content]');
+      if (!note || !body) return;
+      body.innerHTML = sanitizeRenderedHTML(marked.parse(note.content));
+      body.querySelectorAll('img').forEach(img => { img.loading = 'lazy'; });
+      prepareShareNoteImages(body);
+    });
+  }
+  hydrate(content,readState(content));
+  let renderedURL=location.pathname+location.search+location.hash, requestID=0, requestAbort;
+  const historyData=()=>({...history.state,publicFeed:true,scrollY:window.scrollY});
+  history.replaceState(historyData(),'',renderedURL);
+  history.scrollRestoration='manual';
+  let scrollTimer;
+  window.addEventListener('scroll',()=>{
+    clearTimeout(scrollTimer);scrollTimer=setTimeout(()=>{
+      if(renderedURL===location.pathname+location.search+location.hash)history.replaceState(historyData(),'',renderedURL);
+    },150);
+  },{passive:true});
+  async function navigateFeed(url,options={}) {
+    if(url.origin!==location.origin||!(url.pathname==='/shares'||(url.pathname==='/'&&!document.body.dataset.publicAccount)))return;
+    const id=++requestID;requestAbort?.abort();requestAbort=new AbortController();
+    const controller=requestAbort,timeout=setTimeout(()=>controller.abort(),15000);
+    const previousY=window.scrollY;
+    if(!options.pop)history.replaceState(historyData(),'',renderedURL);
+    const message=content.querySelector('.public-load-status');message.hidden=false;message.textContent=window.__('public.loading');
+    content.setAttribute('aria-busy','true');
+    try {
+      const response=await fetch(url.href,{headers:{'X-BookStark-Feed':'content',Accept:'application/vnd.bookstark.feed+html'},credentials:'same-origin',cache:'no-store',signal:controller.signal});
+      if(!response.ok||!['/shares','/'].includes(new URL(response.url).pathname))throw Error(window.__('public.load_error'));
+      const doc=new DOMParser().parseFromString(await response.text(),'text/html');
+      const next=doc.querySelector('.public-content');if(!next)throw Error(window.__('public.load_error'));
+      const state=readState(next);
+      if((state.account||'')!==(document.body.dataset.publicAccount||''))throw Error(window.__('public.session_changed'));
+      if(id!==requestID)return;
+      closeShareNoteViewer();closeShareImageLightbox();
+      content.replaceWith(next);content=next;hydrate(content,state);
+      renderedURL=url.pathname+url.search+url.hash;
+      const y=options.pop?Number(options.scrollY)||0:options.replace?previousY:Math.max(0,content.getBoundingClientRect().top+window.scrollY-60);
+      if(options.pop||options.replace)history.replaceState({...history.state,publicFeed:true,scrollY:y},'',renderedURL);
+      else history.pushState({publicFeed:true,scrollY:y},'',renderedURL);
+      window.scrollTo({top:y,behavior:'instant'});
+      content.querySelector('.public-nav a[aria-current]')?.focus({preventScroll:true});
+      document.dispatchEvent(new CustomEvent('bookstark:public-feed-updated'));
+    } catch(error) {
+      if(id!==requestID)return;
+      const status=content.querySelector('.public-load-status');status.hidden=false;status.textContent=error.message===window.__('public.session_changed')?error.message:window.__('public.load_error');
+      // A failed Back/Forward request must not leave the URL describing other content.
+      if(options.pop)history.replaceState(historyData(),'',renderedURL);
+      const sort=content.querySelector('#publicSort');if(sort){const current=new URL(renderedURL,location.origin).searchParams.get('sort')||'latest';[...sort.options].forEach(option=>option.selected=new URL(option.value,location.origin).searchParams.get('sort')===current);}
+    } finally {clearTimeout(timeout);if(id===requestID)content.removeAttribute('aria-busy');}
+  }
+  document.addEventListener('click',event=>{
+    if(event.defaultPrevented||event.button!==0||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
+    const link=event.target.closest('.public-nav a[href], .public-categories a[href], .public-pagination a[href], .public-items-bookmark .bm-label-badge[href]');
+    if(!link||link.target||link.hasAttribute('download'))return;
+    const url=new URL(link.href);if(url.origin!==location.origin||url.pathname!=='/shares')return;
+    event.preventDefault();navigateFeed(url);
   });
-  document.querySelectorAll('[data-bookmark-url]').forEach(node => {
-    try { node.textContent = new URL(node.dataset.bookmarkUrl).hostname; } catch (_) {}
+  document.addEventListener('submit',event=>{
+    if(event.target.id!=='publicSearch')return;
+    event.preventDefault();const url=new URL(event.target.action);url.search=new URLSearchParams(new FormData(event.target)).toString();navigateFeed(url);
   });
+  document.addEventListener('change',event=>{if(event.target.id==='publicSort')navigateFeed(new URL(event.target.value,location.href));});
+  window.addEventListener('popstate',event=>navigateFeed(new URL(location.href),{pop:true,scrollY:event.state?.scrollY}));
+  window.addEventListener('pagehide',()=>{requestID++;requestAbort?.abort();clearTimeout(scrollTimer);});
+
   // Save only this tab's reading position, not content or credentials.
   const positionKey = 'bookstark:public-login-return';
   document.querySelector('.public-login')?.addEventListener('click', () => {
@@ -50,7 +130,8 @@
       if (action === 'unpublish' && !await BSDialog.confirm2(formatDeleteConfirmation(window.__('public.unpublish_confirm'), btn.dataset.title, btn.dataset.id))) { btn.disabled = false; return; }
       const base = '/api/shares/' + encodeURIComponent(btn.dataset.type) + '/' + encodeURIComponent(btn.dataset.id);
       await api(base + (action === 'pin' ? '/pin' : ''), action === 'pin' ? 'PATCH' : 'DELETE');
-      location.reload();
+      await navigateFeed(new URL(location.href), {replace:true});
+      btn.disabled = false;
     } catch (err) { BSDialog.toast(err.message, 'error'); btn.disabled = false; }
   });
   document.addEventListener('keydown', e => {
@@ -62,17 +143,6 @@
     });
   });
 
-  if (!window.__PUBLIC_NOTES__) return;
-  Object.entries(window.__PUBLIC_NOTES__).forEach(([key, note]) => {
-    registerShareNote(key, {title: note.title, content: note.content || '', author: note.author, time: note.share_time, labels: note.labels});
-  });
-  document.querySelectorAll('.public-note-card').forEach(row => {
-    const note = shareNoteStore[row.dataset.noteKey], body = row.querySelector('[data-note-content]');
-    if (!note || !body) return;
-    body.innerHTML = sanitizeRenderedHTML(marked.parse(note.content));
-    body.querySelectorAll('img').forEach(img => { img.loading = 'lazy'; });
-    prepareShareNoteImages(body);
-  });
   document.addEventListener('click', e => {
     const btn = e.target.closest('[data-note-action]');
     if (!btn) return;

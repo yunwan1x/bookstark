@@ -221,10 +221,10 @@ func TestPublicCommentGuestNicknameIsRequestScoped(t *testing.T) {
 		if w.Code != 200 || w.Header().Get("Cache-Control") != "private, no-store" {
 			t.Fatal("personalized comment nickname must not be cached", w.Code)
 		}
-		if strings.Contains(w.Body.String(), `window.__SHARE_COMMENT_GUEST_NAME__="203.0.113.24"`) == signedIn {
+		if strings.Contains(w.Body.String(), `"guestName":"203.0.113.24"`) == signedIn {
 			t.Fatal("IP nickname must be populated only for this anonymous request")
 		}
-		if signedIn && !strings.Contains(w.Body.String(), `window.__SHARE_COMMENT_GUEST_NAME__="";`) {
+		if signedIn && !strings.Contains(w.Body.String(), `"guestName":""`) {
 			t.Fatal("signed-in guest nickname must remain a valid JavaScript string")
 		}
 	}
@@ -281,6 +281,45 @@ func TestPublicRadioLinkVisibility(t *testing.T) {
 		// Book tab has no article rows: any radio link must belong to the widget.
 		if got := strings.Contains(w.Body.String(), `href="/shares/radio-web"`); got != state.want {
 			t.Fatalf("link exposed=%v, want %v", got, state.want)
+		}
+	}
+}
+
+func TestPublicFeedFragmentPrivacyAndCache(t *testing.T) {
+	router, token := initAssetControllerTest(t)
+	note := &models.Blog{BlogTitle: "AJAX note", BlogIdentify: "ajax-note", BlogType: "note", BlogContent: "</script><script>window.injected=true</script>", MemberID: 1, Visibility: 1}
+	if err := note.Insert(); err != nil {
+		t.Fatal(err)
+	}
+	protected := &models.Blog{BlogTitle: "Protected", BlogIdentify: "ajax-protected", BlogType: "note", BlogContent: "FRAGMENT_PRIVATE_CONTENT", Password: "secret", MemberID: 1, Visibility: 1}
+	if err := protected.Insert(); err != nil {
+		t.Fatal(err)
+	}
+	for _, auth := range []string{"", token} {
+		req := httptest.NewRequest("GET", "/shares?type=note", nil)
+		req.Header.Set("X-BookStark-Feed", "content")
+		if auth != "" {
+			req.Header.Set("Authorization", "Token "+auth)
+		}
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+		if w.Code != 200 {
+			t.Fatal(w.Code, w.Body.String())
+		}
+		html := w.Body.String()
+		for _, forbidden := range []string{"<!doctype", `id="publicRadioAudio"`, "FRAGMENT_PRIVATE_CONTENT", "<script>window.injected"} {
+			if strings.Contains(html, forbidden) {
+				t.Fatalf("fragment contains %s", forbidden)
+			}
+		}
+		if !strings.Contains(html, `class="public-content"`) || !strings.Contains(html, `type="application/json"`) {
+			t.Fatal("missing fragment state")
+		}
+		if w.Header().Get("Cache-Control") != "private, no-store" || w.Header().Get("Vary") != "X-BookStark-Feed" {
+			t.Fatal("fragment cache policy")
+		}
+		if auth == "" && strings.Contains(html, `data-public-action=`) {
+			t.Fatal("guest management controls leaked")
 		}
 	}
 }

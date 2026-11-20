@@ -157,6 +157,11 @@ self.addEventListener('fetch', function(event) {
 
   // Only handle same-origin requests
   if (url.origin !== location.origin) return;
+  // Public workspace fragments and full pages must never share a cached response.
+  if (event.request.method === 'GET' && url.pathname === '/shares') {
+    event.respondWith(privatePageWithDeadline(event.request));
+    return;
+  }
 
   // Assistant conversations are private and online-only. Never cache or replay
   // confirmations; invalidate cached lists after a successful draft action.

@@ -76,6 +76,8 @@ func assignPublicLabelIcons(labels []string) map[string]string {
 
 func PublicFeedPage(c *gin.Context) {
 	c.Header("Cache-Control", "private, no-store")
+	c.Header("Vary", "X-BookStark-Feed")
+	partial := c.GetHeader("X-BookStark-Feed") == "content"
 	data := commonData(c, "shares")
 	data["Background"] = nil
 	data["ShareCommentsEnabled"] = models.ShareCommentsEnabled()
@@ -165,12 +167,7 @@ func PublicFeedPage(c *gin.Context) {
 			}
 		}
 	}
-	notesJSON, err := json.Marshal(notes)
-	if err != nil {
-		c.String(http.StatusInternalServerError, "Unable to load public notes")
-		return
-	}
-	data["Management"], data["PublicNotesJSON"] = management, template.JS(notesJSON)
+	data["Management"] = management
 	labels, err := models.PublicFeedLabels(kind)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Unable to load public categories")
@@ -182,7 +179,9 @@ func PublicFeedPage(c *gin.Context) {
 		categories = append(categories, publicNavItem{Name: l, URL: link(kind, order, l, 1), Icon: icons[l], Active: label == l})
 	}
 	data["SearchKey"] = "public.search_" + kind
-	data["VisitSummary"], _ = models.GetPublicVisitSummary(time.Now())
+	if !partial {
+		data["VisitSummary"], _ = models.GetPublicVisitSummary(time.Now())
+	}
 	// Resolve the optional full player without loading/decompressing its HTML.
 	var radioIdentify string
 	if err := models.DB.QueryRow(`SELECT COALESCE(s.share_identify,b.blog_identify)
@@ -239,6 +238,19 @@ func PublicFeedPage(c *gin.Context) {
 	}
 	if int64(page*15) < total {
 		data["NextURL"] = link(kind, order, label, page+1)
+	}
+	stateJSON, err := json.Marshal(gin.H{
+		"notes": notes, "commentsEnabled": data["ShareCommentsEnabled"], "account": data["Account"],
+		"guestName": data["ShareCommentGuestName"], "commentMaxLength": data["ShareCommentMaxLength"],
+	})
+	if err != nil {
+		c.String(http.StatusInternalServerError, "Unable to load public content")
+		return
+	}
+	data["PublicFeedStateJSON"] = template.JS(stateJSON)
+	if partial {
+		c.HTML(http.StatusOK, "public-feed-content", data)
+		return
 	}
 	c.HTML(http.StatusOK, "public_feed.html", data)
 }
