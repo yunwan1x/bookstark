@@ -12,13 +12,20 @@
     resetShareNoteStore();
     const login=document.querySelector('.public-login');if(login)login.href=root.dataset.loginUrl;
 
-    root.querySelectorAll('.public-items-bookmark .bm-row-favicon').forEach(icon => {
+    root.querySelectorAll('.public-items-bookmark .bm-row-favicon, [data-news-favicon]').forEach(icon => {
       let timer;
       function fallback() {
         clearTimeout(timer);
         if (!icon.isConnected) return;
         icon.insertAdjacentHTML('beforebegin', bookmarkFaviconFallback(icon.dataset.title, icon.dataset.url));
         icon.remove();
+      }
+      if (icon.hasAttribute('data-news-favicon')) {
+        try {
+          const site = new URL(icon.dataset.url);
+          if (!['http:', 'https:'].includes(site.protocol)) { fallback(); return; }
+          icon.src = '/api/favicon?url=' + encodeURIComponent(site.origin + '/favicon.ico');
+        } catch (_) { fallback(); return; }
       }
       if (icon.hasAttribute('data-favicon-missing') || (icon.complete && !icon.naturalWidth)) { fallback(); return; }
       if (icon.complete && icon.naturalWidth) return;
@@ -69,6 +76,7 @@
     feed.querySelectorAll('.public-items,.public-pagination').forEach(node=>node.inert=true);
     content.setAttribute('aria-busy','true');
     try {
+      if(navigator.onLine===false)throw Error(window.__('public.load_error'));
       const response=await fetch(url.href,{headers:{'X-BookStark-Feed':'content',Accept:'application/vnd.bookstark.feed+html'},credentials:'same-origin',cache:'no-store',signal:controller.signal});
       if(!response.ok||!['/shares','/'].includes(new URL(response.url).pathname))throw Error(window.__('public.load_error'));
       const doc=new DOMParser().parseFromString(await response.text(),'text/html');

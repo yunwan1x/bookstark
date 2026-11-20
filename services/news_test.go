@@ -361,3 +361,38 @@ func TestNewsSourceDiversityBeforePaginationAndRetention(t *testing.T) {
 		t.Fatal(n, e)
 	}
 }
+
+func TestNewsCategoryCapIsSeparateForEachLanguage(t *testing.T) {
+	newsTestDB(t)
+	now := time.Now().Unix()
+	for source := 1; source <= 4; source++ {
+		lang := "zh"
+		if source > 2 {
+			lang = "en"
+		}
+		if _, e := models.DB.Exec(`INSERT INTO md_news_sources(id,url,name,category,language,enabled) VALUES(?,?,?,'ai-research',?,1)`, source, "https://example.com/"+strconv.Itoa(source), lang, lang); e != nil {
+			t.Fatal(e)
+		}
+		for i := 0; i < 60; i++ {
+			key := strconv.Itoa(source) + "-" + strconv.Itoa(i)
+			if _, e := models.DB.Exec(`INSERT INTO md_news_articles(source_id,item_key,url,title,published,created) VALUES(?,?,?,'Story',?,?)`, source, key, "https://example.com/"+key, now-int64(source*100+i), now); e != nil {
+				t.Fatal(e)
+			}
+		}
+	}
+	if e := models.TrimNewsCategories(100); e != nil {
+		t.Fatal(e)
+	}
+	for _, lang := range []string{"zh", "en"} {
+		var n, sources int
+		if e := models.DB.QueryRow(`SELECT COUNT(*),COUNT(DISTINCT a.source_id) FROM md_news_articles a JOIN md_news_sources s ON s.id=a.source_id WHERE s.category='ai-research' AND s.language=?`, lang).Scan(&n, &sources); e != nil || n != 100 || sources != 2 {
+			t.Fatal(lang, n, sources, e)
+		}
+	}
+	for source := 1; source <= 4; source++ {
+		var n int
+		if e := models.DB.QueryRow(`SELECT COUNT(*) FROM md_news_articles WHERE source_id=?`, source).Scan(&n); e != nil || n != 50 {
+			t.Fatal(source, n, e)
+		}
+	}
+}

@@ -88,7 +88,7 @@ func InitNewsTables() error {
 		}
 	}
 
-	// Cache v3 refills source diversity after the previous timestamp-only cap.
+	// Cache v4 refills feeds after splitting the category cap by language.
 	// Invalidate conditional headers once so trimmed feeds can be re-fetched.
 	tx, e := DB.Begin()
 	if e != nil {
@@ -100,11 +100,11 @@ func InitNewsTables() error {
 	if e != nil && !errors.Is(e, sql.ErrNoRows) {
 		return e
 	}
-	if version != "3" {
+	if version != "4" {
 		if _, e = tx.Exec("UPDATE md_news_sources SET etag='',modified=''"); e != nil {
 			return e
 		}
-		if _, e = tx.Exec("INSERT INTO md_settings(key,value) VALUES('news_parser_version','3') ON CONFLICT(key) DO UPDATE SET value='3'"); e != nil {
+		if _, e = tx.Exec("INSERT INTO md_settings(key,value) VALUES('news_parser_version','4') ON CONFLICT(key) DO UPDATE SET value='4'"); e != nil {
 			return e
 		}
 	}
@@ -209,7 +209,7 @@ func ListNews(page int, keyword, category, language, source string) ([]NewsArtic
 	return out, total, rows.Err()
 }
 
-// TrimNewsCategories distributes the category cap in rounds across sources,
+// TrimNewsCategories distributes each category/language cap across sources,
 // keeping each source's newest articles. Active sources take priority.
 // Bookmarks are separate records and are never deleted by this cap.
 func TrimNewsCategories(limit int) error {
@@ -218,8 +218,8 @@ func TrimNewsCategories(limit int) error {
 	}
 	_, err := DB.Exec(`DELETE FROM md_news_articles WHERE id IN (
  SELECT id FROM (
- SELECT id,ROW_NUMBER() OVER (PARTITION BY category ORDER BY enabled DESC,(published>0) DESC,source_position,published DESC,id DESC) AS position FROM (
- SELECT a.id,a.published,s.category,s.enabled,
+ SELECT id,ROW_NUMBER() OVER (PARTITION BY category,language ORDER BY enabled DESC,(published>0) DESC,source_position,published DESC,id DESC) AS position FROM (
+ SELECT a.id,a.published,s.category,s.language,s.enabled,
  ROW_NUMBER() OVER (PARTITION BY a.source_id ORDER BY a.published DESC,a.id DESC) AS source_position
  FROM md_news_articles a JOIN md_news_sources s ON s.id=a.source_id
  )) WHERE position > ?
