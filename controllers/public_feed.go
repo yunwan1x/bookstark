@@ -261,7 +261,7 @@ func PublicFeedPage(c *gin.Context) {
 		data["NextURL"] = link(kind, order, label, page+1)
 	}
 	stateJSON, err := json.Marshal(gin.H{
-		"news": data["News"], "notes": notes, "commentsEnabled": data["ShareCommentsEnabled"], "account": data["Account"],
+		"notes": notes, "commentsEnabled": data["ShareCommentsEnabled"], "account": data["Account"],
 		"guestName": data["ShareCommentGuestName"], "commentMaxLength": data["ShareCommentMaxLength"],
 	})
 	if err != nil {
