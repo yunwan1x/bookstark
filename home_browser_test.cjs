@@ -61,10 +61,8 @@ const origin = process.env.BOOKSTARK_TEST_ORIGIN;
     assert.equal(await page.locator('#homeGrid .home-card').getAttribute('data-section'),'tasks','selection survives reload');
     await page.locator('#homeLimit').selectOption('10');await page.waitForSelector('#homeGrid[aria-busy=false]');
     await page.locator('[data-home-filter=notes]').click();
-    await page.locator('#homeSearch').fill('首页测试');
-    await page.locator('#homeSearch').press('Enter');
-    await page.waitForURL('**/search?q=*');
-    assert.equal(new URL(page.url()).searchParams.get('q'),'首页测试');
+    assert.equal(await page.locator('.home-welcome,.home-search,#homeToday').count(),0);
+    assert.equal(await page.locator('#searchTrigger').count(),1);
     await page.goto(origin+'/home'); await page.waitForSelector('#homeGrid[aria-busy=false] .home-card');
     for(const id of [1,2,3,4]) assert.equal((await context.request.get(origin+'/api/blogs/'+id)).status(),200);
     await page.reload();await page.waitForSelector('#homeGrid[aria-busy=false] .home-card');
@@ -110,24 +108,15 @@ const origin = process.env.BOOKSTARK_TEST_ORIGIN;
       await context.addCookies([{name:'lang',value:lang,url:origin}]);
       await page.goto(origin+'/home');await page.waitForSelector('#homeGrid[aria-busy=false] .home-card');
       assert.equal(await page.locator('html').getAttribute('lang'),lang);
-      assert.equal(await page.locator('.home-welcome h1').innerText(),lang==='en'?'A clear space for your ideas.':'让思考，井然有序。');
-      if(lang==='en') assert.ok(!/[\u4e00-\u9fff]/.test(await page.locator('.home-welcome').innerText()));
+      assert.equal(await page.locator('.home-welcome,.home-search').count(),0);
       for(const theme of ['light','nvidia','apple']) {
         await page.evaluate(theme=>window.BookStarkTheme.apply(theme),theme);
         await page.waitForTimeout(150);
         assert.equal(await page.locator('html').getAttribute('data-theme-style'),theme);
-        const colors=await page.locator('.home-primary').first().evaluate(n=>{const s=getComputedStyle(n),r=getComputedStyle(document.documentElement);return [s.backgroundColor,s.color,r.getPropertyValue('--color-primary').trim(),r.getPropertyValue('--color-on-primary').trim()];});
-        assert.notEqual(colors[0],colors[1]);
-        function luminance(color) {
-          const rgb=color.match(/[\d.]+/g).slice(0,3).map(Number).map(x=>{x/=255;return x<=.04045?x/12.92:((x+.055)/1.055)**2.4;});
-          return rgb[0]*.2126+rgb[1]*.7152+rgb[2]*.0722;
-        }
-        const light=luminance(colors[0]),dark=luminance(colors[1]);
-        assert.ok((Math.max(light,dark)+.05)/(Math.min(light,dark)+.05)>=4.5,'primary button contrast '+theme);
         for(const width of [320,390,820,1440]) {
           await page.setViewportSize({width,height:1000});
           assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'overflow '+lang+' '+theme+' '+width);
-          assert.ok(await page.locator('.home-search').evaluate(n=>n.getBoundingClientRect().right<=innerWidth));
+          assert.ok(await page.locator('.home-workspace').evaluate(n=>n.getBoundingClientRect().right<=innerWidth));
         }
         await page.screenshot({path:'/tmp/bookstark-white-'+lang+'-'+theme+'.png',fullPage:true});
         await page.setViewportSize({width:390,height:844});
@@ -146,7 +135,7 @@ const origin = process.env.BOOKSTARK_TEST_ORIGIN;
     }
     await context.addCookies([{name:'lang',value:'zh',url:origin}]);
     await page.goto(origin+'/home');await page.waitForSelector('#homeGrid[aria-busy=false] .home-card');
-    console.log('PASS real statistics, global search, module filters, date views, two languages and three themes at 320/390/820/1440px');
+    console.log('PASS real statistics, compact header-free workspace, module filters, date views, two languages and three themes at 320/390/820/1440px');
     await page.route('**/api/home?*',route=>route.fulfill({status:500,contentType:'application/json',body:JSON.stringify({code:500,message:'测试加载错误'})}));
     await page.locator('[data-home-sort=created]').click();await page.locator('#homeRetry').waitFor({state:'visible'});assert.equal(await page.locator('.home-card').count(),0);
     assert.ok((await page.locator('#homeStatus').innerText()).includes('首页加载失败'));

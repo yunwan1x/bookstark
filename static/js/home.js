@@ -20,9 +20,6 @@
     function lt(zh, en) { return english ? en : zh; }
     var moduleEnglish = {notes:'Notes',articles:'Articles',tasks:'Tasks',books:'Books',bookmarks:'Bookmarks',topics:'Topics',nav:'Navigation',shares:'Community',assets:'Assets'};
     function moduleName(key) { return english ? moduleEnglish[key] : modules[key][0]; }
-    var today = document.getElementById('homeToday');
-    today.textContent = new Date().toLocaleDateString(english ? 'en-US' : 'zh-CN', {year:'numeric',month:'long',day:'numeric',weekday:'long'});
-    today.dateTime = new Date().toISOString();
     function renderStats(stats) {
         document.querySelectorAll('[data-home-stat]').forEach(function(node) {
             var value = stats && stats[node.dataset.homeStat];
