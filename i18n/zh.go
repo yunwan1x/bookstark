@@ -1,6 +1,8 @@
 package i18n
 
 var zhMessages = map[string]string{
+	"news.unknown_date": "发布时间未知",
+
 	"news.task_failed": "失败",
 
 	"public.news":          "新闻",

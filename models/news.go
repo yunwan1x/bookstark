@@ -75,7 +75,28 @@ func InitNewsTables() error {
 			return e
 		}
 	}
-	return nil
+
+	// Parser v2 distinguishes unknown publication dates; invalidate conditional
+	// request headers once so existing caches are re-parsed on the next update.
+	tx, e := DB.Begin()
+	if e != nil {
+		return e
+	}
+	defer tx.Rollback()
+	var version string
+	e = tx.QueryRow("SELECT value FROM md_settings WHERE key='news_parser_version'").Scan(&version)
+	if e != nil && !errors.Is(e, sql.ErrNoRows) {
+		return e
+	}
+	if version != "2" {
+		if _, e = tx.Exec("UPDATE md_news_sources SET etag='',modified=''"); e != nil {
+			return e
+		}
+		if _, e = tx.Exec("INSERT INTO md_settings(key,value) VALUES('news_parser_version','2') ON CONFLICT(key) DO UPDATE SET value='2'"); e != nil {
+			return e
+		}
+	}
+	return tx.Commit()
 }
 
 type NewsSource struct {

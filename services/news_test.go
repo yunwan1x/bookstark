@@ -203,3 +203,34 @@ func TestNewsJobRetentionAndMutationLock(t *testing.T) {
 		t.Fatal(status, added, e)
 	}
 }
+
+func TestNewsUnknownDatesRemainUnknown(t *testing.T) {
+	newsTestDB(t)
+	now := time.Now()
+	body := `<rss><channel><item><title>Undated</title><guid>u</guid><link>https://example.com/undated</link></item><item><title>Dated</title><guid>d</guid><link>https://example.com/dated</link><pubDate>` + now.Add(-time.Hour).Format(time.RFC1123Z) + `</pubDate></item></channel></rss>`
+	items, e := parseNewsFeed([]byte(body), "https://example.com/feed", now)
+	if e != nil || len(items) != 2 || items[0].Published != 0 {
+		t.Fatal(items, e)
+	}
+	_, e = models.DB.Exec(`INSERT INTO md_news_sources(url,name,enabled) VALUES('https://example.com/feed','Example',1)`)
+	if e != nil {
+		t.Fatal(e)
+	}
+	sources, _ := models.NewsSources(false)
+	mockNewsHTTP(body, 200)
+	if _, e = fetchNewsSource(context.Background(), sources[0], 90); e != nil {
+		t.Fatal(e)
+	}
+	list, _, e := models.ListNews(1, "", "", "", "")
+	if e != nil || len(list) != 2 || list[0].Title != "Dated" || list[1].Published != 0 {
+		t.Fatal(list, e)
+	}
+	_, _ = models.DB.Exec(`UPDATE md_news_articles SET published=created WHERE title='Undated'`)
+	if _, e = fetchNewsSource(context.Background(), sources[0], 90); e != nil {
+		t.Fatal(e)
+	}
+	list, _, _ = models.ListNews(1, "", "", "", "")
+	if list[1].Published != 0 {
+		t.Fatal("existing undated cache was not corrected")
+	}
+}

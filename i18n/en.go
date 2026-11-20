@@ -1,6 +1,8 @@
 package i18n
 
 var enMessages = map[string]string{
+	"news.unknown_date": "Publication date unavailable",
+
 	"news.task_failed": "Failed",
 
 	"public.news":          "News",

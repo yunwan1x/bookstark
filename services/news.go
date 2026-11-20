@@ -333,10 +333,11 @@ func parseNewsFeed(b []byte, base string, now time.Time) ([]models.NewsArticle, 
 				break
 			}
 		}
-		if published.IsZero() || published.After(now.Add(24*time.Hour)) {
-			published = now
+		publishedUnix := int64(0)
+		if !published.IsZero() && !published.After(now.Add(24*time.Hour)) {
+			publishedUnix = published.Unix()
 		}
-		out = append(out, models.NewsArticle{URL: link, Title: title, Summary: plainNewsText(summary, 700), Published: published.Unix()})
+		out = append(out, models.NewsArticle{URL: link, Title: title, Summary: plainNewsText(summary, 700), Published: publishedUnix})
 		key := e.ID
 		if key == "" {
 			key = e.GUID
@@ -369,12 +370,12 @@ func fetchNewsSource(ctx context.Context, s models.NewsSource, retention int) (i
 	}
 	defer tx.Rollback()
 	added := 0
-	latest := s.LatestArticle
+	latest := int64(0)
 	for _, a := range items {
 		if a.Published > latest {
 			latest = a.Published
 		}
-		if a.Published < now.AddDate(0, 0, -retention).Unix() {
+		if a.Published > 0 && a.Published < now.AddDate(0, 0, -retention).Unix() {
 			continue
 		}
 		res, e := tx.ExecContext(ctx, `INSERT OR IGNORE INTO md_news_articles(source_id,item_key,url,title,summary,published,created) VALUES(?,?,?,?,?,?,?)`, s.ID, a.ItemKey, a.URL, a.Title, a.Summary, a.Published, now.Unix())
@@ -383,6 +384,11 @@ func fetchNewsSource(ctx context.Context, s models.NewsSource, retention int) (i
 		}
 		n, _ := res.RowsAffected()
 		added += int(n)
+		if n == 0 {
+			if _, e = tx.ExecContext(ctx, `UPDATE md_news_articles SET title=?,summary=?,published=? WHERE source_id=? AND (item_key=? OR url=?)`, a.Title, a.Summary, a.Published, s.ID, a.ItemKey, a.URL); e != nil {
+				return 0, e
+			}
+		}
 	}
 	_, e = tx.ExecContext(ctx, `UPDATE md_news_sources SET last_attempt=?,last_success=?,latest_article=?,error='',failures=0,etag=?,modified=? WHERE id=?`, now.Unix(), now.Unix(), latest, h.Get("ETag"), h.Get("Last-Modified"), s.ID)
 	if e != nil {
@@ -496,7 +502,7 @@ func runNewsJob(ctx context.Context, kind string, sourceID int64) {
 			}
 			wg.Wait()
 		}
-		if _, err := models.DB.Exec(`DELETE FROM md_news_articles WHERE published<? AND url NOT IN (SELECT url FROM md_bookmark)`, time.Now().AddDate(0, 0, -cfg.RetentionDays).Unix()); err != nil {
+		if _, err := models.DB.Exec(`DELETE FROM md_news_articles WHERE (CASE WHEN published>0 THEN published ELSE created END)<? AND url NOT IN (SELECT url FROM md_bookmark)`, time.Now().AddDate(0, 0, -cfg.RetentionDays).Unix()); err != nil {
 			failed++
 			details = append(details, "retention cleanup failed")
 		}
