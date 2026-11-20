@@ -15,8 +15,8 @@ func TestProfileOnlyOffersDefaultAndIndependentBrandThemes(t *testing.T) {
 	start := strings.Index(text, "<select id=\"profile-theme\"")
 	end := strings.Index(text[start:], "</select>") + start
 	selectHTML := text[start:end]
-	if strings.Count(selectHTML, "<option ") != 3 || !strings.Contains(selectHTML, "value=\"light\"") || !strings.Contains(selectHTML, "value=\"nvidia\"") || !strings.Contains(selectHTML, "value=\"apple\"") {
-		t.Fatal("expected exactly default, NVIDIA and Apple themes")
+	if strings.Count(selectHTML, "<option ") != 4 || !strings.Contains(selectHTML, "value=\"light\"") || !strings.Contains(selectHTML, "value=\"nvidia\"") || !strings.Contains(selectHTML, "value=\"apple\"") || !strings.Contains(selectHTML, "value=\"glass\"") {
+		t.Fatal("expected default, NVIDIA, Apple and Glass themes")
 	}
 	if !strings.Contains(text, "window.BookStarkTheme.set(theme)") {
 		t.Fatal("theme selection must use shared runtime")

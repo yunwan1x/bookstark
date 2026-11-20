@@ -48,9 +48,9 @@ const fs=require('node:fs'),assert=require('node:assert/strict');
    for(const template of ['base','editor_common','notes_public','login','register','forgot_password','reset_password']){
     const source=fs.readFileSync('templates/'+template+'.html','utf8');
     const bootstrap=source.split('<script>').slice(1).map(s=>s.split('</script>')[0]).find(s=>s.includes('s={light:'));
-    for(const valid of ['light','nvidia','apple']){
+    for(const valid of ['light','nvidia','apple','glass']){
      const result=await page.evaluate(({bootstrap,valid})=>{localStorage.setItem('bookstark-theme',valid);(0,eval)(bootstrap);return [document.documentElement.dataset.themeStyle,document.documentElement.dataset.theme];},{bootstrap,valid});
-     assert.deepEqual(result,[valid,valid==='nvidia'?'dark':'light'],template+' valid '+valid);
+     assert.deepEqual(result,[valid,['nvidia','glass'].includes(valid)?'dark':'light'],template+' valid '+valid);
     }
     for(const old of ['nvidia-apple','dark','notion-pro','scholar-paper','linear-saas','apple-minimal','__proto__']){
      const result=await page.evaluate(({bootstrap,old})=>{localStorage.setItem('bookstark-theme',old);(0,eval)(bootstrap);return [document.documentElement.dataset.themeStyle,document.documentElement.dataset.theme,localStorage.getItem('bookstark-theme')];},{bootstrap,old});

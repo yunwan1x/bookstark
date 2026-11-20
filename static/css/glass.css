@@ -1,0 +1,111 @@
+/* Glass material layer. Only paint properties: existing layout remains authoritative. */
+[data-theme-style="glass"] {
+  color-scheme: dark;
+  --color-primary: #b8a1ff; --color-primary-hover: #d2c2ff; --color-on-primary: #ffffff;
+  --color-primary-light: #b2a0ff24; --color-primary-lighter: #b2a0ff36; --color-primary-bg: #b2a0ff24;
+  --color-primary-text: #d4c6ff; --color-primary-border: #c6b5ff70; --color-primary-ring: #baa2ff50;
+  --color-focus: #d3c4ff; --color-focus-ring: #b4a0ff50;
+  --color-bg: #080d25; --color-bg-card: #25305270; --color-bg-hover: #b8bbff20; --color-white: #26325170;
+  --color-text: #f1f2ff; --color-text-secondary: #c5c9e3; --color-text-muted: #aeb6d4; --color-text-placeholder: #aeb6d4;
+  --color-gray-50: #121b3540; --color-gray-100: #bcc6ff12; --color-gray-200: #c3ccff28; --color-gray-300: #c3ccff55;
+  --color-gray-400: #a9b2d0; --color-gray-500: #b6bfd9; --color-gray-600: #c5cce1; --color-gray-700: #d7dcf0; --color-gray-800: #edf0fc; --color-gray-900: #f6f7ff;
+  --color-border: #c5ceff50; --color-border-light: #c5ceff25; --color-border-hover: #c8b5ff;
+  --color-heat-0: #b6bfff0a; --color-heat-1: #b3a0ff33; --color-heat-2: #ad8fff66; --color-heat-3: #9969ed99; --color-heat-4: #8650dbcc;
+  --color-danger-light: #f0788625; --color-success-light: #54d4a025; --color-warning-light: #dcb66a25;
+  --glass-panel: linear-gradient(125deg,#e0e6ff20,#a9b4ee0b 55%,#a897e51b);
+  --glass-control: linear-gradient(135deg,#d2dcff28,#b7b4ff0e);
+  --glass-selected: linear-gradient(130deg,#c5b0ff65,#8b59dc65);
+  --glass-shadow: inset 0 1px 0 #f1f4ff70,inset 1px 0 0 #d8e0ff20,inset 0 -1px 0 #c9ceff18,0 8px 24px #02051b38;
+  --glass-input: #10193270;
+  --surface-border: var(--color-border);
+}
+[data-theme-style="glass"] body {
+  background: var(--color-bg) url('/static/images/glass-ribbons.svg') center / cover fixed !important;
+  color: var(--color-text);
+}
+/* Keep optional scientific drawings unobtrusive without changing the preference. */
+[data-theme-style="glass"] .bookstark-science-bg { opacity: .15; }
+[data-theme-style="glass"] .bookstark-science-bg::before,
+[data-theme-style="glass"] .bookstark-science-bg::after { background: none; }
+[data-theme-style="glass"] #personal-background { opacity: .12; }
+[data-theme-style="glass"] :is(body > header,body > footer,.home-bottom-nav,.local-tools-header,#editor-toolbar,#sidebar,.editor-toolbar,.cherry-toolbar) {
+  background: var(--glass-panel),#18213a75 !important;
+  border-color: var(--color-border) !important;
+  box-shadow: var(--glass-shadow) !important;
+  -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+}
+[data-theme-style="glass"] :is(.bg-white,.home-card,.home-heading-card,.home-side-card,.calendar-card,.tag-card,.note-card,.article-card,.task-card,.bk-card,.topic-list,.topic-detail,.topic-rail,.label-left,.label-right,.member-card,.setting-section,.system-section,.webdav-card,.search-card,.public-feed-card,.public-feed-sidebar,.local-tools-sidebar,.local-tool-grid a,.dialog-box,.dialog-content,.bs-dialog,.modal-content,.header-dropdown-panel,.home-assistant-panel,.ai-dlg,.news-source-card,.tv-panel,.tv-channel-panel,.tv-detail-panel) {
+  background: var(--glass-panel),var(--color-bg-card) !important;
+  border-color: var(--color-border) !important;
+  box-shadow: var(--glass-shadow) !important;
+  -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+}
+[data-theme-style="glass"] :is(.home-card,.calendar-card,.tag-card) { border-radius: var(--radius-xl); }
+[data-theme-style="glass"] :is(.topics-page,.topic-detail-content,.topic-detail-body,.local-tools-main,.editor-shell,.share-view-shell,#content-scroll,.bg-slate-50) { background-color: transparent !important; }
+[data-theme-style="glass"] :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),textarea,select,.dialog-input) {
+  background: var(--glass-control),var(--glass-input) !important; color:var(--color-text) !important;
+  border-color:var(--color-border) !important; box-shadow:inset 0 1px 2px #02071870,inset 0 1px 0 #ffffff25;
+}
+[data-theme-style="glass"] :is(input,textarea)::placeholder { color:var(--color-text-placeholder); }
+[data-theme-style="glass"] select option { background:var(--color-bg); color:var(--color-text); }
+[data-theme-style="glass"] :is(.home-button,.main-tabs,.main-tab,.btn,.dialog-btn,.setting-btn,.save-btn,.bg-blue-600,.bg-blue-500,.calendar-nav-btn,.pagination-btn,.page-btn,.book-view-btn,.bs-dialog-btn,.home-primary,.local-tool-button) {
+  background:var(--glass-control) !important; color:var(--color-text) !important;
+  border-color:var(--color-border) !important; box-shadow:inset 0 1px 0 #eff0ff55,0 2px 6px #00062430;
+}
+[data-theme-style="glass"] :is(.main-tab.active,.bg-blue-600,.bg-blue-500,.save-btn,.home-primary,.calendar-day.selected,.book-view-btn.active,.ai-subtab.active,.system-tab.active) {
+  background:var(--glass-selected) !important; color:var(--color-on-primary) !important;
+  box-shadow:inset 0 1px 0 #f2e7ff90,inset 0 0 0 1px #ceadff60,0 0 12px #a87aff28;
+}
+[data-theme-style="glass"] :is(.text-blue-500,.text-blue-600,.text-blue-700) { color:var(--color-primary-text) !important; }
+[data-theme-style="glass"] :is(button,a,input,textarea,select,summary):focus-visible { outline:2px solid var(--color-focus); outline-offset:2px; }
+[data-theme-style="glass"] button:disabled { opacity:.45; }
+[data-theme-style="glass"] :is(.dialog-overlay,.modal-overlay,.bs-dialog-overlay) { background:#03061970 !important; }
+[data-theme-style="glass"] :is(.dialog-box,.dialog-content,.modal-content,.bs-dialog,.header-dropdown-panel,.home-assistant-panel) { background:var(--glass-panel),#17203bdd !important; }
+[data-theme-style="glass"] :is(.cherry,.cherry-editor,.cherry-previewer,.cherry.theme__dark,.cherry.theme__dark .cherry-editor,.cherry.theme__dark .cherry-previewer,.CodeMirror,.cm-editor,.cm-scroller,.editor-content) {
+  background: #17213d65 !important; color:var(--color-text) !important;
+}
+[data-theme-style="glass"] :is(.CodeMirror-gutters,.cherry-sidebar,.cherry-statusbar) { background:var(--glass-input) !important; border-color:var(--color-border) !important; }
+[data-theme-style="glass"] :is(.cherry-previewer a,.cherry.theme__dark .cherry-previewer a) { color:var(--color-primary-text) !important; }
+[data-theme-style="glass"] .book-cover { background:linear-gradient(130deg,#ffffff26,#ffffff04),color-mix(in srgb,var(--book-cover-color,#68587e) 42%,transparent) !important; border-color:var(--color-border); box-shadow:var(--glass-shadow); backdrop-filter:blur(12px); }
+[data-theme-style="glass"] .book-list.book-view-shelf::before,
+[data-theme-style="glass"] .book-shelf-row::after { background:var(--glass-control) !important; }
+[data-theme-style="glass"] ::-webkit-scrollbar-thumb { background:#b4b7e250; border-radius:var(--radius-full); }
+[data-theme-style="glass"] ::-webkit-scrollbar-track { background:transparent; }
+@media (max-width:640px) {
+  [data-theme-style="glass"] { --glass-shadow:inset 0 1px 0 #f1f4ff60,inset 0 -1px 0 #c9ceff18,0 4px 12px #02051b30; }
+  [data-theme-style="glass"] :is(.home-card,.note-card,.article-card,.task-card,.bk-card,.member-card,.local-tool-grid a) { -webkit-backdrop-filter:none; backdrop-filter:none; }
+}
+@media (prefers-reduced-transparency:reduce) {
+  [data-theme-style="glass"] { --color-bg-card:#202a46; --glass-input:#141d35; }
+}
+/* Review pass 1: match the prototype's surface grouping and thin luminous rim. */
+[data-theme-style="glass"] { --color-bg-card:#23304c48; --glass-panel:radial-gradient(ellipse at 0 0,#edf0ff24,transparent 32%),linear-gradient(120deg,#d7e0ff18,#a3aeea08 55%,#aea0dd18); }
+[data-theme-style="glass"] :is(.home-stats,.home-recent .home-recent-row,.home-quick,.sidebar-tags,.compose-card,.admin-tabs,.ai-action-section,.ai-usage-card,.tv-work,.tv-side,.tv-editor,.tv-world-settings,.tv-world-detail,.tv-world-side,.bs-dialog-box,.editor-modal,.nav-card) {
+ background:var(--glass-panel),var(--color-bg-card) !important; border-color:var(--color-border) !important; box-shadow:var(--glass-shadow) !important; backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+}
+[data-theme-style="glass"] :is(.home-recent,.home-stat) { background:transparent !important; box-shadow:none !important; backdrop-filter:none; -webkit-backdrop-filter:none; border-radius:0; }
+[data-theme-style="glass"] :is(.logo-text,.local-tools-brand) { color:var(--color-text) !important; text-shadow:0 0 12px #b18aff60; }
+[data-theme-style="glass"] :is(.nav-link.active) { filter:drop-shadow(0 0 4px #b18aff60); }
+[data-theme-style="glass"] :is(.bs-btn,.tab-btn,.home-knowledge-tab,.compose-submit,.home-assistant-fab,.home-assistant-open) { background:var(--glass-control) !important; color:var(--color-text) !important; border-color:var(--color-border) !important; box-shadow:var(--glass-shadow); }
+[data-theme-style="glass"] :is(.bs-btn-primary,.tab-btn.active,.home-knowledge-tab.active,.compose-submit,.home-assistant-fab,.home-assistant-open) { background:var(--glass-selected) !important; color:var(--color-on-primary) !important; }
+[data-theme-style="glass"] #panel-ai { background:var(--glass-panel),var(--color-bg-card) !important; box-shadow:var(--glass-shadow); backdrop-filter:blur(18px); }
+[data-theme-style="glass"] #panel-ai .ai-subtab.active { background:var(--glass-selected) !important; color:var(--color-text) !important; }
+[data-theme-style="glass"] :is(.setting-row,.ai-usage-card,.ai-action-section) { border-color:var(--color-border-light) !important; }
+[data-theme-style="glass"] .local-tool-grid a { border-radius:var(--radius-lg); }
+[data-theme-style="glass"] .book-cover { background:var(--glass-panel),color-mix(in srgb,var(--book-cover,#68587e) 40%,transparent) !important; }
+[data-theme-style="glass"] .book-list.book-view-shelf {
+ --shelf-board-top:#eef0ff90; --shelf-board-edge:#b5c8ff30; --shelf-board-front:#b5c8ff20; --shelf-board-bottom:#b5c8ff48; --shelf-board-shadow:#00051940;
+}
+
+[data-theme-style="glass"] .logo-text { background:none!important; -webkit-text-fill-color:var(--color-text)!important; }
+[data-theme-style="glass"] :is(.btn-create,.article-create-btn,.note-ai-go,.home-assistant-trigger,.bs-btn-confirm) { background:var(--glass-selected)!important; color:var(--color-on-primary)!important; border-color:var(--color-primary-border)!important; box-shadow:var(--glass-shadow); }
+[data-theme-style="glass"] :is(.home-assistant-dialog,.editor-modal,.bs-dialog-box) { background:var(--glass-panel),#17203bdd!important; box-shadow:var(--glass-shadow); backdrop-filter:blur(24px); }
+[data-theme-style="glass"] :is(.label-left,.label-right,.tab-btn,.home-sort-btn,.local-tool-grid a) { border-radius:var(--radius-lg); }
+[data-theme-style="glass"] .ai-action-section { background:var(--glass-control),#111c3430!important; }
+[data-theme-style="glass"] .main-tab:not(.active),
+[data-theme-style="glass"] .tab-btn:not(.active) { background:transparent!important; box-shadow:none; }
+
+[data-theme-style="glass"] :is(.topbar-save-btn,.topbar-ai-btn,.tb-btn,.mode-toggle-btn,.assistant-launcher) { background:var(--glass-control)!important; color:var(--color-text)!important; border-color:var(--color-border)!important; box-shadow:var(--glass-shadow); }
+[data-theme-style="glass"] :is(.assistant-launcher,.mode-toggle-btn.active) { background:var(--glass-selected)!important; }
+[data-theme-style="glass"] .topbar-save-btn.saved { background:linear-gradient(130deg,#58c79540,#236b5240)!important; }
+[data-theme-style="glass"] :is(.cherry-editor,.cherry-previewer) { box-shadow:inset 0 1px 0 #e2e7ff40,inset 1px 0 0 #c5ceff40; border-radius:var(--radius-lg); }

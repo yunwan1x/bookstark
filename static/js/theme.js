@@ -10,7 +10,8 @@
     var THEMES = {
         light: { scheme: 'light' },
         'nvidia': { scheme: 'dark' },
-        apple: { scheme: 'light' }
+        apple: { scheme: 'light' },
+        glass: { scheme: 'dark' }
     };
 
     function normalizeTheme(theme) {
