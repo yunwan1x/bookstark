@@ -52,7 +52,7 @@
     {{if $.IsAdmin}}<button type="button" class="header-menu-item" data-public-action="pin" data-type="{{.ShareType}}" data-id="{{.TargetID}}"><i class="fa-solid fa-thumbtack menu-icon"></i>{{if .IsPinned}}{{call $.T "share.unpin.title"}}{{else}}{{call $.T "share.pin.title"}}{{end}}</button>{{end}}
     {{if index $.Management .ShareIdentify}}<button type="button" class="header-menu-item" data-public-action="unpublish" data-type="{{.ShareType}}" data-id="{{.TargetID}}" data-title="{{.Title}}"><i class="fa-solid fa-eye-slash menu-icon"></i>{{call $.T "public.unpublish"}}</button>{{end}}
    </div></details>{{end}}
-   {{if and (ne .ShareType "book") (ne .BlogType "note")}}<span class="public-article-icon" aria-hidden="true"><i class="fa-solid {{index $.EntryIcons .ShareIdentify}}"></i></span>{{end}}
+   {{if and (ne .ShareType "book") (ne .BlogType "note")}}<span class="public-article-icon" aria-hidden="true"><i class="{{index $.EntryIcons .ShareIdentify}}"></i></span>{{end}}
    {{if eq .ShareType "book"}}
    <a class="public-book-cover" href="/shares/{{.ShareIdentify}}" aria-label="{{.Title}}"><i class="fa-solid fa-book-open" aria-hidden="true"></i></a>
    {{end}}

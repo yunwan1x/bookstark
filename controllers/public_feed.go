@@ -179,15 +179,9 @@ func PublicFeedPage(c *gin.Context) {
 		categories = append(categories, publicNavItem{Name: l, URL: link(kind, order, l, 1), Icon: icons[l], Active: label == l})
 	}
 	books, _, _ := models.ListSharesPaged(1, 4, "", "book", models.PublicFeedOptions{Sort: "updated"})
-	entryIcons := make(map[string]string, len(items))
-	for _, item := range items {
-		icon := "fa-file-lines"
-		if len(item.Labels) > 0 && icons[item.Labels[0]] != "" {
-			icon = icons[item.Labels[0]]
-		}
-		entryIcons[item.ShareIdentify] = icon
+	if kind == "article" {
+		data["EntryIcons"] = assignPublicArticleIcons(items)
 	}
-	data["EntryIcons"] = entryIcons
 	data["Items"], data["Categories"], data["PublicBooks"] = items, categories, books
 	typeURLs := map[string]string{}
 	for _, k := range []string{"article", "note", "book", "bookmark"} {
