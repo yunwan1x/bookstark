@@ -7,6 +7,7 @@
 {{template "head-assets" .}}
 <link rel="stylesheet" href="/static/css/bookmarks.css?v={{assetVer "/static/css/bookmarks.css"}}">
 <link rel="stylesheet" href="/static/css/selection-controls.css?v={{assetVer "/static/css/selection-controls.css"}}">
+<link rel="stylesheet" href="/static/css/news.css?v={{assetVer "/static/css/news.css"}}">
 <link rel="stylesheet" href="/static/css/public-feed.css?v={{assetVer "/static/css/public-feed.css"}}">
 <link rel="stylesheet" href="/static/css/share-note-reader.css?v={{assetVer "/static/css/share-note-reader.css"}}">
 </head>
@@ -29,6 +30,7 @@
 <script src="/static/js/share-comments.js?v={{assetVer "/static/js/share-comments.js"}}"></script>
 <script src="/static/js/selection-controls.js?v={{assetVer "/static/js/selection-controls.js"}}"></script>
 <script src="/static/js/public-widgets.js?v={{assetVer "/static/js/public-widgets.js"}}"></script>
+<script src="/static/js/public-news.js?v={{assetVer "/static/js/public-news.js"}}"></script>
 <script src="/static/js/public-feed.js?v={{assetVer "/static/js/public-feed.js"}}"></script>
 </body></html>
 
@@ -37,6 +39,7 @@
  <script type="application/json" class="public-feed-state">{{.PublicFeedStateJSON}}</script>
  <p class="public-load-status" role="status" hidden></p>
  <nav class="public-nav" aria-label="{{call .T "public.navigation"}}">
+  <a href="{{index .TypeURLs "news"}}" {{if eq .Type "news"}}aria-current="page"{{end}}><i class="fa-solid fa-newspaper" aria-hidden="true"></i> {{call .T "public.news"}}</a>
   <a href="{{index .TypeURLs "article"}}" {{if eq .Type "article"}}aria-current="page"{{end}}><i class="fa-solid fa-pen-nib" aria-hidden="true"></i> {{call .T "public.articles"}}</a>
   <a href="{{index .TypeURLs "note"}}" {{if eq .Type "note"}}aria-current="page"{{end}}><i class="fa-solid fa-note-sticky" aria-hidden="true"></i> {{call .T "public.notes"}}</a>
   <a href="{{index .TypeURLs "book"}}" {{if eq .Type "book"}}aria-current="page"{{end}}><i class="fa-solid fa-book" aria-hidden="true"></i> {{call .T "public.books"}}</a>
@@ -45,17 +48,20 @@
   <div class="public-toolbar">
   <form id="publicSearch" class="public-search" action="/shares" role="search">
    <input type="hidden" name="type" value="{{.Type}}"><input type="hidden" name="sort" value="{{.Sort}}"><input type="hidden" name="label" value="{{.Label}}">
+   {{if eq .Type "news"}}<input type="hidden" name="language" value="{{.NewsLanguage}}"><input type="hidden" name="source" value="{{.NewsSource}}">{{end}}
    <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><input name="keyword" value="{{.Keyword}}" placeholder="{{call .T $.SearchKey}}" aria-label="{{call .T $.SearchKey}}" maxlength="200" type="search">
    <button type="submit" class="public-search-submit" aria-label="{{call .T "public.search_action"}}"><span aria-hidden="true">↵</span></button>
   </form>
-  <div class="public-sort"><label class="sr-only" for="publicSort">{{call .T "public.sort"}}</label><select id="publicSort"><option value="{{.LatestURL}}" {{if eq .Sort "latest"}}selected{{end}}>{{call .T "public.latest"}}</option><option value="{{.UpdatedURL}}" {{if eq .Sort "updated"}}selected{{end}}>{{call .T "public.updated"}}</option></select></div>
+  {{if eq .Type "news"}}<select class="dialog-input news-language" data-news-language aria-label="{{call .T "news.language"}}"><option value="">{{call .T "news.all_languages"}}</option><option value="zh" {{if eq .NewsLanguage "zh"}}selected{{end}}>{{call .T "news.zh"}}</option><option value="en" {{if eq .NewsLanguage "en"}}selected{{end}}>{{call .T "news.en"}}</option></select><button class="bs-btn bs-btn-cancel" type="button" data-news-sources>{{call .T "news.sources"}}</button>{{else}}<div class="public-sort"><label class="sr-only" for="publicSort">{{call .T "public.sort"}}</label><select id="publicSort"><option value="{{.LatestURL}}" {{if eq .Sort "latest"}}selected{{end}}>{{call .T "public.latest"}}</option><option value="{{.UpdatedURL}}" {{if eq .Sort "updated"}}selected{{end}}>{{call .T "public.updated"}}</option></select></div>{{end}}
   </div>
  {{if gt (len .Categories) 1}}<nav class="public-categories" aria-label="{{call .T "public.categories"}}"><div>
   {{range .Categories}}<a href="{{.URL}}" {{if .Active}}aria-current="page"{{end}}><i class="fa-solid {{.Icon}}" aria-hidden="true"></i><span>{{if .Name}}{{.Name}}{{else}}{{call $.T "public.all"}}{{end}}</span></a>{{end}}
  </div></nav>{{end}}
- <section class="public-feed{{if eq .Type "book"}} public-book-feed{{end}}" aria-label="{{call .T "public.title"}}">
+ <section class="public-feed{{if eq .Type "news"}} public-news-feed{{end}}{{if eq .Type "book"}} public-book-feed{{end}}" aria-label="{{call .T "public.title"}}">
   <div class="public-items public-items-{{.Type}}">
-  {{if eq .Type "bookmark"}}
+  {{if eq .Type "news"}}
+  {{range .News}}<article class="news-entry"><span class="news-source-icon" aria-hidden="true">{{.Initial}}</span><div class="news-entry-body"><h2><button type="button" data-news-preview="{{.ID}}">{{.Title}}</button></h2><p class="news-excerpt">{{.Summary}}</p><div class="public-meta"><a data-news-source-link href="/shares?type=news&amp;source={{.SourceID}}">{{.Source}}</a><span>{{call $.T (printf "news.cat_%s" .Category)}}</span><span>{{if .Language}}{{call $.T (printf "news.%s" .Language)}}{{end}}</span><time data-news-time="{{.Published}}"></time></div></div><a class="row-action" href="{{.URL}}" target="_blank" rel="noopener noreferrer" aria-label="{{call $.T "news.read_original"}}"><i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a></article>{{else}}<div class="public-empty">{{call .T "news.empty"}}</div>{{end}}
+  {{else if eq .Type "bookmark"}}
   {{range .Bookmarks}}<article class="bm-row"><div class="bm-row-content"><div class="bm-row-body">
    <div class="bm-row-top"><a href="{{.URL}}" target="_blank" rel="noopener noreferrer" class="bm-row-title">{{if .Favicon}}<img src="/api/favicon?url={{.Favicon}}" class="bm-row-favicon" loading="lazy" alt="" data-title="{{.Title}}" data-url="{{.URL}}">{{else}}<span class="bm-row-favicon" data-favicon-missing data-title="{{.Title}}" data-url="{{.URL}}" aria-hidden="true"></span>{{end}}{{.Title}} <i class="fa-solid fa-arrow-up-right-from-square public-external-icon" aria-hidden="true"></i></a></div>
    <div class="bm-row-second">{{if .Description}}<span class="bm-row-desc">{{.Description}}</span>{{end}}

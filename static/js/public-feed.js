@@ -86,7 +86,7 @@
   }
   document.addEventListener('click',event=>{
     if(event.defaultPrevented||event.button!==0||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
-    const link=event.target.closest('.public-nav a[href], .public-categories a[href], .public-pagination a[href], .public-items-bookmark .bm-label-badge[href]');
+    const link=event.target.closest('.public-nav a[href], .public-categories a[href], .public-pagination a[href], .public-items-bookmark .bm-label-badge[href], [data-news-source-link][href]');
     if(!link||link.target||link.hasAttribute('download'))return;
     const url=new URL(link.href);if(url.origin!==location.origin||url.pathname!=='/shares')return;
     event.preventDefault();navigateFeed(url);
@@ -95,7 +95,8 @@
     if(event.target.id!=='publicSearch')return;
     event.preventDefault();const url=new URL(event.target.action);url.search=new URLSearchParams(new FormData(event.target)).toString();navigateFeed(url);
   });
-  document.addEventListener('change',event=>{if(event.target.id==='publicSort')navigateFeed(new URL(event.target.value,location.href));});
+  document.addEventListener('bookstark:news-navigate',e=>navigateFeed(new URL(e.detail,location.origin)));
+  document.addEventListener('change',event=>{if(event.target.matches('[data-news-language]')){const u=new URL(location.href);u.searchParams.set('language',event.target.value);u.searchParams.set('page','1');navigateFeed(u);}if(event.target.id==='publicSort')navigateFeed(new URL(event.target.value,location.href));});
   window.addEventListener('popstate',event=>navigateFeed(new URL(location.href),{pop:true,scrollY:event.state?.scrollY}));
   window.addEventListener('pagehide',()=>{requestID++;requestAbort?.abort();clearTimeout(scrollTimer);});
 

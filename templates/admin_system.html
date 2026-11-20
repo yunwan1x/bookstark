@@ -227,6 +227,7 @@
     </style>
 <link rel="stylesheet" href="/static/css/admin-tv.css?v={{assetVer "/static/css/admin-tv.css"}}">
 {{template "head-assets" .}}
+<link rel="stylesheet" href="/static/css/news.css?v={{assetVer "/static/css/news.css"}}">
 </head>
 <body class="bg-slate-50 min-h-screen flex flex-col">
     {{template "header" .}}
@@ -246,6 +247,7 @@
                         <i class="fa-solid fa-sliders" style="margin-right:4px"></i>{{call .T "admin.tab.settings"}}
                     </button>
                     <button role="tab" aria-selected="false" aria-controls="panel-tv" id="tab-tv" onclick="switchTab('tv')" class="tab-btn flex-1"><i class="fa-solid fa-tv"></i> 电视直播</button>
+                    <button role="tab" aria-selected="false" aria-controls="panel-news" id="tab-news" onclick="switchTab('news')" class="tab-btn flex-1"><i class="fa-solid fa-rss"></i> {{call .T "news.sources"}}</button>
                     <button role="tab" aria-selected="false" aria-controls="panel-ai" id="tab-ai" onclick="switchTab('ai')" class="tab-btn flex-1">
                         <i class="fa-solid fa-wand-magic-sparkles" style="margin-right:4px"></i>{{call .T "admin.tab.ai"}}
                     </button>
@@ -254,6 +256,7 @@
                     </button>
                 </div>
 
+                {{template "admin-news" .}}
                 <!-- 用户管理 -->
                 <div id="panel-members" role="tabpanel" aria-labelledby="tab-members" class="bg-white rounded-b-lg shadow-sm p-4 sm:p-5">
                     <div id="member-list" class="space-y-3"></div>
@@ -1135,6 +1138,7 @@
         </div>
     </main>
     {{template "footer" .}}
+    <script defer src="/static/js/admin-news.js?v={{assetVer "/static/js/admin-news.js"}}"></script>
     <script defer src="/static/js/admin-world-tv.js?v={{assetVer "/static/js/admin-world-tv.js"}}"></script>
     <script defer src="/static/js/admin-tv.js?v={{assetVer "/static/js/admin-tv.js"}}"></script>
     <script src="/static/js/ysp-directory-help.js?v=2" defer></script>
@@ -1149,7 +1153,7 @@
     function switchTab(tab, opts) {
         opts = opts || {};
         if (opts.updateUrl !== false && window.BookStarkTabURL) window.BookStarkTabURL.set('tab', tab);
-        var tabs = ['members', 'comments', 'settings', 'tv', 'ai', 'data'];
+        var tabs = ['members', 'comments', 'settings', 'tv', 'news', 'ai', 'data'];
         tabs.forEach(function(t) {
             var panel = document.getElementById('panel-' + t);
             var btn = document.getElementById('tab-' + t);
@@ -1162,7 +1166,7 @@
                 }
             }
         });
-        document.querySelector('.admin-system-content').style.setProperty('--admin-content-width',tab==='tv'?'1220px':'960px');
+        document.querySelector('.admin-system-content').style.setProperty('--admin-content-width',(tab==='tv'||tab==='news')?'1220px':'960px');
         window.dispatchEvent(new CustomEvent('admin-tab',{detail:tab}));
         if (tab === 'data') {
             loadApprovedMembers();
@@ -1705,7 +1709,7 @@
     // Initial load
     (function() {
         if (!window.BookStarkTabURL) return;
-        var tab = window.BookStarkTabURL.get('tab', ['members', 'comments', 'settings', 'tv', 'ai', 'data'], '');
+        var tab = window.BookStarkTabURL.get('tab', ['members', 'comments', 'settings', 'tv', 'news', 'ai', 'data'], '');
         var aiTab = window.BookStarkTabURL.get('aiTab', ['base', 'prompts', 'actions'], '');
         if (aiTab && tab !== 'ai') tab = 'ai';
         if (location.hash==='#official-channel-settings') tab='tv';

@@ -95,8 +95,8 @@ func PublicFeedPage(c *gin.Context) {
 	if kind == "" {
 		kind = c.Query("tab")
 	}
-	if kind != "article" && kind != "note" && kind != "book" && kind != "bookmark" {
-		kind = "article"
+	if kind != "article" && kind != "note" && kind != "book" && kind != "bookmark" && kind != "news" {
+		kind = "news"
 	}
 	if order != "updated" {
 		order = "latest"
@@ -116,12 +116,21 @@ func PublicFeedPage(c *gin.Context) {
 		if keyword != "" && k == kind {
 			v.Set("keyword", keyword)
 		}
+		if k == "news" && kind == "news" {
+			for _, key := range []string{"language", "source"} {
+				if value := c.Query(key); value != "" {
+					v.Set(key, value)
+				}
+			}
+		}
 		return "/shares?" + v.Encode()
 	}
 	var items []models.ShareItem
 	var total int64
 	var err error
-	if kind == "bookmark" {
+	if kind == "news" {
+		total, err = publicNewsData(c, data, page, keyword, label)
+	} else if kind == "bookmark" {
 		public := true
 		query := models.BookmarkQuery{IsPublic: &public, WithAccount: true, Keyword: keyword, Page: page, PageSize: 15, PublicFeedSort: order}
 		if label != "" {
@@ -168,15 +177,27 @@ func PublicFeedPage(c *gin.Context) {
 		}
 	}
 	data["Management"] = management
-	labels, err := models.PublicFeedLabels(kind)
+	var labels []string
+	if kind == "news" {
+		labels = models.NewsCategories
+	} else {
+		labels, err = models.PublicFeedLabels(kind)
+	}
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Unable to load public categories")
 		return
 	}
 	categories := []publicNavItem{{Name: "", URL: link(kind, order, "", 1), Icon: "fa-border-all", Active: label == ""}}
 	icons := assignPublicLabelIcons(labels)
+	if kind == "news" {
+		icons = map[string]string{"ai-research": "fa-brain", "ai-tools": "fa-wand-magic-sparkles", "development": "fa-code", "design": "fa-palette", "finance": "fa-chart-line", "other": "fa-ellipsis"}
+	}
 	for _, l := range labels {
-		categories = append(categories, publicNavItem{Name: l, URL: link(kind, order, l, 1), Icon: icons[l], Active: label == l})
+		display := l
+		if kind == "news" {
+			display = data["T"].(func(string) string)("news.cat_" + l)
+		}
+		categories = append(categories, publicNavItem{Name: display, URL: link(kind, order, l, 1), Icon: icons[l], Active: label == l})
 	}
 	data["SearchKey"] = "public.search_" + kind
 	if !partial {
@@ -222,7 +243,7 @@ func PublicFeedPage(c *gin.Context) {
 	}
 	data["Items"], data["Categories"] = items, categories
 	typeURLs := map[string]string{}
-	for _, k := range []string{"article", "note", "book", "bookmark"} {
+	for _, k := range []string{"news", "article", "note", "book", "bookmark"} {
 		l := ""
 		if k == kind {
 			l = label
@@ -240,7 +261,7 @@ func PublicFeedPage(c *gin.Context) {
 		data["NextURL"] = link(kind, order, label, page+1)
 	}
 	stateJSON, err := json.Marshal(gin.H{
-		"notes": notes, "commentsEnabled": data["ShareCommentsEnabled"], "account": data["Account"],
+		"news": data["News"], "notes": notes, "commentsEnabled": data["ShareCommentsEnabled"], "account": data["Account"],
 		"guestName": data["ShareCommentGuestName"], "commentMaxLength": data["ShareCommentMaxLength"],
 	})
 	if err != nil {

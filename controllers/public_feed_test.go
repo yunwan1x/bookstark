@@ -104,8 +104,8 @@ func TestPublicFeedPrivacyFiltersAndRendering(t *testing.T) {
 			if path == "/" && strings.Index(html, "公开文章一") < strings.Index(html, "加密文章") {
 				t.Fatal("published sort failed")
 			}
-			if path == "/" && (strings.Contains(html, `public-note-card`) || !strings.Contains(html, `public-content-type`)) {
-				t.Fatal("default must be typed articles")
+			if path == "/" && (strings.Contains(html, `public-note-card`) || !strings.Contains(html, `public-items-news`)) {
+				t.Fatal("default must be news")
 			}
 			if path == "/?type=note" && (!strings.Contains(html, `public-note-card`) || strings.Contains(html, `<h2><a href="/shares/public-test-b"`)) {
 				t.Fatal("notes should be body-first")

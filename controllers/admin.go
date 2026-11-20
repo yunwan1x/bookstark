@@ -183,6 +183,10 @@ func UpdateSettings(c *gin.Context) {
 
 	// Validate numeric settings
 	for k, v := range req {
+		if k == "news_config" {
+			apiError(c, http.StatusBadRequest, "Use the news settings page")
+			return
+		}
 		if k == "world_tv_state" {
 			apiError(c, http.StatusBadRequest, "请在电视直播的世界电视页保存配置")
 			return

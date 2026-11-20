@@ -41,7 +41,7 @@ func TestPublicPinnedBadgePlacement(t *testing.T) {
 	if strings.Index(rest, `class="tag-badge public-pinned"`) > strings.Index(rest, "<h2>") {
 		t.Fatal("pinned badge must precede title")
 	}
-	if strings.Contains(string(tmpl)[strings.Index(string(tmpl), `<div class="public-meta">`):], `class="tag-badge public-pinned"`) {
+	if strings.Contains(rest[strings.Index(rest, `<div class="public-meta">`):], `class="tag-badge public-pinned"`) {
 		t.Fatal("pinned badge must not appear on a separate footer row")
 	}
 	css, err := os.ReadFile("static/css/public-feed.css")

@@ -242,6 +242,7 @@ func Setup() *gin.Engine {
 	r.GET("/api/bookmarks", middleware.OptionalAuth(), controllers.ListBookmarks)
 	r.GET("/api/bookmarks-grouped", middleware.OptionalAuth(), controllers.ListBookmarksGrouped)
 	// Public share APIs
+	r.GET("/api/news/sources", controllers.PublicNewsSources)
 	r.GET("/api/shares", controllers.ListShares)
 	r.GET("/api/shares/:identify", controllers.GetShare)
 	r.POST("/api/shares/:identify/verify-password", controllers.VerifySharePassword)
@@ -484,6 +485,10 @@ func Setup() *gin.Engine {
 			admin.PUT("/friend-links", controllers.ReplaceFriendLinks)
 			admin.GET("/settings", controllers.GetSettings)
 			admin.GET("/tv/channels", controllers.AdminTVChannels)
+			admin.GET("/news", controllers.AdminNews)
+			admin.PUT("/news/config", controllers.SaveNewsConfiguration)
+			admin.PATCH("/news/sources", controllers.UpdateNewsSources)
+			admin.POST("/news/run", controllers.RunNewsJob)
 			admin.GET("/tv/world", controllers.AdminWorldTV)
 			admin.PUT("/tv/world", controllers.SaveWorldTV)
 			admin.POST("/tv/world/pull", controllers.PullWorldTV)

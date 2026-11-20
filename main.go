@@ -117,6 +117,8 @@ func main() {
 	r := routers.Setup()
 	notificationService := services.StartNotificationService()
 	defer notificationService.Stop()
+	stopNews := services.StartNewsScheduler()
+	defer stopNews()
 	stopWorldTV := services.WorldTV().Start(func(err error) { log.Printf("world television sync: %v", err) })
 	defer stopWorldTV()
 

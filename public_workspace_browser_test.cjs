@@ -8,8 +8,8 @@ const origin=process.env.BOOKSTARK_TEST_ORIGIN;
  async function update(action) { const [response]=await Promise.all([page.waitForResponse(r=>r.request().headers()['x-bookstark-feed']==='content'),action()]);assert.equal(response.status(),200);await page.waitForFunction(()=>!document.querySelector('.public-content').hasAttribute('aria-busy')); }
  async function navigate(locator) { if(await locator.evaluate(n=>Boolean(n.closest('.public-content'))))return update(()=>locator.click());const [response]=await Promise.all([page.waitForNavigation(),locator.click()]);assert.equal(response.status(),200); }
  try {
-  await page.goto(origin+'/');
-  await navigate(page.locator('.public-nav a').nth(2));
+  await page.goto(origin+'/?type=article');
+  await navigate(page.locator('.public-nav a').nth(3));
   await update(()=>page.goBack());assert.equal(new URL(page.url()).pathname,'/');
   assert.equal(await page.locator('.public-entry').count(),15);
   await page.evaluate(()=>document.fonts.ready);
@@ -75,7 +75,7 @@ const origin=process.env.BOOKSTARK_TEST_ORIGIN;
   assert.equal(await page.locator('.public-book-card').count(),1);
   const one=await page.locator('.public-book-card').boundingBox(), grid=await page.locator('.public-items-book').boundingBox();
   assert.ok(one.width<grid.width*.6,'single book must not stretch');
-  await navigate(page.locator('.public-nav a').first());assert.equal(new URL(page.url()).searchParams.get('keyword'),null);
+  await navigate(page.locator('.public-nav a').nth(1));assert.equal(new URL(page.url()).searchParams.get('keyword'),null);
   // Real timezone calculation, including DST and date differences.
   for(const instant of ['2026-11-20T12:30:00Z','2026-07-20T23:30:00Z']){
    await page.clock.install({time:new Date(instant)});
@@ -168,20 +168,20 @@ const origin=process.env.BOOKSTARK_TEST_ORIGIN;
   await navigate(page.locator('.public-categories a').nth(1));
   await page.locator('#publicSearch [name=keyword]').fill('Workspace article 03');await navigate(page.locator('.public-search-submit'));assert.equal(await page.locator('.public-entry').count(),1);
   await update(()=>page.locator('#publicSort').selectOption({label:'最近更新'}));
-  await navigate(page.locator('.public-nav a').nth(1));await page.locator('[data-note-content] strong').waitFor();
+  await navigate(page.locator('.public-nav a').nth(2));await page.locator('[data-note-content] strong').waitFor();
   await page.locator('[data-note-action=expand]').click();await page.locator('#shareNoteViewerOverlay').waitFor({state:'visible'});await page.keyboard.press('Escape');
   await page.locator('[data-note-action=comments]').click();await page.locator('.share-comments').waitFor({state:'visible'});await page.locator('[data-note-action=comments]').click();
-  await navigate(page.locator('.public-nav a').nth(2));assert.equal(await page.locator('.public-book-card').count(),4);
-  await navigate(page.locator('.public-nav a').nth(3));assert.equal(await page.locator('.public-bookmark-domain').innerText(),'example.com');
+  await navigate(page.locator('.public-nav a').nth(3));assert.equal(await page.locator('.public-book-card').count(),4);
+  await navigate(page.locator('.public-nav a').nth(4));assert.equal(await page.locator('.public-bookmark-domain').innerText(),'example.com');
   await update(()=>page.goBack());assert.equal(await page.locator('.public-book-card').count(),4);
   await update(()=>page.goForward());assert.equal(await page.locator('.bm-row').count(),1);
   // Fetch errors keep the current view and URL; they must not fall back to reload.
   await page.route(origin+'/shares?**',route=>route.request().headers()['x-bookstark-feed']==='content'?route.fulfill({status:503,body:'unavailable'}):route.continue());
-  const retainedURL=page.url();await page.locator('.public-nav a').first().click();await page.waitForFunction(()=>document.querySelector('.public-load-status').textContent.includes('加载失败'));assert.equal(page.url(),retainedURL);assert.equal(await page.locator('.bm-row').count(),1);
+  const retainedURL=page.url();await page.locator('.public-nav a').nth(1).click();await page.waitForFunction(()=>document.querySelector('.public-load-status').textContent.includes('加载失败'));assert.equal(page.url(),retainedURL);assert.equal(await page.locator('.bm-row').count(),1);
   await page.unroute(origin+'/shares?**');
   // Delayed obsolete requests cannot overwrite a more recent tab selection.
   await page.route(origin+'/shares?**',async route=>{if(route.request().headers()['x-bookstark-feed']==='content'&&new URL(route.request().url()).searchParams.get('type')==='article'){await new Promise(r=>setTimeout(r,200));}await route.continue().catch(()=>{});});
-  await page.locator('.public-nav a').first().click();await navigate(page.locator('.public-nav a').nth(2));await page.waitForTimeout(250);assert.equal(new URL(page.url()).searchParams.get('type'),'book');assert.equal(await page.locator('.public-book-card').count(),4);
+  await page.locator('.public-nav a').nth(1).click();await navigate(page.locator('.public-nav a').nth(3));await page.waitForTimeout(250);assert.equal(new URL(page.url()).searchParams.get('type'),'book');assert.equal(await page.locator('.public-book-card').count(),4);
   await page.unroute(origin+'/shares?**');
   assert.equal(documentRequests,0,'left navigation must never reload the document');
   assert.ok(await page.evaluate(()=>window.keptAudio===document.getElementById('publicRadioAudio')&&window.keptSidebar===document.querySelector('.public-info')&&!window.keptAudio.paused&&window.keptAudio.currentTime>window.audioStart&&window.pauseEvents===0),'audio continuity');
@@ -196,12 +196,12 @@ const origin=process.env.BOOKSTARK_TEST_ORIGIN;
   await context.clearCookies();await page.reload();assert.equal(await page.locator('.public-entry').count(),0);
 
   const pwa=await browser.newContext({serviceWorkers:'allow'}),pwaPage=await pwa.newPage();
-  await pwaPage.goto(origin+'/shares');await pwaPage.evaluate(async()=>{await navigator.serviceWorker.register('/sw.js');await navigator.serviceWorker.ready;});await pwaPage.reload();
+  await pwaPage.goto(origin+'/shares?type=article');await pwaPage.evaluate(async()=>{await navigator.serviceWorker.register('/sw.js');await navigator.serviceWorker.ready;});await pwaPage.reload();
   await pwaPage.waitForFunction(()=>Boolean(navigator.serviceWorker.controller));
-  await pwaPage.locator('.public-nav a').nth(2).click();await pwaPage.locator('.public-book-card').first().waitFor();
+  await pwaPage.locator('.public-nav a').nth(3).click();await pwaPage.locator('.public-book-card').first().waitFor();
   assert.equal(await pwaPage.locator('#publicRadioAudio').count(),1);
   assert.deepEqual(await pwaPage.evaluate(async()=>{const paths=[];for(const name of await caches.keys()){const cache=await caches.open(name);for(const request of await cache.keys()){if(new URL(request.url).pathname==='/shares')paths.push(request.url);}}return paths;}),[],'service worker must not cache public pages or fragments');
-  await pwa.setOffline(true);await pwaPage.locator('.public-nav a').first().click();await pwaPage.waitForFunction(()=>document.querySelector('.public-load-status').textContent.includes('加载失败'));
+  await pwa.setOffline(true);await pwaPage.locator('.public-nav a').nth(1).click();await pwaPage.waitForFunction(()=>document.querySelector('.public-load-status').textContent.includes('加载失败'));
   assert.equal(await pwaPage.locator('.public-book-card').count(),4);await pwa.close();
   assert.deepEqual(errors,[]);
   console.log('PASS real server: tabs, pagination, search, category/sort retention, empty state, login return, account menu, note viewer, bookmark domain, pin/unpublish, radio search/countries, AJAX tabs/search/sort/pages/history/errors/races with uninterrupted native audio, 320–1440px.');
