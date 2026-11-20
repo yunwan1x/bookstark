@@ -187,7 +187,20 @@ func PublicFeedPage(c *gin.Context) {
 		c.String(http.StatusInternalServerError, "Unable to load public categories")
 		return
 	}
-	categories := []publicNavItem{{Name: "", URL: link(kind, order, "", 1), Icon: "fa-border-all", Active: label == ""}}
+	// Categories browse all sources; carrying a selected source into another
+	// category produces an empty intersection. Keep source filters on pagination.
+	categoryLink := func(category string) string {
+		target := link(kind, order, category, 1)
+		if kind == "news" {
+			u, _ := url.Parse(target)
+			query := u.Query()
+			query.Del("source")
+			u.RawQuery = query.Encode()
+			return u.String()
+		}
+		return target
+	}
+	categories := []publicNavItem{{Name: "", URL: categoryLink(""), Icon: "fa-border-all", Active: label == ""}}
 	icons := assignPublicLabelIcons(labels)
 	if kind == "news" {
 		icons = map[string]string{"ai-research": "fa-brain", "ai-tools": "fa-wand-magic-sparkles", "development": "fa-code", "design": "fa-palette", "finance": "fa-chart-line", "other": "fa-ellipsis"}
@@ -197,7 +210,7 @@ func PublicFeedPage(c *gin.Context) {
 		if kind == "news" {
 			display = data["T"].(func(string) string)("news.cat_" + l)
 		}
-		categories = append(categories, publicNavItem{Name: display, URL: link(kind, order, l, 1), Icon: icons[l], Active: label == l})
+		categories = append(categories, publicNavItem{Name: display, URL: categoryLink(l), Icon: icons[l], Active: label == l})
 	}
 	data["SearchKey"] = "public.search_" + kind
 	if !partial {
