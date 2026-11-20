@@ -142,7 +142,7 @@ button:active:not(:disabled), .page-btn:active:not(:disabled) {
 {{end}}
 
 {{define "header"}}
-<header class="h-10 flex items-center px-3 sm:px-4 text-sm shrink-0" data-swipe-nav data-swipe-item="[data-nav-idx][href]" data-swipe-index="data-nav-idx" data-swipe-mode="href" data-swipe-ignore="input,textarea,select,#user-menu-trigger,#searchTrigger,#themeToggle,#langToggle,#headerCloseSearch,#headerCreateTrigger,[data-header-menu-trigger]" style="position:sticky;top:0;z-index:20;background:var(--color-bg-card);border-bottom:1px solid var(--color-border)">
+<header class="{{if eq .Nav "shares"}}public-header {{end}}h-10 flex items-center px-3 sm:px-4 text-sm shrink-0" data-swipe-nav data-swipe-item="[data-nav-idx][href]" data-swipe-index="data-nav-idx" data-swipe-mode="href" data-swipe-ignore="input,textarea,select,#user-menu-trigger,#searchTrigger,#themeToggle,#langToggle,#headerCloseSearch,#headerCreateTrigger,[data-header-menu-trigger]" style="position:sticky;top:0;z-index:20;background:var(--color-bg-card);border-bottom:1px solid var(--color-border)">
     <a href="/" class="logo-text py-2 sm:mr-6 hidden sm:inline">BookStark</a>
     <nav class="flex gap-1" id="main-nav">
         {{if .Account}}<a href="/home" class="nav-link header-home-link px-2 py-2.5 font-semibold {{if eq .Nav "home"}}active{{end}}"><i class="fa-solid fa-house nav-icon" aria-hidden="true"></i><span class="nav-text">{{call .T "home.nav"}}</span></a>{{end}}
@@ -212,7 +212,7 @@ button:active:not(:disabled), .page-btn:active:not(:disabled) {
         </div>
     </div>
     <div class="relative">
-        <button type="button" id="user-menu-trigger" class="flex items-center gap-2 cursor-pointer py-1 px-2 rounded-md select-none" style="transition:background 0.15s ease;background:none;border:0" aria-haspopup="menu" aria-expanded="false" aria-controls="user-menu-dropdown" onmouseenter="this.style.background='var(--color-bg-hover)'" onmouseleave="this.style.background=''">
+        <button type="button" id="user-menu-trigger" {{if eq .Nav "shares"}}data-click-menu{{end}} class="flex items-center gap-2 cursor-pointer py-1 px-2 rounded-md select-none" style="transition:background 0.15s ease;background:none;border:0" aria-haspopup="menu" aria-expanded="false" aria-controls="user-menu-dropdown" onmouseenter="this.style.background='var(--color-bg-hover)'" onmouseleave="this.style.background=''">
             <div class="w-7 h-7 bg-blue-600 rounded-full flex items-center justify-center"><i class="fa-solid fa-user text-white text-xs"></i></div>
             <span class="hidden sm:inline text-sm" style="color:var(--color-text-secondary)">{{.Account}}</span>
             <i class="fa-solid fa-chevron-down text-xs transition-transform duration-150" style="color:var(--color-text-muted)" id="user-menu-arrow"></i>

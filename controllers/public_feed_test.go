@@ -86,7 +86,7 @@ func TestPublicFeedPrivacyFiltersAndRendering(t *testing.T) {
 			if !strings.Contains(html, "public-layout") || !strings.Contains(w.Header().Get("Cache-Control"), "no-store") {
 				t.Fatal("missing visitor layout/cache policy")
 			}
-			if auth != "" && (!strings.Contains(html, `class="relative public-account"`) || strings.Contains(html, `class="sh-page"`)) {
+			if auth != "" && (!strings.Contains(html, `id="main-nav"`) || strings.Contains(html, `class="sh-page"`)) {
 				t.Fatal("signed-in layout not unified")
 			}
 			if auth == "" && strings.Contains(html, `data-public-action=`) {

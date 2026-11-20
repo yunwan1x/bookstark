@@ -27,6 +27,7 @@ var enMessages = map[string]string{
 	"public.articles":                    "Articles",
 	"public.notes":                       "Notes",
 	"public.books":                       "Books",
+	"public.search_action":               "Search",
 	"public.search":                      "Search public content",
 	"public.login":                       "Log in",
 	"public.categories":                  "Categories",

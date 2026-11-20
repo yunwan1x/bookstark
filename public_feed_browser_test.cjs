@@ -4,7 +4,7 @@ const assert=require('node:assert/strict');
 (async()=>{
  const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH,args:['--no-sandbox','--disable-dev-shm-usage']});
  try {
-  for(const [width,lang,theme] of [[1440,'zh','light'],[390,'zh','light'],[320,'en','dark'],[768,'en','scholar-paper']]){
+  for(const [width,lang,theme] of [[1440,'zh','light'],[390,'zh','light'],[320,'en','nvidia'],[768,'en','apple']]){
    for(const kind of (process.env.PUBLIC_FEED_TEST_TYPES||'article,note,book,bookmark').split(',')){
    for(const signedIn of [false,true]) {
    const page=await browser.newPage({viewport:{width,height:1000}}),errors=[];let commentPosts=[],commentItems=[],rejectComment=false;
@@ -42,7 +42,7 @@ const assert=require('node:assert/strict');
    assert.equal(await page.locator('.public-nav a i').count(),4);
    const current=new URL(await page.locator('.public-nav a[aria-current]').getAttribute('href'),'http://public.test');
    assert.equal(current.pathname,'/shares');assert.equal(current.searchParams.get('type'),kind);
-   assert.equal(await page.locator('.public-account').count(),signedIn?1:0);
+   assert.equal(await page.locator('#user-menu-trigger').count(),signedIn?1:0);
    assert.equal(await page.locator('.public-login').count(),signedIn?0:1);
    if(signedIn){
     await page.locator('#user-menu-trigger').click();assert(await page.locator('#user-menu-dropdown').isVisible());
@@ -79,14 +79,9 @@ const assert=require('node:assert/strict');
      if(width>=768)assert(aligned.delta<1,'badge/title vertical alignment');
     }
    }
-   assert.notEqual(await page.locator('.public-categories').evaluate(n=>getComputedStyle(n).backgroundColor),'rgba(0, 0, 0, 0)');
-   if(width<=640){
-    assert.equal(await page.locator('.public-search').isVisible(),false);
-    await page.locator('.public-search-toggle').click();assert(await page.locator('.public-search').isVisible());
-    await page.locator('[name="keyword"]').press('Escape');assert.equal(await page.locator('.public-search').isVisible(),false);
-    assert(await page.locator('.public-categories nav').isVisible());
-    assert.equal(await page.locator('.public-info').isVisible(),false);
-   }
+   assert(await page.locator('.public-search').isVisible());
+   assert(await page.locator('.public-categories>div').isVisible());
+   if(width<=640) assert.equal(await page.locator('.public-info').isVisible(),false);
    if(kind==='note'){
     const alignment=await page.locator('.public-note-author-name').evaluate(n=>{
      const a=n.getBoundingClientRect(),b=n.parentElement.querySelector('.public-note-actions').getBoundingClientRect();

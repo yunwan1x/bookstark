@@ -27,6 +27,7 @@ var zhMessages = map[string]string{
 	"public.articles":                    "文章",
 	"public.notes":                       "速记",
 	"public.books":                       "书籍",
+	"public.search_action":               "搜索",
 	"public.search":                      "搜索公开内容",
 	"public.login":                       "登录",
 	"public.categories":                  "分类",

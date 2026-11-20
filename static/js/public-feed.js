@@ -15,18 +15,9 @@
     icon.addEventListener('load', () => clearTimeout(timer), {once: true});
     timer = setTimeout(fallback, 5000);
   });
-  const searchToggle = document.querySelector('.public-search-toggle');
-  const searchForm = document.getElementById('publicSearch');
-  function toggleSearch(open) {
-    searchToggle.setAttribute('aria-expanded', String(open));
-    searchForm.classList.toggle('is-open', open);
-    if (open) searchForm.querySelector('[name="keyword"]').focus();
-  }
-  searchToggle.addEventListener('click', () => toggleSearch(searchToggle.getAttribute('aria-expanded') !== 'true'));
-  searchForm.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { toggleSearch(false); searchToggle.focus(); }
+  document.querySelectorAll('[data-bookmark-url]').forEach(node => {
+    try { node.textContent = new URL(node.dataset.bookmarkUrl).hostname; } catch (_) {}
   });
-  if (searchForm.querySelector('[name="keyword"]').value) searchForm.classList.add('is-open');
   // Save only this tab's reading position, not content or credentials.
   const positionKey = 'bookstark:public-login-return';
   document.querySelector('.public-login')?.addEventListener('click', () => {
@@ -34,7 +25,7 @@
   });
   try {
     const saved = JSON.parse(sessionStorage.getItem(positionKey) || 'null');
-    if (document.querySelector('.public-account') && saved && saved.url === location.pathname + location.search) {
+    if (document.body.dataset.publicAccount && saved && saved.url === location.pathname + location.search) {
       sessionStorage.removeItem(positionKey);
       requestAnimationFrame(() => scrollTo(0, saved.y));
     }
