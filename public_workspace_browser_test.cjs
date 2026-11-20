@@ -175,13 +175,21 @@ const origin=process.env.BOOKSTARK_TEST_ORIGIN;
   await navigate(page.locator('.public-nav a').nth(4));assert.equal(await page.locator('.public-bookmark-domain').innerText(),'example.com');
   await update(()=>page.goBack());assert.equal(await page.locator('.public-book-card').count(),4);
   await update(()=>page.goForward());assert.equal(await page.locator('.bm-row').count(),1);
+  const navTop=await page.locator('.public-nav').evaluate(el=>el.getBoundingClientRect().top+scrollY);
   // Fetch errors keep the current view and URL; they must not fall back to reload.
   await page.route(origin+'/shares?**',route=>route.request().headers()['x-bookstark-feed']==='content'?route.fulfill({status:503,body:'unavailable'}):route.continue());
   const retainedURL=page.url();await page.locator('.public-nav a').nth(1).click();await page.waitForFunction(()=>document.querySelector('.public-load-status').textContent.includes('加载失败'));assert.equal(page.url(),retainedURL);assert.equal(await page.locator('.bm-row').count(),1);
   await page.unroute(origin+'/shares?**');
   // Delayed obsolete requests cannot overwrite a more recent tab selection.
-  await page.route(origin+'/shares?**',async route=>{if(route.request().headers()['x-bookstark-feed']==='content'&&new URL(route.request().url()).searchParams.get('type')==='article'){await new Promise(r=>setTimeout(r,200));}await route.continue().catch(()=>{});});
-  await page.locator('.public-nav a').nth(1).click();await navigate(page.locator('.public-nav a').nth(3));await page.waitForTimeout(250);assert.equal(new URL(page.url()).searchParams.get('type'),'book');assert.equal(await page.locator('.public-book-card').count(),4);
+  await page.route(origin+'/shares?**',async route=>{if(route.request().headers()['x-bookstark-feed']==='content'&&new URL(route.request().url()).searchParams.get('type')==='article'){await new Promise(r=>setTimeout(r,800));}await route.continue().catch(()=>{});});
+  await page.locator('.public-nav a').nth(1).click();
+  await page.locator('.public-feed-skeleton').waitFor({state:'visible'});
+  assert.equal(await page.locator('.public-load-status').isVisible(),false);
+  assert.equal(await page.locator('.public-nav').evaluate(el=>el.getBoundingClientRect().top+scrollY),navTop);
+  assert.ok(await page.locator('.public-items').evaluate(el=>el.inert&&getComputedStyle(el).visibility==='hidden'));
+  await navigate(page.locator('.public-nav a').nth(3));await page.waitForTimeout(850);
+  assert.equal(await page.locator('.public-feed-skeleton').count(),0);
+  assert.ok(await page.locator('.public-items').evaluate(el=>!el.inert&&getComputedStyle(el).visibility==='visible'));assert.equal(new URL(page.url()).searchParams.get('type'),'book');assert.equal(await page.locator('.public-book-card').count(),4);
   await page.unroute(origin+'/shares?**');
   assert.equal(documentRequests,0,'left navigation must never reload the document');
   assert.ok(await page.evaluate(()=>window.keptAudio===document.getElementById('publicRadioAudio')&&window.keptSidebar===document.querySelector('.public-info')&&!window.keptAudio.paused&&window.keptAudio.currentTime>window.audioStart&&window.pauseEvents===0),'audio continuity');

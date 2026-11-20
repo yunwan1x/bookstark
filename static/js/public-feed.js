@@ -57,7 +57,16 @@
     const controller=requestAbort,timeout=setTimeout(()=>controller.abort(),15000);
     const previousY=window.scrollY;
     if(!options.pop)history.replaceState(historyData(),'',renderedURL);
-    const message=content.querySelector('.public-load-status');message.hidden=false;message.textContent=window.__('public.loading');
+    const message=content.querySelector('.public-load-status');message.hidden=true;message.textContent='';
+    const feed=content.querySelector('.public-feed');
+    let skeleton=feed.querySelector('.public-feed-skeleton');
+    if(!skeleton){
+      skeleton=document.createElement('div');skeleton.className='public-feed-skeleton';skeleton.setAttribute('aria-hidden','true');
+      const rows=Math.max(4,Math.ceil(feed.getBoundingClientRect().height/100));
+      skeleton.innerHTML=Array.from({length:rows},()=>'<div class="skeleton-row"><span class="skeleton public-skeleton-icon"></span><div class="skeleton-row-body"><div class="skeleton skeleton-row-title"></div><div class="skeleton public-skeleton-excerpt"></div><div class="skeleton public-skeleton-excerpt"></div><div class="skeleton skeleton-row-time"></div></div></div>').join('');
+      feed.append(skeleton);
+    }
+    feed.querySelectorAll('.public-items,.public-pagination').forEach(node=>node.inert=true);
     content.setAttribute('aria-busy','true');
     try {
       const response=await fetch(url.href,{headers:{'X-BookStark-Feed':'content',Accept:'application/vnd.bookstark.feed+html'},credentials:'same-origin',cache:'no-store',signal:controller.signal});
@@ -82,7 +91,11 @@
       // A failed Back/Forward request must not leave the URL describing other content.
       if(options.pop)history.replaceState(historyData(),'',renderedURL);
       const sort=content.querySelector('#publicSort');if(sort){const current=new URL(renderedURL,location.origin).searchParams.get('sort')||'latest';[...sort.options].forEach(option=>option.selected=new URL(option.value,location.origin).searchParams.get('sort')===current);}
-    } finally {clearTimeout(timeout);if(id===requestID)content.removeAttribute('aria-busy');}
+    } finally {clearTimeout(timeout);if(id===requestID){
+      content.removeAttribute('aria-busy');
+      content.querySelector('.public-feed-skeleton')?.remove();
+      content.querySelectorAll('.public-items,.public-pagination').forEach(node=>node.inert=false);
+    }}
   }
   document.addEventListener('click',event=>{
     if(event.defaultPrevented||event.button!==0||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
