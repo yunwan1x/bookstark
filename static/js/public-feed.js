@@ -1,6 +1,7 @@
 /* One public reading surface for guests and signed-in readers. */
 (function () {
   'use strict';
+  document.getElementById('publicSort')?.addEventListener('change', e => { location.href = e.target.value; });
   document.querySelectorAll('.public-items-bookmark .bm-row-favicon').forEach(icon => {
     let timer;
     function fallback() {

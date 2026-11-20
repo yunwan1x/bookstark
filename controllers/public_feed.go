@@ -3,6 +3,7 @@ package controllers
 import (
 	"bookstark/middleware"
 	"bookstark/models"
+	"crypto/sha256"
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"hash/fnv"
@@ -12,6 +13,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
+	"unicode"
 )
 
 type publicNavItem struct {
@@ -108,7 +111,7 @@ func PublicFeedPage(c *gin.Context) {
 		if l != "" {
 			v.Set("label", l)
 		}
-		if keyword != "" {
+		if keyword != "" && k == kind {
 			v.Set("keyword", keyword)
 		}
 		return "/shares?" + v.Encode()
@@ -178,11 +181,47 @@ func PublicFeedPage(c *gin.Context) {
 	for _, l := range labels {
 		categories = append(categories, publicNavItem{Name: l, URL: link(kind, order, l, 1), Icon: icons[l], Active: label == l})
 	}
-	books, _, _ := models.ListSharesPaged(1, 4, "", "book", models.PublicFeedOptions{Sort: "updated"})
+	data["SearchKey"] = "public.search_" + kind
+	data["VisitSummary"], _ = models.GetPublicVisitSummary(time.Now())
+	// Resolve the optional full player without loading/decompressing its HTML.
+	var radioIdentify string
+	if err := models.DB.QueryRow(`SELECT COALESCE(s.share_identify,b.blog_identify)
+ FROM md_blogs b LEFT JOIN md_shares s ON s.share_type='blog' AND s.target_id=b.blog_id
+ WHERE b.blog_identify=? AND b.visibility=1 AND COALESCE(b.password,'')='' LIMIT 1`, "radio-web").Scan(&radioIdentify); err == nil {
+		data["RadioURL"] = "/shares/" + url.PathEscape(radioIdentify)
+	}
+	covers := map[string]struct {
+		Theme, Title string
+		Compact      bool
+	}{}
+	for _, item := range items {
+		if item.ShareType != "book" {
+			continue
+		}
+		title := strings.TrimSpace(item.Title)
+		sum := sha256.Sum256([]byte(title))
+		// Keep the main title on the cover; the adjacent heading retains the full name.
+		short := strings.FieldsFunc(title, func(r rune) bool { return r == '—' || r == '·' || r == '：' || r == ':' })
+		if len(short) > 0 {
+			title = strings.TrimSpace(short[0])
+		}
+		compact := len([]rune(title)) <= 8
+		for _, r := range title {
+			if !unicode.Is(unicode.Han, r) {
+				compact = false
+				break
+			}
+		}
+		covers[item.ShareIdentify] = struct {
+			Theme, Title string
+			Compact      bool
+		}{[]string{"blue", "green", "amber", "indigo"}[sum[0]%4], title, compact}
+	}
+	data["BookCovers"] = covers
 	if kind == "article" {
 		data["EntryIcons"] = assignPublicArticleIcons(items)
 	}
-	data["Items"], data["Categories"], data["PublicBooks"] = items, categories, books
+	data["Items"], data["Categories"] = items, categories
 	typeURLs := map[string]string{}
 	for _, k := range []string{"article", "note", "book", "bookmark"} {
 		l := ""

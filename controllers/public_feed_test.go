@@ -259,3 +259,28 @@ func TestPublicTagsAdminSettings(t *testing.T) {
 		}
 	}
 }
+
+func TestPublicRadioLinkVisibility(t *testing.T) {
+	router, _ := initAssetControllerTest(t)
+	blog := &models.Blog{BlogTitle: "Radio", BlogIdentify: "radio-web", MemberID: 1, BlogType: "article", BlogContent: "radio", Visibility: 0}
+	if err := blog.Insert(); err != nil {
+		t.Fatal(err)
+	}
+	for _, state := range []struct {
+		visibility int
+		password   string
+		want       bool
+	}{{0, "", false}, {1, "secret", false}, {1, "", true}} {
+		if _, err := models.DB.Exec("UPDATE md_blogs SET visibility=?,password=? WHERE blog_id=?", state.visibility, state.password, blog.BlogID); err != nil {
+			t.Fatal(err)
+		}
+		w := adminAssetRequest(router, "", "GET", "/shares?type=book", nil)
+		if w.Code != 200 {
+			t.Fatal(w.Code, w.Body.String())
+		}
+		// Book tab has no article rows: any radio link must belong to the widget.
+		if got := strings.Contains(w.Body.String(), `href="/shares/radio-web"`); got != state.want {
+			t.Fatalf("link exposed=%v, want %v", got, state.want)
+		}
+	}
+}

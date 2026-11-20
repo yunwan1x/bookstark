@@ -80,8 +80,8 @@ const assert=require('node:assert/strict');
     }
    }
    assert(await page.locator('.public-search').isVisible());
-   assert(await page.locator('.public-categories>div').isVisible());
-   if(width<=640) assert.equal(await page.locator('.public-info').isVisible(),false);
+   if(await page.locator('.public-categories').count()) assert(await page.locator('.public-categories>div').isVisible());
+   assert.equal(await page.locator('.public-info').isVisible(),true);
    if(kind==='note'){
     const alignment=await page.locator('.public-note-author-name').evaluate(n=>{
      const a=n.getBoundingClientRect(),b=n.parentElement.querySelector('.public-note-actions').getBoundingClientRect();

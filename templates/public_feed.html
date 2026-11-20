@@ -19,24 +19,26 @@
 <main class="public-layout" role="main">
  <section class="public-intro">
   <h1 class="page-title public-page-title">{{call .T "public.title"}}</h1><p>{{call .T "public.intro"}}</p>
-  <form id="publicSearch" class="public-search" action="/shares" role="search">
-   <input type="hidden" name="type" value="{{.Type}}"><input type="hidden" name="sort" value="{{.Sort}}"><input type="hidden" name="label" value="{{.Label}}">
-   <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><input name="keyword" value="{{.Keyword}}" placeholder="{{call .T "public.search"}}" aria-label="{{call .T "public.search"}}" maxlength="200" type="search">
-   <button type="submit" class="public-search-submit">{{call .T "public.search_action"}} <span aria-hidden="true">↵</span></button>
-  </form>
+ </section>
+ <div class="public-content">
  <nav class="public-nav" aria-label="{{call .T "public.navigation"}}">
   <a href="{{index .TypeURLs "article"}}" {{if eq .Type "article"}}aria-current="page"{{end}}><i class="fa-solid fa-pen-nib" aria-hidden="true"></i> {{call .T "public.articles"}}</a>
   <a href="{{index .TypeURLs "note"}}" {{if eq .Type "note"}}aria-current="page"{{end}}><i class="fa-solid fa-note-sticky" aria-hidden="true"></i> {{call .T "public.notes"}}</a>
   <a href="{{index .TypeURLs "book"}}" {{if eq .Type "book"}}aria-current="page"{{end}}><i class="fa-solid fa-book" aria-hidden="true"></i> {{call .T "public.books"}}</a>
   <a href="{{index .TypeURLs "bookmark"}}" {{if eq .Type "bookmark"}}aria-current="page"{{end}}><i class="fa-solid fa-bookmark" aria-hidden="true"></i> {{call .T "public.bookmarks"}}</a>
  </nav>
-
- </section>
- <nav class="public-categories" aria-label="{{call .T "public.categories"}}"><div>
+  <div class="public-toolbar">
+  <form id="publicSearch" class="public-search" action="/shares" role="search">
+   <input type="hidden" name="type" value="{{.Type}}"><input type="hidden" name="sort" value="{{.Sort}}"><input type="hidden" name="label" value="{{.Label}}">
+   <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><input name="keyword" value="{{.Keyword}}" placeholder="{{call .T $.SearchKey}}" aria-label="{{call .T $.SearchKey}}" maxlength="200" type="search">
+   <button type="submit" class="public-search-submit">{{call .T "public.search_action"}} <span aria-hidden="true">↵</span></button>
+  </form>
+  <div class="public-sort"><label class="sr-only" for="publicSort">{{call .T "public.sort"}}</label><select id="publicSort"><option value="{{.LatestURL}}" {{if eq .Sort "latest"}}selected{{end}}>{{call .T "public.latest"}}</option><option value="{{.UpdatedURL}}" {{if eq .Sort "updated"}}selected{{end}}>{{call .T "public.updated"}}</option></select></div>
+  </div>
+ {{if gt (len .Categories) 1}}<nav class="public-categories" aria-label="{{call .T "public.categories"}}"><div>
   {{range .Categories}}<a href="{{.URL}}" {{if .Active}}aria-current="page"{{end}}><i class="fa-solid {{.Icon}}" aria-hidden="true"></i><span>{{if .Name}}{{.Name}}{{else}}{{call $.T "public.all"}}{{end}}</span></a>{{end}}
- </div></nav>
- <section class="public-feed" aria-label="{{call .T "public.title"}}">
-  <div class="public-feed-tabs"><a href="{{.LatestURL}}" {{if eq .Sort "latest"}}aria-current="page"{{end}}>{{call .T "public.latest"}}</a><a href="{{.UpdatedURL}}" {{if eq .Sort "updated"}}aria-current="page"{{end}}>{{call .T "public.updated"}}</a></div>
+ </div></nav>{{end}}
+ <section class="public-feed{{if eq .Type "book"}} public-book-feed{{end}}" aria-label="{{call .T "public.title"}}">
   <div class="public-items public-items-{{.Type}}">
   {{if eq .Type "bookmark"}}
   {{range .Bookmarks}}<article class="bm-row"><div class="bm-row-content"><div class="bm-row-body">
@@ -54,7 +56,7 @@
    </div></details>{{end}}
    {{if and (ne .ShareType "book") (ne .BlogType "note")}}<span class="public-article-icon" aria-hidden="true"><i class="{{index $.EntryIcons .ShareIdentify}}"></i></span>{{end}}
    {{if eq .ShareType "book"}}
-   <a class="public-book-cover" href="/shares/{{.ShareIdentify}}" aria-label="{{.Title}}"><i class="fa-solid fa-book-open" aria-hidden="true"></i></a>
+   <a class="public-book-cover cover-{{(index $.BookCovers .ShareIdentify).Theme}}" href="/shares/{{.ShareIdentify}}" aria-label="{{.Title}}"><span class="public-cover-title{{if (index $.BookCovers .ShareIdentify).Compact}} public-cover-compact{{end}}">{{(index $.BookCovers .ShareIdentify).Title}}</span><svg class="public-cover-art" viewBox="0 0 120 100" aria-hidden="true" fill="none" stroke="currentColor"><path class="cover-waves" d="M-20 85 Q20 90 55 50 T140 25 M-20 92 Q20 97 55 57 T140 32 M-20 99 Q20 104 55 64 T140 39 M-20 106 Q20 111 55 71 T140 46 M-20 113 Q20 118 55 78 T140 53"/><path class="cover-grid" d="M0 55 60 25 120 55 60 85Z M0 65 60 35 120 65 60 95Z M0 75 60 45 120 75 60 105Z"/><path class="cover-arcs" d="M10 110 A90 90 0 0 1 120 20 M20 110 A80 80 0 0 1 120 30 M30 110 A70 70 0 0 1 120 40 M40 110 A60 60 0 0 1 120 50 M50 110 A50 50 0 0 1 120 60"/></svg></a>
    {{end}}
    {{if eq .BlogType "note"}}
    <div class="public-note-author">{{if .IsPinned}}<span class="tag-badge public-pinned"><i class="fa-solid fa-thumbtack" aria-hidden="true"></i>{{call $.T "note.badge.pinned"}}</span>{{end}}<i class="fa-regular fa-user" aria-hidden="true"></i><span class="public-note-author-name">{{.Author}}</span>
@@ -82,10 +84,8 @@
   </div>
   <nav class="public-pagination" aria-label="{{call .T "public.pagination"}}">{{if .PrevURL}}<a class="page-btn" href="{{.PrevURL}}">{{call .T "public.prev"}}</a>{{end}}<span>{{.Page}}</span>{{if .NextURL}}<a class="page-btn" href="{{.NextURL}}">{{call .T "public.next"}}</a>{{end}}</nav>
  </section>
- <aside class="public-info">
-  <section><h2>{{call .T "public.about"}}</h2><div class="public-brand"><i class="fa-solid fa-book-open" aria-hidden="true"></i> BookStark</div><p>{{call .T "public.intro"}}</p></section>
-  {{if .PublicBooks}}<section><h2>{{call .T "public.recent_books"}}</h2>{{range .PublicBooks}}<a class="public-book" href="/shares/{{.ShareIdentify}}"><i class="fa-solid fa-book" aria-hidden="true"></i><span>{{.Title}}</span></a>{{end}}</section>{{end}}
- </aside>
+ </div>
+ {{template "public-widgets" .}}
 </main>
 {{template "footer" .}}
 {{if eq .Type "note"}}
@@ -95,5 +95,6 @@
 <script src="/static/js/share-note-reader.js?v={{assetVer "/static/js/share-note-reader.js"}}"></script>
 <script src="/static/js/share-comments.js?v={{assetVer "/static/js/share-comments.js"}}"></script>
 {{end}}
+<script src="/static/js/public-widgets.js?v={{assetVer "/static/js/public-widgets.js"}}"></script>
 <script src="/static/js/public-feed.js?v={{assetVer "/static/js/public-feed.js"}}"></script>
 </body></html>

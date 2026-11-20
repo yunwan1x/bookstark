@@ -1,0 +1,26 @@
+{{define "public-widgets"}}
+<aside class="public-info">
+ <section class="public-visit-card"><h2><i class="fa-solid fa-chart-simple" aria-hidden="true"></i>{{call .T "public.visits"}}</h2>
+ {{with .VisitSummary}}<dl class="public-visit-grid">
+ <div><dt>{{call $.T "public.today_pv"}}</dt><dd data-visit-number>{{.TodayViews}}</dd></div>
+ <div><dt>{{call $.T "public.today_uv"}}</dt><dd data-visit-number>{{.TodayVisitors}}</dd></div>
+ <div><dt>{{call $.T "public.total_pv"}}</dt><dd data-visit-number>{{.TotalViews}}</dd></div>
+ <div><dt>{{call $.T "public.total_uv"}}</dt><dd data-visit-number>{{.TotalVisitors}}</dd></div>
+ </dl><svg class="public-visit-chart" viewBox="0 0 260 60" role="img" aria-label="{{call $.T "public.trend"}}"><polygon points="4,60 {{.TrendPoints}} 256,60" fill="currentColor" opacity=".08"/><polyline points="{{.TrendPoints}}" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+ <p class="public-widget-caption">{{call $.T "public.trend"}}</p><p class="public-widget-footnote">{{call $.T "public.visits_note"}}</p>
+ {{else}}<p>{{call .T "public.unavailable"}}</p>{{end}}</section>
+ <section class="public-radio"><h2><i class="fa-solid fa-headphones" aria-hidden="true"></i>Radio</h2>
+ <label class="sr-only" for="publicRadioStation">{{call .T "public.radio_station"}}</label>
+ <select id="publicRadioStation"><option value="rsc_de">{{call .T "public.radio_classical"}} · Swiss Classic</option><option value="rsj">{{call .T "public.radio_jazz"}} · Swiss Jazz</option><option value="rsp">{{call .T "public.radio_pop"}} · Swiss Pop</option></select>
+ <div class="public-radio-controls"><button id="publicRadioPlay" type="button" aria-label="{{call .T "public.radio_play"}}" aria-pressed="false"><i class="fa-solid fa-play" aria-hidden="true"></i></button><span id="publicRadioStatus" role="status">{{call .T "public.radio_idle"}}</span></div>
+ <label class="public-radio-volume"><i class="fa-solid fa-volume-low" aria-hidden="true"></i><span class="sr-only">{{call .T "public.radio_volume"}}</span><input id="publicRadioVolume" type="range" min="0" max="1" step="0.05" value="0.5"></label>
+ <audio id="publicRadioAudio" preload="none"></audio>
+ <div class="public-radio-footer"><a id="publicRadioSource" href="https://www.radioswissclassic.ch/en/reception/internet" target="_blank" rel="noopener noreferrer">Radio Swiss ↗</a>{{if .RadioURL}}<a href="{{.RadioURL}}" target="_blank" rel="noopener noreferrer">{{call .T "public.radio_full"}} ↗</a>{{end}}</div>
+ </section>
+ <section class="public-clock"><h2><i class="fa-solid fa-globe" aria-hidden="true"></i>{{call .T "public.world_clock"}}</h2>
+ <div data-clock-zone="Asia/Shanghai"><i aria-hidden="true"></i><span>{{call .T "public.beijing"}}</span><time>--:--</time><small></small></div>
+ <div data-clock-zone="Europe/London"><i aria-hidden="true"></i><span>{{call .T "public.london"}}</span><time>--:--</time><small></small></div>
+ <div data-clock-zone="America/New_York"><i aria-hidden="true"></i><span>{{call .T "public.new_york"}}</span><time>--:--</time><small></small></div>
+ </section>
+</aside>
+{{end}}

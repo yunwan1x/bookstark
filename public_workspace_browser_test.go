@@ -29,6 +29,16 @@ func TestPublicWorkspaceBrowser(t *testing.T) {
 		if _, err := models.CreateShare("book", book.BookID, 1, ""); err != nil {
 			t.Fatal(err)
 		}
+		for i, title := range []string{"投资认知—从市场机制到投资决策", "技术笔记", "设计手册"} {
+			extra := &models.Book{BookName: title, Identify: fmt.Sprintf("widget-book-%d", i), MemberID: 1, Description: "记录实践中的思考与经验，从知识整理到日常应用。", CreateTime: time.Now()}
+			if err := extra.Insert(); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := models.CreateShare("book", extra.BookID, 1, ""); err != nil {
+				t.Fatal(err)
+			}
+		}
+
 		bookmark := &models.Bookmark{Title: "Workspace bookmark", URL: "https://example.com/docs", Description: "Reference documentation", MemberID: 1, IsPublic: true}
 		if err := bookmark.Insert(); err != nil {
 			t.Fatal(err)
