@@ -16,6 +16,7 @@
     var retry = document.getElementById('homeRetry');
     var key = 'bookstark-home:' + document.body.dataset.homeMember;
     var hidden = [], sections = [], sort = 'updated', sequence = 0, activeRequest;
+    var activeFilter = 'all';
     var layout = [], draft = [], saving = false, dragging = null;
     try { layout = JSON.parse(grid.dataset.loadingLayout || '[]'); } catch (_) {}
     var layoutDialog = document.getElementById('homeCustomize');
@@ -24,6 +25,27 @@
     function lt(zh, en) { return english ? en : zh; }
     var moduleEnglish = {notes:'Notes',articles:'Articles',tasks:'Tasks',books:'Books',bookmarks:'Bookmarks',topics:'Topics',nav:'Navigation',shares:'Community',assets:'Assets'};
     function moduleName(key) { return english ? moduleEnglish[key] : modules[key][0]; }
+    var today = document.getElementById('homeToday');
+    today.textContent = new Date().toLocaleDateString(english ? 'en-US' : 'zh-CN', {year:'numeric',month:'long',day:'numeric',weekday:'long'});
+    today.dateTime = new Date().toISOString();
+    function renderStats(stats) {
+        document.querySelectorAll('[data-home-stat]').forEach(function(node) {
+            var value = stats && stats[node.dataset.homeStat];
+            node.textContent = Number.isFinite(value) ? value.toLocaleString(english ? 'en-US' : 'zh-CN') : '—';
+        });
+    }
+    function renderFilters() {
+        var box = document.getElementById('homeFilters'); box.replaceChildren();
+        var visible = layout.filter(function(item) { return !item.hidden && available(item); });
+        if (!visible.some(function(item) { return item.key === activeFilter; })) activeFilter = 'all';
+        [{key:'all'}].concat(visible).forEach(function(item) {
+            var button = el('button','home-filter',item.key === 'all' ? lt('全部','All') : moduleName(item.key));
+            button.type = 'button'; button.dataset.homeFilter = item.key;
+            button.setAttribute('aria-pressed',String(activeFilter === item.key));
+            button.onclick = function() { activeFilter = item.key; render(); document.querySelector('[data-home-filter="' + activeFilter + '"]').focus(); };
+            box.append(button);
+        });
+    }
     function defaultLayout() { return Object.keys(modules).map(function(k) {return {key:k,width:1,hidden:false};}); }
     function available(item) { return sections.some(function(s) {return s.key === item.key;}); }
     try { var saved = JSON.parse(localStorage.getItem(key)); if (Array.isArray(saved)) hidden = saved; } catch (_) {}
@@ -140,7 +162,7 @@
     };
     function appendCardHeader(card, sectionKey) {
         var m = modules[sectionKey];
-        card.dataset.section = sectionKey; card.style.setProperty('--home-accent', m[2]);
+        card.dataset.section = sectionKey; card.style.setProperty('--home-accent', 'var(--color-primary)');
         var head = el('div', 'home-card-head');
         var icon = el('span', 'home-card-icon'), glyph = el('i', 'fa-solid fa-' + m[1]);
         glyph.setAttribute('aria-hidden','true'); icon.append(glyph);
@@ -169,10 +191,11 @@
         });
     }
     function render() {
+        renderFilters();
         grid.replaceChildren();
         layout.forEach(function (item) {
             var s = sections.find(function(s) {return s.key === item.key;});
-            if (!s || item.hidden) return;
+            if (!s || item.hidden || (activeFilter !== 'all' && activeFilter !== item.key)) return;
             var m = modules[s.key];
             if (!m) return;
             var card = el('section', 'home-card'); appendCardHeader(card, s.key);
@@ -320,6 +343,7 @@
             if (response.status === 401) { window.location.replace('/login'); return; }
             if (!response.ok || data.code !== 0 || !Array.isArray(data.sections)) throw new Error('home request failed');
             sections = data.sections;
+            renderStats(data.stats);
             activityCounts=data.activity||{};activityReady=true;renderCalendar();
             renderRecent(Array.isArray(data.recent)?data.recent:[]);
             layout = Array.isArray(data.layout) ? data.layout : defaultLayout().map(function(item) {item.hidden = hidden.includes(item.key); return item;});
@@ -330,6 +354,7 @@
             if (ticket !== sequence) return;
             console.warn('Home load failed:',err);
             grid.replaceChildren();
+            renderStats(null); document.getElementById('homeFilters').replaceChildren();
             activityCounts={};activityReady=false;renderCalendar();renderRecent([],true);
             sections = []; preferences(); status.hidden = false; status.textContent = err.name === 'AbortError' ? lt('请求超时，请重试','Request timed out. Please retry.') : lt('首页加载失败，请检查网络后重试。','Could not load your home page. Check your connection and retry.'); retry.hidden = false;
         } finally { if (ticket === sequence) grid.setAttribute('aria-busy','false'); }

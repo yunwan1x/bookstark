@@ -8,19 +8,37 @@
 <link rel="manifest" href="/manifest.json">
 <link rel="stylesheet" href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}">
 {{template "head-assets" .}}
-<link rel="stylesheet" href="/static/css/home.css?v={{assetVer "/static/css/home.css"}}">
 <link rel="stylesheet" href="/static/css/calendar.css?v={{assetVer "/static/css/calendar.css"}}">
+<link rel="stylesheet" href="/static/css/home.css?v={{assetVer "/static/css/home.css"}}">
 </head>
 <body class="home-body min-h-screen flex flex-col" data-home-member="{{.MemberID}}">
 {{template "header" .}}
 {{template "assistant-widget" .}}
 <main class="home-page">
-  <div class="home-heading-card">
   <section class="home-welcome">
-    <div><h1 class="page-title">{{call .T "home.title"}}</h1></div>
-    <div class="home-actions"><div><button class="home-button home-primary" data-home-dialog="homeCreate"><i class="fa-solid fa-plus" aria-hidden="true"></i> {{call .T "home.new"}}</button><button class="home-button" data-home-dialog="homeCustomize"><i class="fa-solid fa-sliders" aria-hidden="true"></i> {{call .T "home.layout.title"}}</button></div></div>
+    <div><div class="home-eyebrow">{{call .T "home.eyebrow"}}</div><h1 class="page-title">{{call .T "home.greeting"}}</h1><p>{{call .T "home.subtitle"}}</p></div>
+    <div class="home-actions"><time id="homeToday"></time><div><button class="home-button" data-home-dialog="homeCustomize"><i class="fa-solid fa-sliders" aria-hidden="true"></i> {{call .T "home.layout.title"}}</button><button class="home-button home-primary" data-home-dialog="homeCreate"><i class="fa-solid fa-plus" aria-hidden="true"></i> {{call .T "home.new"}}</button></div></div>
   </section>
-  <div class="home-date-layout">
+  <form class="home-search" action="/search" method="get" role="search"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><input type="search" name="q" required id="homeSearch" aria-label="{{call .T "home.search"}}" placeholder="{{call .T "home.search"}}"><button class="home-button" type="submit">{{call .T "home.search_action"}} <span aria-hidden="true">↵</span></button></form>
+  <div class="home-workspace"><div class="home-main">
+  <section class="home-stats" aria-label="{{call .T "home.stats.title"}}"><a href="/notes" class="home-stat"><span>{{call .T "nav.notes"}}</span><strong data-home-stat="notes">—</strong></a><a href="/notes?tab=articles" class="home-stat"><span>{{call .T "note.tab.articles"}}</span><strong data-home-stat="articles">—</strong></a><a href="/notes?tab=tasks" class="home-stat"><span>{{call .T "home.stats.pending"}}</span><strong data-home-stat="pending_tasks">—</strong></a><div class="home-stat" title="{{call .T "home.stats.week_hint"}}"><span>{{call .T "home.stats.week"}}</span><strong data-home-stat="created_this_week">—</strong></div></section>
+  <section class="home-recent" id="homeRecent" aria-labelledby="homeRecentTitle" aria-busy="true">
+    <div class="home-recent-heading"><h2 id="homeRecentTitle">{{call .T "home.recent.title"}}</h2><span class="home-date-hint">{{call .T "home.recent.sync"}}</span><button type="button" class="row-action" id="homeRecentClear" hidden aria-label="{{call .T "home.recent.clear"}}" title="{{call .T "home.recent.clear"}}"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button></div>
+    <div id="homeRecentList" aria-live="polite"><div class="skeleton home-skeleton-line" aria-hidden="true"></div><div class="skeleton home-skeleton-line" aria-hidden="true"></div><div class="skeleton home-skeleton-line" aria-hidden="true"></div></div>
+    <p class="home-date-hint">{{call .T "home.recent.hint"}}</p>
+  </section>
+  <h2 class="home-content-title">{{call .T "home.content"}}</h2>
+  <div class="home-content-controls">
+    <div class="home-date-summary"><span id="homeSelectedDate" role="status"></span><button type="button" class="home-button" id="homeClearDate" hidden>{{call .T "home.all_time"}}</button></div>
+  <div class="home-toolbar"><div class="main-tabs" role="group" aria-label="{{call .T "home.sort"}}"><button type="button" class="main-tab active" data-home-sort="updated" aria-pressed="true"><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>{{call .T "home.updated"}}</button><button type="button" class="main-tab" data-home-sort="created" aria-pressed="false"><i class="fa-regular fa-square-plus" aria-hidden="true"></i>{{call .T "home.created"}}</button></div></div>
+    <div class="home-limit-row"><label for="homeLimit">{{call .T "home.per_section"}}</label><select class="dialog-input" id="homeLimit"><option value="5">{{call .T "home.limit5"}}</option><option value="10" selected>{{call .T "home.limit10"}}</option><option value="20">{{call .T "home.limit20"}}</option><option value="50">{{call .T "home.limit50"}}</option></select></div>
+  </div>
+  <div id="homeFilters" class="home-filters" role="group" aria-label="{{call .T "home.modules"}}"></div>
+  <p id="homeStatus" role="status" aria-live="polite">{{call .T "home.loading"}}</p>
+  <button id="homeRetry" class="home-button" hidden>{{call .T "home.retry"}}</button>
+  <div class="home-grid" id="homeGrid" aria-busy="true" data-loading-layout="{{.HomeLoadingLayout}}">{{range .HomeLoadingCards}}<section class="home-card home-loading-card" data-section="{{.Key}}" data-width="{{.Width}}" aria-labelledby="home-title-{{.Key}}"><div class="home-card-head"><span class="home-card-icon"><i class="fa-solid fa-{{.Icon}}" aria-hidden="true"></i></span><div><h2 id="home-title-{{.Key}}">{{.Title}}</h2></div><a class="home-card-all" href="{{.URL}}">{{call $.T "home.view_all"}} →</a></div>{{template "home-loading-lines"}}</section>{{end}}</div>
+  <noscript>{{call .T "home.noscript"}}</noscript>
+  </div><aside class="home-sidebar"><div class="home-date-layout">
   <section class="calendar-card home-calendar" aria-label="{{call .T "home.calendar"}}" id="homeCalendar">
     <div class="calendar-header"><button type="button" class="calendar-nav-btn" id="homePrevMonth" aria-label="{{call .T "calendar.nav.prev"}}"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button><span class="calendar-title" id="homeMonthTitle"></span><button type="button" class="calendar-nav-btn" id="homeNextMonth" aria-label="{{call .T "calendar.nav.next"}}"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button><button type="button" class="home-button" data-home-current title="{{call .T "home.calendar.current_hint"}}">{{call .T "home.calendar.current"}}</button></div>
     <div class="calendar-weekdays" id="homeWeekdays"><span class="calendar-weekday">{{call .T "calendar.mon"}}</span><span class="calendar-weekday">{{call .T "calendar.tue"}}</span><span class="calendar-weekday">{{call .T "calendar.wed"}}</span><span class="calendar-weekday">{{call .T "calendar.thu"}}</span><span class="calendar-weekday">{{call .T "calendar.fri"}}</span><span class="calendar-weekday">{{call .T "calendar.sat"}}</span><span class="calendar-weekday">{{call .T "calendar.sun"}}</span></div>
@@ -31,21 +49,9 @@
     </div>
     <p class="home-date-hint" id="homeActivityHint">{{call .T "home.activity.updated"}}</p>
   </section>
-  <section class="home-recent" id="homeRecent" aria-labelledby="homeRecentTitle" aria-busy="true">
-    <div class="home-recent-heading"><h2 id="homeRecentTitle">{{call .T "home.recent.title"}}</h2><span class="home-date-hint">{{call .T "home.recent.sync"}}</span><button type="button" class="row-action" id="homeRecentClear" hidden aria-label="{{call .T "home.recent.clear"}}" title="{{call .T "home.recent.clear"}}"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button></div>
-    <div id="homeRecentList" aria-live="polite"><div class="skeleton home-skeleton-line" aria-hidden="true"></div><div class="skeleton home-skeleton-line" aria-hidden="true"></div><div class="skeleton home-skeleton-line" aria-hidden="true"></div></div>
-    <p class="home-date-hint">{{call .T "home.recent.hint"}}</p>
-  </section></div>
-  </div>
-  <div class="home-content-controls">
-    <div class="home-date-summary"><span id="homeSelectedDate" role="status"></span><button type="button" class="home-button" id="homeClearDate" hidden>{{call .T "home.all_time"}}</button></div>
-  <div class="home-toolbar"><div class="main-tabs" role="group" aria-label="{{call .T "home.sort"}}"><button type="button" class="main-tab active" data-home-sort="updated" aria-pressed="true"><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>{{call .T "home.updated"}}</button><button type="button" class="main-tab" data-home-sort="created" aria-pressed="false"><i class="fa-regular fa-square-plus" aria-hidden="true"></i>{{call .T "home.created"}}</button></div></div>
-    <div class="home-limit-row"><label for="homeLimit">{{call .T "home.per_section"}}</label><select class="dialog-input" id="homeLimit"><option value="5">{{call .T "home.limit5"}}</option><option value="10" selected>{{call .T "home.limit10"}}</option><option value="20">{{call .T "home.limit20"}}</option><option value="50">{{call .T "home.limit50"}}</option></select></div>
-  </div>
-  <p id="homeStatus" role="status" aria-live="polite">{{call .T "home.loading"}}</p>
-  <button id="homeRetry" class="home-button" hidden>{{call .T "home.retry"}}</button>
-  <div class="home-grid" id="homeGrid" aria-busy="true" data-loading-layout="{{.HomeLoadingLayout}}">{{range .HomeLoadingCards}}<section class="home-card home-loading-card" data-section="{{.Key}}" data-width="{{.Width}}" aria-labelledby="home-title-{{.Key}}"><div class="home-card-head"><span class="home-card-icon"><i class="fa-solid fa-{{.Icon}}" aria-hidden="true"></i></span><div><h2 id="home-title-{{.Key}}">{{.Title}}</h2></div><a class="home-card-all" href="{{.URL}}">{{call $.T "home.view_all"}} →</a></div>{{template "home-loading-lines"}}</section>{{end}}</div>
-  <noscript>{{call .T "home.noscript"}}</noscript>
+</div>
+  <section class="home-quick"><h2>{{call .T "home.quick"}}</h2><a href="/books"><i class="fa-solid fa-book-open" aria-hidden="true"></i>{{call .T "nav.books"}}<span aria-hidden="true">↗</span></a><a href="/topics"><i class="fa-solid fa-layer-group" aria-hidden="true"></i>{{call .T "nav.topics"}}<span aria-hidden="true">↗</span></a><a href="/bookmarks"><i class="fa-solid fa-bookmark" aria-hidden="true"></i>{{call .T "nav.bookmarks"}}<span aria-hidden="true">↗</span></a><a href="/nav"><i class="fa-solid fa-compass" aria-hidden="true"></i>{{call .T "nav.home"}}<span aria-hidden="true">↗</span></a></section>
+  </aside></div>
 </main>
 <nav class="home-bottom-nav" aria-label="{{call .T "home.mobile_nav"}}"><a href="/home" aria-current="page"><i class="fa-solid fa-house" aria-hidden="true"></i><span>{{call .T "home.nav"}}</span></a><a href="/notes"><i class="fa-regular fa-note-sticky" aria-hidden="true"></i><span>{{call .T "nav.notes"}}</span></a><button data-home-dialog="homeCreate"><i class="fa-solid fa-plus home-new-icon" aria-hidden="true"></i><span>{{call .T "home.new"}}</span></button><a href="/notes?tab=tasks"><i class="fa-solid fa-list-check" aria-hidden="true"></i><span>{{call .T "nav.todos"}}</span></a><button data-home-dialog="homeMore"><i class="fa-solid fa-bars" aria-hidden="true"></i><span>{{call .T "home.more"}}</span></button></nav>
 <dialog class="home-dialog" id="homeMore" aria-labelledby="homeMoreTitle"><div class="home-dialog-head"><h2 id="homeMoreTitle">{{call .T "home.modules"}}</h2><button data-home-close aria-label="{{call .T "common.close"}}">×</button></div><h3>{{call .T "nav.knowledge"}}</h3><div class="home-menu-grid"><a href="/notes">{{call .T "nav.notes"}}</a><a href="/notes?tab=articles">{{call .T "note.tab.articles"}}</a><a href="/notes?tab=tasks">{{call .T "nav.todos"}}</a><a href="/books">{{call .T "nav.books"}}</a><a href="/bookmarks">{{call .T "nav.bookmarks"}}</a></div><h3>{{call .T "nav.collections"}}</h3><div class="home-menu-grid"><a href="/topics">{{call .T "nav.topics"}}</a>{{if .IsAdmin}}<a href="/labels">{{call .T "user.menu.labels"}}</a>{{end}}</div><h3>{{call .T "nav.assets"}}</h3><div class="home-menu-grid"><a href="/nav">{{call .T "nav.home"}}</a><a href="/shares">{{call .T "nav.shares"}}</a>{{if .IsAdmin}}<a href="/admin/assets">{{call .T "page.assets.title"}}</a>{{end}}<a href="/images">{{call .T "user.menu.images"}}</a></div></dialog>

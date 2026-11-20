@@ -108,7 +108,13 @@ func HomeSummary(c *gin.Context) {
 		apiError(c, http.StatusInternalServerError, "首页加载失败，请重试")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"code": 0, "sections": sections, "layout": layout, "start": start, "end": end, "limit": limit, "activity": activity, "activity_start": activityStart, "activity_end": activityEnd, "recent": recent})
+	stats, err := models.GetHomeStats(middleware.GetMemberID(c), time.Now())
+	if err != nil {
+		log.Printf("home statistics: %v", err)
+		apiError(c, http.StatusInternalServerError, "首页加载失败，请重试")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"stats": stats, "code": 0, "sections": sections, "layout": layout, "start": start, "end": end, "limit": limit, "activity": activity, "activity_start": activityStart, "activity_end": activityEnd, "recent": recent})
 }
 
 func SaveHomeLayout(c *gin.Context) {

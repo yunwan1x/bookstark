@@ -53,9 +53,13 @@ func TestHomeSummaryIsolationOrderAndLinks(t *testing.T) {
 		}
 		var data struct {
 			Sections []models.HomeSection `json:"sections"`
+			Stats    models.HomeStats     `json:"stats"`
 		}
 		if err := json.Unmarshal(w.Body.Bytes(), &data); err != nil {
 			t.Fatal(err)
+		}
+		if data.Stats.Notes != 12 {
+			t.Fatalf("statistics leaked another owner or respected the item limit: %+v", data.Stats)
 		}
 		if len(data.Sections) != 9 {
 			t.Fatalf("admin sections %d", len(data.Sections))
@@ -71,6 +75,12 @@ func TestHomeSummaryIsolationOrderAndLinks(t *testing.T) {
 	w := adminAssetRequest(router, otherToken.Token, "GET", "/api/home", nil)
 	if w.Code != 200 || strings.Contains(w.Body.String(), `"key":"assets"`) || strings.Contains(w.Body.String(), "note-00") {
 		t.Fatalf("nonadmin isolation: %d %s", w.Code, w.Body.String())
+	}
+	var otherData struct {
+		Stats models.HomeStats `json:"stats"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &otherData); err != nil || otherData.Stats.Notes != 1 {
+		t.Fatalf("nonadmin statistics isolation: %+v, %v", otherData, err)
 	}
 	w = adminAssetRequest(router, token, "GET", "/api/home?order=unsafe", nil)
 	if w.Code != 400 {
@@ -165,7 +175,7 @@ func TestPersonalHomeEnglishTemplate(t *testing.T) {
 	if w.Code != 200 {
 		t.Fatalf("home response: %d", w.Code)
 	}
-	for _, expected := range []string{`<html lang="en">`, `<h1 class="page-title">Personal Home</h1>`, `Recently updated`, `Customize sections`, `New Note`, `Mobile navigation`, `All sections`, `Capture an idea`, `Date range`, `Per section`, `Latest 10`} {
+	for _, expected := range []string{`<html lang="en">`, `<h1 class="page-title">A clear space for your ideas.</h1>`, `Recently updated`, `Customize sections`, `New Note`, `Mobile navigation`, `All sections`, `Capture an idea`, `Date range`, `Per section`, `Latest 10`} {
 		if !strings.Contains(w.Body.String(), expected) {
 			t.Errorf("missing translation: %s", expected)
 		}
@@ -222,8 +232,8 @@ func TestHomeStatsOwnerAndWeekBoundary(t *testing.T) {
 	if w.Code != 200 {
 		t.Fatal(w.Code, w.Body.String())
 	}
-	if strings.Contains(w.Body.String(), `"stats"`) {
-		t.Fatal("calendar home must not query or expose statistics")
+	if !strings.Contains(w.Body.String(), `"stats":{"notes":3,"articles":1,"pending_tasks":1,`) {
+		t.Fatal("home must expose owned statistics", w.Body.String())
 	}
 	if dir := os.Getenv("HOME_SNAPSHOT_DIR"); dir != "" {
 		for _, lang := range []string{"zh", "en"} {
