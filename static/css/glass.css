@@ -34,7 +34,7 @@
   box-shadow: var(--glass-shadow) !important;
   -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
 }
-[data-theme-style="glass"] :is(.bg-white,.home-card,.home-heading-card,.home-side-card,.calendar-card,.tag-card,.note-card,.article-card,.task-card,.bk-card,.topic-list,.topic-detail,.topic-rail,.label-left,.label-right,.member-card,.setting-section,.system-section,.webdav-card,.search-card,.public-feed-card,.public-feed-sidebar,.local-tools-sidebar,.local-tool-grid a,.dialog-box,.dialog-content,.bs-dialog,.modal-content,.header-dropdown-panel,.home-assistant-panel,.ai-dlg,.news-source-card,.tv-panel,.tv-channel-panel,.tv-detail-panel) {
+[data-theme-style="glass"] :is(.bg-white,.home-card,.home-heading-card,.home-side-card,.calendar-card,.tag-card,.note-card,.article-card,.task-card,.bk-card,.topic-list,.topic-detail,.topic-rail,.label-left,.label-right,.member-card,.setting-section,.system-section,.webdav-card,.search-card,.public-feed-card,.public-feed-sidebar,.local-tools-sidebar,:where(.local-tool-grid) a,.dialog-box,.dialog-content,.bs-dialog,.modal-content,.header-dropdown-panel,.home-assistant-panel,.ai-dlg,.news-source-card,.tv-panel,.tv-channel-panel,.tv-detail-panel) {
   background: var(--glass-panel),var(--color-bg-card) !important;
   border-color: var(--color-border) !important;
   box-shadow: var(--glass-shadow) !important;
@@ -73,14 +73,14 @@
 [data-theme-style="glass"] ::-webkit-scrollbar-track { background:transparent; }
 @media (max-width:640px) {
   [data-theme-style="glass"] { --glass-shadow:inset 0 1px 0 #f1f4ff60,inset 0 -1px 0 #c9ceff18,0 4px 12px #02051b30; }
-  [data-theme-style="glass"] :is(.home-card,.note-card,.article-card,.task-card,.bk-card,.member-card,.local-tool-grid a) { -webkit-backdrop-filter:none; backdrop-filter:none; }
+  [data-theme-style="glass"] :is(.home-card,.note-card,.article-card,.task-card,.bk-card,.member-card,:where(.local-tool-grid) a) { -webkit-backdrop-filter:none; backdrop-filter:none; }
 }
 @media (prefers-reduced-transparency:reduce) {
   [data-theme-style="glass"] { --color-bg-card:#202a46; --glass-input:#141d35; }
 }
 /* Review pass 1: match the prototype's surface grouping and thin luminous rim. */
 [data-theme-style="glass"] { --color-bg-card:#23304c48; --glass-panel:radial-gradient(ellipse at 0 0,#edf0ff24,transparent 32%),linear-gradient(120deg,#d7e0ff18,#a3aeea08 55%,#aea0dd18); }
-[data-theme-style="glass"] :is(.home-stats,.home-recent .home-recent-row,.home-quick,.sidebar-tags,.compose-card,.admin-tabs,.ai-action-section,.ai-usage-card,.tv-work,.tv-side,.tv-editor,.tv-world-settings,.tv-world-detail,.tv-world-side,.bs-dialog-box,.editor-modal,.nav-card) {
+[data-theme-style="glass"] :is(.home-stats,:where(.home-recent) .home-recent-row,.home-quick,.sidebar-tags,.compose-card,.admin-tabs,.ai-action-section,.ai-usage-card,.tv-work,.tv-side,.tv-editor,.tv-world-settings,.tv-world-detail,.tv-world-side,.bs-dialog-box,.editor-modal,.nav-card) {
  background:var(--glass-panel),var(--color-bg-card) !important; border-color:var(--color-border) !important; box-shadow:var(--glass-shadow) !important; backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
 }
 [data-theme-style="glass"] :is(.home-recent,.home-stat) { background:transparent !important; box-shadow:none !important; backdrop-filter:none; -webkit-backdrop-filter:none; border-radius:0; }
@@ -91,7 +91,7 @@
 [data-theme-style="glass"] #panel-ai { background:var(--glass-panel),var(--color-bg-card) !important; box-shadow:var(--glass-shadow); backdrop-filter:blur(18px); }
 [data-theme-style="glass"] #panel-ai .ai-subtab.active { background:var(--glass-selected) !important; color:var(--color-text) !important; }
 [data-theme-style="glass"] :is(.setting-row,.ai-usage-card,.ai-action-section) { border-color:var(--color-border-light) !important; }
-[data-theme-style="glass"] .local-tool-grid a { border-radius:var(--radius-lg); }
+[data-theme-style="glass"] :where(.local-tool-grid) a { border-radius:var(--radius-lg); }
 [data-theme-style="glass"] .book-cover { background:var(--glass-panel),color-mix(in srgb,var(--book-cover,#68587e) 40%,transparent) !important; }
 [data-theme-style="glass"] .book-list.book-view-shelf {
  --shelf-board-top:#eef0ff90; --shelf-board-edge:#b5c8ff30; --shelf-board-front:#b5c8ff20; --shelf-board-bottom:#b5c8ff48; --shelf-board-shadow:#00051940;
@@ -100,7 +100,7 @@
 [data-theme-style="glass"] .logo-text { background:none!important; -webkit-text-fill-color:var(--color-text)!important; }
 [data-theme-style="glass"] :is(.btn-create,.article-create-btn,.note-ai-go,.home-assistant-trigger,.bs-btn-confirm) { background:var(--glass-selected)!important; color:var(--color-on-primary)!important; border-color:var(--color-primary-border)!important; box-shadow:var(--glass-shadow); }
 [data-theme-style="glass"] :is(.home-assistant-dialog,.editor-modal,.bs-dialog-box) { background:var(--glass-panel),#17203bdd!important; box-shadow:var(--glass-shadow); backdrop-filter:blur(24px); }
-[data-theme-style="glass"] :is(.label-left,.label-right,.tab-btn,.home-sort-btn,.local-tool-grid a) { border-radius:var(--radius-lg); }
+[data-theme-style="glass"] :is(.label-left,.label-right,.tab-btn,.home-sort-btn,:where(.local-tool-grid) a) { border-radius:var(--radius-lg); }
 [data-theme-style="glass"] .ai-action-section { background:var(--glass-control),#111c3430!important; }
 [data-theme-style="glass"] .main-tab:not(.active),
 [data-theme-style="glass"] .tab-btn:not(.active) { background:transparent!important; box-shadow:none; }
@@ -121,3 +121,67 @@
 [data-theme-style="glass"] .range-btn.active { background:var(--glass-selected)!important; color:var(--color-on-primary)!important; box-shadow:var(--glass-shadow); }
 [data-theme-style="glass"] .home-date-layout .calendar-day[data-level="4"] { background:#7044bb!important; }
 [data-theme-style="glass"] .home-date-layout .calendar-day[data-level="4"] .calendar-day-num { color:var(--color-on-primary)!important; }
+
+/* Floating surfaces have their own material: page-card alpha is not suitable
+   above readable content. Keep layout and stacking owned by each component. */
+[data-theme-style="glass"] {
+  --glass-scrim: #03071985;
+  --glass-floating-base: #151e38f5;
+  --glass-floating-rim: #d8d8ff85;
+  --glass-floating-fill: radial-gradient(ellipse at 0 0,#c9cfff30,transparent 58%),linear-gradient(135deg,#9184d51a,transparent 55%,#6687c922);
+  --glass-floating-shadow: inset 0 1px 0 #f2eeff9c,inset 1px 0 0 #e0e7ff26,inset 0 -1px 0 #b5b7ff24,0 24px 64px #02051590,0 0 0 1px #060c2240;
+  --glass-field-base: #0c1429c7;
+  --glass-field-shadow: inset 0 1px 2px #01071966,inset 0 1px 0 #e6eaff18;
+  --glass-focus-shadow: 0 0 0 2px #bba3ff30,0 0 16px #a285ff35;
+  --glass-section-tint: linear-gradient(110deg,#bbc8ff12,#c2a8ff05);
+}
+[data-theme-style="glass"] :is(.asset-modal-backdrop,.editor-overlay,.bs-dialog-overlay,.bs-dialog-form-overlay,.dialog-overlay,.modal-overlay,.ai-dlg-overlay,.cmdk-overlay,.tag-input-sheet-backdrop,.resource-create-backdrop,.asset-preview-backdrop,.asset-session-backdrop,.richdoc-overlay-backdrop,.mobile-drawer-overlay,.task-mobile-drawer-overlay,.bm-drawer-overlay,.local-drawer-backdrop) {
+  background:var(--glass-scrim)!important;
+  -webkit-backdrop-filter:blur(10px) saturate(.7); backdrop-filter:blur(10px) saturate(.7);
+}
+[data-theme-style="glass"] dialog::backdrop {
+  background:var(--glass-scrim)!important;
+  -webkit-backdrop-filter:blur(10px) saturate(.7); backdrop-filter:blur(10px) saturate(.7);
+}
+[data-theme-style="glass"] :is(.asset-modal,.book-modal,.dav-modal,.editor-modal,.bs-dialog-box,.bs-dialog-panel,.bs-dialog-form,.dialog-box,.dialog-content,.modal-content,.home-dialog,.home-assistant-dialog,.home-assistant-panel,.ai-dlg-box,.cmdk-panel,.note-viewer-panel,.resource-create-modal,.richdoc-modal,.topic-modal,.topic-resource-modal) {
+  background:var(--glass-floating-fill),var(--glass-floating-base)!important;
+  color:var(--color-text); border-color:var(--glass-floating-rim)!important;
+  box-shadow:var(--glass-floating-shadow)!important;
+  -webkit-backdrop-filter:blur(28px); backdrop-filter:blur(28px);
+}
+/* Small floating menus need the same isolation, including menus inside a
+   parent that already creates a backdrop-filter boundary. Dense tint is the fallback. */
+[data-theme-style="glass"] :is(.header-dropdown-panel,.bs-action-dd-menu,.bs-action-menu,.bs-action-submenu-panel,.tag-input-dropdown,.tag-popover,.tag-input-sheet,.asset-floating-dropdown,.asset-row-menu-panel,.asset-combobox-dropdown,.dropdown-menu,.context-menu,.dav-row-menu,.dav-menu,.nav-view-menu,.note-ai-popover,.share-popover,.color-picker-popover,.richdoc-popover,.richdoc-color-popover,.richdoc-font-popover,.tb-dropdown,.cherry-dropdown,.cherry-floatmenu,.bs-selection-popover,.offline-status-popover) {
+  background:var(--glass-floating-fill),var(--glass-floating-base)!important;
+  color:var(--color-text); border-color:var(--glass-floating-rim)!important;
+  box-shadow:var(--glass-floating-shadow)!important;
+  -webkit-backdrop-filter:blur(24px); backdrop-filter:blur(24px);
+}
+[data-theme-style="glass"] :is(.asset-modal-head,.asset-modal-foot,.editor-modal-header,.editor-modal-footer,.ai-dlg-header,.ai-dlg-footer,.tag-popover-header) {
+  background:var(--glass-section-tint)!important; border-color:var(--color-border-light)!important;
+}
+[data-theme-style="glass"] :is(.asset-modal,.editor-modal,.home-dialog,.home-assistant-dialog,.bs-dialog-box,.ai-dlg-box,.cmdk-panel,.tag-popover) :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),textarea,select) {
+  background:var(--glass-control),var(--glass-field-base)!important;
+  box-shadow:var(--glass-field-shadow);
+}
+[data-theme-style="glass"] :is(input:not([type="checkbox"]):not([type="radio"]),textarea,select):focus-visible {
+  outline:1px solid var(--color-focus); outline-offset:0;
+  border-color:var(--color-focus)!important; box-shadow:var(--glass-field-shadow),var(--glass-focus-shadow)!important;
+}
+[data-theme-style="glass"] :is(.header-menu-item,.bs-action-menu-item,.tag-dropdown-item):hover {
+  background:var(--glass-control)!important; color:var(--color-text)!important;
+}
+@media (prefers-reduced-transparency:reduce) {
+  [data-theme-style="glass"] { --glass-floating-base:#151e38; --glass-scrim:#030719d9; --glass-field-base:#0c1429; }
+}
+/* The command search is one field, with focus on its containing row. */
+[data-theme-style="glass"] .cmdk-panel .cmdk-search .cmdk-input {
+  background:transparent!important; box-shadow:none!important;
+}
+[data-theme-style="glass"] .cmdk-panel .cmdk-search .cmdk-input:focus-visible {
+  outline:none; box-shadow:none!important;
+}
+[data-theme-style="glass"] .cmdk-search:focus-within {
+  background:var(--glass-section-tint); box-shadow:inset 0 -2px 0 var(--color-focus);
+}
+[data-theme-style="glass"] .bs-action-menu-item-danger:hover { color:var(--color-danger)!important; }
