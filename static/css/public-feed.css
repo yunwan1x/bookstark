@@ -277,3 +277,13 @@
 .public-radio-result i { position:absolute; right:var(--spacing-xs); top:var(--spacing-md); color:var(--color-primary); font-size:10px; }
 #publicRadioMore { padding:var(--spacing-sm); border:0; background:var(--color-primary-light); color:var(--color-primary); border-radius:var(--radius-md); font-size:12px; cursor:pointer; }
 .public-radio-footer a { max-width:100%; overflow-wrap:anywhere; }
+#publicRadioCountry .bs-selection-trigger { min-height:36px; padding:var(--spacing-xs) var(--spacing-sm); border-radius:var(--radius-lg); gap:var(--spacing-sm); }
+#publicRadioCountry .bs-selection-trigger-icon { width:20px; height:20px; flex-basis:20px; background:transparent; }
+#publicRadioCountry .bs-selection-trigger-label { font-size:12px; }
+#publicRadioCountry .bs-selection-trigger-meta { display:none; }
+#publicRadioCountry .bs-selection-popover { min-width:0; }
+#publicRadioCountry .bs-selection-list { max-height:220px; }
+#publicRadioCountry .bs-selection-option-label { font-size:12px; }
+#publicRadioCountry .bs-selection-search-input { font-size:12px; }
+
+#publicRadioCountry input[type=search]::-webkit-search-cancel-button { -webkit-appearance:none; }

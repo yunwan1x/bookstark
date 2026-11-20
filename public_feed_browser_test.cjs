@@ -31,6 +31,7 @@ const assert=require('node:assert/strict');
     }
     return route.fulfill({status:404,body:''});
    });
+   await page.route('https://*.api.radio-browser.info/**',route=>route.fulfill({json:[{name:'CN'},{name:'US'},{name:'CH'}]}));
    await page.goto('http://public.test/shares');
    await page.locator(kind==='bookmark'?'.bm-row':'.public-entry').first().waitFor();
    if(kind==='note')await page.locator('[data-note-content] strong').first().waitFor();
@@ -143,6 +144,11 @@ const assert=require('node:assert/strict');
    if(kind==='book') {
     await page.locator('#publicRadioDiscovery summary').click();
     assert.ok(await page.locator('#publicRadioQuery').isVisible());
+    await page.locator('#publicRadioCountry [role=combobox]').click();
+    await page.locator('#publicRadioCountry input[type=search]').fill('China');
+    await page.locator('#publicRadioCountry [data-bs-selection-value="CN"]').waitFor();
+    await page.waitForFunction(()=>document.querySelectorAll('#publicRadioCountry [role=option]').length===1);
+    assert.equal(await page.locator('.public-radio a[href^="http"]').count(),0);
     assert.equal(await page.locator('#publicRadioGenre option').count(),11);
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'radio search overflow');
     assert.ok(!(await page.locator('.public-radio').innerText()).includes('public.radio_'),'missing radio translation');

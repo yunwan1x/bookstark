@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}">
 {{template "head-assets" .}}
 {{if eq .Type "bookmark"}}<link rel="stylesheet" href="/static/css/bookmarks.css?v={{assetVer "/static/css/bookmarks.css"}}">{{end}}
+<link rel="stylesheet" href="/static/css/selection-controls.css?v={{assetVer "/static/css/selection-controls.css"}}">
 <link rel="stylesheet" href="/static/css/public-feed.css?v={{assetVer "/static/css/public-feed.css"}}">
 {{if eq .Type "note"}}<link rel="stylesheet" href="/static/css/share-note-reader.css?v={{assetVer "/static/css/share-note-reader.css"}}">{{end}}
 </head>
@@ -95,6 +96,7 @@
 <script src="/static/js/share-note-reader.js?v={{assetVer "/static/js/share-note-reader.js"}}"></script>
 <script src="/static/js/share-comments.js?v={{assetVer "/static/js/share-comments.js"}}"></script>
 {{end}}
+<script src="/static/js/selection-controls.js?v={{assetVer "/static/js/selection-controls.js"}}"></script>
 <script src="/static/js/public-widgets.js?v={{assetVer "/static/js/public-widgets.js"}}"></script>
 <script src="/static/js/public-feed.js?v={{assetVer "/static/js/public-feed.js"}}"></script>
 </body></html>

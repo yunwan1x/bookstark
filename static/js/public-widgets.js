@@ -24,7 +24,7 @@
  const play=document.getElementById('publicRadioPlay'), select=document.getElementById('publicRadioStation'), volume=document.getElementById('publicRadioVolume'), status=document.getElementById('publicRadioStatus');
  const stations=new Map([...select.options].map(option=>[option.value,{
   id:option.value,name:option.textContent,url:'https://stream.srg-ssr.ch/srgssr/'+option.value+'/mp3/128',
-  homepage:'https://www.radioswiss'+({rsc_de:'classic',rsj:'jazz',rsp:'pop'}[option.value])+'.ch/en/reception/internet',builtin:true
+  builtin:true
  }]));
  function httpsURL(raw) {
   try { const u=new URL(raw); return u.protocol==='https:'&&!u.username&&!u.password ? u.href : ''; } catch(_){return '';}
@@ -35,7 +35,7 @@
   if(!url||!name||(raw.hls&&!audio.canPlayType('application/vnd.apple.mpegurl')))return null;
   const codec=String(raw.codec||'').toUpperCase(),types={MP3:'audio/mpeg',AAC:'audio/aac','AAC+':'audio/aac',OGG:'audio/ogg',OPUS:'audio/ogg; codecs="opus"',FLAC:'audio/flac'};
   if(types[codec]&&!audio.canPlayType(types[codec]))return null;
-  return {id:'catalog:'+url,name,url,homepage:httpsURL(raw.homepage)||'https://www.radio-browser.info/',country:String(raw.countrycode||'').slice(0,2),tags:String(raw.tags||'').slice(0,100)};
+  return {id:'catalog:'+url,name,url,country:String(raw.countrycode||'').slice(0,2),tags:String(raw.tags||'').slice(0,100)};
  }
  function addStation(station) {
   // Keep the dropdown compact: presets plus the selected search result.
@@ -69,11 +69,9 @@
   else if(saved?.selected){const station=normalizeStation(saved.selected);if(station)addStation(station);}
   if(saved&&typeof saved.volume==='number'&&saved.volume>=0&&saved.volume<=1)audio.volume=volume.value=saved.volume;
  }catch(_){}
- function updateSource(){const station=stations.get(select.value),link=document.getElementById('publicRadioSource');link.href=station.homepage;link.textContent=(station.builtin?'Radio Swiss':station.name)+' ↗';}
- updateSource();
  function save(){try{localStorage.setItem('bookstark:public-radio',JSON.stringify({station:select.value,selected:stations.get(select.value)?.builtin?null:stations.get(select.value),volume:audio.volume}));}catch(_){}}
  play.addEventListener('click',()=>active?stop():start());
- select.addEventListener('change',()=>{const resume=active;stop();updateSource();save();if(resume)start();});
+ select.addEventListener('change',()=>{const resume=active;stop();save();if(resume)start();});
  volume.addEventListener('input',()=>{audio.volume=Number(volume.value);save();});
  audio.addEventListener('playing',()=>{if(active){clearTimeout(timeout);render('playing');}});
  audio.addEventListener('waiting',()=>{if(active)waitForStream();});
@@ -83,12 +81,46 @@
  // Use the same directory mirrors as the full Radio page; fetch only on intent.
  const form=document.getElementById('publicRadioSearch'),query=document.getElementById('publicRadioQuery'),genre=document.getElementById('publicRadioGenre'),results=document.getElementById('publicRadioResults'),searchStatus=document.getElementById('publicRadioSearchStatus'),more=document.getElementById('publicRadioMore');
  const mirrors=['https://de1.api.radio-browser.info','https://de2.api.radio-browser.info'];
- let searchVersion=0,searchAbort,offset=0,preferred=0,lastQuery,lastGenre;
+ let searchVersion=0,searchAbort,offset=0,preferred=0,lastQuery,lastGenre,lastCountry,countryCode='';
+
+ let countryPicker,countryPromise;
+ const countryNames=new Intl.DisplayNames([locale],{type:'region'}),englishNames=new Intl.DisplayNames(['en'],{type:'region'}),chineseNames=new Intl.DisplayNames(['zh'],{type:'region'});
+ async function loadCountries() {
+  for(const mirror of mirrors){
+   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),7000);
+   try {
+    const response=await fetch(mirror+'/json/countrycodes?hidebroken=true',{signal:controller.signal,credentials:'omit'});
+    if(!response.ok)throw Error();
+    const rows=await response.json();if(!Array.isArray(rows))throw Error();
+    return [...new Set(rows.map(row=>String(row.name||'').toUpperCase()).filter(code=>/^[A-Z]{2}$/.test(code)))].map(code=>({value:code,label:countryNames.of(code),meta:code,keywords:[code,englishNames.of(code),chineseNames.of(code)].join(' ').toLowerCase()})).sort((a,b)=>a.label.localeCompare(b.label,locale));
+   }catch(_){}finally{clearTimeout(timer);}
+  }
+  throw Error(t('radio_countries_error'));
+ }
+ const countryHost=document.getElementById('publicRadioCountry');
+ document.getElementById('publicRadioDiscovery').addEventListener('toggle',event=>{
+  if(!event.target.open){countryPicker?.close();return;}
+  if(countryPicker)return;
+  countryPicker=window.BookStarkSearchSelect.create(countryHost,{
+   icon:'fa-globe',optionIcon:'fa-globe',placeholder:t('radio_all_countries'),searchPlaceholder:t('radio_country_search'),clearLabel:t('radio_clear_search'),loadingText:t('radio_searching'),emptyText:t('radio_country_empty'),errorText:t('radio_countries_error'),
+   load:async text=>{
+    if(!countryPromise)countryPromise=loadCountries().catch(error=>{countryPromise=null;throw error;});
+    const countries=await countryPromise,needle=text.trim().toLowerCase();
+    return [{value:'',label:t('radio_all_countries')},...countries].filter(item=>!needle||(item.label+' '+(item.keywords||'')).toLowerCase().includes(needle));
+   },
+   onChange:(_,value)=>{countryCode=value;search();}
+  });
+  countryPicker.trigger.setAttribute('aria-label',t('radio_country_filter'));
+  // Do not select the previous highlighted country while search is debouncing.
+  countryPicker.search.addEventListener('input',()=>{countryPicker.activeIndex=-1;});
+ });
+ // Enter within the dropdown chooses a country, never submits the outer search.
+ countryHost.addEventListener('keydown',event=>{if(event.key==='Enter')event.preventDefault();});
  const seen=new Set();
  async function search(append=false) {
   const version=++searchVersion;searchAbort?.abort();
-  if(!append){offset=0;seen.clear();results.replaceChildren();lastQuery=query.value.trim();lastGenre=genre.value;}
-  const params=new URLSearchParams({name:lastQuery,tag:lastGenre,hidebroken:'true',order:'votes',reverse:'true',limit:'40',offset:String(offset)});
+  if(!append){offset=0;seen.clear();results.replaceChildren();lastQuery=query.value.trim();lastGenre=genre.value;lastCountry=countryCode;}
+  const params=new URLSearchParams({name:lastQuery,tag:lastGenre,countrycode:lastCountry,hidebroken:'true',order:'votes',reverse:'true',limit:'40',offset:String(offset)});
   results.setAttribute('aria-busy','true');searchStatus.textContent=t('radio_searching');more.hidden=true;
   let rows;
   for(let i=0;i<mirrors.length;i++){
@@ -112,7 +144,7 @@
    const meta=document.createElement('small');meta.textContent=[station.country,station.tags].filter(Boolean).join(' · ');
    const icon=document.createElement('i');icon.className='fa-solid fa-play';icon.setAttribute('aria-hidden','true');
    button.append(title,meta,icon);button.setAttribute('aria-label',t('radio_play')+' '+station.name);
-   button.addEventListener('click',()=>{stop();addStation(station);updateSource();save();start();});results.append(button);
+   button.addEventListener('click',()=>{stop();addStation(station);save();start();});results.append(button);
   });
   searchStatus.textContent=seen.size?seen.size+' '+t('radio_results'):t('radio_no_results');more.hidden=rows.length<40;
  }
