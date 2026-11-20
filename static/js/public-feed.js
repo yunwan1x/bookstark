@@ -116,7 +116,6 @@
     if(event.target.id!=='publicSearch')return;
     event.preventDefault();const url=new URL(event.target.action);url.search=new URLSearchParams(new FormData(event.target)).toString();navigateFeed(url);
   });
-  document.addEventListener('bookstark:news-navigate',e=>navigateFeed(new URL(e.detail,location.origin)));
   document.addEventListener('change',event=>{if(event.target.matches('[data-news-language]')){const u=new URL(location.href);u.searchParams.set('language',event.target.value);u.searchParams.set('page','1');navigateFeed(u);}if(event.target.id==='publicSort')navigateFeed(new URL(event.target.value,location.href));});
   window.addEventListener('popstate',event=>navigateFeed(new URL(location.href),{pop:true,scrollY:event.state?.scrollY}));
   window.addEventListener('pagehide',()=>{requestID++;requestAbort?.abort();clearTimeout(scrollTimer);});
