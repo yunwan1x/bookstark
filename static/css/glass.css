@@ -117,3 +117,7 @@
 [data-theme-style="glass"] :is(.asset-modal-head,.asset-modal-body,.asset-modal-foot) { background:transparent!important; }
 [data-theme-style="glass"] :is(.stat-card,.list-row,.task-item,.tasks-stats,.dav-connection,.dav-table-wrap,.asset-table-wrap) { background:var(--glass-panel),var(--color-bg-card)!important; border-color:var(--color-border)!important; box-shadow:var(--glass-shadow); backdrop-filter:blur(16px); }
 [data-theme-style="glass"] :is(.asset-tab.active,.tasks-btn-primary) { background:var(--glass-selected)!important; color:var(--color-on-primary)!important; box-shadow:var(--glass-shadow); }
+/* Selected labels remain readable over the light ribbons. */
+[data-theme-style="glass"] .range-btn.active { background:var(--glass-selected)!important; color:var(--color-on-primary)!important; box-shadow:var(--glass-shadow); }
+[data-theme-style="glass"] .home-date-layout .calendar-day[data-level="4"] { background:#7044bb!important; }
+[data-theme-style="glass"] .home-date-layout .calendar-day[data-level="4"] .calendar-day-num { color:var(--color-on-primary)!important; }
