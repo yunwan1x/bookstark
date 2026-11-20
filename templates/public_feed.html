@@ -18,9 +18,7 @@
  <a class="ai-dlg-btn ai-dlg-btn-cancel public-login" href="{{.LoginURL}}">{{call .T "public.login"}}</a>
 </div></header>{{end}}
 <main class="public-layout" role="main">
- <section class="public-intro">
-  <h1 class="page-title public-page-title">{{call .T "public.title"}}</h1><p>{{call .T "public.intro"}}</p>
- </section>
+ <h1 class="sr-only">{{call .T "public.title"}}</h1>
  {{template "public-feed-content" .}}
  {{template "public-widgets" .}}
 </main>
@@ -48,7 +46,7 @@
   <form id="publicSearch" class="public-search" action="/shares" role="search">
    <input type="hidden" name="type" value="{{.Type}}"><input type="hidden" name="sort" value="{{.Sort}}"><input type="hidden" name="label" value="{{.Label}}">
    <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><input name="keyword" value="{{.Keyword}}" placeholder="{{call .T $.SearchKey}}" aria-label="{{call .T $.SearchKey}}" maxlength="200" type="search">
-   <button type="submit" class="public-search-submit">{{call .T "public.search_action"}} <span aria-hidden="true">↵</span></button>
+   <button type="submit" class="public-search-submit" aria-label="{{call .T "public.search_action"}}"><span aria-hidden="true">↵</span></button>
   </form>
   <div class="public-sort"><label class="sr-only" for="publicSort">{{call .T "public.sort"}}</label><select id="publicSort"><option value="{{.LatestURL}}" {{if eq .Sort "latest"}}selected{{end}}>{{call .T "public.latest"}}</option><option value="{{.UpdatedURL}}" {{if eq .Sort "updated"}}selected{{end}}>{{call .T "public.updated"}}</option></select></div>
   </div>
