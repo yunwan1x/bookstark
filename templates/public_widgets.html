@@ -1,14 +1,9 @@
 {{define "public-widgets"}}
 <aside class="public-info">
- <section class="public-visit-card"><h2><i class="fa-solid fa-chart-simple" aria-hidden="true"></i>{{call .T "public.visits"}}</h2>
- {{with .VisitSummary}}<dl class="public-visit-grid">
- <div><dt>{{call $.T "public.today_pv"}}</dt><dd data-visit-number>{{.TodayViews}}</dd></div>
- <div><dt>{{call $.T "public.today_uv"}}</dt><dd data-visit-number>{{.TodayVisitors}}</dd></div>
- <div><dt>{{call $.T "public.total_pv"}}</dt><dd data-visit-number>{{.TotalViews}}</dd></div>
- <div><dt>{{call $.T "public.total_uv"}}</dt><dd data-visit-number>{{.TotalVisitors}}</dd></div>
- </dl><svg class="public-visit-chart" viewBox="0 0 260 60" role="img" aria-label="{{call $.T "public.trend"}}"><polygon points="4,60 {{.TrendPoints}} 256,60" fill="currentColor" opacity=".08"/><polyline points="{{.TrendPoints}}" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
- <p class="public-widget-caption">{{call $.T "public.trend"}}</p><p class="public-widget-footnote">{{call $.T "public.visits_note"}}</p>
- {{else}}<p>{{call .T "public.unavailable"}}</p>{{end}}</section>
+ <section class="public-tools-card"><h2><i class="fa-solid fa-shapes" aria-hidden="true"></i>{{call .T "tools.title"}}</h2><p class="public-widget-caption">{{call .T "tools.subtitle"}}</p>
+ {{template "local-tool-grid" .}}
+ <div class="local-recent-heading"><h3>{{call .T "tools.recent"}}</h3><a href="/tools" target="_blank" rel="noopener">{{call .T "tools.all"}} ›</a></div>
+ <div id="publicLocalDrafts" class="local-draft-list"></div><p class="public-widget-caption">{{call .T "tools.auto"}}</p></section>
  <section class="public-radio"><h2><i class="fa-solid fa-headphones" aria-hidden="true"></i>Radio</h2>
  <details class="public-radio-discovery" id="publicRadioDiscovery"><summary><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>{{call .T "public.radio_discover"}}</summary>
  <form id="publicRadioSearch" role="search" aria-label="{{call .T "public.radio_discover"}}">
@@ -34,6 +29,15 @@
  <div class="public-clock-row" data-clock-zone="Europe/London">{{template "public-clock-dial" .}}<div class="public-clock-details"><div class="public-clock-city"><i aria-hidden="true"></i><span>{{call .T "public.london"}}</span></div><time>--:--</time><small><span data-clock-date></span><span data-clock-period></span></small></div></div>
  <div class="public-clock-row" data-clock-zone="America/New_York">{{template "public-clock-dial" .}}<div class="public-clock-details"><div class="public-clock-city"><i aria-hidden="true"></i><span>{{call .T "public.new_york"}}</span></div><time>--:--</time><small><span data-clock-date></span><span data-clock-period></span></small></div></div>
  </section>
+ <section class="public-visit-card"><h2><i class="fa-solid fa-chart-simple" aria-hidden="true"></i>{{call .T "public.visits"}}</h2>
+ {{with .VisitSummary}}<dl class="public-visit-grid">
+ <div><dt>{{call $.T "public.today_pv"}}</dt><dd data-visit-number>{{.TodayViews}}</dd></div>
+ <div><dt>{{call $.T "public.today_uv"}}</dt><dd data-visit-number>{{.TodayVisitors}}</dd></div>
+ <div><dt>{{call $.T "public.total_pv"}}</dt><dd data-visit-number>{{.TotalViews}}</dd></div>
+ <div><dt>{{call $.T "public.total_uv"}}</dt><dd data-visit-number>{{.TotalVisitors}}</dd></div>
+ </dl><svg class="public-visit-chart" viewBox="0 0 260 60" role="img" aria-label="{{call $.T "public.trend"}}"><polygon points="4,60 {{.TrendPoints}} 256,60" fill="currentColor" opacity=".08"/><polyline points="{{.TrendPoints}}" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+ <p class="public-widget-caption">{{call $.T "public.trend"}}</p><p class="public-widget-footnote">{{call $.T "public.visits_note"}}</p>
+ {{else}}<p>{{call .T "public.unavailable"}}</p>{{end}}</section>
 </aside>
 {{end}}
 

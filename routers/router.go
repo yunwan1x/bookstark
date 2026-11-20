@@ -219,6 +219,8 @@ func Setup() *gin.Engine {
 	r.GET("/reset-password", controllers.ResetPasswordPage)
 	// Public bookmark page (with optional auth for user filtering)
 	r.GET("/bookmarks", middleware.OptionalAuth(), middleware.CSRFMiddleware(), middleware.VisitLog(), controllers.BookmarksPage)
+	// Browser-local creation tools (no server persistence).
+	r.GET("/tools", middleware.OptionalAuth(), middleware.CSRFMiddleware(), controllers.LocalToolsPage)
 	// Public shares pages
 	r.GET("/shares", middleware.OptionalAuth(), middleware.CSRFMiddleware(), middleware.VisitLog(), controllers.SharesPage)
 	r.GET("/shares/:identify", middleware.OptionalAuth(), middleware.CSRFMiddleware(), middleware.VisitLog(), controllers.ShareViewPage)

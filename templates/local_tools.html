@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="{{.Lang}}"><head><title>{{call .T "tools.title"}} · BookStark</title>
+{{template "editor_head" .}}
+<link rel="stylesheet" href="/static/css/local-tools.css?v={{assetVer "/static/css/local-tools.css"}}">
+</head><body class="local-tools-body">
+<header class="local-tools-header">
+<button type="button" class="row-action local-drawer-toggle" id="toolsDrawer" aria-expanded="false" aria-controls="toolsSidebar" aria-label="{{call .T "tools.drafts"}}"><i class="fa-solid fa-bars"></i></button>
+<a class="local-tools-brand" href="/shares" title="{{call .T "tools.back"}}"><i class="fa-solid fa-book-open"></i><span>BookStark</span></a>
+<h1 class="page-title">{{call .T "tools.title"}}</h1>
+<label class="sr-only" for="toolsTitle">{{call .T "tools.filename"}}</label><input id="toolsTitle" class="dialog-input" maxlength="120" hidden>
+<span id="toolsStatus" role="status" aria-live="polite"></span>
+<button id="toolsRetry" class="bs-btn bs-btn-cancel" hidden>{{call .T "tools.retry"}}</button>
+<button id="toolsCopy" class="bs-btn bs-btn-cancel" hidden>{{call .T "tools.copy"}}</button>
+<details class="local-export" id="toolsExport" hidden><summary class="bs-btn bs-btn-primary"><i class="fa-solid fa-download"></i> {{call .T "tools.export"}}</summary><div class="header-dropdown-panel" id="toolsExportMenu"></div></details>
+</header>
+<div class="local-tools-layout">
+<button class="local-drawer-backdrop" id="toolsBackdrop" aria-label="{{call .T "tools.close"}}" hidden></button>
+<aside id="toolsSidebar" class="local-tools-sidebar">
+<h2>{{call .T "tools.local"}}</h2>
+<button id="toolsNew" class="bs-btn bs-btn-primary"><i class="fa-solid fa-plus"></i> {{call .T "tools.new"}}</button>
+<button id="toolsImport" class="bs-btn bs-btn-cancel"><i class="fa-solid fa-file-import"></i> {{call .T "tools.import"}}</button>
+<input id="toolsImportFile" type="file" accept=".json,.bookstark.json" hidden>
+<div id="toolsDrafts" class="local-draft-list"></div>
+<div class="local-storage-note"><p id="toolsUsage"></p><p>{{call .T "tools.notice"}}</p></div>
+</aside>
+<main class="local-tools-main" role="main">
+<section id="toolsWelcome"><h2>{{call .T "tools.choose"}}</h2>{{template "local-tool-grid" .}}<p>{{call .T "tools.native_hint"}}</p></section>
+<div id="toolsLoading" role="status" hidden>{{call .T "tools.loading"}}</div>
+<div id="toolsEditor" hidden></div>
+</main></div>
+<script src="/static/js/bs-dialog.js?v={{assetVer "/static/js/bs-dialog.js"}}"></script>
+<script src="/static/js/marked.min.js?v={{assetVer "/static/js/marked.min.js"}}"></script>
+<script src="/static/js/univer-adapter.js?v={{assetVer "/static/js/univer-adapter.js"}}"></script>
+<script src="/static/js/pptist-adapter.js?v={{assetVer "/static/js/pptist-adapter.js"}}"></script>
+<script src="/static/js/editor-common.js?v={{assetVer "/static/js/editor-common.js"}}"></script>
+<script src="/static/js/richdoc-editor.js?v={{assetVer "/static/js/richdoc-editor.js"}}"></script>
+<script src="/static/js/local-drafts.js?v={{assetVer "/static/js/local-drafts.js"}}"></script>
+<script src="/static/js/local-tools.js?v={{assetVer "/static/js/local-tools.js"}}"></script>
+</body></html>
+
+{{define "local-tool-grid"}}
+<div class="local-tool-grid">
+<a class="bs-btn bs-btn-cancel" href="/tools?type=markdown" target="_blank" rel="noopener"><i class="fa-solid fa-file-lines"></i>Markdown</a>
+<a class="bs-btn bs-btn-cancel" href="/tools?type=richdoc" target="_blank" rel="noopener"><i class="fa-solid fa-file-word"></i>{{call .T "tools.richdoc"}}</a>
+<a class="bs-btn bs-btn-cancel" href="/tools?type=spreadsheet" target="_blank" rel="noopener"><i class="fa-solid fa-table"></i>{{call .T "tools.spreadsheet"}}</a>
+<a class="bs-btn bs-btn-cancel" href="/tools?type=drawing" target="_blank" rel="noopener"><i class="fa-solid fa-pen-ruler"></i>{{call .T "tools.drawing"}}</a>
+<a class="bs-btn bs-btn-cancel" href="/tools?type=mindmap" target="_blank" rel="noopener"><i class="fa-solid fa-diagram-project"></i>{{call .T "tools.mindmap"}}</a>
+<a class="bs-btn bs-btn-cancel" href="/tools?type=presentation" target="_blank" rel="noopener"><i class="fa-solid fa-display"></i>{{call .T "tools.presentation"}}</a>
+</div>
+{{end}}

@@ -221,6 +221,7 @@ const BookStarkEditor = (function() {
         },
       },
       fileUpload: function(file, callback) {
+        if (window.BookStarkLocalFile) { window.BookStarkLocalFile(file).then(function(data) { callback(data.url); }).catch(function(e) { BSDialog.toast(e.message, "error"); }); return; }
         // Try hash pre-check first to avoid re-uploading duplicates
         var doUpload = function() {
           var formData = new FormData();
@@ -1974,8 +1975,8 @@ const BookStarkEditor = (function() {
       el: '#mindmap-el',
       direction: window.MindElixir.SIDE,
       theme: getMindElixirAppTheme(),
-      locale: 'zh',
-      newTopicName: '新节点',
+      locale: window.__currentLang === 'en' ? 'en' : 'zh',
+      newTopicName: window.__currentLang === 'en' ? 'New topic' : '新节点',
       editable: !isReadonly,
       draggable: true,
       toolBar: opts && opts.toolBar !== undefined ? opts.toolBar : true,

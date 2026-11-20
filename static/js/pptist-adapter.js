@@ -54,6 +54,7 @@
   }
 
   function uploadImageFile(file) {
+    if (currentOptions.localFile) return currentOptions.localFile(file);
     if (!file || !/^image\//i.test(file.type || '')) {
       return Promise.reject(new Error(
         translatedText('note.upload.not_image', '请选择图片文件')

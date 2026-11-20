@@ -17879,6 +17879,8 @@ function nF(e) {
   });
 }
 function aF(e) {
+  // Standalone tools retain embedded image data in IndexedDB, never upload.
+  if (window.BookStarkLocalFile) return;
   e && Object.keys(e).forEach(function(t) {
     var n = e[t];
     n.dataURL && !Wh(n.dataURL) && !gi[t] && !Or[t] && (function(a, i) {
@@ -17960,7 +17962,7 @@ function iF(e, t, n) {
     return Fc = d, Y.createElement(Q1, {
       initialData: o,
       onChange: l,
-      langCode: "zh-CN",
+      langCode: window.__currentLang === "en" ? "en" : "zh-CN",
       theme: s,
       excalidrawAPI: function(f) {
         er = f;
@@ -17993,7 +17995,7 @@ function rF(e, t) {
     Fc = d;
     return Y.createElement(Q1, {
       initialData: i,
-      langCode: "zh-CN",
+      langCode: window.__currentLang === "en" ? "en" : "zh-CN",
       theme: s,
       viewModeEnabled: !0,
       excalidrawAPI: function(l) {

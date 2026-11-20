@@ -241,6 +241,7 @@
   }
 
   function hashAndUpload(file, options) {
+    if (options.localFile) return options.localFile(file);
     var endpoint = options.uploadURL || '/api/uploads';
     function post() {
       var body = new FormData();
@@ -1874,7 +1875,7 @@
       editor_version: result.version || '0.9.137', data: result.data,
       options: options, comments: this.comments
     };
-    if (hasEmbeddedImage(payload)) throw new Error('图片尚未上传完成，不能保存内嵌图片');
+    if (!this.options.localFile && hasEmbeddedImage(payload)) throw new Error('图片尚未上传完成，不能保存内嵌图片');
     return JSON.stringify(payload);
   };
 

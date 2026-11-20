@@ -39,3 +39,8 @@ go run ./cmd/pptist-font-publisher \
 ```
 
 Run `tools/build-pptist.sh` from the repository root to reproduce this bundle.
+
+The embedded change bridge sends a JSON-decoded snapshot to `postMessage`.
+Vue reactive slide/theme objects cannot be structured-cloned directly. The
+source patch and vendored bundle both carry this fix; the local-tools browser
+regression exercises adding a slide and restoring it from IndexedDB.

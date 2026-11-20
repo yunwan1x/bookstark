@@ -57,7 +57,7 @@ index 660741e..74e5185 100644
 +    window.parent.postMessage({
 +      source: 'bookstark-pptist',
 +      type: 'change',
-+      payload,
++      payload: JSON.parse(snapshot), // Structured clone cannot copy Vue proxies.
 +    }, window.location.origin)
 +  }, 350)
 +}
