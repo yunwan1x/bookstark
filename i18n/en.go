@@ -83,7 +83,7 @@ var enMessages = map[string]string{
 	"news.fetch_auto":          "Scheduled news updates",
 	"news.fetch_interval":      "Update interval (minutes)",
 	"news.max_per_category":    "Maximum articles per category",
-	"news.category_limit_hint": "After each update, keep the newest articles per category and delete excess cached news, including bookmarked articles. Existing bookmarks remain unchanged. Undated articles come last.",
+	"news.category_limit_hint": "After each update, keep recent articles in rounds across sources within each category cap, prioritizing enabled sources. Lists interleave sources. Excess cache is deleted; existing bookmarks remain unchanged. Undated articles come last.",
 	"news.retention":           "Retention (days)",
 	"news.retention_hint":      "Failures use increasing retry delays. Retention preserves bookmarked entries.",
 	"news.backend_hint":        "Schedules run on the server after closing this page. Manual tasks use saved settings.",

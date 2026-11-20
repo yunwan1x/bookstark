@@ -83,7 +83,7 @@ var zhMessages = map[string]string{
 	"news.fetch_auto":          "定时更新",
 	"news.fetch_interval":      "更新间隔（分钟）",
 	"news.max_per_category":    "每个分类最多保留（条）",
-	"news.category_limit_hint": "每次更新按发布时间保留各分类最新的指定条数，超出即删除新闻缓存（含已收藏新闻）；已有书签不受影响。无发布时间的新闻排在最后。",
+	"news.category_limit_hint": "每次更新按来源轮流保留最新新闻，分类总数不超过设定值；启用来源优先。列表交错展示各来源，超额缓存删除，已有书签不受影响。无日期新闻排最后。",
 	"news.retention":           "保留时长（天）",
 	"news.retention_hint":      "失败逐步延长重试间隔；过期清理保留已收藏条目。",
 	"news.backend_hint":        "配置保存到后端，关闭页面仍会执行；手动任务使用已保存配置。",

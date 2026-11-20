@@ -293,3 +293,71 @@ func TestNewsCategoryLimitAndLegacyConfig(t *testing.T) {
 		t.Fatal(ids, e)
 	}
 }
+
+func TestNewsSourceDiversityBeforePaginationAndRetention(t *testing.T) {
+	newsTestDB(t)
+	now := time.Now().Unix()
+	for source := 1; source <= 3; source++ {
+		if _, e := models.DB.Exec(`INSERT INTO md_news_sources(id,url,name,category,enabled) VALUES(?,?,?,'development',1)`, source, "https://example.com/rss/"+strconv.Itoa(source), "Source "+strconv.Itoa(source)); e != nil {
+			t.Fatal(e)
+		}
+		for i := 0; i < 20; i++ {
+			key := strconv.Itoa(source) + "-" + strconv.Itoa(i)
+			// All of source 1 is newer than sources 2 and 3.
+			if _, e := models.DB.Exec(`INSERT INTO md_news_articles(source_id,item_key,url,title,published,created) VALUES(?,?,?,'Story',?,?)`, source, key, "https://example.com/"+key, now-int64(source*100+i), now); e != nil {
+				t.Fatal(e)
+			}
+		}
+	}
+	first, total, e := models.ListNews(1, "", "development", "", "")
+	if e != nil || total != 60 || len(first) != 15 {
+		t.Fatal(total, len(first), e)
+	}
+	for i, a := range first {
+		if a.SourceID != int64(i%3+1) {
+			t.Fatal("not interleaved", i, a.SourceID)
+		}
+	}
+	second, _, e := models.ListNews(2, "", "development", "", "")
+	if e != nil {
+		t.Fatal(e)
+	}
+	seen := map[int64]bool{}
+	for _, a := range first {
+		seen[a.ID] = true
+	}
+	for _, a := range second {
+		if seen[a.ID] {
+			t.Fatal("pagination repeats", a.ID)
+		}
+	}
+	single, _, e := models.ListNews(1, "", "development", "", "2")
+	if e != nil {
+		t.Fatal(e)
+	}
+	for i, a := range single {
+		if a.SourceID != 2 || (i > 0 && a.Published > single[i-1].Published) {
+			t.Fatal("single source ordering")
+		}
+	}
+	if e = models.TrimNewsCategories(10); e != nil {
+		t.Fatal(e)
+	}
+	for source, want := range map[int]int{1: 4, 2: 3, 3: 3} {
+		var n int
+		if e = models.DB.QueryRow(`SELECT COUNT(*) FROM md_news_articles WHERE source_id=?`, source).Scan(&n); e != nil || n != want {
+			t.Fatal(source, n, want, e)
+		}
+	}
+	// Inactive cached sources cannot crowd out enabled sources.
+	if _, e = models.DB.Exec(`UPDATE md_news_sources SET enabled=0 WHERE id=1`); e != nil {
+		t.Fatal(e)
+	}
+	if e = models.TrimNewsCategories(6); e != nil {
+		t.Fatal(e)
+	}
+	var n int
+	if e = models.DB.QueryRow(`SELECT COUNT(*) FROM md_news_articles WHERE source_id=1`).Scan(&n); e != nil || n != 0 {
+		t.Fatal(n, e)
+	}
+}

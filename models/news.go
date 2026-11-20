@@ -26,11 +26,22 @@ type NewsConfig struct {
 }
 
 func DefaultNewsConfig() NewsConfig {
-	return NewsConfig{Repositories: []NewsRepository{
+	c := NewsConfig{Repositories: []NewsRepository{
 		{"alan-turing-institute/ai-rss-feeds", "main", "feeds.opml", "ai-research", "en", true},
 		{"xiangyugongzuoliu/awesome-rss-feeds-list", "main", "feeds/cn-ai-tools.opml", "ai-tools", "zh", true},
 		{"xiangyugongzuoliu/awesome-rss-feeds-list", "main", "feeds/en-ai-research.opml", "ai-research", "en", true},
 	}, SyncHours: 24, FetchMinutes: 30, RetentionDays: 90, MaxPerCategory: 100}
+	for _, group := range []struct{ file, category string }{{"backend", "development"}, {"web-frontend", "development"}, {"product-design", "design"}, {"finance", "finance"}, {"essays", "other"}} {
+		for _, lang := range []string{"cn", "en"} {
+			language := lang
+			if lang == "cn" {
+				language = "zh"
+			}
+			c.Repositories = append(c.Repositories, NewsRepository{"xiangyugongzuoliu/awesome-rss-feeds-list", "main", "feeds/" + lang + "-" + group.file + ".opml", group.category, language, true})
+		}
+	}
+	c.Repositories = append(c.Repositories, NewsRepository{"xiangyugongzuoliu/awesome-rss-feeds-list", "main", "feeds/cn-ai-research.opml", "ai-research", "zh", true}, NewsRepository{"xiangyugongzuoliu/awesome-rss-feeds-list", "main", "feeds/en-ai-tools.opml", "ai-tools", "en", true})
+	return c
 }
 func LoadNewsConfig() (NewsConfig, error) {
 	c := DefaultNewsConfig()
@@ -77,8 +88,8 @@ func InitNewsTables() error {
 		}
 	}
 
-	// Parser v2 distinguishes unknown publication dates; invalidate conditional
-	// request headers once so existing caches are re-parsed on the next update.
+	// Cache v3 refills source diversity after the previous timestamp-only cap.
+	// Invalidate conditional headers once so trimmed feeds can be re-fetched.
 	tx, e := DB.Begin()
 	if e != nil {
 		return e
@@ -89,11 +100,11 @@ func InitNewsTables() error {
 	if e != nil && !errors.Is(e, sql.ErrNoRows) {
 		return e
 	}
-	if version != "2" {
+	if version != "3" {
 		if _, e = tx.Exec("UPDATE md_news_sources SET etag='',modified=''"); e != nil {
 			return e
 		}
-		if _, e = tx.Exec("INSERT INTO md_settings(key,value) VALUES('news_parser_version','2') ON CONFLICT(key) DO UPDATE SET value='2'"); e != nil {
+		if _, e = tx.Exec("INSERT INTO md_settings(key,value) VALUES('news_parser_version','3') ON CONFLICT(key) DO UPDATE SET value='3'"); e != nil {
 			return e
 		}
 	}
@@ -175,7 +186,10 @@ func ListNews(page int, keyword, category, language, source string) ([]NewsArtic
 		return nil, 0, e
 	}
 	args = append(args, 15, (page-1)*15)
-	rows, e := DB.Query(`SELECT a.id,a.source_id,a.url,a.title,a.summary,a.published,s.name,s.category,s.language`+from+where+` ORDER BY a.published DESC,a.id DESC LIMIT ? OFFSET ?`, args...)
+	rows, e := DB.Query(`SELECT id,source_id,url,title,summary,published,name,category,language FROM (
+ SELECT a.id,a.source_id,a.url,a.title,a.summary,a.published,s.name,s.category,s.language,
+ ROW_NUMBER() OVER (PARTITION BY a.source_id ORDER BY a.published DESC,a.id DESC) AS source_position`+from+where+`
+ ) ORDER BY (published>0) DESC,source_position,published DESC,id DESC LIMIT ? OFFSET ?`, args...)
 	if e != nil {
 		return nil, 0, e
 	}
@@ -195,17 +209,20 @@ func ListNews(page int, keyword, category, language, source string) ([]NewsArtic
 	return out, total, rows.Err()
 }
 
-// TrimNewsCategories keeps the newest cached articles across all sources in each
-// category. Bookmarks are separate records and are never deleted by this cap.
+// TrimNewsCategories distributes the category cap in rounds across sources,
+// keeping each source's newest articles. Active sources take priority.
+// Bookmarks are separate records and are never deleted by this cap.
 func TrimNewsCategories(limit int) error {
 	if limit < 1 {
 		return errors.New("invalid news category limit")
 	}
 	_, err := DB.Exec(`DELETE FROM md_news_articles WHERE id IN (
  SELECT id FROM (
- SELECT a.id, ROW_NUMBER() OVER (PARTITION BY s.category ORDER BY a.published DESC,a.id DESC) AS position
+ SELECT id,ROW_NUMBER() OVER (PARTITION BY category ORDER BY enabled DESC,(published>0) DESC,source_position,published DESC,id DESC) AS position FROM (
+ SELECT a.id,a.published,s.category,s.enabled,
+ ROW_NUMBER() OVER (PARTITION BY a.source_id ORDER BY a.published DESC,a.id DESC) AS source_position
  FROM md_news_articles a JOIN md_news_sources s ON s.id=a.source_id
- ) WHERE position > ?
+ )) WHERE position > ?
  )`, limit)
 	return err
 }
