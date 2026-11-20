@@ -129,11 +129,11 @@
 .home-primary,.home-bottom-nav .home-new-icon{color:var(--color-on-primary)}
 .home-actions .home-primary{display:inline-flex}
 .home-button{min-height:40px}
-.home-search{display:flex;align-items:center;gap:14px;padding:10px 12px 10px 20px;border:1px solid var(--color-border);border-radius:12px;background:var(--color-bg-card);margin-bottom:28px;color:var(--color-text-muted)}
+.home-search{display:flex;align-items:center;gap:var(--spacing-sm);height:36px;box-sizing:border-box;padding:0 var(--spacing-md);border:1px solid var(--color-border);border-radius:var(--radius-md);background:var(--color-bg-card);margin-bottom:var(--spacing-md);color:var(--color-text-muted)}
 .home-search:focus-within{border-color:var(--color-primary);box-shadow:0 0 0 3px var(--color-focus-ring)}
-.home-search input{flex:1;min-width:0;width:100%;border:0;background:transparent;color:var(--color-text);font-size:14px;outline:none;padding:8px 0}
+.home-search input{flex:1;min-width:0;width:100%;border:0;background:transparent;color:var(--color-text);font-size:13px;outline:none;height:100%;padding:0}
 .home-search input::placeholder{color:var(--color-text-muted);opacity:1}
-.home-search .home-button{flex-shrink:0;background:var(--color-bg-hover)}
+.home-search .home-button{flex-shrink:0;border:0;border-radius:var(--radius-md);background:transparent;padding:0 var(--spacing-xs);min-height:0;height:100%;min-width:24px}
 .home-workspace{display:grid;grid-template-columns:minmax(0,1fr) 286px;gap:26px;align-items:start}
 .home-main,.home-sidebar{min-width:0}
 .home-sidebar{display:flex;flex-direction:column;gap:20px}
@@ -203,10 +203,6 @@
  .home-actions time{font-size:11px;margin-bottom:10px}
  .home-actions>div{justify-content:flex-start;gap:8px}
  .home-actions .home-button{padding:8px 12px;font-size:12px;white-space:normal}
- .home-search{padding:7px 8px 7px 12px;gap:8px;margin-bottom:20px}
- .home-search input{font-size:12px}
- .home-search .home-button{font-size:12px;padding:7px 9px}
- .home-search .home-button span{display:none}
  .home-stats{grid-template-columns:repeat(2,minmax(0,1fr));padding:0;margin-bottom:22px}
  .home-stat{padding:16px;gap:7px}
  .home-stat:nth-child(2){border-right:0}
@@ -224,4 +220,9 @@
  .home-filters{gap:4px}
  .home-filter{padding:7px 9px}
  .home-menu-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+@media(max-width:640px){
+ .home-search{height:40px}
+ .home-search .home-button{font-size:11px}
 }
