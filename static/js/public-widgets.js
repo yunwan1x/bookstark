@@ -6,20 +6,33 @@
  document.querySelectorAll('[data-visit-number]').forEach(el => { el.textContent = new Intl.NumberFormat(locale).format(Number(el.textContent)); });
  const clocks = [...document.querySelectorAll('[data-clock-zone]')].map(el => ({el,
   time: new Intl.DateTimeFormat(locale, {timeZone:el.dataset.clockZone,hour:'2-digit',minute:'2-digit',hourCycle:'h23'}),
-  date: new Intl.DateTimeFormat(locale, {timeZone:el.dataset.clockZone,month:'short',day:'numeric'})
+  parts: new Intl.DateTimeFormat('en-US', {timeZone:el.dataset.clockZone,hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}),
+  date: new Intl.DateTimeFormat(locale, {timeZone:el.dataset.clockZone,month:'short',day:'numeric'}),
+  digital:el.querySelector('time'), dateLabel:el.querySelector('[data-clock-date]'), period:el.querySelector('[data-clock-period]'), icon:el.querySelector('i'),
+  hourHand:el.querySelector('.public-clock-hour'), minuteHand:el.querySelector('.public-clock-minute'), secondHand:el.querySelector('.public-clock-second')
  }));
  function tick() {
   const now = new Date();
-  clocks.forEach(({el,time,date}) => {
-   const parts=time.formatToParts(now), hour=Number(parts.find(p=>p.type==='hour').value);
-   el.querySelector('time').textContent=time.format(now);
-   el.querySelector('time').dateTime=now.toISOString();
-   el.querySelector('small').textContent=date.format(now);
-   el.querySelector('i').className='fa-regular '+(hour>=6&&hour<18?'fa-sun':'fa-moon');
+  clocks.forEach(({el,time,parts,date,digital,dateLabel,period,icon,hourHand,minuteHand,secondHand}) => {
+   const values=Object.fromEntries(parts.formatToParts(now).map(p=>[p.type,p.value]));
+   const hour=Number(values.hour), minute=Number(values.minute), second=Number(values.second);
+   // Day/night is a local-time indicator (06:00–18:00), not a sunrise forecast.
+   const day=hour>=6&&hour<18;
+   digital.textContent=time.format(now); digital.dateTime=now.toISOString();
+   dateLabel.textContent=date.format(now); period.textContent=t(day?'clock_day':'clock_night');
+   icon.className='fa-regular '+(day?'fa-sun':'fa-moon'); el.classList.toggle('is-night',!day);
+   hourHand.setAttribute('transform','rotate('+((hour%12)*30+minute*.5+second/120)+' 50 50)');
+   minuteHand.setAttribute('transform','rotate('+(minute*6+second*.1)+' 50 50)');
+   secondHand.setAttribute('transform','rotate('+(second*6)+' 50 50)');
   });
  }
- tick(); let clockTimer=setInterval(tick,15000);
- document.addEventListener('visibilitychange',()=>{if(!document.hidden)tick();});
+ let clockTimer;
+ function stopClock(){clearInterval(clockTimer);clockTimer=undefined;}
+ function startClock(){stopClock();tick();if(!document.hidden)clockTimer=setInterval(tick,1000);}
+ startClock();
+ document.addEventListener('visibilitychange',()=>document.hidden?stopClock():startClock());
+ window.addEventListener('pagehide',stopClock);
+ window.addEventListener('pageshow',e=>{if(e.persisted)startClock();});
  const audio=document.getElementById('publicRadioAudio'); if(!audio)return;
  const play=document.getElementById('publicRadioPlay'), select=document.getElementById('publicRadioStation'), volume=document.getElementById('publicRadioVolume'), status=document.getElementById('publicRadioStatus');
  const stations=new Map([...select.options].map(option=>[option.value,{
@@ -151,6 +164,6 @@
  form.addEventListener('submit',e=>{e.preventDefault();search();});
  genre.addEventListener('change',()=>search());
  more.addEventListener('click',()=>search(true));
- window.addEventListener('pagehide',()=>{clearInterval(clockTimer);searchVersion++;searchAbort?.abort();stop();});
- window.addEventListener('pageshow',e=>{if(e.persisted){tick();clockTimer=setInterval(tick,15000);if(results.getAttribute('aria-busy')==='true'){results.setAttribute('aria-busy','false');searchStatus.textContent=t('radio_search_hint');}}});
+ window.addEventListener('pagehide',()=>{searchVersion++;searchAbort?.abort();stop();});
+ window.addEventListener('pageshow',e=>{if(e.persisted){if(results.getAttribute('aria-busy')==='true'){results.setAttribute('aria-busy','false');searchStatus.textContent=t('radio_search_hint');}}});
 })();

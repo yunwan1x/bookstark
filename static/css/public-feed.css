@@ -229,11 +229,23 @@
 .public-radio-volume input { min-width:0; width:100%; accent-color:var(--color-primary); cursor:pointer; }
 .public-radio-footer { display:flex; flex-wrap:wrap; gap:var(--spacing-sm); justify-content:space-between; margin-top:var(--spacing-lg); padding-top:var(--spacing-md); border-top:1px solid var(--color-border); font-size:11px; }
 .public-radio-footer a { color:var(--color-primary); text-decoration:none; }
-.public-clock>div { display:grid; grid-template-columns:18px minmax(0,1fr) auto; gap:var(--spacing-xs) var(--spacing-sm); align-items:center; padding:var(--spacing-sm) 0; border-bottom:1px solid var(--color-border-light); font-size:13px; }
-.public-clock>div:last-child { border-bottom:0; }
-.public-clock i { color:var(--color-primary); }
-.public-clock time { font-size:17px; font-weight:600; font-variant-numeric:tabular-nums; }
-.public-clock small { grid-column:2 / -1; color:var(--color-text-secondary); font-size:10px; }
+.public-clock-row { display:grid; grid-template-columns:78px minmax(0,1fr); gap:var(--spacing-lg); align-items:center; padding:var(--spacing-lg) 0; border-bottom:1px solid var(--color-border-light); }
+.public-clock-row:last-child { border-bottom:0; padding-bottom:0; }
+.public-clock-dial { --clock-face:var(--color-clock-day-face); --clock-ink:var(--color-clock-day-ink); --clock-hand:var(--color-primary); display:block; width:78px; height:78px; }
+.public-clock-row.is-night .public-clock-dial { --clock-face:var(--color-clock-night-face); --clock-ink:var(--color-clock-night-ink); --clock-hand:var(--color-clock-night-ink); }
+.public-clock-face { fill:var(--clock-face); stroke:var(--color-border); stroke-width:1.5; }
+.public-clock-ticks { stroke:var(--clock-ink); stroke-width:.8; }
+.public-clock-numbers { fill:var(--clock-ink); font-size:11px; font-weight:500; text-anchor:middle; }
+.public-clock-hand { stroke:var(--clock-hand); stroke-linecap:round; }
+.public-clock-hour { stroke-width:4; }
+.public-clock-minute { stroke-width:2.5; }
+.public-clock-second { stroke:var(--color-primary); stroke-width:1; }
+.public-clock-pin { fill:var(--clock-face); stroke:var(--color-primary); stroke-width:1.5; }
+.public-clock-details { min-width:0; }
+.public-clock-city { display:flex; align-items:center; gap:var(--spacing-sm); font-size:13px; font-weight:600; }
+.public-clock-city i { color:var(--color-primary); }
+.public-clock time { display:block; margin:var(--spacing-xs) 0; font-size:24px; line-height:1.2; font-weight:650; font-variant-numeric:tabular-nums; }
+.public-clock small { display:flex; flex-wrap:wrap; gap:var(--spacing-xs) var(--spacing-sm); color:var(--color-text-secondary); font-size:10px; }
 @media (min-width:641px) and (max-width:1100px) {
  .public-items-book { grid-template-columns:minmax(0,1fr); }
 }

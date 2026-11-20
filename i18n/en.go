@@ -80,6 +80,8 @@ var enMessages = map[string]string{
 	"public.radio_classical":             "Classical",
 	"public.radio_jazz":                  "Jazz",
 	"public.radio_pop":                   "Pop",
+	"public.clock_day":                   "Daytime",
+	"public.clock_night":                 "Night",
 	"public.world_clock":                 "World clock",
 	"public.beijing":                     "Beijing",
 	"public.london":                      "London",

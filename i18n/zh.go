@@ -80,6 +80,8 @@ var zhMessages = map[string]string{
 	"public.radio_classical":             "古典音乐",
 	"public.radio_jazz":                  "爵士音乐",
 	"public.radio_pop":                   "流行音乐",
+	"public.clock_day":                   "白昼",
+	"public.clock_night":                 "夜晚",
 	"public.world_clock":                 "世界时钟",
 	"public.beijing":                     "北京",
 	"public.london":                      "伦敦",

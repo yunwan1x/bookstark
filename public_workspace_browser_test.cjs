@@ -82,6 +82,14 @@ const origin=process.env.BOOKSTARK_TEST_ORIGIN;
    await page.reload();
    const times=await page.locator('[data-clock-zone] time').allTextContents();
    assert.deepEqual(times,instant.includes('11-20')?['20:30','12:30','07:30']:['07:30','00:30','19:30']);
+   const winter=instant.includes('11-20');
+   assert.deepEqual(await page.locator('[data-clock-zone]').evaluateAll(rows=>rows.map(r=>r.classList.contains('is-night'))),winter?[true,false,false]:[false,true,true]);
+   assert.deepEqual(await page.locator('.public-clock-hour').evaluateAll(hands=>hands.map(h=>h.getAttribute('transform'))),winter?['rotate(255 50 50)','rotate(15 50 50)','rotate(225 50 50)']:['rotate(225 50 50)','rotate(15 50 50)','rotate(225 50 50)']);
+   assert.deepEqual(await page.locator('[data-clock-date]').allTextContents(),winter?['11月20日','11月20日','11月20日']:['7月21日','7月21日','7月20日']);
+   await page.clock.runFor(2000);
+   assert.deepEqual(await page.locator('.public-clock-second').evaluateAll(hands=>hands.map(h=>h.getAttribute('transform'))),Array(3).fill('rotate(12 50 50)'));
+   assert.deepEqual(await page.locator('.public-clock-minute').evaluateAll(hands=>hands.map(h=>h.getAttribute('transform'))),Array(3).fill('rotate(180.2 50 50)'));
+
   }
   // Exercise native media with a generated WAV, without depending on an external stream.
   await page.clock.resume();
