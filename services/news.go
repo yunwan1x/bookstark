@@ -62,7 +62,7 @@ var repoPattern = regexp.MustCompile(`^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$`)
 var branchPattern = regexp.MustCompile(`^[A-Za-z0-9_.-]+$`)
 
 func ValidateNewsConfig(c models.NewsConfig) error {
-	if len(c.Repositories) < 1 || len(c.Repositories) > 24 || c.SyncHours < 1 || c.SyncHours > 168 || c.FetchMinutes < 15 || c.FetchMinutes > 1440 || c.RetentionDays < 7 || c.RetentionDays > 365 {
+	if len(c.Repositories) < 1 || len(c.Repositories) > 24 || c.SyncHours < 1 || c.SyncHours > 168 || c.FetchMinutes < 15 || c.FetchMinutes > 1440 || c.RetentionDays < 7 || c.RetentionDays > 365 || c.MaxPerCategory < 1 || c.MaxPerCategory > 1000 {
 		return errors.New("invalid intervals, retention or repository count")
 	}
 	seen := map[string]bool{}
@@ -505,6 +505,12 @@ func runNewsJob(ctx context.Context, kind string, sourceID int64) {
 		if _, err := models.DB.Exec(`DELETE FROM md_news_articles WHERE (CASE WHEN published>0 THEN published ELSE created END)<? AND url NOT IN (SELECT url FROM md_bookmark)`, time.Now().AddDate(0, 0, -cfg.RetentionDays).Unix()); err != nil {
 			failed++
 			details = append(details, "retention cleanup failed")
+		}
+	}
+	if e == nil {
+		if err := models.TrimNewsCategories(cfg.MaxPerCategory); err != nil {
+			failed++
+			details = append(details, "category limit cleanup failed")
 		}
 	}
 	status := "success"

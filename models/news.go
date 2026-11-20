@@ -16,12 +16,13 @@ type NewsRepository struct {
 	Enabled  bool   `json:"enabled"`
 }
 type NewsConfig struct {
-	Repositories  []NewsRepository `json:"repositories"`
-	SyncEnabled   bool             `json:"syncEnabled"`
-	SyncHours     int              `json:"syncHours"`
-	FetchEnabled  bool             `json:"fetchEnabled"`
-	FetchMinutes  int              `json:"fetchMinutes"`
-	RetentionDays int              `json:"retentionDays"`
+	Repositories   []NewsRepository `json:"repositories"`
+	SyncEnabled    bool             `json:"syncEnabled"`
+	SyncHours      int              `json:"syncHours"`
+	FetchEnabled   bool             `json:"fetchEnabled"`
+	FetchMinutes   int              `json:"fetchMinutes"`
+	RetentionDays  int              `json:"retentionDays"`
+	MaxPerCategory int              `json:"maxPerCategory"`
 }
 
 func DefaultNewsConfig() NewsConfig {
@@ -29,7 +30,7 @@ func DefaultNewsConfig() NewsConfig {
 		{"alan-turing-institute/ai-rss-feeds", "main", "feeds.opml", "ai-research", "en", true},
 		{"xiangyugongzuoliu/awesome-rss-feeds-list", "main", "feeds/cn-ai-tools.opml", "ai-tools", "zh", true},
 		{"xiangyugongzuoliu/awesome-rss-feeds-list", "main", "feeds/en-ai-research.opml", "ai-research", "en", true},
-	}, SyncHours: 24, FetchMinutes: 30, RetentionDays: 90}
+	}, SyncHours: 24, FetchMinutes: 30, RetentionDays: 90, MaxPerCategory: 100}
 }
 func LoadNewsConfig() (NewsConfig, error) {
 	c := DefaultNewsConfig()
@@ -192,4 +193,19 @@ func ListNews(page int, keyword, category, language, source string) ([]NewsArtic
 		out = append(out, a)
 	}
 	return out, total, rows.Err()
+}
+
+// TrimNewsCategories keeps the newest cached articles across all sources in each
+// category. Bookmarks are separate records and are never deleted by this cap.
+func TrimNewsCategories(limit int) error {
+	if limit < 1 {
+		return errors.New("invalid news category limit")
+	}
+	_, err := DB.Exec(`DELETE FROM md_news_articles WHERE id IN (
+ SELECT id FROM (
+ SELECT a.id, ROW_NUMBER() OVER (PARTITION BY s.category ORDER BY a.published DESC,a.id DESC) AS position
+ FROM md_news_articles a JOIN md_news_sources s ON s.id=a.source_id
+ ) WHERE position > ?
+ )`, limit)
+	return err
 }

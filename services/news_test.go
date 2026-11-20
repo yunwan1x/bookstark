@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -232,5 +233,63 @@ func TestNewsUnknownDatesRemainUnknown(t *testing.T) {
 	list, _, _ = models.ListNews(1, "", "", "", "")
 	if list[1].Published != 0 {
 		t.Fatal("existing undated cache was not corrected")
+	}
+}
+
+func TestNewsCategoryLimitAndLegacyConfig(t *testing.T) {
+	newsTestDB(t)
+	// Older saved configurations gain the new default without resetting schedules.
+	if e := models.BatchUpdateSettings(map[string]string{"news_config": `{"fetchMinutes":45}`}); e != nil {
+		t.Fatal(e)
+	}
+	cfg, e := models.LoadNewsConfig()
+	if e != nil || cfg.MaxPerCategory != 100 || cfg.FetchMinutes != 45 {
+		t.Fatal(cfg, e)
+	}
+	for _, n := range []int{0, -1, 1001} {
+		bad := cfg
+		bad.MaxPerCategory = n
+		if ValidateNewsConfig(bad) == nil {
+			t.Fatal("accepted invalid limit", n)
+		}
+	}
+	cfg.MaxPerCategory = 2
+	if e = models.SaveNewsConfig(cfg); e != nil {
+		t.Fatal(e)
+	}
+	if _, e = models.DB.Exec(`INSERT INTO md_news_sources(id,url,name,category,enabled) VALUES(1,'https://one.example/rss','One','ai-tools',0),(2,'https://two.example/rss','Two','ai-tools',0),(3,'https://three.example/rss','Three','design',0)`); e != nil {
+		t.Fatal(e)
+	}
+	now := time.Now().Unix()
+	for _, a := range []struct {
+		id, source int
+		published  int64
+	}{{1, 1, now - 10}, {2, 2, now}, {3, 1, now}, {4, 2, 0}, {5, 3, now}, {6, 3, now - 10}, {7, 3, now - 20}} {
+		if _, e = models.DB.Exec(`INSERT INTO md_news_articles(id,source_id,item_key,url,title,published,created) VALUES(?,?,?,?,'Story',?,?)`, a.id, a.source, a.id, "https://example.com/"+strconv.Itoa(a.id), a.published, now); e != nil {
+			t.Fatal(e)
+		}
+	}
+	b := models.Bookmark{Title: "Keep bookmark", URL: "https://example.com/1", MemberID: 1}
+	if e = b.Insert(); e != nil {
+		t.Fatal(e)
+	}
+	// Also trim when sources are disabled or skipped: cleanup is job-wide.
+	runNewsJob(context.Background(), "fetch", 0)
+	var ids string
+	if e = models.DB.QueryRow(`SELECT group_concat(id,',') FROM (SELECT id FROM md_news_articles ORDER BY id)`).Scan(&ids); e != nil || ids != "2,3,5,6" {
+		t.Fatal(ids, e)
+	}
+	var n int
+	if e = models.DB.QueryRow(`SELECT COUNT(*) FROM md_bookmark WHERE url=?`, b.URL).Scan(&n); e != nil || n != 1 {
+		t.Fatal("bookmark deleted", n, e)
+	}
+	// A tighter saved cap applies on the next update with deterministic tie ordering.
+	cfg.MaxPerCategory = 1
+	if e = models.SaveNewsConfig(cfg); e != nil {
+		t.Fatal(e)
+	}
+	runNewsJob(context.Background(), "fetch", 0)
+	if e = models.DB.QueryRow(`SELECT group_concat(id,',') FROM (SELECT id FROM md_news_articles ORDER BY id)`).Scan(&ids); e != nil || ids != "3,5" {
+		t.Fatal(ids, e)
 	}
 }

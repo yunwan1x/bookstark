@@ -16,6 +16,13 @@ func TestNewsAdminValidationAndPublicCache(t *testing.T) {
 	if w := adminAssetRequest(r, token, "PUT", "/api/admin/news/config", bad); w.Code != 400 {
 		t.Fatal(w.Code, w.Body.String())
 	}
+	for _, n := range []int{0, -1, 1001} {
+		bad = cfg
+		bad.MaxPerCategory = n
+		if w := adminAssetRequest(r, token, "PUT", "/api/admin/news/config", bad); w.Code != 400 {
+			t.Fatal("invalid category limit accepted", n, w.Code)
+		}
+	}
 	if w := adminAssetRequest(r, token, "PUT", "/api/admin/news/config", cfg); w.Code != 200 {
 		t.Fatal(w.Code, w.Body.String())
 	}
