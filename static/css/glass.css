@@ -151,7 +151,7 @@
 }
 /* Small floating menus need the same isolation, including menus inside a
    parent that already creates a backdrop-filter boundary. Dense tint is the fallback. */
-[data-theme-style="glass"] :is(.header-dropdown-panel,.bs-action-dd-menu,.bs-action-menu,.bs-action-submenu-panel,.tag-input-dropdown,.tag-popover,.tag-input-sheet,.asset-floating-dropdown,.asset-row-menu-panel,.asset-combobox-dropdown,.dropdown-menu,.context-menu,.dav-row-menu,.dav-menu,.nav-view-menu,.note-ai-popover,.share-popover,.color-picker-popover,.richdoc-popover,.richdoc-color-popover,.richdoc-font-popover,.tb-dropdown,.cherry-dropdown,.cherry-floatmenu,.bs-selection-popover,.offline-status-popover) {
+[data-theme-style="glass"] :is(:where(#user-menu-dropdown,#lang-dropdown) > div,.header-dropdown-panel,.bs-action-dd-menu,.bs-action-menu,.bs-action-submenu-panel,.tag-input-dropdown,.tag-popover,.tag-input-sheet,.asset-floating-dropdown,.asset-row-menu-panel,.asset-combobox-dropdown,.dropdown-menu,.context-menu,.dav-row-menu,.dav-menu,.nav-view-menu,.note-ai-popover,.share-popover,.color-picker-popover,.richdoc-popover,.richdoc-color-popover,.richdoc-font-popover,.tb-dropdown,.cherry-dropdown,.cherry-floatmenu,.bs-selection-popover,.offline-status-popover) {
   background:var(--glass-floating-fill),var(--glass-floating-base)!important;
   color:var(--color-text); border-color:var(--glass-floating-rim)!important;
   box-shadow:var(--glass-floating-shadow)!important;
@@ -185,3 +185,8 @@
   background:var(--glass-section-tint); box-shadow:inset 0 -2px 0 var(--color-focus);
 }
 [data-theme-style="glass"] .bs-action-menu-item-danger:hover { color:var(--color-danger)!important; }
+/* Header menus live inside a filtered sticky header: a solid tint prevents
+   sharp calendar/text bleed where nested backdrop sampling is unavailable. */
+[data-theme-style="glass"] :where(#user-menu-dropdown,#lang-dropdown) > div {
+  --glass-floating-base: #151e38;
+}
