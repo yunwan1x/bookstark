@@ -1935,6 +1935,7 @@ var zhMessages = map[string]string{
 	"profile.theme.nvidia":                    "NVIDIA",
 	"profile.theme.glass":                     "玻璃",
 	"profile.theme.hud":                       "青蓝航空 HUD",
+	"profile.theme.hud_light":                 "冰川青蓝 HUD（浅色）",
 	"admin.settings.appearance":               "外观设置",
 	"admin.settings.guest_default_theme":      "未登录用户默认主题",
 	"admin.settings.guest_default_theme.hint": "仅用于没有本地主题偏好的未登录访客；已选择的主题优先。修改后，访客刷新页面生效。",

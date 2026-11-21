@@ -15,8 +15,8 @@ func TestProfileOnlyOffersDefaultAndIndependentBrandThemes(t *testing.T) {
 	start := strings.Index(text, "<select id=\"profile-theme\"")
 	end := strings.Index(text[start:], "</select>") + start
 	selectHTML := text[start:end]
-	if strings.Count(selectHTML, "<option ") != 5 || !strings.Contains(selectHTML, "value=\"light\"") || !strings.Contains(selectHTML, "value=\"nvidia\"") || !strings.Contains(selectHTML, "value=\"apple\"") || !strings.Contains(selectHTML, "value=\"glass\"") || !strings.Contains(selectHTML, "value=\"hud\"") {
-		t.Fatal("expected default, NVIDIA, Apple, Glass and HUD themes")
+	if strings.Count(selectHTML, "<option ") != 6 || !strings.Contains(selectHTML, "value=\"light\"") || !strings.Contains(selectHTML, "value=\"nvidia\"") || !strings.Contains(selectHTML, "value=\"apple\"") || !strings.Contains(selectHTML, "value=\"glass\"") || !strings.Contains(selectHTML, "value=\"hud\"") || !strings.Contains(selectHTML, "value=\"hud-light\"") {
+		t.Fatal("expected default, NVIDIA, Apple, Glass, dark HUD and light HUD themes")
 	}
 	if !strings.Contains(text, "window.BookStarkTheme.set(theme)") {
 		t.Fatal("theme selection must use shared runtime")
@@ -37,7 +37,7 @@ func TestRetiredThemesAreRemovedFromRuntimeAndFirstPaint(t *testing.T) {
 			}
 		}
 		if strings.HasPrefix(path, "templates/") && path != "templates/profile.html" {
-			for _, marker := range []string{"nvidia:'dark'", "apple:'light'", "hud:'dark'", "t='light'", "localStorage.removeItem(k)", "hasOwnProperty.call(s,saved)"} {
+			for _, marker := range []string{"nvidia:'dark'", "apple:'light'", "hud:'dark'", "'hud-light':'light'", "t='light'", "localStorage.removeItem(k)", "hasOwnProperty.call(s,saved)"} {
 				if !strings.Contains(text, marker) {
 					t.Fatalf("%s missing first-paint rule %s", path, marker)
 				}

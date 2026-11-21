@@ -12,7 +12,8 @@
         'nvidia': { scheme: 'dark' },
         apple: { scheme: 'light' },
         glass: { scheme: 'light' },
-        hud: { scheme: 'dark' }
+        hud: { scheme: 'dark' },
+        'hud-light': { scheme: 'light' }
     };
 
     function normalizeTheme(theme) {

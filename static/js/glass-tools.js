@@ -11,12 +11,17 @@
             var doc = frame.contentDocument;
             if (!doc || !doc.head || !doc.body) return;
             ['glass', 'hud'].forEach(function (theme) {
-                var enabled = document.documentElement.dataset.themeStyle === theme;
+                var style = document.documentElement.dataset.themeStyle;
+                var enabled = style === theme || (theme === 'hud' && style === 'hud-light');
+                if (theme === 'hud') {
+                    if (style === 'hud-light') doc.documentElement.setAttribute('data-bookstark-hud-light', '');
+                    else doc.documentElement.removeAttribute('data-bookstark-hud-light');
+                }
                 var sheet = doc.getElementById('bookstark-' + theme + '-tool');
                 if (enabled && !sheet) {
                     sheet = doc.createElement('link');
                     sheet.id = 'bookstark-' + theme + '-tool'; sheet.rel = 'stylesheet';
-                    sheet.href = '/static/css/' + theme + '-tools.css?v=hud-01-v1';
+                    sheet.href = '/static/css/' + theme + '-tools.css?v=hud-light-01-v1';
                     doc.head.appendChild(sheet);
                 }
                 if (sheet) sheet.disabled = !enabled;

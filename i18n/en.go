@@ -1935,6 +1935,7 @@ var enMessages = map[string]string{
 	"profile.theme.nvidia":                    "NVIDIA",
 	"profile.theme.glass":                     "Glass",
 	"profile.theme.hud":                       "Cyan Aviation HUD",
+	"profile.theme.hud_light":                 "Glacier Cyan HUD (Light)",
 	"admin.settings.appearance":               "Appearance",
 	"admin.settings.guest_default_theme":      "Default theme for guests",
 	"admin.settings.guest_default_theme.hint": "Used for signed-out visitors without a saved browser theme. Saved choices take priority. Changes apply on the next page load.",

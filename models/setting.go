@@ -522,7 +522,7 @@ func GetFaviconCacheDays() int {
 // IsValidTheme restricts system defaults to the independently supported themes.
 func IsValidTheme(value string) bool {
 	switch value {
-	case "light", "nvidia", "apple", "glass", "hud":
+	case "light", "nvidia", "apple", "glass", "hud", "hud-light":
 		return true
 	}
 	return false

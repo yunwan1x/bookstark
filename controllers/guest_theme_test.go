@@ -15,7 +15,7 @@ func TestGuestDefaultThemeSettingsAndFirstPaint(t *testing.T) {
 	if got := models.GetGuestDefaultTheme(); got != "light" {
 		t.Fatalf("initial default=%s", got)
 	}
-	for _, theme := range []string{"light", "nvidia", "apple", "glass", "hud"} {
+	for _, theme := range []string{"light", "nvidia", "apple", "glass", "hud-light", "hud"} {
 		if status := save(theme); status != http.StatusOK {
 			t.Fatalf("save %s: %d", theme, status)
 		}
