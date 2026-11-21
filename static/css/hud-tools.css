@@ -1,0 +1,12 @@
+/* Reversible paint for the three approved first-party HTML previews only. */
+html[data-bookstark-hud] {
+ color-scheme:dark; --hud-bg:#031421; --hud-panel:#081e2d; --hud-text:#eef7ff; --hud-muted:#a6c3d4; --hud-line:#759aaf; --hud-cyan:#46eafa; --hud-active:#093544;
+ --bg:var(--hud-bg); --titlebar:var(--hud-panel); --activity:var(--hud-bg); --panel:var(--hud-panel); --panel-2:var(--hud-panel); --surface:var(--hud-panel); --ink:var(--hud-text); --muted:var(--hud-muted); --line:var(--hud-line); --accent:var(--hud-cyan);
+}
+html[data-bookstark-hud] body { background:var(--hud-bg)!important; color:var(--hud-text)!important; }
+html[data-bookstark-hud] :is(.modern-header,.modern-welcome,.modern-toolbar,.modern-dock,.modern-entry-tabs,.modern-popover,.nav,.q-card,.panel,.hero,.bridge-step,.side-block,.hero-note,.note,.toolbar,.topbar,.bottom-bar,.welcome-card,.frame,.badge,.overlay) { background:var(--hud-panel)!important; color:var(--hud-text)!important; border:1px solid var(--hud-line)!important; border-image:url('/static/images/hud-frame.svg') 12 / 12px / 0 stretch!important; border-radius:0!important; box-shadow:none!important; backdrop-filter:none!important; }
+html[data-bookstark-hud] :is(button,.modern-btn,input,textarea,select) { background:var(--hud-bg)!important; color:var(--hud-text)!important; border-color:var(--hud-line)!important; border-radius:2px!important; }
+html[data-bookstark-hud] :is(.modern-btn.primary,button.active,.tab.active) { background:var(--hud-active)!important; color:var(--hud-cyan)!important; border-color:var(--hud-cyan)!important; }
+html[data-bookstark-hud] :is(a,.brand,.logo) { color:var(--hud-cyan)!important; }
+html[data-bookstark-hud] :is(button,a,input,textarea,select):focus-visible { outline:2px solid var(--hud-cyan); outline-offset:2px; }
+html[data-bookstark-hud="meeting"] body.rtc-modern { --bg:var(--hud-bg); --titlebar:var(--hud-panel); --activity:var(--hud-bg); --panel:var(--hud-panel); --panel-2:var(--hud-panel); --surface:var(--hud-panel); --ink:var(--hud-text); --muted:var(--hud-muted); --line:var(--hud-line); --accent:var(--hud-cyan); }

@@ -1,6 +1,7 @@
 /* BookStark Design Tokens — single source of truth */
 /* Independent NVIDIA and Apple theme tokens are defined at the end of this file. */
 :root {
+  --chart-pv: #2563eb; --chart-uv: #8b5cf6;
   /* Primary */
   --color-primary: #2563eb;
   --color-on-primary: #ffffff;

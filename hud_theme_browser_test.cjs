@@ -1,0 +1,58 @@
+// Offline regression test for HUD lifecycle, surface isolation and iframe opt-in.
+const {chromium} = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+const fs = require('fs'), assert = require('assert/strict');
+const bootstrap = fs.readFileSync('templates/base.html', 'utf8').match(/<script>(\(function\(\)\{var k='bookstark-theme'[\s\S]*?)<\/script>/)[1];
+const html = `<!doctype html><html><head><script>${bootstrap};window.firstPaintScheme=document.documentElement.dataset.theme;</script>
+<link rel="stylesheet" href="/static/css/variables.css"><link rel="stylesheet" href="/static/css/hud.css">
+<style>.home-assistant-dialog{width:300px;height:200px}.home-card{width:300px;height:200px}.bm-row-swipe-actions{position:absolute}</style>
+</head><body><select id="profile-theme"><option value="light">Default</option><option value="hud">HUD</option></select>
+<div class="home-card">Document underneath</div><dialog open class="home-assistant-dialog">Assistant<input aria-label="Message"></dialog>
+<div id="bm-list"><div class="bm-row"><div class="bm-row-swipe-actions">Delete</div><div class="bm-row-content">Bookmark</div></div></div>
+<iframe class="html-preview-iframe" src="/frame"></iframe><script src="/static/js/theme.js"></script><script src="/static/js/glass-tools.js"></script></body></html>`;
+(async () => {
+ const browser = await chromium.launch({args:['--no-sandbox']});
+ try {
+  const context = await browser.newContext({viewport:{width:390,height:844}});
+  await context.route('**/*', route => {
+   const path = new URL(route.request().url()).pathname;
+   if (path.startsWith('/static/')) return route.fulfill({path:'.'+path});
+   return route.fulfill({contentType:'text/html',body:path==='/frame'?'<!doctype html><html><head></head><body><div class="panel">Tool</div></body></html>':html});
+  });
+  for (const name of ['base','editor_common','notes_public','login','register','forgot_password','reset_password']) {
+   const source = fs.readFileSync('templates/'+name+'.html','utf8');
+   assert(source.includes('/static/css/hud.css'),name+' HUD stylesheet');
+   const script = source.match(/<script>(\(function\(\)\{var k='bookstark-theme'[\s\S]*?)<\/script>/)[1];
+   assert(script.includes("hud:'dark'"),name+' first-paint scheme');
+  }
+  const page = await context.newPage();
+  await page.goto('http://hud.test/shares/share-1783071864572357387');
+  await page.evaluate(() => BookStarkTheme.set('hud'));
+  assert.equal(await page.evaluate(() => document.documentElement.dataset.theme),'dark');
+  assert.equal(await page.locator('#profile-theme').inputValue(),'hud');
+  await page.reload();
+  assert.equal(await page.evaluate(() => BookStarkTheme.get()),'hud');
+  assert.equal(await page.evaluate(() => window.firstPaintScheme),'dark');
+  assert.match(await page.locator('.home-card').evaluate(e=>getComputedStyle(e).borderImageSource),/hud-frame/);
+  const surface = await page.locator('dialog').evaluate(e=>({bg:getComputedStyle(e).backgroundColor,blur:getComputedStyle(e).backdropFilter}));
+  assert.equal(surface.bg,'rgb(6, 27, 43)'); assert.equal(surface.blur,'none');
+  assert.equal(await page.locator('.bm-row-swipe-actions').evaluate(e=>getComputedStyle(e).visibility),'hidden');
+  await page.locator('.bm-row').evaluate(e=>e.classList.add('bm-row-swipe-open'));
+  assert.equal(await page.locator('.bm-row-swipe-actions').evaluate(e=>getComputedStyle(e).visibility),'visible');
+  assert.equal(await page.locator('.bm-row-content').evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(6, 27, 43)');
+  await page.locator('input').focus();
+  assert.equal(await page.locator('input').evaluate(e=>getComputedStyle(e).outlineStyle),'solid');
+  await page.waitForFunction(()=>document.querySelector('iframe').contentDocument.documentElement.dataset.bookstarkHud==='meeting');
+  const second = await context.newPage(); await second.goto('http://hud.test/home');
+  await page.evaluate(()=>BookStarkTheme.set('glass'));
+  await second.waitForFunction(()=>BookStarkTheme.get()==='glass');
+  assert.equal(await page.locator('iframe').evaluate(e=>e.contentDocument.querySelector('#bookstark-hud-tool').disabled),true);
+  await page.evaluate(()=>BookStarkTheme.set('hud'));
+  await page.waitForFunction(()=>!document.querySelector('iframe').contentDocument.querySelector('#bookstark-hud-tool').disabled);
+  await page.goto('http://hud.test/shares/untrusted-user-html');
+  assert.equal(await page.locator('iframe').evaluate(e=>e.contentDocument.querySelector('#bookstark-hud-tool')),null);
+  await page.evaluate(()=>BookStarkTheme.set('light'));
+  assert.equal(await page.locator('.home-card').evaluate(e=>getComputedStyle(e).borderImageSource),'none');
+  assert.equal(await page.evaluate(()=>BookStarkTheme.normalize('__proto__')),'light');
+  console.log('PASS HUD persistence, cross-tab sync, opaque AI/bookmark surfaces, focus, reversible allowlisted iframe paint, theme isolation');
+ } finally { await browser.close(); }
+})().catch(error=>{console.error(error);process.exitCode=1});

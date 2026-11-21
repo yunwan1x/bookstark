@@ -23,6 +23,7 @@
     <div id="homeRecentList" aria-live="polite"><div class="skeleton home-skeleton-line" aria-hidden="true"></div><div class="skeleton home-skeleton-line" aria-hidden="true"></div><div class="skeleton home-skeleton-line" aria-hidden="true"></div></div>
     <p class="home-date-hint">{{call .T "home.recent.hint"}}</p>
   </section>
+  <section class="home-content-panel">
   <h2 class="home-content-title">{{call .T "home.content"}}</h2>
   <div class="home-content-controls">
     <div class="home-date-summary"><span id="homeSelectedDate" role="status"></span><button type="button" class="home-button" id="homeClearDate" hidden>{{call .T "home.all_time"}}</button></div>
@@ -34,6 +35,7 @@
   <button id="homeRetry" class="home-button" hidden>{{call .T "home.retry"}}</button>
   <div class="home-grid" id="homeGrid" aria-busy="true"><section class="home-card home-loading-card" data-section="notes" aria-labelledby="home-title-notes"><div class="home-card-head"><span class="home-card-icon"><i class="fa-solid fa-note-sticky" aria-hidden="true"></i></span><div><h2 id="home-title-notes">{{call .T "nav.notes"}}</h2></div><a class="home-card-all" href="/notes">{{call .T "home.view_all"}} →</a></div>{{template "home-loading-lines"}}</section></div>
   <noscript>{{call .T "home.noscript"}}</noscript>
+  </section>
   </div><aside class="home-sidebar"><div class="home-date-layout">
   <section class="calendar-card home-calendar" aria-label="{{call .T "home.calendar"}}" id="homeCalendar">
     <div class="calendar-header"><button type="button" class="calendar-nav-btn" id="homePrevMonth" aria-label="{{call .T "calendar.nav.prev"}}"><i class="fa-solid fa-chevron-left" aria-hidden="true"></i></button><span class="calendar-title" id="homeMonthTitle"></span><button type="button" class="calendar-nav-btn" id="homeNextMonth" aria-label="{{call .T "calendar.nav.next"}}"><i class="fa-solid fa-chevron-right" aria-hidden="true"></i></button><button type="button" class="home-button" data-home-current title="{{call .T "home.calendar.current_hint"}}">{{call .T "home.calendar.current"}}</button></div>

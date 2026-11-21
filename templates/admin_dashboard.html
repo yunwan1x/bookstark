@@ -198,6 +198,9 @@
         var pvData = points.map(function(p) { return p.page_views; });
         var uvData = points.map(function(p) { return p.unique_ips; });
         var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        var tokens = getComputedStyle(document.documentElement);
+        var pvColor = tokens.getPropertyValue('--chart-pv').trim();
+        var uvColor = tokens.getPropertyValue('--chart-uv').trim();
         var gridColor = isDark ? '#334155' : '#f1f5f9';
         var legendColor = isDark ? '#cbd5e1' : '#64748b';
         var tooltipBg = isDark ? '#0f172a' : '#1e293b';
@@ -206,6 +209,11 @@
             trendChart.data.labels = labels;
             trendChart.data.datasets[0].data = pvData;
             trendChart.data.datasets[1].data = uvData;
+            [pvColor, uvColor].forEach(function(color, index) {
+                trendChart.data.datasets[index].borderColor = color;
+                trendChart.data.datasets[index].pointBackgroundColor = color;
+                trendChart.data.datasets[index].pointHoverBackgroundColor = color;
+            });
             trendChart.options.scales.x.ticks.color = legendColor;
             trendChart.options.scales.y.ticks.color = legendColor;
             trendChart.options.scales.y.grid.color = gridColor;
@@ -217,8 +225,8 @@
 
         var ctx = document.getElementById('trendChart').getContext('2d');
         var gradient = ctx.createLinearGradient(0, 0, 0, 220);
-        gradient.addColorStop(0, isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(37, 99, 235, 0.12)');
-        gradient.addColorStop(1, isDark ? 'rgba(59, 130, 246, 0.01)' : 'rgba(37, 99, 235, 0.01)');
+        gradient.addColorStop(0, tokens.getPropertyValue('--chart-fill-start').trim() || (isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(37, 99, 235, 0.12)'));
+        gradient.addColorStop(1, tokens.getPropertyValue('--chart-fill-end').trim() || (isDark ? 'rgba(59, 130, 246, 0.01)' : 'rgba(37, 99, 235, 0.01)'));
 
         trendChart = new Chart(ctx, {
             type: 'line',
@@ -227,26 +235,26 @@
                 datasets: [{
                     label: 'PV',
                     data: pvData,
-                    borderColor: '#2563eb',
+                    borderColor: pvColor,
                     backgroundColor: gradient,
                     fill: true,
                     tension: 0.3,
                     pointRadius: 3,
                     pointHoverRadius: 5,
-                    pointBackgroundColor: '#2563eb',
-                    pointHoverBackgroundColor: '#2563eb',
+                    pointBackgroundColor: pvColor,
+                    pointHoverBackgroundColor: pvColor,
                     borderWidth: 2
                 }, {
                     label: 'UV',
                      data: uvData,
-                    borderColor: '#8b5cf6',
+                    borderColor: uvColor,
                     backgroundColor: 'transparent',
                     fill: false,
                     tension: 0.3,
                     pointRadius: 3,
                     pointHoverRadius: 5,
-                    pointBackgroundColor: '#8b5cf6',
-                    pointHoverBackgroundColor: '#8b5cf6',
+                    pointBackgroundColor: uvColor,
+                    pointHoverBackgroundColor: uvColor,
                     borderWidth: 2,
                     borderDash: [4, 2]
                 }]

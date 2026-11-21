@@ -1934,6 +1934,7 @@ var enMessages = map[string]string{
 	"profile.theme.light":                     "Default",
 	"profile.theme.nvidia":                    "NVIDIA",
 	"profile.theme.glass":                     "Glass",
+	"profile.theme.hud":                       "Cyan Aviation HUD",
 	"profile.theme.apple":                     "Apple",
 	"profile.field.background_animation":      "Background animation",
 	"profile.field.background_animation_hint": "Show formula rain and HUD background on every page",

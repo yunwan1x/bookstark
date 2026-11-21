@@ -1,7 +1,7 @@
 {{define "editor_head"}}
     <meta charset="UTF-8">
     <meta name="csrf-token" content="{{.CSRFToken}}">
-<script>(function(){var k='bookstark-theme',s={light:'light',nvidia:'dark',apple:'light',glass:'light'},t='light';try{var saved=localStorage.getItem(k);if(Object.prototype.hasOwnProperty.call(s,saved))t=saved;else if(saved)localStorage.setItem(k,t);}catch(_){}document.documentElement.setAttribute('data-theme',s[t]);document.documentElement.setAttribute('data-theme-style',t);})();</script>
+<script>(function(){var k='bookstark-theme',s={light:'light',nvidia:'dark',apple:'light',glass:'light',hud:'dark'},t='light';try{var saved=localStorage.getItem(k);if(Object.prototype.hasOwnProperty.call(s,saved))t=saved;else if(saved)localStorage.setItem(k,t);}catch(_){}document.documentElement.setAttribute('data-theme',s[t]);document.documentElement.setAttribute('data-theme-style',t);})();</script>
     <script>
         window.__assetVer__ = '{{assetVer "/static/js/editor-common.js"}}';
         window.__univerCssVer__ = '{{assetVer "/static/js/univer/univer.css"}}';
@@ -24,6 +24,7 @@
     <link href="/static/css/font-awesome.min.css?v={{assetVer "/static/css/font-awesome.min.css"}}" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/variables.css?v={{assetVer "/static/css/variables.css"}}">
 <link rel="stylesheet" href="/static/css/glass.css?v={{assetVer "/static/css/glass.css"}}">
+<link rel="stylesheet" href="/static/css/hud.css?v={{assetVer "/static/css/hud.css"}}">
     <link href="/static/css/cherry-markdown.min.css?v={{assetVer "/static/css/cherry-markdown.min.css"}}" rel="stylesheet">
     <script src="/static/js/mermaid.min.js?v={{assetVer "/static/js/mermaid.min.js"}}"></script>
     <script src="/static/js/cherry-markdown.min.js?v={{assetVer "/static/js/cherry-markdown.min.js"}}"></script>

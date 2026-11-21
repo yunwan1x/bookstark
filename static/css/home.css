@@ -190,3 +190,6 @@
  .home-filter{padding:7px 9px}
  .home-menu-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+
+/* HUD groups the content controls and list; other themes retain their layout. */
+.home-content-panel { display: contents; }

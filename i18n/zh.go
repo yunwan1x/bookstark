@@ -1934,6 +1934,7 @@ var zhMessages = map[string]string{
 	"profile.theme.light":                     "默认",
 	"profile.theme.nvidia":                    "NVIDIA",
 	"profile.theme.glass":                     "玻璃",
+	"profile.theme.hud":                       "青蓝航空 HUD",
 	"profile.theme.apple":                     "Apple",
 	"profile.field.background_animation":      "背景动画",
 	"profile.field.background_animation_hint": "开启后所有页面显示公式雨 + HUD 背景",

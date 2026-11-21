@@ -1,4 +1,4 @@
-/* Theme paint for the explicitly approved HTML pages included in the glass designs.
+/* Theme paint for the explicitly approved HTML pages included in the approved Glass and HUD designs.
    The stored article and arbitrary user HTML remain untouched. */
 (function () {
     'use strict';
@@ -10,17 +10,20 @@
         try {
             var doc = frame.contentDocument;
             if (!doc || !doc.head || !doc.body) return;
-            var enabled = document.documentElement.dataset.themeStyle === 'glass';
-            var sheet = doc.getElementById('bookstark-glass-tool');
-            if (enabled && !sheet) {
-                sheet = doc.createElement('link');
-                sheet.id = 'bookstark-glass-tool'; sheet.rel = 'stylesheet';
-                sheet.href = '/static/css/glass-tools.css?v=pearl-edge-v3';
-                doc.head.appendChild(sheet);
-            }
-            if (sheet) sheet.disabled = !enabled;
-            if (enabled) doc.documentElement.dataset.bookstarkGlass = tool;
-            else delete doc.documentElement.dataset.bookstarkGlass;
+            ['glass', 'hud'].forEach(function (theme) {
+                var enabled = document.documentElement.dataset.themeStyle === theme;
+                var sheet = doc.getElementById('bookstark-' + theme + '-tool');
+                if (enabled && !sheet) {
+                    sheet = doc.createElement('link');
+                    sheet.id = 'bookstark-' + theme + '-tool'; sheet.rel = 'stylesheet';
+                    sheet.href = '/static/css/' + theme + '-tools.css?v=hud-01-v1';
+                    doc.head.appendChild(sheet);
+                }
+                if (sheet) sheet.disabled = !enabled;
+                var attribute = 'data-bookstark-' + theme;
+                if (enabled) doc.documentElement.setAttribute(attribute, tool);
+                else doc.documentElement.removeAttribute(attribute);
+            });
         } catch (_) { /* Cross-origin frames keep their own appearance. */ }
     }
     function scan() {
