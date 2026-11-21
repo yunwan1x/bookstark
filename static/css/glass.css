@@ -476,3 +476,9 @@ html[data-theme-style="glass"][data-theme="light"] .topic-detail-tab.main-tab {
 }
 html[data-theme-style="glass"][data-theme="light"] .topic-detail-tabs-actions { margin-left:auto; }
 html[data-theme-style="glass"][data-theme="light"] .topic-toolbar .topic-search-input { min-width:0; width:0; }
+
+/* A segmented bar must reserve space for the glass button edges. */
+html[data-theme-style="glass"][data-theme="light"] .asset-tabs {
+  padding:var(--spacing-sm); gap:var(--spacing-xs);
+  border-radius:var(--radius-lg); overflow-x:auto; overflow-y:hidden;
+}
