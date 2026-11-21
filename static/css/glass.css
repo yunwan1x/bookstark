@@ -411,3 +411,13 @@ html[data-theme-style="glass"][data-theme="light"] .public-search input[type="se
 html[data-theme-style="glass"][data-theme="light"] .home-toolbar .main-tab[data-home-sort] {
   padding-inline:var(--spacing-md); white-space:nowrap;
 }
+
+/* Public bookmarks share one feed surface; rows are not independent glass cards. */
+html[data-theme-style="glass"][data-theme="light"] .public-items-bookmark :is(.bm-row,.bm-row-content) {
+  background:transparent!important; box-shadow:none!important; border-radius:0!important;
+  -webkit-backdrop-filter:none; backdrop-filter:none;
+}
+html[data-theme-style="glass"][data-theme="light"] .public-items-bookmark .bm-row {
+  border-color:var(--color-border-light)!important;
+}
+html[data-theme-style="glass"][data-theme="light"] .public-items-bookmark .bm-row::before { content:none; }
