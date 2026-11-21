@@ -170,7 +170,7 @@ html[data-theme-style="hud"][data-theme="dark"] .bm-layout { max-width:1280px; }
 html[data-theme-style="hud"][data-theme="dark"] #bm-list .bm-row { background:var(--hud-panel)!important; border:1px solid var(--color-border)!important; border-image:var(--hud-frame) 12 / 12px / 0 stretch!important; border-radius:0; margin-bottom:var(--spacing-xs); }
 html[data-theme-style="hud"][data-theme="dark"] #bm-list .bm-row-content { background:var(--hud-panel)!important; padding:var(--spacing-md) var(--spacing-lg); }
 html[data-theme-style="hud"][data-theme="dark"] #bm-list .bm-row-title { font-size:16px; }
-html[data-theme-style="hud"][data-theme="dark"] :where(.tasks-search-btn,.tasks-btn,.tv-footer button,#tv-verify,#tv-save,#panel-tv .w-btn,.home-assistant-send) { background:var(--hud-field)!important; color:var(--color-primary)!important; border:1px solid var(--color-primary)!important; border-image:var(--hud-active) 12 / 6px / 0 stretch!important; border-radius:0!important; }
+html[data-theme-style="hud"][data-theme="dark"] :where(.tasks-search-btn,.tasks-btn,.tv-footer button,#tv-verify,#tv-save,#panel-tv .w-btn,.home-assistant-send,.ai-dlg-btn) { background:var(--hud-field)!important; color:var(--color-primary)!important; border:1px solid var(--color-primary)!important; border-image:var(--hud-active) 12 / 6px / 0 stretch!important; border-radius:0!important; }
 html[data-theme-style="hud"][data-theme="dark"] #panel-tv { --tv-blue:var(--color-primary); --tv-selected:var(--hud-selected); }
 html[data-theme-style="hud"][data-theme="dark"] .tv-search input { border:0!important; background:transparent!important; }
 html[data-theme-style="hud"][data-theme="dark"] :where(.compose-card .cm-editor,.compose-card textarea) { border:1px solid var(--color-border)!important; }
@@ -186,7 +186,6 @@ html[data-theme-style="hud"][data-theme="dark"] .home-new-icon { background:var(
 }
 html[data-theme-style="hud"][data-theme="dark"] :where(.main-tab,.system-tab,.asset-tab,.home-filter) { font-weight:600; }
 html[data-theme-style="hud"][data-theme="dark"] :where(.home-card h2,.home-quick h2,.topic-comment-head h3) { font-size:18px; }
-html[data-theme-style="hud"][data-theme="dark"] .home-row::before { content:"\\f15c"; font-family:"Font Awesome 6 Free"; font-weight:400; font-size:16px; margin-right:var(--spacing-sm); color:var(--color-text-secondary); }
 html[data-theme-style="hud"][data-theme="dark"] .home-recent-icon { background:transparent; color:var(--color-primary); font-size:22px; }
 html[data-theme-style="hud"][data-theme="dark"] .topic-comment-card .cm-editor { border:1px solid var(--color-border)!important; }
 html[data-theme-style="hud"][data-theme="dark"] .home-recent { gap:var(--spacing-sm); }
@@ -209,3 +208,14 @@ html[data-theme-style="hud"][data-theme="dark"] .calendar-type-legend { flex-wra
 html[data-theme-style="hud"][data-theme="dark"] :where(.home-button,.btn,.main-tab,.system-tab,.asset-tab,.home-filter,.bs-btn,.bm-tool-btn,.tasks-btn):hover:not(:disabled) { background:var(--hud-selected)!important; color:var(--color-primary)!important; }
 html[data-theme-style="hud"][data-theme="dark"] :where(.home-row,.nav-card,.topic-card):hover { background:var(--hud-selected)!important; }
 html[data-theme-style="hud"][data-theme="dark"] #bm-list .bm-row:hover .bm-row-content { background:var(--hud-selected)!important; }
+/* Draw row decoration above its opaque swipe foreground, so the foreground
+   cannot paint over the frame. No font glyph dependency for decorative icons. */
+html[data-theme-style="hud"][data-theme="dark"] .home-card .home-row::before { content:""; flex:0 0 16px; width:16px; height:20px; margin-right:var(--spacing-sm); background:var(--color-text-secondary); mask:url('/static/images/hud-document.svg') center / contain no-repeat; }
+html[data-theme-style="hud"][data-theme="dark"] #bm-list .bm-row { border:0!important; border-image:none!important; }
+html[data-theme-style="hud"][data-theme="dark"] #bm-list .bm-row-content { position:relative; }
+html[data-theme-style="hud"][data-theme="dark"] #bm-list .bm-row-content::after { content:""; position:absolute; inset:0; pointer-events:none; border:1px solid var(--color-border); border-image:var(--hud-frame) 12 / 12px / 0 stretch; }
+html[data-theme-style="hud"][data-theme="dark"] :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),textarea,select,.dialog-input,.public-search) { border-image:var(--hud-frame) 12 / 6px / 0 stretch!important; border-radius:0!important; }
+html[data-theme-style="hud"][data-theme="dark"] :where(.public-search input[type="search"],.cmdk-search .cmdk-input,.tv-search input) { border-image:none!important; }
+html[data-theme-style="hud"][data-theme="dark"] :where(input,textarea,select):focus-visible { border-image-source:var(--hud-active)!important; }
+html[data-theme-style="hud"][data-theme="dark"] :where(.public-categories a,.public-tool-links a) { background:var(--hud-field)!important; border:1px solid var(--color-border)!important; border-image:var(--hud-frame) 12 / 8px / 0 stretch!important; border-radius:0!important; }
+html[data-theme-style="hud"][data-theme="dark"] .public-categories a[aria-current] { background:var(--hud-selected)!important; color:var(--color-primary); border-image-source:var(--hud-active)!important; }

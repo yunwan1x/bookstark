@@ -6,7 +6,7 @@ const html = `<!doctype html><html><head><script>${bootstrap};window.firstPaintS
 <link rel="stylesheet" href="/static/css/variables.css"><link rel="stylesheet" href="/static/css/hud.css">
 <style>.home-assistant-dialog{width:300px;height:200px}.home-card{width:300px;height:200px}.bm-row-swipe-actions{position:absolute}</style>
 </head><body><select id="profile-theme"><option value="light">Default</option><option value="hud">HUD</option></select>
-<div class="home-card">Document underneath</div><dialog open class="home-assistant-dialog">Assistant<input aria-label="Message"></dialog>
+<div class="home-card"><a class="home-row">Document underneath</a></div><dialog open class="home-assistant-dialog">Assistant<input aria-label="Message"></dialog>
 <div id="bm-list"><div class="bm-row"><div class="bm-row-swipe-actions">Delete</div><div class="bm-row-content">Bookmark</div></div></div>
 <iframe class="html-preview-iframe" src="/frame"></iframe><script src="/static/js/theme.js"></script><script src="/static/js/glass-tools.js"></script></body></html>`;
 (async () => {
@@ -33,6 +33,8 @@ const html = `<!doctype html><html><head><script>${bootstrap};window.firstPaintS
   assert.equal(await page.evaluate(() => BookStarkTheme.get()),'hud');
   assert.equal(await page.evaluate(() => window.firstPaintScheme),'dark');
   assert.match(await page.locator('.home-card').evaluate(e=>getComputedStyle(e).borderImageSource),/hud-frame/);
+  assert.equal(await page.locator('.home-card .home-row').evaluate(e=>getComputedStyle(e,'::before').content),'\"\"');
+  assert.match(await page.locator('.bm-row-content').evaluate(e=>getComputedStyle(e,'::after').borderImageSource),/hud-frame/);
   const surface = await page.locator('dialog').evaluate(e=>({bg:getComputedStyle(e).backgroundColor,blur:getComputedStyle(e).backdropFilter}));
   assert.equal(surface.bg,'rgb(6, 27, 43)'); assert.equal(surface.blur,'none');
   assert.equal(await page.locator('.bm-row-swipe-actions').evaluate(e=>getComputedStyle(e).visibility),'hidden');
