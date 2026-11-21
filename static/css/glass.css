@@ -482,3 +482,10 @@ html[data-theme-style="glass"][data-theme="light"] .asset-tabs {
   padding:var(--spacing-sm); gap:var(--spacing-xs);
   border-radius:var(--radius-lg); overflow-x:auto; overflow-y:hidden;
 }
+/* The TV workbench owns the outer glass surface; its columns are subdivisions. */
+html[data-theme-style="glass"][data-theme="light"] .tv-work { padding:var(--spacing-sm); }
+html[data-theme-style="glass"][data-theme="light"] .tv-work :is(.tv-side,.tv-editor) {
+  background:transparent!important; box-shadow:none!important; border-radius:0!important;
+  backdrop-filter:none; -webkit-backdrop-filter:none;
+}
+html[data-theme-style="glass"][data-theme="light"] .tv-work :is(.tv-side,.tv-editor)::before { content:none; }
