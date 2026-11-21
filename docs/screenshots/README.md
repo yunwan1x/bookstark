@@ -25,3 +25,12 @@
 - `bookmarks-plugin-settings.png`、`bookmarks-plugin-save.png`：实际安装的 Linkding 扩展 1.15.1，连接本地演示服务；设置页令牌遮盖，收藏表单在独立扩展页拍摄。
 - 扩展来自 [sissbruecker/linkding-extension](https://github.com/sissbruecker/linkding-extension) 的 Chrome 分支，第三方扩展不随本仓库分发。
 - 已验证实际保存与兼容接口查询，完整范围见 [书签与浏览器插件指南](../bookmarks-and-browser-extension.md)。
+
+## 访问统计与管理员后台
+
+- 拍摄日期：2026-11-21；本地独立演示数据库，1440 × 1000，冰川青蓝 HUD 浅色主题。
+- `admin-analytics.png`：`/admin/dashboard`，7 天趋势和最近访问；数据库中预置演示日汇总和记录，由真实页面及 API 渲染，不代表生产流量。示例 IP 使用文档保留网段 `192.0.2.0/24`，另含本地浏览产生的 `127.0.0.1`。
+- `admin-members.png`：`/admin/system` 用户管理，预置演示成员和待审核申请；未改动线上账号。
+- `admin-settings.png`：系统参数，展开外观设置、收起分页设置以展示配置分组。
+- `admin-data.png`：数据管理，展开导出及导入面板；未执行导入、导出、清理或线上配置修改。
+- 统计口径已核对 `middleware/visit_log.go` 与 `models/visit_log.go`：限定页面范围、每日汇总、跨日 IP 累加、每个 IP 与账号组合保留最新访问。
