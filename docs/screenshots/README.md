@@ -17,3 +17,11 @@
 - 来源链接见 [extensions-sources.json](extensions-sources.json)。第三方工具资源独立于 BookStark 主程序发布，不能仅凭主程序提交号确定其版本。
 - 截图展示真实运行界面；未伪造 AI 回答、通话参与者或直播画面。会议图为进入房间前的界面，直播图为频道选择及播放入口。
 - 更新截图时等待工具资源加载完成，不能使用加载中或错误页面；工具自身的示例与欢迎界面可以保留。
+
+## 书签与浏览器扩展
+
+- 拍摄日期：2026-11-21；独立本地演示数据库，使用 demo 账号。
+- `bookmarks-overview.png`、`bookmarks-search.png`、`bookmarks-site.png`、`bookmarks-bulk.png`：实际总览、组合筛选、同站查询与批量操作，桌面视口 1440 × 1000。
+- `bookmarks-plugin-settings.png`、`bookmarks-plugin-save.png`：实际安装的 Linkding 扩展 1.15.1，连接本地演示服务；设置页令牌遮盖，收藏表单在独立扩展页拍摄。
+- 扩展来自 [sissbruecker/linkding-extension](https://github.com/sissbruecker/linkding-extension) 的 Chrome 分支，第三方扩展不随本仓库分发。
+- 已验证实际保存与兼容接口查询，完整范围见 [书签与浏览器插件指南](../bookmarks-and-browser-extension.md)。
