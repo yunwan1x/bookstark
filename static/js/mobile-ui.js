@@ -177,6 +177,11 @@
       lastX = clientX;
       if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.15) {
         horizontalSwipe = true;
+        // Capture only after a drag is recognized. Capturing on pointerdown
+        // retargets an ordinary tab click to the navigation container.
+        if (activePointerId !== null && root.setPointerCapture) {
+          try { root.setPointerCapture(activePointerId); } catch(err) {}
+        }
         if (event && event.cancelable) event.preventDefault();
       }
       if (Math.abs(dy) > Math.abs(dx) * 1.3 && !horizontalSwipe) reset();
@@ -216,9 +221,7 @@
 
     document.addEventListener('touchcancel', reset, { passive: true });
     root.addEventListener('pointerdown', function(e) {
-      if (beginSwipe(e.clientX, e.clientY, e.target, e.pointerId) && root.setPointerCapture) {
-        try { root.setPointerCapture(e.pointerId); } catch(err) {}
-      }
+      beginSwipe(e.clientX, e.clientY, e.target, e.pointerId);
     });
     document.addEventListener('pointermove', function(e) {
       if (!tracking || activePointerId !== e.pointerId) return;
