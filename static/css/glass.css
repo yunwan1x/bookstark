@@ -143,7 +143,7 @@ html[data-theme-style="glass"][data-theme="light"] dialog::backdrop {
   background:var(--glass-scrim)!important;
   -webkit-backdrop-filter:blur(10px) saturate(.7); backdrop-filter:blur(10px) saturate(.7);
 }
-html[data-theme-style="glass"][data-theme="light"] :where(.asset-modal,.book-modal,.dav-modal,.editor-modal,.bs-dialog-box,.bs-dialog-panel,.bs-dialog-form,.dialog-box,.dialog-content,.modal-content,.home-dialog,.home-assistant-dialog,.home-assistant-panel,.ai-dlg-box,.cmdk-panel,.note-viewer-panel,.resource-create-modal,.richdoc-modal,.topic-modal,.topic-resource-modal) {
+html[data-theme-style="glass"][data-theme="light"] :where(.asset-modal,.book-modal,.dav-modal,.editor-modal,.bs-dialog-box,.bs-dialog-panel,.bs-dialog-form,.dialog-box,.dialog-content,.modal-content,.home-dialog,.home-assistant-dialog,.home-assistant-panel,.preview-ai-panel,.ai-dlg-box,.cmdk-panel,.note-viewer-panel,.resource-create-modal,.richdoc-modal,.topic-modal,.topic-resource-modal) {
   background:var(--glass-floating-fill),var(--glass-floating-base)!important;
   color:var(--color-text); border-color:var(--glass-floating-rim)!important;
   box-shadow:var(--glass-floating-shadow)!important;
@@ -489,3 +489,9 @@ html[data-theme-style="glass"][data-theme="light"] .tv-work :is(.tv-side,.tv-edi
   backdrop-filter:none; -webkit-backdrop-filter:none;
 }
 html[data-theme-style="glass"][data-theme="light"] .tv-work :is(.tv-side,.tv-editor)::before { content:none; }
+
+/* AI windows sit directly over readable documents. Their body must occlude
+   underlying text; the gradient and rim provide the glass appearance. */
+html[data-theme-style="glass"][data-theme="light"] :is(.preview-ai-panel,.home-assistant-dialog,.ai-dlg-box) {
+  --glass-floating-base:#eff1f8;
+}
