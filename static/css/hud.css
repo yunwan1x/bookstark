@@ -219,3 +219,12 @@ html[data-theme-style="hud"][data-theme="dark"] :where(.public-search input[type
 html[data-theme-style="hud"][data-theme="dark"] :where(input,textarea,select):focus-visible { border-image-source:var(--hud-active)!important; }
 html[data-theme-style="hud"][data-theme="dark"] :where(.public-categories a,.public-tool-links a) { background:var(--hud-field)!important; border:1px solid var(--color-border)!important; border-image:var(--hud-frame) 12 / 8px / 0 stretch!important; border-radius:0!important; }
 html[data-theme-style="hud"][data-theme="dark"] .public-categories a[aria-current] { background:var(--hud-selected)!important; color:var(--color-primary); border-image-source:var(--hud-active)!important; }
+@media(max-width:640px) {
+  /* Long translated tab labels leave the record count and filter on a new row. */
+  html[data-theme-style="hud"][data-theme="dark"] .notes-page-header>div:first-child { flex-wrap:wrap; }
+}
+html[data-theme-style="hud"][data-theme="dark"] .page-sticky-header { top:48px; }
+@media(max-width:1024px) {
+  html[lang="en"][data-theme-style="hud"][data-theme="dark"] .header-nav-trigger .nav-text { display:none; }
+  html[lang="en"][data-theme-style="hud"][data-theme="dark"] .header-nav-trigger { min-width:40px; min-height:40px; justify-content:center; }
+}
