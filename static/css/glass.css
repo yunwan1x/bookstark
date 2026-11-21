@@ -449,3 +449,30 @@ html[data-theme-style="glass"][data-theme="light"] .public-items-bookmark .bm-ro
     visibility:visible; pointer-events:auto;
   }
 }
+
+/* Topic workbench controls need space inside the optical rim. Keep scrolling
+   and sticky positioning on their existing containers. */
+html[data-theme-style="glass"][data-theme="light"] :is(.topic-rail,.topic-detail) {
+  padding:var(--spacing-md); box-sizing:border-box;
+}
+html[data-theme-style="glass"][data-theme="light"] :is(.topic-toolbar,.topic-list) {
+  background:transparent!important; box-shadow:none!important;
+  backdrop-filter:none; -webkit-backdrop-filter:none;
+}
+html[data-theme-style="glass"][data-theme="light"] .topic-list {
+  border-radius:0; border:0;
+}
+html[data-theme-style="glass"][data-theme="light"] .topic-list::before { content:none; }
+html[data-theme-style="glass"][data-theme="light"] .topic-detail-tabs-row {
+  flex-wrap:wrap; min-width:0; margin:0;
+}
+html[data-theme-style="glass"][data-theme="light"] .topic-detail-tabs {
+  flex:0 1 280px; min-width:0; display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr)); gap:var(--spacing-xs);
+  background:transparent!important; box-shadow:none!important; border:0; overflow:visible;
+}
+html[data-theme-style="glass"][data-theme="light"] .topic-detail-tab.main-tab {
+  min-width:0; padding:var(--spacing-sm) var(--spacing-xs); white-space:normal; overflow-wrap:anywhere;
+}
+html[data-theme-style="glass"][data-theme="light"] .topic-detail-tabs-actions { margin-left:auto; }
+html[data-theme-style="glass"][data-theme="light"] .topic-toolbar .topic-search-input { min-width:0; width:0; }
