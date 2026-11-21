@@ -49,7 +49,12 @@
         if (window.BookStarkExcalidraw) { window.BookStarkExcalidraw.setTheme(scheme); }
         // Refresh Chart.js charts on dashboard for dark/light theme colors
         if (typeof renderChart === 'function' && typeof trendChartData !== 'undefined') {
-            trendChart = null;
+            // Chart.js keeps ownership of the canvas. Destroy the existing
+            // instance before rebuilding gradients for the new theme.
+            if (typeof trendChart !== 'undefined' && trendChart) {
+                trendChart.destroy();
+                trendChart = null;
+            }
             renderChart(trendChartData);
         }
     }
