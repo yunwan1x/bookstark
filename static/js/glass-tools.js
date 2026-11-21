@@ -15,7 +15,7 @@
             if (enabled && !sheet) {
                 sheet = doc.createElement('link');
                 sheet.id = 'bookstark-glass-tool'; sheet.rel = 'stylesheet';
-                sheet.href = '/static/css/glass-tools.css?v=pearl-v2';
+                sheet.href = '/static/css/glass-tools.css?v=pearl-edge-v3';
                 doc.head.appendChild(sheet);
             }
             if (sheet) sheet.disabled = !enabled;
