@@ -29,6 +29,7 @@ var defaultSettings = map[string]struct {
 	"page_size_labels":                         {"20", "标签页分页大小"},
 	"page_size_notes":                          {"20", "笔记页分页大小"},
 	"label_list_limit":                         {"3000", "标签列表最大返回数"},
+	"guest_default_theme":                      {"light", "未登录用户默认主题"},
 	"login_session_days":                       {"30", "登录状态有效期(天)"},
 	"tag_recommend_strategy":                   {"recent", "TagInput 默认推荐策略"},
 	"tag_recommend_manual_labels":              {"", "TagInput 手动精选推荐标签"},
@@ -516,4 +517,22 @@ func GetFaviconCacheDays() int {
 	faviconCacheDaysCache = n
 	faviconCacheDaysCacheAt = time.Now()
 	return n
+}
+
+// IsValidTheme restricts system defaults to the independently supported themes.
+func IsValidTheme(value string) bool {
+	switch value {
+	case "light", "nvidia", "apple", "glass", "hud":
+		return true
+	}
+	return false
+}
+
+func GetGuestDefaultTheme() string {
+	if DB != nil {
+		if value := GetSetting("guest_default_theme"); IsValidTheme(value) {
+			return value
+		}
+	}
+	return "light"
 }

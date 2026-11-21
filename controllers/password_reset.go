@@ -37,10 +37,11 @@ func renderPasswordPage(c *gin.Context, name string) {
 	bundleJSON, _ := json.Marshal(i18n.JSBundle(lang))
 	c.Header("Referrer-Policy", "no-referrer")
 	c.HTML(http.StatusOK, name, gin.H{
-		"Lang":      lang,
-		"T":         i18n.MakeT(lang),
-		"JSBundle":  template.JS(bundleJSON),
-		"Available": models.GetMailSettings().PasswordResetReady(),
+		"DefaultTheme": defaultThemeForVisitor(c),
+		"Lang":         lang,
+		"T":            i18n.MakeT(lang),
+		"JSBundle":     template.JS(bundleJSON),
+		"Available":    models.GetMailSettings().PasswordResetReady(),
 	})
 }
 

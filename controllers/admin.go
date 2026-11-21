@@ -181,8 +181,12 @@ func UpdateSettings(c *gin.Context) {
 		return
 	}
 
-	// Validate numeric settings
+	// Validate settings before applying the batch.
 	for k, v := range req {
+		if k == "guest_default_theme" && !models.IsValidTheme(v) {
+			apiError(c, http.StatusBadRequest, "Invalid guest default theme")
+			return
+		}
 		if k == "news_config" {
 			apiError(c, http.StatusBadRequest, "Use the news settings page")
 			return

@@ -37,6 +37,7 @@ func TestAdminSettingsPanelUsesAccordionSections(t *testing.T) {
 		`{{call .T "admin.settings.webrtc"}}`,
 		`{{call .T "admin.settings.mail"}}`,
 		`{{call .T "admin.settings.invite"}}`,
+		`name="guest_default_theme"`,
 		`name="nav_max_items"`,
 		`name="login_session_days"`,
 		`name="save_interval"`,
@@ -60,8 +61,8 @@ func TestAdminSettingsPanelUsesAccordionSections(t *testing.T) {
 		}
 	}
 
-	if count := strings.Count(panel, `class="ai-action-section"`); count != 11 {
-		t.Fatalf("expected 11 settings accordion sections, got %d", count)
+	if count := strings.Count(panel, `class="ai-action-section"`); count != 13 {
+		t.Fatalf("expected 13 settings accordion sections, got %d", count)
 	}
 
 	if count := strings.Count(panel, `data-webdav-size-mib`); count != 3 {

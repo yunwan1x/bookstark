@@ -336,6 +336,22 @@
                 <div id="panel-settings" role="tabpanel" aria-labelledby="tab-settings" class="bg-white rounded-b-lg shadow-sm p-4 sm:p-5 hidden">
                     <form id="settingsForm" onsubmit="saveSettings(event)">
                         <div class="ai-action-sections">
+                            <details class="ai-action-section" open>
+                                <summary class="ai-action-summary"><span class="ai-action-summary-title"><i class="fa-solid fa-chevron-right"></i>{{call .T "admin.settings.appearance"}}</span></summary>
+                                <div class="ai-action-body">
+                                    {{$guestTheme := "light"}}{{range .Settings}}{{if eq .Key "guest_default_theme"}}{{$guestTheme = .Value}}{{end}}{{end}}
+                                    <div class="setting-row">
+                                        <div><label for="guest-default-theme" class="text-sm text-slate-700">{{call .T "admin.settings.guest_default_theme"}}</label><div id="guest-default-theme-hint" class="text-xs text-slate-500 mt-0.5">{{call .T "admin.settings.guest_default_theme.hint"}}</div></div>
+                                        <select id="guest-default-theme" name="guest_default_theme" class="setting-input" style="width:240px;max-width:100%;text-align:left" aria-describedby="guest-default-theme-hint">
+                                        <option value="light" {{if eq $guestTheme "light"}}selected{{end}}>{{call .T "profile.theme.light"}}</option>
+                                        <option value="nvidia" {{if eq $guestTheme "nvidia"}}selected{{end}}>{{call .T "profile.theme.nvidia"}}</option>
+                                        <option value="apple" {{if eq $guestTheme "apple"}}selected{{end}}>{{call .T "profile.theme.apple"}}</option>
+                                        <option value="glass" {{if eq $guestTheme "glass"}}selected{{end}}>{{call .T "profile.theme.glass"}}</option>
+                                        <option value="hud" {{if eq $guestTheme "hud"}}selected{{end}}>{{call .T "profile.theme.hud"}}</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </details>
                             <!-- 登录设置 -->
                             <details class="ai-action-section">
                                 <summary class="ai-action-summary">

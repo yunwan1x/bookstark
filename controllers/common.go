@@ -48,17 +48,18 @@ func commonData(c *gin.Context, nav string) gin.H {
 	}
 
 	return gin.H{
-		"Account":     account,
-		"Background":  background,
-		"MemberID":    memberID,
-		"IsAdmin":     isAdmin,
-		"Nav":         nav,
-		"FriendLinks": friendLinks,
-		"CSRFToken":   csrfToken,
-		"Lang":        lang,
-		"T":           t,
-		"JSBundle":    template.JS(bundleJSON),
-		"AIEnabled":   models.GetSettingWithDefault("ai_enabled", "0") == "1",
+		"Account":      account,
+		"DefaultTheme": defaultThemeForVisitor(c),
+		"Background":   background,
+		"MemberID":     memberID,
+		"IsAdmin":      isAdmin,
+		"Nav":          nav,
+		"FriendLinks":  friendLinks,
+		"CSRFToken":    csrfToken,
+		"Lang":         lang,
+		"T":            t,
+		"JSBundle":     template.JS(bundleJSON),
+		"AIEnabled":    models.GetSettingWithDefault("ai_enabled", "0") == "1",
 	}
 }
 
@@ -255,4 +256,12 @@ func generateIdentify(prefix string) string {
 		return fmt.Sprintf("%s-%d", prefix, time.Now().UnixNano())
 	}
 	return fmt.Sprintf("%s-%x", prefix, b)
+}
+
+// Authenticated users keep their existing local preference / light fallback.
+func defaultThemeForVisitor(c *gin.Context) string {
+	if middleware.GetMemberID(c) > 0 {
+		return "light"
+	}
+	return models.GetGuestDefaultTheme()
 }

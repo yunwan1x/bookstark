@@ -37,7 +37,7 @@ func TestRetiredThemesAreRemovedFromRuntimeAndFirstPaint(t *testing.T) {
 			}
 		}
 		if strings.HasPrefix(path, "templates/") && path != "templates/profile.html" {
-			for _, marker := range []string{"nvidia:'dark'", "apple:'light'", "hud:'dark'", "t='light'", "localStorage.setItem(k,t)", "hasOwnProperty.call(s,saved)"} {
+			for _, marker := range []string{"nvidia:'dark'", "apple:'light'", "hud:'dark'", "t='light'", "localStorage.removeItem(k)", "hasOwnProperty.call(s,saved)"} {
 				if !strings.Contains(text, marker) {
 					t.Fatalf("%s missing first-paint rule %s", path, marker)
 				}
@@ -61,7 +61,7 @@ func TestIndependentThemesUseBrandTokensAndDefaultIsUnchanged(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, marker := range []string{"light: { scheme: 'light' }", "'nvidia': { scheme: 'dark' }", "apple: { scheme: 'light' }", "return DEFAULT_LIGHT_THEME;", "applyTheme(normalizeTheme(e.newValue))"} {
+	for _, marker := range []string{"light: { scheme: 'light' }", "'nvidia': { scheme: 'dark' }", "apple: { scheme: 'light' }", "return getDefaultTheme();", "e.newValue : getDefaultTheme()"} {
 		if !strings.Contains(string(runtime), marker) {
 			t.Fatalf("missing runtime behavior %s", marker)
 		}

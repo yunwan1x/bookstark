@@ -28,14 +28,18 @@
         return isDarkTheme(theme) ? 'dark' : 'light';
     }
 
+    function getDefaultTheme() {
+        var meta = document.querySelector('meta[name="bookstark-default-theme"]');
+        return normalizeTheme(meta ? meta.content : DEFAULT_LIGHT_THEME);
+    }
+
     function getPreferredTheme() {
-        var stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-            var next = normalizeTheme(stored);
-            if (next !== stored) localStorage.setItem(STORAGE_KEY, next);
-            return next;
-        }
-        return DEFAULT_LIGHT_THEME;
+        try {
+            var stored = localStorage.getItem(STORAGE_KEY);
+            if (Object.prototype.hasOwnProperty.call(THEMES, stored)) return stored;
+            if (stored) localStorage.removeItem(STORAGE_KEY);
+        } catch (_) { /* Private browsing can deny storage; retain the server default. */ }
+        return getDefaultTheme();
     }
 
     function applyTheme(theme) {
@@ -1079,7 +1083,7 @@
 
     window.addEventListener('storage', function(e) {
         if (e.key === STORAGE_KEY) {
-            applyTheme(normalizeTheme(e.newValue));
+            applyTheme(Object.prototype.hasOwnProperty.call(THEMES, e.newValue) ? e.newValue : getDefaultTheme());
         } else if (e.key === BACKGROUND_STORAGE_KEY) {
             initScienceBackground();
         } else if (e.key === MUSIC_STORAGE_KEY) {

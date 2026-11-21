@@ -99,6 +99,7 @@ func LoginPage(c *gin.Context) {
 	t := i18n.MakeT(lang)
 	bundleJSON, _ := json.Marshal(i18n.JSBundle(lang))
 	c.HTML(http.StatusOK, "login.html", gin.H{
+		"DefaultTheme":           defaultThemeForVisitor(c),
 		"Lang":                   lang,
 		"T":                      t,
 		"JSBundle":               template.JS(bundleJSON),
@@ -117,9 +118,10 @@ func RegisterPage(c *gin.Context) {
 	t := i18n.MakeT(lang)
 	bundleJSON, _ := json.Marshal(i18n.JSBundle(lang))
 	c.HTML(http.StatusOK, "register.html", gin.H{
-		"Lang":     lang,
-		"T":        t,
-		"JSBundle": template.JS(bundleJSON),
+		"DefaultTheme": defaultThemeForVisitor(c),
+		"Lang":         lang,
+		"T":            t,
+		"JSBundle":     template.JS(bundleJSON),
 	})
 }
 
