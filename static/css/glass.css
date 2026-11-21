@@ -332,11 +332,47 @@ html[data-theme-style="glass"][data-theme="light"] :is(.images-view-toggle > but
 html[data-theme-style="glass"][data-theme="light"] :is(.images-view-toggle > button,.btn-upload,.btn-select,.btn-select-all,.btn-cancel-select,.btn-batch-del,.bm-tool-btn,.bm-batch-btn,.bm-page-btn,.page-btn,.pagination-btn,.nav-view-btn,.asset-refresh-button,.asset-create-button,.asset-prune-button,.topic-primary-btn,.topic-secondary-btn,.topic-resource-filter-btn,.topic-comment-layout-btn,.topic-summary-save-btn,.mobile-filter-btn,.ai-test-btn,.bs-btn-cancel,.bs-btn-danger):disabled { cursor:not-allowed; }
 html[data-theme-style="glass"][data-theme="light"] :is(.images-view-toggle) { border-radius:var(--glass-tab-radius); }
 /* Danger and warning actions retain their meaning on the pearl surface. */
-html[data-theme-style="glass"][data-theme="light"] :is(.bs-btn-danger,.btn-batch-del,.bm-batch-btn-danger) {
+html[data-theme-style="glass"][data-theme="light"] :is(button,a):is(.bs-btn-danger,.btn-batch-del,.bm-batch-btn-danger) {
   --glass-action-fill:linear-gradient(var(--color-danger-light),var(--color-danger-light));
   color:var(--color-danger)!important; border-color:var(--color-danger)!important;
 }
-html[data-theme-style="glass"][data-theme="light"] .asset-prune-button {
+html[data-theme-style="glass"][data-theme="light"] button.asset-prune-button {
   --glass-action-fill:linear-gradient(var(--color-warning-light),var(--color-warning-light));
   color:var(--color-warning)!important; border-color:var(--color-warning)!important;
+}
+
+/* Native switches and file inputs retain their dimensions and checked mechanics. */
+html[data-theme-style="glass"][data-theme="light"] {
+  --glass-switch-off:linear-gradient(180deg,#bdc7db99,#edf4ff99);
+  --glass-switch-on:linear-gradient(180deg,#aa8be0,#d6c4f8);
+  --glass-switch-knob:linear-gradient(160deg,#fff,#e4f5ff 70%,#d5d8ed);
+  --glass-switch-knob-shadow:inset 0 0 0 1px #ffffffeb,0 1px 3px #47526760;
+}
+html[data-theme-style="glass"][data-theme="light"] :is(.fl-toggle .slider,.toggle-switch .toggle-track,.toggle-switch .toggle-slider) {
+  background:var(--glass-switch-off)!important; box-shadow:var(--glass-tab-pressed); transition:none;
+}
+html[data-theme-style="glass"][data-theme="light"] :is(.fl-toggle,.toggle-switch) input:checked + :is(.slider,.toggle-track,.toggle-slider) {
+  background:var(--glass-switch-on)!important;
+}
+html[data-theme-style="glass"][data-theme="light"] :is(.fl-toggle .slider,.toggle-switch .toggle-slider)::before,
+html[data-theme-style="glass"][data-theme="light"] .toggle-switch .toggle-track::after {
+  background:var(--glass-switch-knob); box-shadow:var(--glass-switch-knob-shadow); transition:transform .15s ease;
+}
+html[data-theme-style="glass"][data-theme="light"] :is(.fl-toggle,.toggle-switch) input:focus-visible + :is(.slider,.toggle-track,.toggle-slider) {
+  outline:2px solid var(--color-focus); outline-offset:2px;
+}
+html[data-theme-style="glass"][data-theme="light"] :is(.fl-toggle,.toggle-switch) input:disabled + :is(.slider,.toggle-track,.toggle-slider) { opacity:.45; cursor:not-allowed; }
+html[data-theme-style="glass"][data-theme="light"] input:is([type="checkbox"],[type="radio"],[type="range"]) { accent-color:var(--color-primary); }
+html[data-theme-style="glass"][data-theme="light"] input[type="file"]::file-selector-button {
+  color:var(--color-text); background:var(--glass-control); border:1px solid var(--color-border);
+  border-radius:var(--radius-md); box-shadow:var(--glass-tab-edge); cursor:pointer;
+}
+/* Selected images need a visible boundary above the shared card rim. */
+html[data-theme-style="glass"][data-theme="light"] :is(.img-card.selected,.img-row.selected) {
+  border-color:var(--color-primary)!important;
+  box-shadow:var(--glass-shadow),0 0 0 2px var(--color-focus)!important;
+}
+/* Keep the selected obsidian sort action distinct without changing its material. */
+html[data-theme-style="glass"][data-theme="light"] .main-tab[data-home-sort][aria-pressed="true"] {
+  box-shadow:var(--glass-tab-edge),0 0 0 2px var(--color-primary-border)!important;
 }
