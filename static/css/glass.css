@@ -421,3 +421,22 @@ html[data-theme-style="glass"][data-theme="light"] .public-items-bookmark .bm-ro
   border-color:var(--color-border-light)!important;
 }
 html[data-theme-style="glass"][data-theme="light"] .public-items-bookmark .bm-row::before { content:none; }
+
+/* A mobile swipe foreground must occlude its action tray, even while moving. */
+@media (max-width:640px) {
+  html[data-theme-style="glass"][data-theme="light"] #bm-list { --glass-bookmark-base:#edf0f8; }
+  html[data-theme-style="glass"][data-theme="light"] #bm-list .bm-row-content {
+    background:var(--glass-bookmark-fill,var(--glass-panel)),var(--glass-bookmark-base)!important;
+    border-radius:inherit; box-shadow:var(--glass-tab-edge);
+  }
+  html[data-theme-style="glass"][data-theme="light"] #bm-list :is(.bm-row-selected,.bm-row-highlight) {
+    --glass-bookmark-fill:var(--glass-selected);
+  }
+  html[data-theme-style="glass"][data-theme="light"] #bm-list .bm-row-swipe-action { color:var(--color-on-primary); }
+  html[data-theme-style="glass"][data-theme="light"] #bm-list .bm-row-swipe-actions {
+    visibility:hidden; pointer-events:none;
+  }
+  html[data-theme-style="glass"][data-theme="light"] #bm-list :is(.bm-row-swiping,.bm-row-swipe-open) .bm-row-swipe-actions {
+    visibility:visible; pointer-events:auto;
+  }
+}
