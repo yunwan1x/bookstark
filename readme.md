@@ -170,12 +170,12 @@ BookStark 的 HTML 文章和文档可以承载 HTML、CSS 与 JavaScript，运�
 
 <table>
   <tr>
-    <td width="50%"><strong>电视直播 · 央视与卫视</strong><br><img src="docs/screenshots/extension-tv.png" alt="BookStark HTML 工具中的国内电视直播频道界面" width="100%"></td>
-    <td width="50%"><strong>世界电视 · 全球直播</strong><br><img src="docs/screenshots/extension-world-tv.png" alt="世界电视国家分类与频道播放界面" width="100%"></td>
+    <td width="50%"><strong>电视直播 · CCTV-1 实际播放</strong><br><img src="docs/screenshots/extension-tv.png" alt="BookStark 国内电视工具播放 CCTV-1 综合频道的实际画面" width="100%"></td>
+    <td width="50%"><strong>世界电视 · 美国 Biz TV 实际播放</strong><br><img src="docs/screenshots/extension-world-tv.png" alt="世界电视筛选美国频道并实际播放 Biz TV 的画面" width="100%"></td>
   </tr>
 </table>
 
-频道来自所配置的直播源，实际可用性受源站和网络影响；截图展示工具界面。
+两张截图分别为 **CCTV-1 综合频道**和**美国 Biz TV** 的实际播放画面，拍摄前已确认视频持续播放。频道来自所配置的直播源，实际可用性受源站和网络影响。
 
 ### 案例三：街机游戏厅，让 HTML 承载完整的交互应用
 

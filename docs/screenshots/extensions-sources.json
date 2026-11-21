@@ -13,12 +13,30 @@
     {
       "file": "extension-world-tv.png",
       "title": "世界电视 · 全球直播",
-      "url": "https://books.vs2010wy.top/shares/world-tv"
+      "url": "https://books.vs2010wy.top/shares/world-tv",
+      "channel": "Biz TV",
+      "country": "美国",
+      "playback_verified": {
+        "width": 1920,
+        "height": 1080,
+        "time_before": 2.025192,
+        "time_after": 6.030424,
+        "paused": false
+      }
     },
     {
       "file": "extension-tv.png",
       "title": "电视直播 · 央视与卫视",
-      "url": "https://books.vs2010wy.top/shares/superlive-web"
+      "url": "https://books.vs2010wy.top/shares/superlive-web",
+      "channel": "CCTV-1 综合",
+      "country": "中国",
+      "playback_verified": {
+        "width": 1280,
+        "height": 720,
+        "time_before": 2.056635,
+        "time_after": 6.074508,
+        "paused": false
+      }
     },
     {
       "file": "extension-craft.png",
