@@ -85,7 +85,7 @@ html[data-theme-style="glass"][data-theme="light"] { --color-bg-card:#f2f4fb55; 
 html[data-theme-style="glass"][data-theme="light"] :where(.home-stats,:where(.home-recent) .home-recent-row,.home-quick,.sidebar-tags,.compose-card,.admin-tabs,.ai-action-section,.ai-usage-card,.tv-work,.tv-side,.tv-editor,.tv-world-settings,.tv-world-detail,.tv-world-side,.bs-dialog-box,.editor-modal,.nav-card) {
  background:var(--glass-panel),var(--color-bg-card) !important; border-color:var(--color-border) !important; box-shadow:var(--glass-shadow) !important; backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
 }
-html[data-theme-style="glass"][data-theme="light"] :where(.home-recent,.home-stat) { background:transparent !important; box-shadow:none !important; backdrop-filter:none; -webkit-backdrop-filter:none; border-radius:0; }
+html[data-theme-style="glass"][data-theme="light"] :where(.home-stat) { background:transparent !important; box-shadow:none !important; backdrop-filter:none; -webkit-backdrop-filter:none; border-radius:0; }
 html[data-theme-style="glass"][data-theme="light"] :where(.logo-text,.local-tools-brand) { color:var(--color-text) !important; text-shadow:0 0 12px #b18aff60; }
 html[data-theme-style="glass"][data-theme="light"] :where(.nav-link.active) { filter:drop-shadow(0 0 4px #b18aff60); }
 html[data-theme-style="glass"][data-theme="light"] :where(.bs-btn,.tab-btn,.home-knowledge-tab,.compose-submit,.home-assistant-fab,.home-assistant-open) { background:var(--glass-control) !important; color:var(--color-text) !important; border-color:var(--color-border) !important; box-shadow:var(--glass-shadow); }
@@ -202,7 +202,16 @@ html[data-theme-style="glass"][data-theme="light"] :where(input:not([type="check
 html[data-theme-style="glass"][data-theme="light"] :where(.logo-text,.local-tools-brand) { color:#4278e9!important; -webkit-text-fill-color:#4278e9!important; text-shadow:none; }
 html[data-theme-style="glass"][data-theme="light"] :where(.home-assistant-fab,.home-assistant-open,.home-assistant-trigger,.assistant-launcher) { background:var(--glass-selected)!important; color:#4d2e82!important; box-shadow:var(--glass-shadow)!important; }
 html[data-theme-style="glass"][data-theme="light"] :where(.article-setting-modal,.profile-tabs,.profile-card,.auth-card) { background:var(--glass-panel),var(--glass-floating-base)!important; box-shadow:var(--glass-shadow); border-color:var(--color-border)!important; }
-html[data-theme-style="glass"][data-theme="light"] :where(.home-recent) { background:#f5f6fc55!important; border-radius:var(--radius-lg); }
+/* Recent visits form a soft group; individual links use a lighter edge than content panels. */
+html[data-theme-style="glass"][data-theme="light"] .home-recent {
+  background:var(--glass-panel),var(--color-bg-card)!important;
+  border:1px solid var(--color-border); border-radius:var(--radius-lg);
+  padding:var(--spacing-sm); box-shadow:var(--glass-field-shadow);
+}
+html[data-theme-style="glass"][data-theme="light"] .home-recent .home-recent-row {
+  box-shadow:var(--glass-tab-edge)!important;
+}
+html[data-theme-style="glass"][data-theme="light"] .home-recent .home-recent-row::before { content:none; }
 html[data-theme-style="glass"][data-theme="light"] :where(.home-recent-row,.note-card,.article-card,.task-card,.bk-card,.list-row,.task-item) { border-radius:var(--radius-lg); }
 html[data-theme-style="glass"][data-theme="light"] :where(.cherry,.cherry-previewer,.cherry-editor,.CodeMirror,.cm-editor) { color:var(--color-text)!important; }
 @media (prefers-reduced-transparency:reduce) { html[data-theme-style="glass"][data-theme="light"] { --glass-panel:linear-gradient(#edf0f8,#edf0f8); --glass-control:linear-gradient(#f5f6fa,#e7eaf3); } }
