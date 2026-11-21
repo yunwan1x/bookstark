@@ -93,14 +93,14 @@ let language = 'zh';
     await page.reload(); await page.waitForSelector('.home-card');
     assert.equal(await page.locator('h1').innerText(),'Personal Home');
     assert(!/[\u3400-\u9fff]/.test(await page.locator('main').innerText()),'English dashboard has no Chinese UI text');
-    await page.locator('.home-expand').first().click();
-    assert.equal(await page.locator('.home-expand').first().innerText(),'Collapse ↑');
+    assert.equal(await page.locator('.home-expand').count(),0);
+    assert.equal(await page.locator('[data-section=notes] li:visible').count(),4);
     for (const id of ['homeCustomize','homeCreate','homeMore']) {
       await page.locator('[data-home-dialog="'+id+'"]').last().click();
       assert(!/[\u3400-\u9fff]/.test(await page.locator('#'+id).innerText()), 'English dialog '+id);
       await page.keyboard.press('Escape');
     }
     assert.deepEqual(errors,[]);
-    console.log('PASS English dashboard, dates, empty/status labels, expansion and all dialogs');
+    console.log('PASS English dashboard, dates, empty/status labels, always-expanded content and all dialogs');
   } finally {await browser.close();}
 })().catch(error => {console.error(error);process.exitCode=1;});

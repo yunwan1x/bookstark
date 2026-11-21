@@ -76,11 +76,10 @@ const origin = process.env.BOOKSTARK_TEST_ORIGIN;
     for(const width of [320,375,390,640]) {
       await page.setViewportSize({width,height:844});assert.equal(await columns(),1);
       assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'horizontal overflow '+width);
-      assert.equal(await page.locator('[data-section=notes] li:visible').count(),3);
+      assert.equal(await page.locator('[data-section=notes] li:visible').count(),10);
     }
     await page.setViewportSize({width:390,height:844});
-    await page.locator('[data-section=notes] .home-expand').click();assert.equal(await page.locator('[data-section=notes] li:visible').count(),10);
-    await page.locator('[data-section=notes] .home-expand').click();assert.equal(await page.locator('[data-section=notes] li:visible').count(),3);
+    assert.equal(await page.locator('.home-expand').count(),0);
     await page.locator('.home-bottom-nav [data-home-dialog=homeMore]').click();await page.locator('#homeMore a[href="/topics"]').waitFor({state:'visible'});
     await page.keyboard.press('Escape');
     await page.screenshot({path:'/tmp/bookstark-home-mobile-test.png',fullPage:true});
@@ -142,7 +141,7 @@ const origin = process.env.BOOKSTARK_TEST_ORIGIN;
     await page.unroute('**/api/home?*');await page.locator('#homeRetry').click();await page.waitForSelector('#homeGrid[aria-busy=false] .home-card');
     await context.clearCookies();await page.locator('[data-home-sort=updated]').click();await page.waitForURL('**/login');
     assert.deepEqual(errors,[]);
-    console.log('PASS: home auth, empty state, sorting, 10/3 limits, responsive 320–1440, expand, tab switching, XSS, record links, error/retry and session expiry');
+    console.log('PASS: home auth, empty state, sorting, full selected limits, responsive 320–1440, always-expanded content, tab switching, XSS, record links, error/retry and session expiry');
   } catch(e) { console.error('Browser test failed at',page.url(),e); throw e; }
   finally { await browser.close(); }
 })().catch(e=>{console.error(e);process.exitCode=1;});

@@ -201,12 +201,6 @@
             });
             card.append(list);
             if (!s.items.length) card.append(el('p','home-empty',selected ? lt('截至所选日期没有记录','No records through the selected date') : lt('暂无记录','No records yet')));
-            if (s.items.length > 3) {
-                var expandText = lt('展开最近 ' + s.items.length + ' 条 ↓','Show latest ' + s.items.length + ' ↓');
-                var expand = el('button','home-expand',expandText); expand.setAttribute('aria-expanded','false'); expand.setAttribute('aria-controls',list.id);
-                expand.onclick = function () { var open = list.classList.toggle('expanded'); expand.setAttribute('aria-expanded',String(open)); expand.textContent = open ? lt('收起 ↑','Collapse ↑') : expandText; };
-                card.append(expand);
-            }
             grid.append(card);
         });
         status.hidden = grid.childElementCount > 0;
