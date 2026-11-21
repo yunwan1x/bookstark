@@ -91,7 +91,6 @@ html[data-theme-style="glass"][data-theme="light"] :where(.nav-link.active) { fi
 html[data-theme-style="glass"][data-theme="light"] :where(.bs-btn,.tab-btn,.home-knowledge-tab,.compose-submit,.home-assistant-fab,.home-assistant-open) { background:var(--glass-control) !important; color:var(--color-text) !important; border-color:var(--color-border) !important; box-shadow:var(--glass-shadow); }
 html[data-theme-style="glass"][data-theme="light"] :where(.bs-btn-primary,.tab-btn.active,.home-knowledge-tab.active,.compose-submit,.home-assistant-fab,.home-assistant-open) { background:var(--glass-selected) !important; color:var(--color-on-primary) !important; }
 html[data-theme-style="glass"][data-theme="light"] #panel-ai { background:var(--glass-panel),var(--color-bg-card) !important; box-shadow:var(--glass-shadow); backdrop-filter:blur(18px); }
-html[data-theme-style="glass"][data-theme="light"] #panel-ai .ai-subtab.active { background:var(--glass-selected) !important; color:var(--color-text) !important; }
 html[data-theme-style="glass"][data-theme="light"] :where(.setting-row,.ai-usage-card,.ai-action-section) { border-color:var(--color-border-light) !important; }
 html[data-theme-style="glass"][data-theme="light"] :where(.local-tool-grid) a { border-radius:var(--radius-lg); }
 html[data-theme-style="glass"][data-theme="light"] .book-cover { background:var(--glass-panel),color-mix(in srgb,var(--book-cover,#68587e) 40%,transparent) !important; }
@@ -276,4 +275,38 @@ html[data-theme-style="glass"][data-theme="light"] :where(.home-filter,.main-tab
 }
 @media (max-width:640px) {
   html[data-theme-style="glass"][data-theme="light"] { --glass-shadow:inset 0 1px 0 #fff,inset 0 -1px 0 #fff,0 0 0 1px #afbdd066,0 4px 10px #53617c29; }
+}
+
+/* Shared tab material: includes page-specific tabs and dynamically created pickers.
+   Shadows form the narrow optical rim without changing hit areas or using pseudo-elements. */
+html[data-theme-style="glass"][data-theme="light"] {
+  --glass-tab-radius: 12px;
+  --glass-tab-highlight: linear-gradient(180deg,#ffffffb3,transparent 40%,transparent 70%,#c8f4ff66);
+  --glass-tab-hover: linear-gradient(#ffffff40,#ffffff40);
+  --glass-tab-ink: #302244;
+  --glass-tab-edge: inset 0 0 0 1px #fffffff0,inset 0 0 0 3px #bdcbe54d,inset 1px 3px 3px #ffffffb3,inset -1px -3px 3px #c5f2ffb3,0 2px 5px #53617c30;
+  --glass-tab-pressed: inset 0 0 0 1px #ffffffed,inset 0 2px 5px #725c9250,inset 0 -2px 2px #e2f9ffcc;
+}
+html[data-theme-style="glass"][data-theme="light"] :is(button[role="tab"],a[role="tab"],.main-tab,.tab-btn,.system-tab,.ai-subtab,.asset-tab,.asset-docker-subtab,.asset-settings-tab,.asset-docker-create-tab,.search-tab,.filter-tab,.bm-panel-tab,.sidebar-tab,.pager-tab,.label-right .tab,.expand-tab,.topic-expand-tabs > button,.tv-subtabs > button,.asset-segmented > button,.home-knowledge-tab,.book-view-btn,.range-btn,.mode-toggle-btn,.note-emoji-tab,.editor-emoji-tab,.topic-emoji-tab,.icon-tab):not([data-home-sort]) {
+  --glass-tab-fill: var(--glass-control);
+  background:var(--glass-tab-highlight),var(--glass-tab-fill)!important;
+  color:var(--color-text-secondary)!important;
+  border-color:transparent!important;
+  border-radius:var(--glass-tab-radius)!important;
+  box-shadow:var(--glass-tab-edge)!important;
+}
+html[data-theme-style="glass"][data-theme="light"] :is(button[role="tab"],a[role="tab"],.main-tab,.tab-btn,.system-tab,.ai-subtab,.asset-tab,.asset-docker-subtab,.asset-settings-tab,.asset-docker-create-tab,.search-tab,.filter-tab,.bm-panel-tab,.sidebar-tab,.pager-tab,.label-right .tab,.expand-tab,.topic-expand-tabs > button,.tv-subtabs > button,.asset-segmented > button,.home-knowledge-tab,.book-view-btn,.range-btn,.mode-toggle-btn,.note-emoji-tab,.editor-emoji-tab,.topic-emoji-tab,.icon-tab):not([data-home-sort]):is(.active,.chosen,.selected,[aria-selected="true"],[aria-pressed="true"],[data-state="active"]) {
+  --glass-tab-fill:var(--glass-selected);
+  background:var(--glass-tab-highlight),var(--glass-tab-fill)!important;
+  color:var(--glass-tab-ink)!important;
+}
+@media (hover:hover) {
+  html[data-theme-style="glass"][data-theme="light"] :is(button[role="tab"],a[role="tab"],.main-tab,.tab-btn,.system-tab,.ai-subtab,.asset-tab,.asset-docker-subtab,.asset-settings-tab,.asset-docker-create-tab,.search-tab,.filter-tab,.bm-panel-tab,.sidebar-tab,.pager-tab,.label-right .tab,.expand-tab,.topic-expand-tabs > button,.tv-subtabs > button,.asset-segmented > button,.home-knowledge-tab,.book-view-btn,.range-btn,.mode-toggle-btn,.note-emoji-tab,.editor-emoji-tab,.topic-emoji-tab,.icon-tab):not([data-home-sort]):hover:not(:disabled):not([aria-disabled="true"]) {
+    background:var(--glass-tab-hover),var(--glass-tab-highlight),var(--glass-tab-fill)!important;
+  }
+}
+html[data-theme-style="glass"][data-theme="light"] :is(button[role="tab"],a[role="tab"],.main-tab,.tab-btn,.system-tab,.ai-subtab,.asset-tab,.asset-docker-subtab,.asset-settings-tab,.asset-docker-create-tab,.search-tab,.filter-tab,.bm-panel-tab,.sidebar-tab,.pager-tab,.label-right .tab,.expand-tab,.topic-expand-tabs > button,.tv-subtabs > button,.asset-segmented > button,.home-knowledge-tab,.book-view-btn,.range-btn,.mode-toggle-btn,.note-emoji-tab,.editor-emoji-tab,.topic-emoji-tab,.icon-tab):not([data-home-sort]):active:not(:disabled):not([aria-disabled="true"]) { box-shadow:var(--glass-tab-pressed)!important; }
+html[data-theme-style="glass"][data-theme="light"] :is(button[role="tab"],a[role="tab"],.main-tab,.tab-btn,.system-tab,.ai-subtab,.asset-tab,.asset-docker-subtab,.asset-settings-tab,.asset-docker-create-tab,.search-tab,.filter-tab,.bm-panel-tab,.sidebar-tab,.pager-tab,.label-right .tab,.expand-tab,.topic-expand-tabs > button,.tv-subtabs > button,.asset-segmented > button,.home-knowledge-tab,.book-view-btn,.range-btn,.mode-toggle-btn,.note-emoji-tab,.editor-emoji-tab,.topic-emoji-tab,.icon-tab):not([data-home-sort]):focus-visible { outline:2px solid var(--color-focus); outline-offset:-2px; }
+html[data-theme-style="glass"][data-theme="light"] :is(.ai-subtabs,.tv-subtabs,.asset-segmented,.bm-panel-tabs,.sidebar-tabs,.pager-tabs) {
+  background:var(--glass-panel)!important; border-color:var(--color-border-light)!important;
 }
