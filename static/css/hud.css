@@ -228,3 +228,13 @@ html[data-theme-style="hud"][data-theme="dark"] .page-sticky-header { top:48px; 
   html[lang="en"][data-theme-style="hud"][data-theme="dark"] .header-nav-trigger .nav-text { display:none; }
   html[lang="en"][data-theme-style="hud"][data-theme="dark"] .header-nav-trigger { min-width:40px; min-height:40px; justify-content:center; }
 }
+/* Keep the legacy 1100px sidebar breakpoint from splitting the 320px HUD rail. */
+@media(min-width:1024px) {
+  html[data-theme-style="hud"][data-theme="dark"] .home-sidebar { display:flex; align-items:stretch; }
+}
+@media(max-width:1024px) {
+  html[data-theme-style="hud"][data-theme="dark"] .home-sidebar { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:640px) {
+  html[data-theme-style="hud"][data-theme="dark"] .home-sidebar { display:flex; align-items:stretch; }
+}
