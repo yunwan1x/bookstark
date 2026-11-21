@@ -211,7 +211,6 @@ html[data-theme-style="glass"][data-theme="light"] :where(.cherry,.cherry-previe
 /* Match the actual homepage controls and profile sections in the approved frames. */
 html[data-theme-style="glass"][data-theme="light"] .home-filter { background:var(--glass-control)!important; color:var(--color-text)!important; border-radius:14px!important; box-shadow:var(--glass-shadow)!important; }
 html[data-theme-style="glass"][data-theme="light"] .home-filter[aria-pressed="true"] { background:var(--glass-selected)!important; color:#302244!important; }
-html[data-theme-style="glass"][data-theme="light"] [data-home-sort] { border-radius:14px!important; background:linear-gradient(#626671,#15171d 45%,#06080d 65%,#404451)!important; color:white!important; box-shadow:inset 0 2px 2px #ffffffb3,inset 0 -2px 2px #9698a6,0 4px 9px #30344240!important; }
 html[data-theme-style="glass"][data-theme="light"] .home-toolbar .main-tabs { background:transparent!important; box-shadow:none!important; }
 html[data-theme-style="glass"][data-theme="light"] :where(.profile-panel,.profile-background,.profile-tabs,.music-volume-row,.profile-panel .bg-slate-50) { border-radius:20px!important; box-shadow:var(--glass-shadow)!important; background:var(--glass-panel),var(--color-bg-card)!important; }
 html[data-theme-style="glass"][data-theme="light"] :where(.ai-dlg-btn,.tag-input-container,.tag-input-wrapper) { border-radius:12px; background:var(--glass-control)!important; box-shadow:var(--glass-shadow)!important; }
@@ -228,7 +227,6 @@ html[data-theme-style="glass"][data-theme="light"] :where(.text-slate-400,.setti
 html[data-theme-style="glass"][data-theme="light"] :where(.bg-white,.calendar-card,.home-card,.home-quick,.home-stats,.sidebar-tags,.compose-card,.public-feed,.public-info section,.ai-stat-card,.asset-modal,.editor-modal,.article-setting-modal) { border-radius:20px!important; }
 html[data-theme-style="glass"][data-theme="light"] :where(button.bg-blue-600,button.bg-blue-500,.btn-create,.compose-submit,.main-tab,.tab-btn,.book-view-btn,.topbar-save-btn,.topbar-ai-btn,.mode-toggle-btn,.tb-btn,.tasks-btn-primary) { border-radius:12px!important; }
 html[data-theme-style="glass"][data-theme="light"] .main-tab:not(.active) { background:var(--glass-control)!important; box-shadow:var(--glass-shadow)!important; }
-html[data-theme-style="glass"][data-theme="light"] .main-tab[data-home-sort] { background:linear-gradient(#626671,#15171d 45%,#06080d 65%,#404451)!important; color:#fff!important; }
 /* Dense collections retain their existing row geometry inside the crystal surface. */
 html[data-theme-style="glass"][data-theme="light"] :where(.bm-row,.dav-drop-zone,.img-card,.tv-side,.tv-editor,.tv-work,.tv-world-settings,.tv-world-side,.tv-world-detail,.system-section,.news-source-card) { background:var(--glass-panel),var(--color-bg-card)!important; border-color:var(--color-border)!important; border-radius:16px!important; box-shadow:var(--glass-shadow)!important; }
 html[data-theme-style="glass"][data-theme="light"] :where(.share-topbar,#sidebar,.share-reader-fullscreen #content-scroll) { border-radius:16px; box-shadow:var(--glass-shadow)!important; }
@@ -287,7 +285,7 @@ html[data-theme-style="glass"][data-theme="light"] {
   --glass-tab-edge: inset 0 0 0 1px #fffffff0,inset 0 0 0 3px #bdcbe54d,inset 1px 3px 3px #ffffffb3,inset -1px -3px 3px #c5f2ffb3,0 2px 5px #53617c30;
   --glass-tab-pressed: inset 0 0 0 1px #ffffffed,inset 0 2px 5px #725c9250,inset 0 -2px 2px #e2f9ffcc;
 }
-html[data-theme-style="glass"][data-theme="light"] :is(button[role="tab"],a[role="tab"],.main-tab,.tab-btn,.system-tab,.ai-subtab,.asset-tab,.asset-docker-subtab,.asset-settings-tab,.asset-docker-create-tab,.search-tab,.filter-tab,.bm-panel-tab,.sidebar-tab,.pager-tab,.label-right .tab,.expand-tab,.topic-expand-tabs > button,.tv-subtabs > button,.asset-segmented > button,.home-knowledge-tab,.book-view-btn,.range-btn,.mode-toggle-btn,.note-emoji-tab,.editor-emoji-tab,.topic-emoji-tab,.icon-tab,.filter-chip,.topic-comment-scope > button):not([data-home-sort]) {
+html[data-theme-style="glass"][data-theme="light"] :is(button[role="tab"],a[role="tab"],.main-tab,.tab-btn,.system-tab,.ai-subtab,.asset-tab,.asset-docker-subtab,.asset-settings-tab,.asset-docker-create-tab,.search-tab,.filter-tab,.bm-panel-tab,.sidebar-tab,.pager-tab,.label-right .tab,.expand-tab,.topic-expand-tabs > button,.tv-subtabs > button,.asset-segmented > button,.home-knowledge-tab,.book-view-btn,.range-btn,.mode-toggle-btn,.note-emoji-tab,.editor-emoji-tab,.topic-emoji-tab,.icon-tab,.filter-chip,.topic-comment-scope > button) {
   --glass-tab-fill: var(--glass-control);
   background:var(--glass-tab-highlight),var(--glass-tab-fill)!important;
   color:var(--color-text-secondary)!important;
@@ -295,18 +293,18 @@ html[data-theme-style="glass"][data-theme="light"] :is(button[role="tab"],a[role
   border-radius:var(--glass-tab-radius)!important;
   box-shadow:var(--glass-tab-edge)!important;
 }
-html[data-theme-style="glass"][data-theme="light"] :is(button[role="tab"],a[role="tab"],.main-tab,.tab-btn,.system-tab,.ai-subtab,.asset-tab,.asset-docker-subtab,.asset-settings-tab,.asset-docker-create-tab,.search-tab,.filter-tab,.bm-panel-tab,.sidebar-tab,.pager-tab,.label-right .tab,.expand-tab,.topic-expand-tabs > button,.tv-subtabs > button,.asset-segmented > button,.home-knowledge-tab,.book-view-btn,.range-btn,.mode-toggle-btn,.note-emoji-tab,.editor-emoji-tab,.topic-emoji-tab,.icon-tab,.filter-chip,.topic-comment-scope > button):not([data-home-sort]):is(.active,.chosen,.selected,[aria-selected="true"],[aria-pressed="true"],[data-state="active"]) {
+html[data-theme-style="glass"][data-theme="light"] :is(button[role="tab"],a[role="tab"],.main-tab,.tab-btn,.system-tab,.ai-subtab,.asset-tab,.asset-docker-subtab,.asset-settings-tab,.asset-docker-create-tab,.search-tab,.filter-tab,.bm-panel-tab,.sidebar-tab,.pager-tab,.label-right .tab,.expand-tab,.topic-expand-tabs > button,.tv-subtabs > button,.asset-segmented > button,.home-knowledge-tab,.book-view-btn,.range-btn,.mode-toggle-btn,.note-emoji-tab,.editor-emoji-tab,.topic-emoji-tab,.icon-tab,.filter-chip,.topic-comment-scope > button):is(.active,.chosen,.selected,[aria-selected="true"],[aria-pressed="true"],[data-state="active"]) {
   --glass-tab-fill:var(--glass-selected);
   background:var(--glass-tab-highlight),var(--glass-tab-fill)!important;
   color:var(--glass-tab-ink)!important;
 }
 @media (hover:hover) {
-  html[data-theme-style="glass"][data-theme="light"] :is(button[role="tab"],a[role="tab"],.main-tab,.tab-btn,.system-tab,.ai-subtab,.asset-tab,.asset-docker-subtab,.asset-settings-tab,.asset-docker-create-tab,.search-tab,.filter-tab,.bm-panel-tab,.sidebar-tab,.pager-tab,.label-right .tab,.expand-tab,.topic-expand-tabs > button,.tv-subtabs > button,.asset-segmented > button,.home-knowledge-tab,.book-view-btn,.range-btn,.mode-toggle-btn,.note-emoji-tab,.editor-emoji-tab,.topic-emoji-tab,.icon-tab,.filter-chip,.topic-comment-scope > button):not([data-home-sort]):hover:not(:disabled):not([aria-disabled="true"]) {
+  html[data-theme-style="glass"][data-theme="light"] :is(button[role="tab"],a[role="tab"],.main-tab,.tab-btn,.system-tab,.ai-subtab,.asset-tab,.asset-docker-subtab,.asset-settings-tab,.asset-docker-create-tab,.search-tab,.filter-tab,.bm-panel-tab,.sidebar-tab,.pager-tab,.label-right .tab,.expand-tab,.topic-expand-tabs > button,.tv-subtabs > button,.asset-segmented > button,.home-knowledge-tab,.book-view-btn,.range-btn,.mode-toggle-btn,.note-emoji-tab,.editor-emoji-tab,.topic-emoji-tab,.icon-tab,.filter-chip,.topic-comment-scope > button):hover:not(:disabled):not([aria-disabled="true"]) {
     background:var(--glass-tab-hover),var(--glass-tab-highlight),var(--glass-tab-fill)!important;
   }
 }
-html[data-theme-style="glass"][data-theme="light"] :is(button[role="tab"],a[role="tab"],.main-tab,.tab-btn,.system-tab,.ai-subtab,.asset-tab,.asset-docker-subtab,.asset-settings-tab,.asset-docker-create-tab,.search-tab,.filter-tab,.bm-panel-tab,.sidebar-tab,.pager-tab,.label-right .tab,.expand-tab,.topic-expand-tabs > button,.tv-subtabs > button,.asset-segmented > button,.home-knowledge-tab,.book-view-btn,.range-btn,.mode-toggle-btn,.note-emoji-tab,.editor-emoji-tab,.topic-emoji-tab,.icon-tab,.filter-chip,.topic-comment-scope > button):not([data-home-sort]):active:not(:disabled):not([aria-disabled="true"]) { box-shadow:var(--glass-tab-pressed)!important; }
-html[data-theme-style="glass"][data-theme="light"] :is(button[role="tab"],a[role="tab"],.main-tab,.tab-btn,.system-tab,.ai-subtab,.asset-tab,.asset-docker-subtab,.asset-settings-tab,.asset-docker-create-tab,.search-tab,.filter-tab,.bm-panel-tab,.sidebar-tab,.pager-tab,.label-right .tab,.expand-tab,.topic-expand-tabs > button,.tv-subtabs > button,.asset-segmented > button,.home-knowledge-tab,.book-view-btn,.range-btn,.mode-toggle-btn,.note-emoji-tab,.editor-emoji-tab,.topic-emoji-tab,.icon-tab,.filter-chip,.topic-comment-scope > button):not([data-home-sort]):focus-visible { outline:2px solid var(--color-focus); outline-offset:-2px; }
+html[data-theme-style="glass"][data-theme="light"] :is(button[role="tab"],a[role="tab"],.main-tab,.tab-btn,.system-tab,.ai-subtab,.asset-tab,.asset-docker-subtab,.asset-settings-tab,.asset-docker-create-tab,.search-tab,.filter-tab,.bm-panel-tab,.sidebar-tab,.pager-tab,.label-right .tab,.expand-tab,.topic-expand-tabs > button,.tv-subtabs > button,.asset-segmented > button,.home-knowledge-tab,.book-view-btn,.range-btn,.mode-toggle-btn,.note-emoji-tab,.editor-emoji-tab,.topic-emoji-tab,.icon-tab,.filter-chip,.topic-comment-scope > button):active:not(:disabled):not([aria-disabled="true"]) { box-shadow:var(--glass-tab-pressed)!important; }
+html[data-theme-style="glass"][data-theme="light"] :is(button[role="tab"],a[role="tab"],.main-tab,.tab-btn,.system-tab,.ai-subtab,.asset-tab,.asset-docker-subtab,.asset-settings-tab,.asset-docker-create-tab,.search-tab,.filter-tab,.bm-panel-tab,.sidebar-tab,.pager-tab,.label-right .tab,.expand-tab,.topic-expand-tabs > button,.tv-subtabs > button,.asset-segmented > button,.home-knowledge-tab,.book-view-btn,.range-btn,.mode-toggle-btn,.note-emoji-tab,.editor-emoji-tab,.topic-emoji-tab,.icon-tab,.filter-chip,.topic-comment-scope > button):focus-visible { outline:2px solid var(--color-focus); outline-offset:-2px; }
 html[data-theme-style="glass"][data-theme="light"] :is(.ai-subtabs,.tv-subtabs,.asset-segmented,.bm-panel-tabs,.sidebar-tabs,.pager-tabs) {
   background:var(--glass-panel)!important; border-color:var(--color-border-light)!important;
 }
@@ -372,10 +370,6 @@ html[data-theme-style="glass"][data-theme="light"] :is(.img-card.selected,.img-r
   border-color:var(--color-primary)!important;
   box-shadow:var(--glass-shadow),0 0 0 2px var(--color-focus)!important;
 }
-/* Keep the selected obsidian sort action distinct without changing its material. */
-html[data-theme-style="glass"][data-theme="light"] .main-tab[data-home-sort][aria-pressed="true"] {
-  box-shadow:var(--glass-tab-edge),0 0 0 2px var(--color-primary-border)!important;
-}
 /* Utility-class secondary actions, including the reminder test-mail button. */
 html[data-theme-style="glass"][data-theme="light"] button.border-slate-300:not(.bg-blue-600):not(.bg-blue-500) {
   background:var(--glass-tab-highlight),var(--glass-control)!important;
@@ -397,4 +391,20 @@ html[data-theme-style="glass"][data-theme="light"] .home-date-layout .calendar-d
     --glass-input:#f3f5fa; --color-bg-card:#e8ebf3;
     --glass-floating-base:#eff1f8; --glass-field-base:#f4f5fa;
   }
+}
+
+/* Composite search: the form owns the glass surface and focus ring. */
+html[data-theme-style="glass"][data-theme="light"] .public-search {
+  background:var(--glass-control),var(--glass-input); border-radius:var(--glass-tab-radius);
+  border-color:var(--color-border); box-shadow:var(--glass-field-shadow);
+}
+html[data-theme-style="glass"][data-theme="light"] .public-search:focus-within {
+  border-color:var(--color-focus); box-shadow:var(--glass-field-shadow),var(--glass-focus-shadow);
+}
+html[data-theme-style="glass"][data-theme="light"] .public-search input[type="search"],
+html[data-theme-style="glass"][data-theme="light"] .public-search input[type="search"]:focus-visible {
+  background:transparent!important; border-color:transparent!important; box-shadow:none!important;
+}
+html[data-theme-style="glass"][data-theme="light"] .public-search input[type="search"]:focus-visible {
+  outline:none; /* The enclosing form supplies the visible focus indicator. */
 }
