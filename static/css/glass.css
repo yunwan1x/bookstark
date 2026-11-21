@@ -408,3 +408,6 @@ html[data-theme-style="glass"][data-theme="light"] .public-search input[type="se
 html[data-theme-style="glass"][data-theme="light"] .public-search input[type="search"]:focus-visible {
   outline:none; /* The enclosing form supplies the visible focus indicator. */
 }
+html[data-theme-style="glass"][data-theme="light"] .home-toolbar .main-tab[data-home-sort] {
+  padding-inline:var(--spacing-md); white-space:nowrap;
+}
