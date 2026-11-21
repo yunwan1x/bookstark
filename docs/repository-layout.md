@@ -8,7 +8,7 @@
 bookstark/
 ├── main.go / embed*.go          服务入口、生产资源嵌入与开发模式
 ├── go.mod / go.sum              Go 模块及依赖
-├── *_browser*_test.go           依赖主程序 EmbedFS 的集成测试入口
+├── browser_integration_test.go    依赖主程序 EmbedFS 的集成测试入口
 ├── build.py / deploy.sh         常用构建、现有环境发布入口
 ├── Dockerfile                  标准源码镜像构建入口
 ├── readme.md / LICENSE          项目介绍与许可
@@ -43,7 +43,7 @@ bookstark/
 ## 为什么这些文件继续在首层？
 
 - `main.go` 与 `embed*.go` 保留现有入口，使 `go build .`、`build.py`、Docker 和 Release 构建继续使用同一方式。`go:embed` 不能向父目录引用资源，因此 `static/`、`templates/`、`conf/` 与入口保持当前相对位置。
-- 五个浏览器集成测试入口直接使用 `main` 包的 `EmbedFS`。保留在根包可以验证生产嵌入内容；JavaScript 测试主体统一在 `tests/browser/`。
+- `browser_integration_test.go` 中的浏览器集成测试直接使用 `main` 包的 `EmbedFS`。保留在根包可以验证生产嵌入内容；JavaScript 测试主体统一在 `tests/browser/`。
 - `Dockerfile` 是常用构建工具的默认入口；仅供部署脚本使用的 `Dockerfile.release` 归入 `deploy/docker/`。
 - `build.py` 和 `deploy.sh` 是已有工作流、文档约定的入口，保留路径可避免开发与发布命令发生不必要变化。
 - Go 各业务包保留独立目录；与包相关的单元测试就近放置，不集中搬走。

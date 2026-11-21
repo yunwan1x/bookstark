@@ -4,7 +4,7 @@
 
 - `ui/`：Go 编写的模板、样式、交互约束测试。测试入口自动定位仓库根目录，原有模板和静态资源引用保持不变。
 - `browser/`：JavaScript 单元测试与 Playwright 浏览器回归。`repo-root.cjs` 统一定位资源路径，支持从仓库根目录或其他目录调用。
-- 根目录的五个 `*_browser*_test.go`：使用主程序 `EmbedFS` 的端到端测试入口，继续与 `main` 包同目录，保证测试的仍是生产嵌入资源。
+- 根目录的 `browser_integration_test.go`：使用主程序 `EmbedFS` 的端到端测试入口，继续与 `main` 包同目录，保证测试的仍是生产嵌入资源。
 - `models/`、`controllers/`、`middleware/` 等包中的 Go 测试继续与对应代码放在一起。
 
 ## Go 测试

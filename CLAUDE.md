@@ -51,8 +51,8 @@ go get <package>
 ```
 
 UI contract tests live in `tests/ui/`; JavaScript and Playwright scripts live in
-`tests/browser/`. Run `go test ./...` for all Go packages. Root browser integration
-tests stay with `main` because they use its embedded assets. See `tests/README.md`
+`tests/browser/`. Run `go test ./...` for all Go packages. The root browser integration
+test entry stays with `main` because it uses the embedded assets. See `tests/README.md`
 and `docs/repository-layout.md`. Production Docker builds use the root Dockerfile;
 the specialized native-release image uses `deploy/docker/Dockerfile.release`.
 
