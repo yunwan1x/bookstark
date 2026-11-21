@@ -192,7 +192,7 @@ var ImagesPage = (function() {
         document.getElementById('select-count').textContent = count;
         document.getElementById('btn-batch-del').disabled = count === 0;
         var allSelected = currentData.length > 0 && count === currentData.length;
-        document.getElementById('btn-select-all').textContent = allSelected ? '取消全选' : '全选';
+        document.getElementById('btn-select-all').textContent = window.__(allSelected ? 'image.select.deselect_all' : 'image.select.all');
     }
 
     function batchDelete() {
