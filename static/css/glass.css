@@ -376,3 +376,9 @@ html[data-theme-style="glass"][data-theme="light"] :is(.img-card.selected,.img-r
 html[data-theme-style="glass"][data-theme="light"] .main-tab[data-home-sort][aria-pressed="true"] {
   box-shadow:var(--glass-tab-edge),0 0 0 2px var(--color-primary-border)!important;
 }
+/* Utility-class secondary actions, including the reminder test-mail button. */
+html[data-theme-style="glass"][data-theme="light"] button.border-slate-300:not(.bg-blue-600):not(.bg-blue-500) {
+  background:var(--glass-tab-highlight),var(--glass-control)!important;
+  color:var(--color-text-secondary)!important; border-color:var(--color-border)!important;
+  border-radius:var(--glass-tab-radius)!important; box-shadow:var(--glass-tab-edge)!important;
+}
