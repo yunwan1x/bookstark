@@ -63,3 +63,6 @@ mihomo/config.yaml
 *.sqlite-*
 *.sqlite3-*
 *.tgz
+
+# Public README screenshots use isolated demo data.
+!docs/screenshots/*.png
