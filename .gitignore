@@ -66,3 +66,6 @@ mihomo/config.yaml
 
 # Public README screenshots use isolated demo data.
 !docs/screenshots/*.png
+
+# Optional local developer proxy configuration.
+tools/dev-proxy/mihomo/config.yaml

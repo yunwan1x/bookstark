@@ -38,3 +38,6 @@ android/app/src/main/assets
 android/app/src/main/res/mipmap-mdpi
 android/app/src/main/res/mipmap-hdpi
 dist/android
+
+# Optional local developer proxy configuration.
+tools/dev-proxy/mihomo/config.yaml

@@ -41,8 +41,8 @@ logged by the TTS handlers.
 ```sh
 go test -p=1 ./internal/edgetts/... ./controllers ./routers
 # Playwright must be installed; CHROMIUM_PATH is optional.
-node ai_speech_browser_test.cjs
-node home_assistant_browser_test.cjs
+node tests/browser/ai_speech_browser_test.cjs
+node tests/browser/home_assistant_browser_test.cjs
 # Explicitly opt in to Microsoft network test; optional proxy as above.
 BOOKSTARK_TTS_LIVE=1 go test ./internal/edgetts -run TestEdgeLive -v
 python3 build.py --build

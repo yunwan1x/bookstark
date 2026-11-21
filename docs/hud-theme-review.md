@@ -31,10 +31,10 @@
 ## 验证
 
 - Chromium：实际本地应用登录、设置主题、刷新保持、首页排序、笔记 Tab；320/390/768/1024/1440px，中文/英文服务端模板。
-- `hud_theme_browser_test.cjs`：首屏深色、刷新保持、跨标签同步、AI/书签遮挡、焦点可见、白名单 iframe 启停和任意用户 HTML 不注入。
-- `glass_theme_browser_test.cjs`：原玻璃主题与回切保持正常。
-- `mobile_swipe_tabs_browser_test.cjs`：鼠标、触摸、滑动和键盘 Tab 操作。
-- `theme_chart_lifecycle_browser_test.cjs`：切换主题图表生命周期。
+- `tests/browser/hud_theme_browser_test.cjs`：首屏深色、刷新保持、跨标签同步、AI/书签遮挡、焦点可见、白名单 iframe 启停和任意用户 HTML 不注入。
+- `tests/browser/glass_theme_browser_test.cjs`：原玻璃主题与回切保持正常。
+- `tests/browser/mobile_swipe_tabs_browser_test.cjs`：鼠标、触摸、滑动和键盘 Tab 操作。
+- `tests/browser/theme_chart_lifecycle_browser_test.cjs`：切换主题图表生命周期。
 - Go 主题注册、首屏入口、后台 AI 与编辑器主题相关测试；`git diff --check`。
 - 40 个桌面页面/状态 + 4 个手机页面截图，初查无页面横向溢出。截图与 manifest 位于 `artifacts/hud-implementation/`，不提交私人业务截图到仓库。
 

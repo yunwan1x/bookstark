@@ -60,7 +60,7 @@ func runIsolatedBrowser(t *testing.T, script string, setup ...func(*testing.T)) 
 	}
 	server := httptest.NewServer(routers.Setup())
 	defer server.Close()
-	cmd := exec.Command("node", filepath.Join(repo, script))
+	cmd := exec.Command("node", filepath.Join(repo, "tests", "browser", script))
 	cmd.Env = append(os.Environ(), "BOOKSTARK_TEST_ORIGIN="+server.URL, "BOOKSTARK_TEST_PASSWORD="+conf.App.AdminPassword)
 	cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
 	if err := cmd.Run(); err != nil {

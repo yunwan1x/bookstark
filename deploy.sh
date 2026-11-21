@@ -125,7 +125,7 @@ if [ "$BUILD_MODE" = native ]; then
     cp /etc/ssl/certs/ca-certificates.crt "${ARTIFACT_DIR}/ca-certificates.crt"
     docker build \
         --build-arg "COMMIT=${COMMIT}" \
-        -f "${PWD}/Dockerfile.release" \
+        -f "${PWD}/deploy/docker/Dockerfile.release" \
         -t "${FULL_IMAGE}" \
         "${ARTIFACT_DIR}"
 else

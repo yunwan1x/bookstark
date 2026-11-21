@@ -187,7 +187,7 @@ sed -n 's/^ADMIN_PASSWORD=//p' data/bookstark.env
 
 访问 **http://localhost:8089**，使用 `admin` 和生成的密码登录。远程访问请配置 HTTPS 反向代理，并支持 WebSocket 与 SSE。
 
-也可以使用 [GitHub Releases](https://github.com/yunwan1x/bookstark/releases) 提供的发布产物。完整的 Docker Compose 示例、GHCR 镜像、环境变量、本地运行、升级和备份方法见 [部署与维护手册](docs/usage-and-deployment.md)。根目录现有的 `docker-compose.yml` 用于其他服务，请使用手册中的 BookStark 示例。
+也可以使用 [GitHub Releases](https://github.com/yunwan1x/bookstark/releases) 提供的发布产物。完整的 Docker Compose 示例、GHCR 镜像、环境变量、本地运行、升级和备份方法见 [部署与维护手册](docs/usage-and-deployment.md)。请使用手册中的 BookStark Compose 示例；开发机代理工具单独放在 `tools/dev-proxy/`。
 
 > 升级前备份数据库、上传文件与密钥。首次生成的环境文件不要提交到 Git，也不要在升级时重新生成；已有账号密码不会因初始化环境变量改变。
 
@@ -202,7 +202,7 @@ sed -n 's/^ADMIN_PASSWORD=//p' data/bookstark.env
 | 接入 | API Token、WebDAV、OpenAI 兼容 / Anthropic AI 接口 |
 | 许可 | Apache License 2.0；第三方组件遵循各自许可 |
 
-[部署与维护](docs/usage-and-deployment.md) · [创作工具](docs/local-creation-tools.md) · [资讯源](docs/news-feeds.md) · [开发约定](CLAUDE.md) · [辅助脚本](scripts/README.md)
+[部署与维护](docs/usage-and-deployment.md) · [创作工具](docs/local-creation-tools.md) · [资讯源](docs/news-feeds.md) · [仓库结构](docs/repository-layout.md) · [测试指南](tests/README.md) · [开发约定](CLAUDE.md) · [辅助脚本](scripts/README.md)
 
 ## 一起把 BookStark 做得更好
 

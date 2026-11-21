@@ -126,7 +126,7 @@ docker pull ghcr.io/yunwan1x/bookstark:latest
 
 镜像发布使用 `GITHUB_TOKEN` 和工作流的 `packages: write` 权限，无需维护额外仓库密码。GHCR 新包的可见性需在 GitHub Packages 设置中确认：私有包拉取需要登录，设为 Public 后可匿名拉取。
 
-仓库根目录现有的 [docker-compose.yml](../docker-compose.yml) 只包含 Mihomo 服务，**不是 BookStark 的启动配置**。可在仓库根目录另建 `compose.bookstark.yml`，使用下面的独立示例：
+[tools/dev-proxy/compose.yml](../tools/dev-proxy/compose.yml) 是可选的开发机代理工具，**不是 BookStark 的启动配置**。可在仓库根目录另建 `compose.bookstark.yml`，使用下面的独立示例：
 
 ```yaml
 services:
@@ -236,7 +236,7 @@ GOMAXPROCS=1 GOMEMLIMIT=300MiB go test -p=1 ./controllers \
 # 首页助手：账号隔离、模型协议、草稿确认、事务回滚、重复提交
 GOMAXPROCS=1 GOMEMLIMIT=220MiB go test -p=1 ./models ./controllers -run TestAssistant -count=1
 # 安装 Playwright 并指定 Chromium 路径后运行（模拟网络，不访问线上数据）
-CHROMIUM_PATH=/path/to/chromium node home_assistant_browser_test.cjs
+CHROMIUM_PATH=/path/to/chromium node tests/browser/home_assistant_browser_test.cjs
 ```
 
 仓库还包含 `*_browser_test.cjs` 等浏览器回归脚本，需要单独准备 Playwright/Chromium，运行前查看相应脚本的依赖与环境变量。
@@ -252,10 +252,14 @@ templates/    Go HTML 模板
 static/       前端脚本、样式及静态资源
 i18n/         中英文翻译
 docs/         设计与测试文档
+tests/        UI 约束与 JavaScript/浏览器测试
+deploy/       专用镜像发布文件
 scripts/      辅助脚本
 build.py      构建、资源版本生成与本地启动
 deploy.sh     现有环境的远程发布脚本
 ```
+
+完整目录说明见 [仓库结构](repository-layout.md)，测试分层见 [测试指南](../tests/README.md)。
 
 新增界面应复用现有组件、兼容手机布局，并同时补充中英文文案。项目约定见 [CLAUDE.md](../CLAUDE.md)，辅助工具说明见 [scripts/README.md](../scripts/README.md)。
 
