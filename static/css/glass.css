@@ -126,7 +126,7 @@ html[data-theme-style="glass"][data-theme="light"] .home-date-layout .calendar-d
    above readable content. Keep layout and stacking owned by each component. */
 html[data-theme-style="glass"][data-theme="light"] {
   --glass-scrim: #6c73865c;
-  --glass-floating-base: #eff1f8f5;
+  --glass-floating-base: #eff1f8;
   --glass-floating-rim: #fffffff0;
   --glass-floating-fill: radial-gradient(ellipse at 0 0,#c9cfff30,transparent 58%),linear-gradient(135deg,#9184d51a,transparent 55%,#6687c922);
   --glass-floating-shadow: inset 0 2px 3px #fff,inset 2px 0 3px #fff,inset 0 -3px 4px #fff,0 20px 56px #59617945,0 0 0 1px #ffffffd9;
@@ -494,4 +494,17 @@ html[data-theme-style="glass"][data-theme="light"] .tv-work :is(.tv-side,.tv-edi
    underlying text; the gradient and rim provide the glass appearance. */
 html[data-theme-style="glass"][data-theme="light"] :is(.preview-ai-panel,.home-assistant-dialog,.ai-dlg-box) {
   --glass-floating-base:#eff1f8;
+}
+
+/* Floating drawers and native dialogs must not inherit translucent page-card
+   paint. State selectors keep ordinary desktop sidebars unchanged. */
+html[data-theme-style="glass"][data-theme="light"] :is(.mobile-drawer,.task-mobile-drawer,.bm-drawer,#sidebar.drawer-open,.local-tools-sidebar.is-open,body.topic-mobile-topic-open .topic-rail,.share-comments-panel,#panel-tv dialog) {
+  background:var(--glass-floating-fill),var(--glass-floating-base)!important;
+  color:var(--color-text); border-color:var(--glass-floating-rim)!important;
+  box-shadow:var(--glass-floating-shadow)!important;
+}
+html[data-theme-style="glass"][data-theme="light"] :is(.note-emoji-picker,.editor-emoji-picker,.topic-emoji-picker,.asset-autocomplete-options) {
+  background:var(--glass-floating-fill),var(--glass-floating-base)!important;
+  color:var(--color-text); border-color:var(--glass-floating-rim)!important;
+  box-shadow:var(--glass-floating-shadow)!important;
 }
