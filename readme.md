@@ -4,10 +4,10 @@
 
 ### 把灵感、知识与行动，装进自己的工作台。
 
-**自托管知识管理 · AI 助手 · 多格式创作 · 六套主题 · Go + SQLite**
+**自托管知识管理 · AI 生成工具 · HTML 扩展平台 · 六套主题 · Go + SQLite**
 
 一个地方，完成记录、整理、阅读、创作与分享。<br>
-从随手记下一个想法，到建立一本知识手册，再到管理自己的服务器。
+从随手记下一个想法，到让 AI 生成自己的工具，再到把创作、协作与分享集成进同一张工作台。
 
 [![GitHub Stars](https://img.shields.io/github/stars/yunwan1x/bookstark?style=flat-square&color=00a9bd)](https://github.com/yunwan1x/bookstark/stargazers)
 [![Release](https://img.shields.io/github/v/release/yunwan1x/bookstark?style=flat-square)](https://github.com/yunwan1x/bookstark/releases)
@@ -15,7 +15,7 @@
 [![SQLite](https://img.shields.io/badge/SQLite-自托管-003B57?style=flat-square&logo=sqlite&logoColor=white)](docs/usage-and-deployment.md)
 [![License](https://img.shields.io/github/license/yunwan1x/bookstark?style=flat-square)](LICENSE)
 
-[快速部署](#快速部署) · [功能全景](#功能全景) · [六套主题](#六套主题让工作台有自己的性格) · [截图导览](#从记录到输出一条完整的工作流) · [参与贡献](#一起把-bookstark-做得更好)
+[快速部署](#快速部署) · [功能全景](#功能全景) · [HTML 工具与案例](#html-扩展平台把想用的工具装进同一个工作台) · [六套主题](#六套主题让工作台有自己的性格) · [截图导览](#从记录到输出一条完整的工作流) · [参与贡献](#一起把-bookstark-做得更好)
 
 **喜欢这个方向？点亮右上角的 ⭐ Star，让更多人发现 BookStark。**
 
@@ -23,18 +23,114 @@
 
 ![BookStark 冰川青蓝 HUD 首页：统计、最近访问、个人内容与日历](docs/screenshots/theme-hud-light.png)
 
-> 上图及下方界面图均来自实际运行的 BookStark，使用独立演示数据拍摄。点击图片可查看大图。
+> 上图及下方界面图均来自实际运行的 BookStark，知识管理界面使用独立演示数据，HTML 扩展案例拍摄自公开工具页面。点击图片可查看大图。
 
 ## 为什么值得放进你的自托管清单？
 
 - **让知识有去处，也有下一步。** 笔记捕捉灵感，书签积累资料，书籍建立体系，专题串联问题，待办推动行动。
 - **一个工作台，覆盖多种创作方式。** Markdown、HTML、富文档、电子表格、画板、思维导图、演示文稿，在熟悉的界面里切换。
 - **AI 可以围绕你的资料工作。** 检索当前账号的文字资料、读取与总结 Markdown 正文、起草笔记和待办；确认草稿后再创建。
+- **把想用的工具接进来，也让 AI 帮你造工具。** HTML/CSS/JavaScript 承载交互页面，AI 辅助生成和修改；从 Craft 创作套件到直播、街机、WebRTC 会议室，工具与知识共用一个入口。
 - **数据与部署自己掌握。** Go 后端与 SQLite，无需单独部署数据库服务；支持 Docker，生产构建可将前端资源与模板嵌入二进制。
 - **从个人知识库延伸到开发者工作台。** 书签、文件、WebDAV 与管理员专用的 SSH、远程文件、Docker 管理，共用一个入口。
 - **每天打开，也要看得舒服。** 六套独立主题、中文/英文、桌面与手机布局、PWA 安装，兼顾内容密度与使用体验。
 
 **适合你，如果你想要：** 一个自己的知识库、一套学习与研究工作流、一个自托管内容站，或一张把资料与工具放在一起的开发者工作台。
+
+## HTML 扩展平台：把想用的工具，装进同一个工作台
+
+**知识库用来积累，HTML 工具用来动手。再加上 AI，你可以在同一个地方提出想法、生成工具、修改界面、保存成果并分享使用。**
+
+BookStark 的 HTML 文章和文档可以承载 HTML、CSS 与 JavaScript，运行交互页面。一个计算器、一张数据看板、一套创作工作台，甚至直播播放器、街机游戏厅和 WebRTC 会议室，都可以成为知识库里可打开、可使用的内容。
+
+### 从一句需求，到一个自己的工具
+
+1. **描述需求**：新建 HTML 文章或文档，在编辑器中打开 AI，说明需要的页面、交互和样式；也可以导入或粘贴已有 HTML 工具代码。
+2. **生成并预览**：让 AI 输出 HTML/CSS/JavaScript，应用到编辑器后查看实际运行效果。简单的浏览器工具不必另建项目、另配一套站点。
+3. **继续用自然语言修改**：选中代码或带上现有内容，让 AI「增加 CSV 导出」「把布局改成适合手机」「给筛选器加一个重置按钮」，检查生成结果后应用。
+4. **保存、组织、分享**：把工具与说明文档、使用笔记一起管理，按标签查找，再通过分享链接开放给他人使用。工具需要更新时，回到同一篇 HTML 内容继续编辑。
+
+例如，你可以直接提出：
+
+> 帮我做一个项目工时计算器，用 HTML、CSS 和 JavaScript 实现；支持添加任务、填写时长、自动汇总和导出 CSV，手机上也能用。
+>
+> 在现有工具上增加按项目筛选，保留已有数据和导出功能。
+
+这是**编辑器里的 AI 生成与修改流程**：生成结果经过预览与确认后再使用。配置好 AI 服务即可开始；复杂工具仍需按功能接入资源或服务，并验证实际行为。
+
+### 为什么放在 BookStark 里？
+
+| 优势 | 带来的改变 |
+| --- | --- |
+| **工具和知识在一起** | 操作工具、记录过程、整理结果、分享说明，共用一个工作台入口，减少在零散站点间切换。 |
+| **HTML 成为通用扩展入口** | 自己写的单页、AI 生成的小工具、可嵌入的 Web 应用，都有接入路径，不必为每个前端工具修改 Go 主程序。 |
+| **按自己的需求持续修改** | 从现成页面开始，让 AI 帮忙增减功能、调整布局和优化交互，把通用工具变成自己的工具。 |
+| **从个人使用到链接分享** | 同一份 HTML 内容既能自己使用，也能作为公开工具发布；说明、标签和访问入口一起管理。 |
+| **一站式集成，按需扩展** | 记录、创作、AI、工具运行与分享连在一起；静态资源可通过 WebDAV 承载，需要后端的工具再接入相应服务。 |
+
+这里的「接入任意工具」指开放的 Web/HTML 扩展方式：纯前端工具可以直接运行，第三方页面需允许嵌入，依赖后端、API 或本地程序的工具需要相应服务。工具内部的数据保存和权限以各工具实现为准。
+
+### 案例一：Craft 系列，把专业创作工具汇集到工作台
+
+从文档、表格、演示到图像、设计、工程制图和材质创作，Craft 系列展示了同一 HTML 入口可以覆盖多种工作场景。下面是已经接入站点的实际界面。
+
+<table>
+  <tr>
+    <td width="50%"><strong>CADCraft · 工程制图</strong><br><img src="docs/screenshots/extension-cadcraft.png" alt="通过 BookStark HTML 分享页打开的 CADCraft 工程制图工作台" width="100%"></td>
+    <td width="50%"><strong>DeckCraft · 演示文稿</strong><br><img src="docs/screenshots/extension-deckcraft.png" alt="DeckCraft 演示文稿工作台" width="100%"></td>
+  </tr>
+  <tr>
+    <td><strong>MaterialCraft · 节点材质</strong><br><img src="docs/screenshots/extension-materialcraft.png" alt="MaterialCraft 节点材质设计工作台" width="100%"></td>
+    <td><strong>TextureCraft · 3D 纹理</strong><br><img src="docs/screenshots/extension-texturecraft.png" alt="TextureCraft 3D 纹理绘制工作台" width="100%"></td>
+  </tr>
+</table>
+
+<details>
+<summary><strong>展开查看更多 Craft 工具：文档、表格、演示、图像、音视频与设计</strong></summary>
+
+<table>
+  <tr><td width="50%"><strong>WordCraft · 文档</strong><br><img src="docs/screenshots/extension-wordcraft.png" alt="WordCraft 文档编辑工作台" width="100%"></td><td width="50%"><strong>GridCraft · 表格</strong><br><img src="docs/screenshots/extension-gridcraft.png" alt="GridCraft 电子表格工作台" width="100%"></td></tr>
+  <tr><td><strong>FigCraft · 界面设计</strong><br><img src="docs/screenshots/extension-figcraft.png" alt="FigCraft 界面设计工作台" width="100%"></td><td><strong>PhotoCraft · 图片编辑</strong><br><img src="docs/screenshots/extension-photocraft.png" alt="PhotoCraft 图片编辑器" width="100%"></td></tr>
+  <tr><td><strong>VectorCraft · 矢量设计</strong><br><img src="docs/screenshots/extension-vectorcraft.png" alt="VectorCraft 矢量设计工作台" width="100%"></td><td><strong>DesignCraft · 版式设计</strong><br><img src="docs/screenshots/extension-designcraft.png" alt="DesignCraft 版式设计工作台" width="100%"></td></tr>
+  <tr><td><strong>FilmCraft · 视频剪辑</strong><br><img src="docs/screenshots/extension-filmcraft.png" alt="FilmCraft 视频剪辑工作台" width="100%"></td><td><strong>SoundCraft · 音频制作</strong><br><img src="docs/screenshots/extension-soundcraft.png" alt="SoundCraft 音频制作工作台" width="100%"></td></tr>
+  <tr><td><strong>EffectCraft · 动效</strong><br><img src="docs/screenshots/extension-effectcraft.png" alt="EffectCraft 动效与视觉特效工作台" width="100%"></td><td><strong>LightCraft · 照片与 RAW</strong><br><img src="docs/screenshots/extension-lightcraft.png" alt="LightCraft 照片与 RAW 工作台" width="100%"></td></tr>
+  <tr><td><strong>PdfCraft · PDF</strong><br><img src="docs/screenshots/extension-pdfcraft.png" alt="PdfCraft PDF 工作台" width="100%"></td><td><strong>Craft Anything · 文件识别</strong><br><img src="docs/screenshots/extension-craft.png" alt="Craft Anything 文件识别工具 Web 简化版" width="100%"></td></tr>
+</table>
+
+</details>
+
+**适用场景：** 在同一个入口打开设计稿、编写说明、整理表格，再把操作心得沉淀为文章。这里展示的是已接入的工具界面，各工具的功能范围、资源依赖和授权以其自身实现为准。
+
+### 案例二：电视直播，把频道变成可分享的工具页面
+
+国内直播与世界电视分别提供频道浏览和播放入口。把常看的内容集中到自己的门户，打开链接即可进入，不用为每个频道维护一张独立书签。
+
+<table>
+  <tr>
+    <td width="50%"><strong>电视直播 · 央视与卫视</strong><br><img src="docs/screenshots/extension-tv.png" alt="BookStark HTML 工具中的国内电视直播频道界面" width="100%"></td>
+    <td width="50%"><strong>世界电视 · 全球直播</strong><br><img src="docs/screenshots/extension-world-tv.png" alt="世界电视国家分类与频道播放界面" width="100%"></td>
+  </tr>
+</table>
+
+频道来自所配置的直播源，实际可用性受源站和网络影响；截图展示工具界面。
+
+### 案例三：街机游戏厅，让 HTML 承载完整的交互应用
+
+街机游戏厅将浏览器模拟器、游戏选择和运行控制整合到一个页面，支持键盘、手柄与触屏操作，以及工具支持的存档导入导出。它展示了 HTML 扩展也能承载 WebAssembly 等复杂浏览器应用。
+
+![街机游戏厅：在 BookStark HTML 工具中选择和运行游戏](docs/screenshots/extension-arcade.png)
+
+模拟器资源按需加载；游戏与 BIOS 需自行提供有权使用的文件，不随 BookStark 发布包分发。接入说明见 [Retro Player](integrations/retro-player/README.md)。
+
+### 案例四：WebRTC 会议室，把交流和协作也放进工作台
+
+一个 HTML 分享入口，承载房间创建与加入、屏幕和摄像头共享、实时标注等协作能力。讲解设计稿、远程演示工具、一起看资料，都可以围绕同一张协作画布展开。
+
+![WebRTC 会议室：房间入口、屏幕共享与协作标注工具栏](docs/screenshots/extension-webrtc.png)
+
+浏览器媒体权限、信令和网络连通性按实际部署配置。图中为会议入口，不代表正在进行多人通话。
+
+> 以上为公开站点实际接入案例，不代表安装 BookStark 后自动附带全部工具、媒体源和第三方资源。BookStark 提供 HTML 编辑、运行与分享的基础，让你按自己的需求搭出一站式工作台。
 
 ## 六套主题，让工作台有自己的性格
 
@@ -68,6 +164,7 @@
 | 留住优质链接 | 书签、标签、导入、批量管理与导航页 |
 | 让 AI 帮忙梳理 | 首页助手、文字资料检索、Markdown 总结、笔记与待办草稿确认创建、编辑器辅助 |
 | 写文章之外也能创作 | 富文档、电子表格、画板、思维导图、演示文稿，以及无需登录的本机创作工具 |
+| 扩展自己的工具平台 | HTML 工具编辑与运行、AI 生成与修改、分享发布；可接入 Craft、直播、街机和 WebRTC 等工具 |
 | 发布自己的内容 | 公开广场、文章/速记/书籍/书签浏览、分享链接与评论 |
 | 管理文件和图片 | 图片管理、本地 WebDAV 文件服务、文件上传、浏览与管理 |
 | 管理服务器 | 管理员专用的 SSH 资产、网页终端、凭据、远程文件与 Docker 管理 |
