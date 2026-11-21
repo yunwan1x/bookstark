@@ -11,7 +11,7 @@
         light: { scheme: 'light' },
         'nvidia': { scheme: 'dark' },
         apple: { scheme: 'light' },
-        glass: { scheme: 'dark' }
+        glass: { scheme: 'light' }
     };
 
     function normalizeTheme(theme) {

@@ -1,17 +1,25 @@
 /* Scope is assigned only to BookStark's Short and collaboration tool frames. */
-[data-bookstark-glass] { color-scheme:dark; --bg:#0a1028; --panel:#26325175; --text:#f1f2ff; --muted:#bac3dd; --border:#c6d0ff55; --accent:#b49af0; --surface:#26325175; }
-[data-bookstark-glass] body { background:#0a1028 url('/static/images/glass-ribbons.svg') center/cover fixed!important; color:#f1f2ff!important; }
-[data-bookstark-glass] :is(button,input,select,.toolbar,.topbar,.bottom-bar,.panel,.welcome-card) { background:linear-gradient(125deg,#e0e6ff2a,#a9b4ee10),#25305270!important; color:#f1f2ff!important; border-color:#c6d0ff55!important; box-shadow:inset 0 1px 0 #eef1ff65,0 4px 16px #02051b40!important; backdrop-filter:blur(16px); }
-[data-bookstark-glass] :is(.primary,button.active,button.selected) { background:linear-gradient(130deg,#c5b0ff65,#8b59dc65)!important; color:#fff!important; }
-[data-bookstark-glass] select option { background:#17213b; color:#f1f2ff; }
-[data-bookstark-glass="short"] .frame { box-shadow:inset 0 0 0 1px #c6d0ff55,0 0 24px #8d71cf25; }
-[data-bookstark-glass="short"] :is(.badge,.overlay) { background:#15203bb0!important; color:#e2dbff!important; }
-[data-bookstark-glass="short"] .app:fullscreen { background:#0a1028 url('/static/images/glass-ribbons.svg') center/cover!important; }
+[data-bookstark-glass] { color-scheme:light; --bg:#dce0e9; --panel:#f1f3fa99; --text:#191d2b; --muted:#596174; --border:#ffffffdd; --accent:#7352bc; --surface:#f1f3fa99; }
+[data-bookstark-glass] body { background:#dce0e9 linear-gradient(145deg,#e1e4ed,#e0d9f0 45%,#dcf1f6 70%,#d9dce7) center/cover fixed!important; color:#191d2b!important; }
+[data-bookstark-glass] :is(button,input,select,.toolbar,.topbar,.bottom-bar,.panel,.welcome-card) { background:linear-gradient(125deg,#ffffffc0,#deddf655),#eff1f899!important; color:#191d2b!important; border-color:#ffffffdd!important; box-shadow:inset 0 1px 0 #ffffff,0 4px 16px #53617c30!important; backdrop-filter:blur(16px); }
+[data-bookstark-glass] :is(.primary,button.active,button.selected) { background:linear-gradient(130deg,#e7ddff,#c9b4f4)!important; color:#fff!important; }
+[data-bookstark-glass] select option { background:#edf0f8; color:#191d2b; }
+[data-bookstark-glass="short"] .frame { box-shadow:inset 0 0 0 1px #ffffffdd,0 0 24px #8d71cf25; }
+[data-bookstark-glass="short"] :is(.badge,.overlay) { background:#eff1f8e8!important; color:#191d2b!important; }
+[data-bookstark-glass="short"] .app:fullscreen { background:#dce0e9 linear-gradient(145deg,#e1e4ed,#e0d9f0 45%,#dcf1f6 70%,#d9dce7) center/cover!important; }
 [data-bookstark-glass="short"] .progress i { background:#bea5ff; }
-html[data-bookstark-glass="meeting"] body.rtc-modern { --bg:transparent; --titlebar:#1b264480; --activity:#1b264480; --panel:#24315180; --panel-2:#b4bfff18; --surface:#24315180; --ink:#edf0ff; --muted:#bdc5de; --line:#c6d0ff50; --accent:#b69af4; --canvas:transparent; }
+html[data-bookstark-glass="meeting"] body.rtc-modern { --bg:transparent; --titlebar:#edf0f899; --activity:#edf0f899; --panel:#eff1f899; --panel-2:#d9def180; --surface:#eff1f899; --ink:#191d2b; --muted:#596174; --line:#ffffffdd; --accent:#7352bc; --canvas:transparent; }
 html[data-bookstark-glass="meeting"] body.rtc-modern :is(.app,.stage) { background:transparent!important; }
-html[data-bookstark-glass="meeting"] body.rtc-modern :is(.modern-header,.modern-welcome,.modern-toolbar,.modern-dock,.modern-entry-tabs,.modern-popover) { background:linear-gradient(125deg,#e0e6ff20,#a9b4ee0b),#25305260!important; border-color:#c6d0ff55!important; box-shadow:inset 0 1px 0 #eef1ff65,0 4px 16px #02051b40; backdrop-filter:blur(18px); }
+html[data-bookstark-glass="meeting"] body.rtc-modern :is(.modern-header,.modern-welcome,.modern-toolbar,.modern-dock,.modern-entry-tabs,.modern-popover) { background:linear-gradient(125deg,#e0e6ff20,#a9b4ee0b),#eff1f899!important; border-color:#ffffffdd!important; box-shadow:inset 0 1px 0 #ffffff,0 4px 16px #53617c30; backdrop-filter:blur(18px); }
 html[data-bookstark-glass="meeting"] body.rtc-modern .modern-btn.danger { background:linear-gradient(130deg,#d9638650,#873d6e40)!important; }
 /* The unused drawing canvas is white before a room starts; don't blur it into the welcome surface. */
-html[data-bookstark-glass="meeting"] body.rtc-modern .modern-welcome { background:linear-gradient(120deg,#c9d5ff16,#aab4e909),#18213b url('/static/images/glass-ribbons.svg') center/cover!important; backdrop-filter:none; }
-html[data-bookstark-glass="meeting"] body.rtc-modern input::placeholder { color:#b9c2dd; }
+html[data-bookstark-glass="meeting"] body.rtc-modern .modern-welcome { background:linear-gradient(120deg,#c9d5ff16,#aab4e909),#dce0e9 linear-gradient(145deg,#e1e4ed,#e0d9f0 45%,#dcf1f6 70%,#d9dce7) center/cover!important; backdrop-filter:none; }
+html[data-bookstark-glass="meeting"] body.rtc-modern input::placeholder { color:#596174; }
+
+[data-bookstark-glass] :is(button,input,select,.toolbar,.topbar,.bottom-bar,.panel,.welcome-card,.modern-header,.modern-welcome,.modern-toolbar,.modern-dock,.modern-entry-tabs,.modern-popover) { border-radius:16px; box-shadow:inset 0 2px 3px #fff,inset 2px 0 3px #fff,inset 0 -3px 3px #fff,0 8px 20px #53617c30!important; }
+[data-bookstark-glass] :is(.primary,button.active,button.selected) { color:#302244!important; }
+[data-bookstark-glass="article"] :is(.nav,.q-card,.panel,.hero,.bridge-step,.side-block,.hero-note,.note) { background:linear-gradient(135deg,#ffffffa0,#ede7f580,#e0f4f880)!important; border-color:#ffffffdd!important; box-shadow:inset 0 2px 3px #fff,inset 0 -2px 3px #fff,0 8px 18px #53617c26; }
+@media(prefers-reduced-motion:reduce) { [data-bookstark-glass] * { animation:none!important; transition:none!important; } }
+
+html[data-bookstark-glass] :is(.modern-header,.modern-welcome,.modern-toolbar,.modern-dock,.nav,.q-card,.panel,.hero,.bridge-step,.side-block,.hero-note,.note) { border-radius:20px; box-shadow:inset 0 2px 1px #fff,inset 2px 0 2px #ffffffed,inset -2px 0 2px #c9ebff,inset 0 -2px 2px #fff,inset 0 4px 5px #7e8ca557,inset 0 -5px 5px #bdeaff99,0 8px 18px #53617c30!important; }
+html[data-bookstark-glass="meeting"] body.rtc-modern .modern-btn.primary { background:linear-gradient(#646773,#1b1d25 30%,#090a10 70%,#424652)!important; color:white!important; }
