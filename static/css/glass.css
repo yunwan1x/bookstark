@@ -287,7 +287,7 @@ html[data-theme-style="glass"][data-theme="light"] {
   --glass-tab-edge: inset 0 0 0 1px #fffffff0,inset 0 0 0 3px #bdcbe54d,inset 1px 3px 3px #ffffffb3,inset -1px -3px 3px #c5f2ffb3,0 2px 5px #53617c30;
   --glass-tab-pressed: inset 0 0 0 1px #ffffffed,inset 0 2px 5px #725c9250,inset 0 -2px 2px #e2f9ffcc;
 }
-html[data-theme-style="glass"][data-theme="light"] :is(button[role="tab"],a[role="tab"],.main-tab,.tab-btn,.system-tab,.ai-subtab,.asset-tab,.asset-docker-subtab,.asset-settings-tab,.asset-docker-create-tab,.search-tab,.filter-tab,.bm-panel-tab,.sidebar-tab,.pager-tab,.label-right .tab,.expand-tab,.topic-expand-tabs > button,.tv-subtabs > button,.asset-segmented > button,.home-knowledge-tab,.book-view-btn,.range-btn,.mode-toggle-btn,.note-emoji-tab,.editor-emoji-tab,.topic-emoji-tab,.icon-tab):not([data-home-sort]) {
+html[data-theme-style="glass"][data-theme="light"] :is(button[role="tab"],a[role="tab"],.main-tab,.tab-btn,.system-tab,.ai-subtab,.asset-tab,.asset-docker-subtab,.asset-settings-tab,.asset-docker-create-tab,.search-tab,.filter-tab,.bm-panel-tab,.sidebar-tab,.pager-tab,.label-right .tab,.expand-tab,.topic-expand-tabs > button,.tv-subtabs > button,.asset-segmented > button,.home-knowledge-tab,.book-view-btn,.range-btn,.mode-toggle-btn,.note-emoji-tab,.editor-emoji-tab,.topic-emoji-tab,.icon-tab,.filter-chip,.topic-comment-scope > button):not([data-home-sort]) {
   --glass-tab-fill: var(--glass-control);
   background:var(--glass-tab-highlight),var(--glass-tab-fill)!important;
   color:var(--color-text-secondary)!important;
@@ -295,41 +295,41 @@ html[data-theme-style="glass"][data-theme="light"] :is(button[role="tab"],a[role
   border-radius:var(--glass-tab-radius)!important;
   box-shadow:var(--glass-tab-edge)!important;
 }
-html[data-theme-style="glass"][data-theme="light"] :is(button[role="tab"],a[role="tab"],.main-tab,.tab-btn,.system-tab,.ai-subtab,.asset-tab,.asset-docker-subtab,.asset-settings-tab,.asset-docker-create-tab,.search-tab,.filter-tab,.bm-panel-tab,.sidebar-tab,.pager-tab,.label-right .tab,.expand-tab,.topic-expand-tabs > button,.tv-subtabs > button,.asset-segmented > button,.home-knowledge-tab,.book-view-btn,.range-btn,.mode-toggle-btn,.note-emoji-tab,.editor-emoji-tab,.topic-emoji-tab,.icon-tab):not([data-home-sort]):is(.active,.chosen,.selected,[aria-selected="true"],[aria-pressed="true"],[data-state="active"]) {
+html[data-theme-style="glass"][data-theme="light"] :is(button[role="tab"],a[role="tab"],.main-tab,.tab-btn,.system-tab,.ai-subtab,.asset-tab,.asset-docker-subtab,.asset-settings-tab,.asset-docker-create-tab,.search-tab,.filter-tab,.bm-panel-tab,.sidebar-tab,.pager-tab,.label-right .tab,.expand-tab,.topic-expand-tabs > button,.tv-subtabs > button,.asset-segmented > button,.home-knowledge-tab,.book-view-btn,.range-btn,.mode-toggle-btn,.note-emoji-tab,.editor-emoji-tab,.topic-emoji-tab,.icon-tab,.filter-chip,.topic-comment-scope > button):not([data-home-sort]):is(.active,.chosen,.selected,[aria-selected="true"],[aria-pressed="true"],[data-state="active"]) {
   --glass-tab-fill:var(--glass-selected);
   background:var(--glass-tab-highlight),var(--glass-tab-fill)!important;
   color:var(--glass-tab-ink)!important;
 }
 @media (hover:hover) {
-  html[data-theme-style="glass"][data-theme="light"] :is(button[role="tab"],a[role="tab"],.main-tab,.tab-btn,.system-tab,.ai-subtab,.asset-tab,.asset-docker-subtab,.asset-settings-tab,.asset-docker-create-tab,.search-tab,.filter-tab,.bm-panel-tab,.sidebar-tab,.pager-tab,.label-right .tab,.expand-tab,.topic-expand-tabs > button,.tv-subtabs > button,.asset-segmented > button,.home-knowledge-tab,.book-view-btn,.range-btn,.mode-toggle-btn,.note-emoji-tab,.editor-emoji-tab,.topic-emoji-tab,.icon-tab):not([data-home-sort]):hover:not(:disabled):not([aria-disabled="true"]) {
+  html[data-theme-style="glass"][data-theme="light"] :is(button[role="tab"],a[role="tab"],.main-tab,.tab-btn,.system-tab,.ai-subtab,.asset-tab,.asset-docker-subtab,.asset-settings-tab,.asset-docker-create-tab,.search-tab,.filter-tab,.bm-panel-tab,.sidebar-tab,.pager-tab,.label-right .tab,.expand-tab,.topic-expand-tabs > button,.tv-subtabs > button,.asset-segmented > button,.home-knowledge-tab,.book-view-btn,.range-btn,.mode-toggle-btn,.note-emoji-tab,.editor-emoji-tab,.topic-emoji-tab,.icon-tab,.filter-chip,.topic-comment-scope > button):not([data-home-sort]):hover:not(:disabled):not([aria-disabled="true"]) {
     background:var(--glass-tab-hover),var(--glass-tab-highlight),var(--glass-tab-fill)!important;
   }
 }
-html[data-theme-style="glass"][data-theme="light"] :is(button[role="tab"],a[role="tab"],.main-tab,.tab-btn,.system-tab,.ai-subtab,.asset-tab,.asset-docker-subtab,.asset-settings-tab,.asset-docker-create-tab,.search-tab,.filter-tab,.bm-panel-tab,.sidebar-tab,.pager-tab,.label-right .tab,.expand-tab,.topic-expand-tabs > button,.tv-subtabs > button,.asset-segmented > button,.home-knowledge-tab,.book-view-btn,.range-btn,.mode-toggle-btn,.note-emoji-tab,.editor-emoji-tab,.topic-emoji-tab,.icon-tab):not([data-home-sort]):active:not(:disabled):not([aria-disabled="true"]) { box-shadow:var(--glass-tab-pressed)!important; }
-html[data-theme-style="glass"][data-theme="light"] :is(button[role="tab"],a[role="tab"],.main-tab,.tab-btn,.system-tab,.ai-subtab,.asset-tab,.asset-docker-subtab,.asset-settings-tab,.asset-docker-create-tab,.search-tab,.filter-tab,.bm-panel-tab,.sidebar-tab,.pager-tab,.label-right .tab,.expand-tab,.topic-expand-tabs > button,.tv-subtabs > button,.asset-segmented > button,.home-knowledge-tab,.book-view-btn,.range-btn,.mode-toggle-btn,.note-emoji-tab,.editor-emoji-tab,.topic-emoji-tab,.icon-tab):not([data-home-sort]):focus-visible { outline:2px solid var(--color-focus); outline-offset:-2px; }
+html[data-theme-style="glass"][data-theme="light"] :is(button[role="tab"],a[role="tab"],.main-tab,.tab-btn,.system-tab,.ai-subtab,.asset-tab,.asset-docker-subtab,.asset-settings-tab,.asset-docker-create-tab,.search-tab,.filter-tab,.bm-panel-tab,.sidebar-tab,.pager-tab,.label-right .tab,.expand-tab,.topic-expand-tabs > button,.tv-subtabs > button,.asset-segmented > button,.home-knowledge-tab,.book-view-btn,.range-btn,.mode-toggle-btn,.note-emoji-tab,.editor-emoji-tab,.topic-emoji-tab,.icon-tab,.filter-chip,.topic-comment-scope > button):not([data-home-sort]):active:not(:disabled):not([aria-disabled="true"]) { box-shadow:var(--glass-tab-pressed)!important; }
+html[data-theme-style="glass"][data-theme="light"] :is(button[role="tab"],a[role="tab"],.main-tab,.tab-btn,.system-tab,.ai-subtab,.asset-tab,.asset-docker-subtab,.asset-settings-tab,.asset-docker-create-tab,.search-tab,.filter-tab,.bm-panel-tab,.sidebar-tab,.pager-tab,.label-right .tab,.expand-tab,.topic-expand-tabs > button,.tv-subtabs > button,.asset-segmented > button,.home-knowledge-tab,.book-view-btn,.range-btn,.mode-toggle-btn,.note-emoji-tab,.editor-emoji-tab,.topic-emoji-tab,.icon-tab,.filter-chip,.topic-comment-scope > button):not([data-home-sort]):focus-visible { outline:2px solid var(--color-focus); outline-offset:-2px; }
 html[data-theme-style="glass"][data-theme="light"] :is(.ai-subtabs,.tv-subtabs,.asset-segmented,.bm-panel-tabs,.sidebar-tabs,.pager-tabs) {
   background:var(--glass-panel)!important; border-color:var(--color-border-light)!important;
 }
 
 /* Remaining toolbar and pagination controls use the same optical material as tabs. */
-html[data-theme-style="glass"][data-theme="light"] :is(.images-view-toggle > button,.btn-upload,.btn-select,.btn-select-all,.btn-cancel-select,.btn-batch-del,.bm-tool-btn,.bm-batch-btn,.bm-page-btn,.page-btn,.pagination-btn,.nav-view-btn,.asset-refresh-button,.asset-create-button,.asset-prune-button,.topic-primary-btn,.topic-secondary-btn,.topic-resource-filter-btn,.topic-comment-layout-btn,.topic-summary-save-btn,.mobile-filter-btn,.ai-test-btn,.bs-btn-cancel,.bs-btn-danger) {
+html[data-theme-style="glass"][data-theme="light"] :is(.images-view-toggle > button,.btn-upload,.btn-select,.btn-select-all,.btn-cancel-select,.btn-batch-del,.bm-tool-btn,.bm-batch-btn,.bm-page-btn,.page-btn,.pagination-btn,.nav-view-btn,.asset-refresh-button,.asset-create-button,.asset-prune-button,.topic-primary-btn,.topic-secondary-btn,.topic-resource-filter-btn,.topic-comment-layout-btn,.topic-summary-save-btn,.mobile-filter-btn,.ai-test-btn,.bs-btn-cancel,.bs-btn-danger,.note-ai-go,.note-ai-quick-actions > button) {
   --glass-action-fill:var(--glass-control);
   background:var(--glass-tab-highlight),var(--glass-action-fill)!important;
   color:var(--color-text-secondary)!important; border-color:var(--color-border)!important;
   border-radius:var(--glass-tab-radius)!important; box-shadow:var(--glass-tab-edge)!important;
 }
-html[data-theme-style="glass"][data-theme="light"] :is(.images-view-toggle > button,.btn-upload,.btn-select,.btn-select-all,.btn-cancel-select,.btn-batch-del,.bm-tool-btn,.bm-batch-btn,.bm-page-btn,.page-btn,.pagination-btn,.nav-view-btn,.asset-refresh-button,.asset-create-button,.asset-prune-button,.topic-primary-btn,.topic-secondary-btn,.topic-resource-filter-btn,.topic-comment-layout-btn,.topic-summary-save-btn,.mobile-filter-btn,.ai-test-btn,.bs-btn-cancel,.bs-btn-danger):is(.active,.selected,.bm-tag-btn-active,.bm-edit-btn-active,.bm-batch-btn-active,.has-active,[aria-pressed="true"],[aria-current="page"]),
-html[data-theme-style="glass"][data-theme="light"] :is(.btn-upload,.asset-create-button:not(.asset-prune-button),.topic-primary-btn) {
+html[data-theme-style="glass"][data-theme="light"] :is(.images-view-toggle > button,.btn-upload,.btn-select,.btn-select-all,.btn-cancel-select,.btn-batch-del,.bm-tool-btn,.bm-batch-btn,.bm-page-btn,.page-btn,.pagination-btn,.nav-view-btn,.asset-refresh-button,.asset-create-button,.asset-prune-button,.topic-primary-btn,.topic-secondary-btn,.topic-resource-filter-btn,.topic-comment-layout-btn,.topic-summary-save-btn,.mobile-filter-btn,.ai-test-btn,.bs-btn-cancel,.bs-btn-danger,.note-ai-go,.note-ai-quick-actions > button):is(.active,.selected,.bm-tag-btn-active,.bm-edit-btn-active,.bm-batch-btn-active,.has-active,[aria-pressed="true"],[aria-current="page"]),
+html[data-theme-style="glass"][data-theme="light"] :is(.btn-upload,.asset-create-button:not(.asset-prune-button),.topic-primary-btn,.note-ai-go) {
   --glass-action-fill:var(--glass-selected);
   color:var(--glass-tab-ink)!important;
 }
 @media (hover:hover) {
-  html[data-theme-style="glass"][data-theme="light"] :is(.images-view-toggle > button,.btn-upload,.btn-select,.btn-select-all,.btn-cancel-select,.btn-batch-del,.bm-tool-btn,.bm-batch-btn,.bm-page-btn,.page-btn,.pagination-btn,.nav-view-btn,.asset-refresh-button,.asset-create-button,.asset-prune-button,.topic-primary-btn,.topic-secondary-btn,.topic-resource-filter-btn,.topic-comment-layout-btn,.topic-summary-save-btn,.mobile-filter-btn,.ai-test-btn,.bs-btn-cancel,.bs-btn-danger):hover:not(:disabled):not([aria-disabled="true"]) {
+  html[data-theme-style="glass"][data-theme="light"] :is(.images-view-toggle > button,.btn-upload,.btn-select,.btn-select-all,.btn-cancel-select,.btn-batch-del,.bm-tool-btn,.bm-batch-btn,.bm-page-btn,.page-btn,.pagination-btn,.nav-view-btn,.asset-refresh-button,.asset-create-button,.asset-prune-button,.topic-primary-btn,.topic-secondary-btn,.topic-resource-filter-btn,.topic-comment-layout-btn,.topic-summary-save-btn,.mobile-filter-btn,.ai-test-btn,.bs-btn-cancel,.bs-btn-danger,.note-ai-go,.note-ai-quick-actions > button):hover:not(:disabled):not([aria-disabled="true"]) {
     background:var(--glass-tab-hover),var(--glass-tab-highlight),var(--glass-action-fill)!important;
   }
 }
-html[data-theme-style="glass"][data-theme="light"] :is(.images-view-toggle > button,.btn-upload,.btn-select,.btn-select-all,.btn-cancel-select,.btn-batch-del,.bm-tool-btn,.bm-batch-btn,.bm-page-btn,.page-btn,.pagination-btn,.nav-view-btn,.asset-refresh-button,.asset-create-button,.asset-prune-button,.topic-primary-btn,.topic-secondary-btn,.topic-resource-filter-btn,.topic-comment-layout-btn,.topic-summary-save-btn,.mobile-filter-btn,.ai-test-btn,.bs-btn-cancel,.bs-btn-danger):active:not(:disabled):not([aria-disabled="true"]) { box-shadow:var(--glass-tab-pressed)!important; }
-html[data-theme-style="glass"][data-theme="light"] :is(.images-view-toggle > button,.btn-upload,.btn-select,.btn-select-all,.btn-cancel-select,.btn-batch-del,.bm-tool-btn,.bm-batch-btn,.bm-page-btn,.page-btn,.pagination-btn,.nav-view-btn,.asset-refresh-button,.asset-create-button,.asset-prune-button,.topic-primary-btn,.topic-secondary-btn,.topic-resource-filter-btn,.topic-comment-layout-btn,.topic-summary-save-btn,.mobile-filter-btn,.ai-test-btn,.bs-btn-cancel,.bs-btn-danger):disabled { cursor:not-allowed; }
+html[data-theme-style="glass"][data-theme="light"] :is(.images-view-toggle > button,.btn-upload,.btn-select,.btn-select-all,.btn-cancel-select,.btn-batch-del,.bm-tool-btn,.bm-batch-btn,.bm-page-btn,.page-btn,.pagination-btn,.nav-view-btn,.asset-refresh-button,.asset-create-button,.asset-prune-button,.topic-primary-btn,.topic-secondary-btn,.topic-resource-filter-btn,.topic-comment-layout-btn,.topic-summary-save-btn,.mobile-filter-btn,.ai-test-btn,.bs-btn-cancel,.bs-btn-danger,.note-ai-go,.note-ai-quick-actions > button):active:not(:disabled):not([aria-disabled="true"]) { box-shadow:var(--glass-tab-pressed)!important; }
+html[data-theme-style="glass"][data-theme="light"] :is(.images-view-toggle > button,.btn-upload,.btn-select,.btn-select-all,.btn-cancel-select,.btn-batch-del,.bm-tool-btn,.bm-batch-btn,.bm-page-btn,.page-btn,.pagination-btn,.nav-view-btn,.asset-refresh-button,.asset-create-button,.asset-prune-button,.topic-primary-btn,.topic-secondary-btn,.topic-resource-filter-btn,.topic-comment-layout-btn,.topic-summary-save-btn,.mobile-filter-btn,.ai-test-btn,.bs-btn-cancel,.bs-btn-danger,.note-ai-go,.note-ai-quick-actions > button):disabled { cursor:not-allowed; }
 html[data-theme-style="glass"][data-theme="light"] :is(.images-view-toggle) { border-radius:var(--glass-tab-radius); }
 /* Danger and warning actions retain their meaning on the pearl surface. */
 html[data-theme-style="glass"][data-theme="light"] :is(button,a):is(.bs-btn-danger,.btn-batch-del,.bm-batch-btn-danger) {
@@ -381,4 +381,20 @@ html[data-theme-style="glass"][data-theme="light"] button.border-slate-300:not(.
   background:var(--glass-tab-highlight),var(--glass-control)!important;
   color:var(--color-text-secondary)!important; border-color:var(--color-border)!important;
   border-radius:var(--glass-tab-radius)!important; box-shadow:var(--glass-tab-edge)!important;
+}
+
+/* Selected heatmap cells must remain readable at every activity level. */
+html[data-theme-style="glass"][data-theme="light"] .home-date-layout .calendar-day.selected {
+  background:var(--glass-selected)!important; color:var(--glass-tab-ink)!important;
+  border-color:var(--color-primary)!important; box-shadow:0 0 0 2px var(--color-focus-ring)!important;
+}
+html[data-theme-style="glass"][data-theme="light"] .home-date-layout .calendar-day.selected :is(.calendar-day-num,small) { color:var(--glass-tab-ink)!important; }
+/* Preference overrides come after material tokens so later paint rules cannot undo them. */
+@media (prefers-reduced-transparency:reduce) {
+  html[data-theme-style="glass"][data-theme="light"] {
+    --glass-panel:linear-gradient(#edf0f8,#edf0f8);
+    --glass-control:linear-gradient(#f5f6fa,#e7eaf3);
+    --glass-input:#f3f5fa; --color-bg-card:#e8ebf3;
+    --glass-floating-base:#eff1f8; --glass-field-base:#f4f5fa;
+  }
 }
