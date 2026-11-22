@@ -157,6 +157,117 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  client-desktop:
+    name: Package BookStark client (${{ matrix.target }})
+    needs: prepare
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: windows-amd64
+            runner: ubuntu-latest
+            extension: zip
+          - target: linux-amd64
+            runner: ubuntu-latest
+            extension: tar.gz
+          - target: macos-universal
+            runner: macos-latest
+            extension: zip
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+      TARGET: ${{ matrix.target }}
+      EXTENSION: ${{ matrix.extension }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Build package
+        shell: bash
+        run: |
+          mkdir -p dist client-stage
+          BASE="bookstark-client-$VERSION-$TARGET"
+          case "$TARGET" in
+            macos-universal)
+              python3 native/build_macos.py --out "dist/$BASE.zip"
+              ditto -x -k "dist/$BASE.zip" client-stage
+              lipo -verify_arch arm64 x86_64 client-stage/BookStark.app/Contents/MacOS/BookStark
+              codesign --verify --strict client-stage/BookStark.app
+              ;;
+            linux-amd64)
+              GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -trimpath \
+                -tags wails,production,gtk3,purego -ldflags="-s -w" -o client-stage/BookStark .
+              cp native/README.md LICENSE client-stage/
+              tar -czf "dist/$BASE.tar.gz" -C client-stage BookStark README.md LICENSE
+              ;;
+            windows-amd64)
+              GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath \
+                -tags wails,production -ldflags="-s -w -H windowsgui" -o client-stage/BookStark.exe .
+              cp native/README.md LICENSE client-stage/
+              (cd client-stage && zip -q "../dist/$BASE.zip" BookStark.exe README.md LICENSE)
+              ;;
+          esac
+          (cd dist && shasum -a 256 "$BASE.$EXTENSION" > "$BASE.$EXTENSION.sha256")
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bookstark-client-${{ env.VERSION }}-${{ matrix.target }}
+          path: dist/bookstark-client-${{ env.VERSION }}-${{ matrix.target }}.*
+          if-no-files-found: error
+          retention-days: 7
+
+  client-android:
+    name: Package BookStark client (Android ${{ matrix.abi }})
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        abi: [arm64-v8a, x86_64]
+    env:
+      VERSION: ${{ needs.prepare.outputs.version }}
+      ABI: ${{ matrix.abi }}
+      NDK_VERSION: '28.2.13676358'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install Android SDK packages
+        run: |
+          sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;$NDK_VERSION"
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/$NDK_VERSION" >> "$GITHUB_ENV"
+
+      - name: Build and verify APK
+        run: |
+          BASE="bookstark-client-$VERSION-android-$ABI"
+          python3 native/build_android.py --abi "$ABI" --out "dist/$BASE.apk"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify "dist/$BASE.apk"
+          test "$(unzip -Z1 "dist/$BASE.apk" 'lib/*/libwails.so')" = "lib/$ABI/libwails.so"
+          (cd dist && sha256sum "$BASE.apk" > "$BASE.apk.sha256")
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bookstark-client-${{ env.VERSION }}-android-${{ matrix.abi }}
+          path: dist/bookstark-client-${{ env.VERSION }}-android-${{ matrix.abi }}.*
+          if-no-files-found: error
+          retention-days: 7
+
   docker:
     name: Build and publish GHCR image
     needs: prepare
@@ -198,7 +309,7 @@ jobs:
 
   release:
     name: Publish Release
-    needs: [prepare, build, docker]
+    needs: [prepare, build, client-desktop, client-android, docker]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -232,7 +343,14 @@ jobs:
           target_commitish: ${{ github.sha }}
           prerelease: ${{ needs.prepare.outputs.stable != 'true' }}
           generate_release_notes: true
+          fail_on_unmatched_files: true
           body: |
+            **BookStark clients** use Wails 3 and offer local workspaces and remote connections.
+            Assets named `bookstark-client-*` include Windows x64, Linux x64,
+            macOS Universal (Apple silicon and Intel), and Android ARM64 and x86_64.
+            The macOS app uses ad-hoc signing. The Android APKs use test signing for sideloading.
+            The other ZIP and tar.gz archives contain the standalone BookStark server.
+
             Docker image (linux/amd64, linux/arm64):
             ```sh
             docker pull ${{ needs.prepare.outputs.image }}:${{ needs.prepare.outputs.tag }}
@@ -240,4 +358,5 @@ jobs:
           files: |
             dist/*.tar.gz
             dist/*.zip
+            dist/*.apk
             dist/*.sha256

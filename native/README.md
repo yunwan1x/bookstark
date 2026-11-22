@@ -21,13 +21,15 @@ GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -tags wails,production -trimpat
 # Linux，示例目标为安装 GTK3 和 WebKitGTK 4.1 的环境
 go build -tags wails,production,gtk3,purego -trimpath -ldflags="-s -w" -o artifacts/bookstark-wails-linux .
 
-# macOS，在安装 Xcode 命令行工具的 Mac 上编译本机可执行文件
-go build -tags wails,production -trimpath -ldflags="-s -w" -o artifacts/bookstark-wails-mac .
+# macOS Universal .app ZIP（Apple 芯片和 Intel）
+python3 native/build_macos.py
 
 # Android ARM64，安装 JDK 21、Android SDK 36 及 NDK
 # ANDROID_HOME、ANDROID_NDK_HOME 指向相应目录
 python3 native/build_android.py
 ```
+
+macOS 默认生成 `artifacts/bookstark-wails-macos-universal.zip`，解压得到 `BookStark.app`。Linux 交叉打包时需要 `llvm-lipo`，也可通过 `--lipo PATH` 指定工具。用 `--arch arm64` 或 `--arch amd64` 可生成更小的单架构包。在 Mac 上执行脚本会进行临时签名。GitHub Release 的 macOS 构建也会进行临时签名。正式分发另需 Developer ID 签名与 Apple 公证。
 
 在 x86_64 Android 测试环境可用 `--abi x86_64`。Android 默认输出 `artifacts/bookstark-wails-arm64.apk`。没有配置正式签名时，构建使用 Gradle 调试证书，供侧载测试。项目使用独立的 Android 包名 `com.bookstark.wails`，可与旧客户端并存。Wails 的 Android 支持仍属于实验性功能。
 
