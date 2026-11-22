@@ -1,6 +1,7 @@
 package controllers
 
 import (
+ "errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -159,7 +160,8 @@ func DeleteLabel(c *gin.Context) {
 		return
 	}
 
-	if err := models.DeleteLabel(id); err != nil {
+	if err := models.DeleteLabelOwned(id,middleware.GetMemberID(c)); err != nil {
+        if errors.Is(err,models.ErrLabelMutationForbidden){apiError(c,http.StatusForbidden,"标签权限已变化");return}
 		if strings.Contains(err.Error(), "不存在") {
 			apiError(c, http.StatusNotFound, err.Error())
 		} else {
@@ -259,36 +261,12 @@ func UnbindLabels(c *gin.Context) {
 		return
 	}
 
-	// 所有权校验：验证目标资源属于当前用户
-	memberID := middleware.GetMemberID(c)
-	if !isAdmin(c) {
-		unownedCount, err := models.CheckResourcesOwnership(req.ResourceIDs, req.RelationType, memberID)
-		if err != nil {
-			apiError(c, http.StatusInternalServerError, "校验资源所有权失败")
-			return
-		}
-		if unownedCount > 0 {
-			apiError(c, http.StatusForbidden, "无权操作不属于自己的资源")
-			return
-		}
-	}
-
-	if err := models.UnbindLabels(req.LabelID, req.ResourceIDs, req.RelationType); err != nil {
-		apiError(c, http.StatusInternalServerError, "解绑失败")
-		return
-	}
-
-	// 同步资源的 label 字段
-	for _, rid := range req.ResourceIDs {
-		if err := models.SyncResourceLabelField(rid, req.RelationType); err != nil {
-			log.Printf("UnbindLabels: SyncResourceLabelField failed for resource %d (%s): %v", rid, req.RelationType, err)
-		}
-		if req.RelationType == "bookmark" {
-			if err := models.TouchBookmarkModifyTime(rid); err != nil {
-				log.Printf("UnbindLabels: TouchBookmarkModifyTime failed for resource %d: %v", rid, err)
-			}
-		}
-	}
+ // Model performs actual actor/resource ownership and cached-field writes
+ // in the same transaction; there is no success-after-partial-cache path.
+ if err:=models.UnbindLabelsOwned(req.LabelID,req.ResourceIDs,req.RelationType,middleware.GetMemberID(c));err!=nil{
+  if errors.Is(err,models.ErrLabelMutationForbidden){apiError(c,http.StatusForbidden,"资源权限已变化");return}
+  apiError(c,http.StatusInternalServerError,"解绑失败");return
+ }
 
 	apiSuccessMsg(c, "解绑成功")
 }

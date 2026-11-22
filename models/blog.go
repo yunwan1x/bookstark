@@ -465,7 +465,7 @@ func DeleteBlog(id int64) error {
 	return tx.Commit()
 }
 
-func ListBlogsPagedWithLabels(memberID int64, page, pageSize int, keyword string, shared string, encrypted string, blogType string, visibility string, label string, date string, pinned string, editorType string, hasCode string) ([]BlogWithLabels, int64, error) {
+func ListBlogsPagedWithLabels(memberID int64, page, pageSize int, keyword string, shared string, encrypted string, blogType string, visibility string, label string, date string, pinned string, editorType string, hasCode string, metadataOnly ...bool) ([]BlogWithLabels, int64, error) {
 	where := "WHERE 1=1"
 	args := []interface{}{}
 	if memberID > 0 {
@@ -526,7 +526,13 @@ func ListBlogsPagedWithLabels(memberID int64, page, pageSize int, keyword string
 	if blogType == "note" {
 		contentCol = "CASE WHEN b.password != '' THEN '' WHEN COALESCE(b.blog_desc,'') != '' THEN COALESCE(b.blog_desc,'') WHEN COALESCE(b.editor_type,'markdown') = 'html' THEN '' ELSE COALESCE(b.blog_content,'') END"
 	}
-	query := "SELECT b.blog_id, b.blog_title, b.blog_identify, b.member_id, b.modify_time, b.create_time, b.version, CASE WHEN b.password != '' THEN 1 ELSE 0 END, COALESCE(b.blog_type,'article'), COALESCE(b.editor_type,'markdown'), COALESCE(b.visibility,0), COALESCE(b.is_pinned,0), COALESCE(b.pin_order,0), COALESCE(b.location_name,''), b.latitude, b.longitude, b.location_accuracy, COALESCE(b.blog_desc,''), " + contentCol + " FROM md_blogs b " + where + " ORDER BY COALESCE(b.is_pinned,0) DESC, COALESCE(b.pin_order,0) ASC, b.modify_time DESC LIMIT ? OFFSET ?"
+	// Opt-in native metadata: avoid loading complete body/JSON for a list row.
+	descCol := "COALESCE(b.blog_desc,'')"
+	if len(metadataOnly) > 0 && metadataOnly[0] {
+		descCol = "CASE WHEN b.password != '' THEN '' ELSE SUBSTR(COALESCE(b.blog_desc,''),1,512) END"
+		contentCol = "CASE WHEN b.password != '' THEN '' WHEN COALESCE(b.blog_desc,'') != '' THEN SUBSTR(COALESCE(b.blog_desc,''),1,512) WHEN COALESCE(b.editor_type,'markdown') = 'markdown' THEN SUBSTR(COALESCE(b.blog_content,''),1,512) ELSE '' END"
+	}
+	query := "SELECT b.blog_id, b.blog_title, b.blog_identify, b.member_id, b.modify_time, b.create_time, b.version, CASE WHEN b.password != '' THEN 1 ELSE 0 END, COALESCE(b.blog_type,'article'), COALESCE(b.editor_type,'markdown'), COALESCE(b.visibility,0), COALESCE(b.is_pinned,0), COALESCE(b.pin_order,0), COALESCE(b.location_name,''), b.latitude, b.longitude, b.location_accuracy, " + descCol + ", " + contentCol + " FROM md_blogs b " + where + " ORDER BY COALESCE(b.is_pinned,0) DESC, COALESCE(b.pin_order,0) ASC, b.modify_time DESC LIMIT ? OFFSET ?"
 	args = append(args, pageSize, offset)
 
 	rows, err := DB.Query(query, args...)

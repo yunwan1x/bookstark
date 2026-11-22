@@ -215,11 +215,11 @@ func GlobalSearch(memberID int64, keyword string) (*SearchResult, error) {
 		defer wg.Done()
 		rows, err := DB.Query(`
 			SELECT d.document_id, d.document_name, d.identify,
-			       d.markdown, COALESCE(d.doc_type,'markdown'), b.book_name, b.identify
+			       CASE WHEN (substr(CAST(d.markdown AS BLOB),1,4)=X'454E433A' OR substr(CAST(d.markdown AS BLOB),1,7)=X'EFBBBF454E433A') THEN '' ELSE d.markdown END, COALESCE(d.doc_type,'markdown'), b.book_name, b.identify
 			FROM md_documents d
 			JOIN md_books b ON b.book_id = d.book_id
 			WHERE d.member_id = ?
-			  AND (d.document_name LIKE ? ESCAPE '\' OR (COALESCE(d.doc_type,'markdown') != 'html' AND d.markdown LIKE ? ESCAPE '\'))
+			  AND (d.document_name LIKE ? ESCAPE '\' OR (COALESCE(d.doc_type,'markdown') != 'html' AND NOT (substr(CAST(d.markdown AS BLOB),1,4)=X'454E433A' OR substr(CAST(d.markdown AS BLOB),1,7)=X'EFBBBF454E433A') AND d.markdown LIKE ? ESCAPE '\'))
 			ORDER BY d.modify_time DESC
 			LIMIT 20`,
 			memberID, kw, kw,
@@ -238,11 +238,11 @@ func GlobalSearch(memberID int64, keyword string) (*SearchResult, error) {
 				docsErr = err
 				return
 			}
-			contentMatches := docType != "html" && matchWordBoundary(markdown, keyword)
+			contentMatches := docType != "html" && !ownedProtected(markdown) && matchWordBoundary(markdown, keyword)
 			if wordMode && !matchWordBoundary(h.DocumentName, keyword) && !contentMatches {
 				continue
 			}
-			if docType != "html" {
+			if docType != "html" && !ownedProtected(markdown) {
 				h.Snippet = extractSnippet(markdown, keyword)
 			}
 			docs = append(docs, h)
@@ -253,10 +253,10 @@ func GlobalSearch(memberID int64, keyword string) (*SearchResult, error) {
 	go func() {
 		defer wg.Done()
 		rows, err := DB.Query(`
-			SELECT blog_id, blog_title, blog_identify, blog_content, COALESCE(blog_desc,''), COALESCE(blog_type,'article'), COALESCE(editor_type,'markdown')
+			SELECT blog_id, blog_title, blog_identify, CASE WHEN (substr(CAST(blog_content AS BLOB),1,4)=X'454E433A' OR substr(CAST(blog_content AS BLOB),1,7)=X'EFBBBF454E433A') THEN '' ELSE blog_content END, COALESCE(blog_desc,''), COALESCE(blog_type,'article'), COALESCE(editor_type,'markdown')
 			FROM md_blogs
 			WHERE member_id = ?
-			  AND (blog_title LIKE ? ESCAPE '\' OR COALESCE(blog_desc,'') LIKE ? ESCAPE '\' OR (COALESCE(editor_type,'markdown') != 'html' AND blog_content NOT LIKE 'ENC:v1:%' AND blog_content LIKE ? ESCAPE '\'))
+			  AND (blog_title LIKE ? ESCAPE '\' OR COALESCE(blog_desc,'') LIKE ? ESCAPE '\' OR (COALESCE(editor_type,'markdown') != 'html' AND NOT (substr(CAST(blog_content AS BLOB),1,4)=X'454E433A' OR substr(CAST(blog_content AS BLOB),1,7)=X'EFBBBF454E433A') AND blog_content LIKE ? ESCAPE '\'))
 			ORDER BY modify_time DESC
 			LIMIT 20`,
 			memberID, kw, kw, kw,
@@ -277,13 +277,13 @@ func GlobalSearch(memberID int64, keyword string) (*SearchResult, error) {
 				return
 			}
 			descMatches := matchWordBoundary(desc, keyword)
-			contentMatches := editorType != "html" && matchWordBoundary(content, keyword)
+			contentMatches := editorType != "html" && !ownedProtected(content) && matchWordBoundary(content, keyword)
 			if wordMode && !matchWordBoundary(h.Title, keyword) && !descMatches && !contentMatches {
 				continue
 			}
 			if desc != "" {
 				h.Snippet = extractSnippet(desc, keyword)
-			} else if editorType != "html" && !strings.HasPrefix(content, encPrefix) {
+			} else if editorType != "html" && !ownedProtected(content) {
 				h.Snippet = extractSnippet(content, keyword)
 			}
 			blogs = append(blogs, h)

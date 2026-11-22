@@ -137,7 +137,7 @@ func ListBlogs(c *gin.Context) {
 	if page < 1 {
 		page = 1
 	}
-	blogs, total, err := models.ListBlogsPagedWithLabels(memberID, page, pageSize, keyword, shared, encrypted, c.Query("type"), c.Query("visibility"), c.Query("label"), c.Query("date"), c.Query("pinned"), c.Query("editor_type"), c.Query("has_code"))
+	blogs, total, err := models.ListBlogsPagedWithLabels(memberID, page, pageSize, keyword, shared, encrypted, c.Query("type"), c.Query("visibility"), c.Query("label"), c.Query("date"), c.Query("pinned"), c.Query("editor_type"), c.Query("has_code"), c.Query("metadata_only") == "1")
 	if err != nil {
 		apiError(c, http.StatusInternalServerError, "获取博客列表失败")
 		return
@@ -292,6 +292,8 @@ func GetBlog(c *gin.Context) {
 		"editor_type":       blog.EditorType,
 		"blog_desc":         blog.BlogDesc,
 		"has_password":      hasPassword,
+		"visibility":        blog.Visibility,
+		"is_pinned":         blog.IsPinned,
 		"modify_time":       blog.ModifyTime,
 		"modify_at":         blog.ModifyAt,
 		"create_time":       blog.CreateTime,

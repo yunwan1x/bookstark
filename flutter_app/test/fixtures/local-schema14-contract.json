@@ -1,0 +1,236 @@
+{
+  "source": "immutable synthetic rich fixture V4, generated before catalog extraction",
+  "sourceArchiveSHA256": "7f073703c9539ed706e7e27642878f818aee9c3d66f7a6d54018447cfc9efa8a",
+  "schemaVersion": 14,
+  "userRowsIncluded": false,
+  "objects": [
+    {
+      "type": "index",
+      "name": "bookmarks_active_url",
+      "tbl_name": "bookmarks",
+      "sql": "CREATE UNIQUE INDEX bookmarks_active_url ON bookmarks(url) WHERE deleted = 0"
+    },
+    {
+      "type": "index",
+      "name": "bookmarks_listing",
+      "tbl_name": "bookmarks",
+      "sql": "CREATE INDEX bookmarks_listing ON bookmarks(deleted, is_pinned, modify_time)"
+    },
+    {
+      "type": "index",
+      "name": "books_active_name",
+      "tbl_name": "books",
+      "sql": "CREATE UNIQUE INDEX books_active_name ON books(book_name) WHERE deleted = 0"
+    },
+    {
+      "type": "index",
+      "name": "documents_book_parent",
+      "tbl_name": "documents",
+      "sql": "CREATE INDEX documents_book_parent ON documents(book_id, deleted, parent_id, order_sort)"
+    },
+    {
+      "type": "index",
+      "name": "local_drive_blob",
+      "tbl_name": "local_drive_nodes",
+      "sql": "CREATE INDEX local_drive_blob ON local_drive_nodes(blob_key)"
+    },
+    {
+      "type": "index",
+      "name": "local_drive_parent",
+      "tbl_name": "local_drive_nodes",
+      "sql": "CREATE INDEX local_drive_parent ON local_drive_nodes(parent_path, name)"
+    },
+    {
+      "type": "index",
+      "name": "local_images_hash",
+      "tbl_name": "local_images",
+      "sql": "CREATE INDEX local_images_hash ON local_images(file_hash, deleted)"
+    },
+    {
+      "type": "index",
+      "name": "notes_article_title",
+      "tbl_name": "notes",
+      "sql": "CREATE UNIQUE INDEX notes_article_title ON notes(title) WHERE collection = 'article' AND deleted = 0"
+    },
+    {
+      "type": "index",
+      "name": "sqlite_autoindex_books_1",
+      "tbl_name": "books",
+      "sql": null
+    },
+    {
+      "type": "index",
+      "name": "sqlite_autoindex_documents_1",
+      "tbl_name": "documents",
+      "sql": null
+    },
+    {
+      "type": "index",
+      "name": "sqlite_autoindex_html_creation_receipts_1",
+      "tbl_name": "html_creation_receipts",
+      "sql": null
+    },
+    {
+      "type": "index",
+      "name": "sqlite_autoindex_html_preview_resources_1",
+      "tbl_name": "html_preview_resources",
+      "sql": null
+    },
+    {
+      "type": "index",
+      "name": "sqlite_autoindex_local_drive_nodes_1",
+      "tbl_name": "local_drive_nodes",
+      "sql": null
+    },
+    {
+      "type": "index",
+      "name": "sqlite_autoindex_local_images_1",
+      "tbl_name": "local_images",
+      "sql": null
+    },
+    {
+      "type": "index",
+      "name": "sqlite_autoindex_local_labels_1",
+      "tbl_name": "local_labels",
+      "sql": null
+    },
+    {
+      "type": "index",
+      "name": "sqlite_autoindex_topic_resources_1",
+      "tbl_name": "topic_resources",
+      "sql": null
+    },
+    {
+      "type": "index",
+      "name": "tasks_due",
+      "tbl_name": "tasks",
+      "sql": "CREATE INDEX tasks_due ON tasks(deleted, done, due_date)"
+    },
+    {
+      "type": "index",
+      "name": "tasks_parent",
+      "tbl_name": "tasks",
+      "sql": "CREATE INDEX tasks_parent ON tasks(parent_id, deleted)"
+    },
+    {
+      "type": "index",
+      "name": "topic_comments_target",
+      "tbl_name": "topic_comments",
+      "sql": "CREATE INDEX topic_comments_target ON topic_comments(topic_id, target_type, target_id)"
+    },
+    {
+      "type": "index",
+      "name": "topic_summaries_topic",
+      "tbl_name": "topic_summaries",
+      "sql": "CREATE INDEX topic_summaries_topic ON topic_summaries(topic_id, order_sort)"
+    },
+    {
+      "type": "table",
+      "name": "bookmarks",
+      "tbl_name": "bookmarks",
+      "sql": "CREATE TABLE bookmarks (bookmark_id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, url TEXT NOT NULL, description TEXT NOT NULL DEFAULT '', favicon TEXT NOT NULL DEFAULT '', labels TEXT NOT NULL DEFAULT '[]', is_public INTEGER NOT NULL DEFAULT 0, is_pinned INTEGER NOT NULL DEFAULT 0, nav_visible INTEGER NOT NULL DEFAULT 0, order_sort INTEGER NOT NULL DEFAULT 0, create_time INTEGER NOT NULL, modify_time INTEGER NOT NULL, deleted INTEGER NOT NULL DEFAULT 0)"
+    },
+    {
+      "type": "table",
+      "name": "books",
+      "tbl_name": "books",
+      "sql": "CREATE TABLE books (book_id INTEGER PRIMARY KEY AUTOINCREMENT, book_name TEXT NOT NULL, description TEXT NOT NULL DEFAULT '', identify TEXT NOT NULL UNIQUE, labels TEXT NOT NULL DEFAULT '[]', doc_count INTEGER NOT NULL DEFAULT 0, create_time TEXT NOT NULL, modify_time TEXT NOT NULL, deleted INTEGER NOT NULL DEFAULT 0)"
+    },
+    {
+      "type": "table",
+      "name": "documents",
+      "tbl_name": "documents",
+      "sql": "CREATE TABLE documents (document_id INTEGER PRIMARY KEY AUTOINCREMENT, book_id INTEGER NOT NULL, document_name TEXT NOT NULL, identify TEXT NOT NULL UNIQUE, parent_id INTEGER NOT NULL DEFAULT 0, order_sort INTEGER NOT NULL DEFAULT 0, doc_type TEXT NOT NULL DEFAULT 'markdown', markdown TEXT NOT NULL DEFAULT '', create_time TEXT NOT NULL, modify_time TEXT NOT NULL, deleted INTEGER NOT NULL DEFAULT 0, labels TEXT NOT NULL DEFAULT '[]')"
+    },
+    {
+      "type": "table",
+      "name": "html_creation_receipts",
+      "tbl_name": "html_creation_receipts",
+      "sql": "CREATE TABLE html_creation_receipts (creation_key TEXT PRIMARY KEY NOT NULL CHECK(length(creation_key) = 32), note_id INTEGER NOT NULL CHECK(note_id > 0), collection TEXT NOT NULL CHECK(collection IN ('note','article')), input_hash TEXT NOT NULL CHECK(length(input_hash) = 64), created_at INTEGER NOT NULL CHECK(created_at > 0))"
+    },
+    {
+      "type": "table",
+      "name": "html_preview_resources",
+      "tbl_name": "html_preview_resources",
+      "sql": "CREATE TABLE html_preview_resources (note_id INTEGER NOT NULL CHECK(note_id > 0), resource_path TEXT NOT NULL, node_id INTEGER NOT NULL CHECK(node_id > 0), approved_hash TEXT NOT NULL CHECK(length(approved_hash) = 64), PRIMARY KEY(note_id, resource_path))"
+    },
+    {
+      "type": "table",
+      "name": "label_recommendation_settings",
+      "tbl_name": "label_recommendation_settings",
+      "sql": "CREATE TABLE label_recommendation_settings (id INTEGER PRIMARY KEY CHECK(id = 1), settings TEXT NOT NULL)"
+    },
+    {
+      "type": "table",
+      "name": "local_drive_nodes",
+      "tbl_name": "local_drive_nodes",
+      "sql": "CREATE TABLE local_drive_nodes (node_id INTEGER PRIMARY KEY AUTOINCREMENT, path TEXT NOT NULL UNIQUE, parent_path TEXT NOT NULL, name TEXT NOT NULL, directory INTEGER NOT NULL CHECK(directory IN (0,1)), file_size INTEGER NOT NULL DEFAULT 0 CHECK(file_size >= 0), file_hash TEXT NOT NULL DEFAULT '', mime_type TEXT NOT NULL, blob_key TEXT NOT NULL DEFAULT '', create_time TEXT NOT NULL, modify_time TEXT NOT NULL)"
+    },
+    {
+      "type": "table",
+      "name": "local_images",
+      "tbl_name": "local_images",
+      "sql": "CREATE TABLE local_images (image_id INTEGER PRIMARY KEY AUTOINCREMENT, attachment_id TEXT NOT NULL UNIQUE, file_name TEXT NOT NULL, category TEXT NOT NULL DEFAULT 'editor', mime_type TEXT NOT NULL, file_hash TEXT NOT NULL DEFAULT '', file_size INTEGER NOT NULL, width INTEGER NOT NULL DEFAULT 0, height INTEGER NOT NULL DEFAULT 0, create_time TEXT NOT NULL DEFAULT '', modify_time TEXT NOT NULL, file_present INTEGER NOT NULL DEFAULT 1, deleted INTEGER NOT NULL DEFAULT 0, quarantine_name TEXT NOT NULL DEFAULT '')"
+    },
+    {
+      "type": "table",
+      "name": "local_labels",
+      "tbl_name": "local_labels",
+      "sql": "CREATE TABLE local_labels (label_id INTEGER PRIMARY KEY AUTOINCREMENT, label_name TEXT NOT NULL UNIQUE)"
+    },
+    {
+      "type": "table",
+      "name": "notes",
+      "tbl_name": "notes",
+      "sql": "CREATE TABLE notes (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, content TEXT NOT NULL, updated_at INTEGER NOT NULL, deleted INTEGER NOT NULL DEFAULT 0, labels TEXT NOT NULL DEFAULT '[]', collection TEXT NOT NULL DEFAULT 'note', editor_type TEXT NOT NULL DEFAULT 'markdown')"
+    },
+    {
+      "type": "table",
+      "name": "sqlite_sequence",
+      "tbl_name": "sqlite_sequence",
+      "sql": "CREATE TABLE sqlite_sequence(name,seq)"
+    },
+    {
+      "type": "table",
+      "name": "tasks",
+      "tbl_name": "tasks",
+      "sql": "CREATE TABLE tasks (task_id INTEGER PRIMARY KEY AUTOINCREMENT, content TEXT NOT NULL, due_date TEXT NOT NULL, done INTEGER NOT NULL DEFAULT 0 CHECK(done IN (0, 1)), parent_id INTEGER NOT NULL DEFAULT 0 CHECK(parent_id >= 0), topic_id INTEGER NOT NULL DEFAULT 0, create_time TEXT NOT NULL, modify_time TEXT NOT NULL, complete_time TEXT, deleted INTEGER NOT NULL DEFAULT 0)"
+    },
+    {
+      "type": "table",
+      "name": "topic_comments",
+      "tbl_name": "topic_comments",
+      "sql": "CREATE TABLE topic_comments (comment_id INTEGER PRIMARY KEY AUTOINCREMENT, topic_id INTEGER NOT NULL, target_type TEXT NOT NULL, target_id INTEGER NOT NULL, content TEXT NOT NULL, create_time TEXT NOT NULL, modify_time TEXT NOT NULL)"
+    },
+    {
+      "type": "table",
+      "name": "topic_resources",
+      "tbl_name": "topic_resources",
+      "sql": "CREATE TABLE topic_resources (topic_resource_id INTEGER PRIMARY KEY AUTOINCREMENT, topic_id INTEGER NOT NULL, resource_type TEXT NOT NULL, target_id INTEGER NOT NULL, title_snapshot TEXT NOT NULL, desc_snapshot TEXT NOT NULL DEFAULT '', order_sort INTEGER NOT NULL DEFAULT 0, create_time TEXT NOT NULL, UNIQUE(topic_id, resource_type, target_id))"
+    },
+    {
+      "type": "table",
+      "name": "topic_summaries",
+      "tbl_name": "topic_summaries",
+      "sql": "CREATE TABLE topic_summaries (summary_id INTEGER PRIMARY KEY AUTOINCREMENT, topic_id INTEGER NOT NULL, content TEXT NOT NULL, summary_type TEXT NOT NULL DEFAULT 'manual', order_sort INTEGER NOT NULL DEFAULT 0, create_time TEXT NOT NULL, modify_time TEXT NOT NULL)"
+    },
+    {
+      "type": "table",
+      "name": "topics",
+      "tbl_name": "topics",
+      "sql": "CREATE TABLE topics (topic_id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, question TEXT NOT NULL DEFAULT '', is_pinned INTEGER NOT NULL DEFAULT 0, create_time TEXT NOT NULL, modify_time TEXT NOT NULL, deleted INTEGER NOT NULL DEFAULT 0)"
+    },
+    {
+      "type": "table",
+      "name": "trash_entries",
+      "tbl_name": "trash_entries",
+      "sql": "CREATE TABLE trash_entries (trash_id INTEGER PRIMARY KEY AUTOINCREMENT, resource_type TEXT NOT NULL, resource_id INTEGER NOT NULL, name TEXT NOT NULL, payload TEXT NOT NULL, deleted_at TEXT NOT NULL)"
+    },
+    {
+      "type": "trigger",
+      "name": "html_preview_resources_note_delete",
+      "tbl_name": "notes",
+      "sql": "CREATE TRIGGER html_preview_resources_note_delete AFTER DELETE ON notes BEGIN DELETE FROM html_preview_resources WHERE note_id=OLD.id; END"
+    }
+  ]
+}

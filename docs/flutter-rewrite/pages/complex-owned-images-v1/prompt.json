@@ -1,0 +1,12 @@
+{
+  "tool": "builtin image_gen",
+  "mode": "ui-mockup",
+  "selected": "owned-complex-images-v1.png",
+  "panels": [
+    "Owned remote complex editor with inline image and explicit Save",
+    "Scrollable real SAF image confirmation with unchecked consent and Upload and insert",
+    "Unknown upload result, zero automatic retry; return editor or explicitly select existing image"
+  ],
+  "visualContract": "Material3 warm offwhite, indigo actions, scrollable 320dp/200% keyboard-safe controls, existing complex editor wrapper layout retained",
+  "securityCopy": "No credentials, URLs, internal APIs or capability values shown"
+}

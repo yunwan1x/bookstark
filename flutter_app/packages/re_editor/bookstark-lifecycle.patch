@@ -1,0 +1,59 @@
+--- a/lib/src/_code_editable.dart
++++ b/lib/src/_code_editable.dart
+@@ -99,6 +99,7 @@
+ 
+   late bool _didAutoFocus;
+   late final _CodeCursorBlinkController _cursorController;
++  Timer? _autocompleteTimer;
+ 
+   late AnimationController _floatingCursorAnimationController;
+ 
+@@ -175,6 +176,7 @@
+ 
+   @override
+   void dispose() {
++    _autocompleteTimer?.cancel();
+     widget.controller.removeListener(_onCodeInputChanged);
+     widget.inputController.removeListener(_onCodeUserInputChanged);
+     _highlighter.dispose();
+@@ -353,8 +355,10 @@
+       return;
+     }
+     // Delay 50ms to update the auto-complate prompt words.
+-    Future.delayed(const Duration(milliseconds: 50), () {
+-      _updateAutoCompleteState(true);
++    _autocompleteTimer?.cancel();
++    _autocompleteTimer = Timer(const Duration(milliseconds: 50), () {
++      _autocompleteTimer = null;
++      if (mounted) _updateAutoCompleteState(true);
+     });
+   }
+ 
+@@ -449,6 +453,7 @@
+ class _CodeCursorBlinkController extends ValueNotifier<bool> {
+ 
+   Timer? _timer;
++  Timer? _showTimer;
+ 
+   _CodeCursorBlinkController() : super(false);
+ 
+@@ -459,7 +464,9 @@
+     _timer = Timer.periodic(_kCursorBlinkHalfPeriod, _cursorTick);
+     if (kIsAndroid || kIsIOS) {
+       // Wait selection position to update
+-      Future.delayed(const Duration(milliseconds: 100), () {
++      _showTimer?.cancel();
++      _showTimer = Timer(const Duration(milliseconds: 100), () {
++        _showTimer = null;
+         value = true;
+       });
+     } else {
+@@ -468,6 +475,8 @@
+   }
+ 
+   void stopBlink() {
++    _showTimer?.cancel();
++    _showTimer = null;
+     if (_timer == null) {
+       return;
+     }

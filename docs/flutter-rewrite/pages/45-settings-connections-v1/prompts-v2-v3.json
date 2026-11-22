@@ -1,0 +1,10 @@
+[
+  {
+    "revision": 2,
+    "prompt": "Edit the supplied BookStark three-screen Flutter Android prototype. Preserve exactly the three screens, all layout, sizes, typography, purple palette, icons, cards, and all other text. Only make these precise changes: On left settings screen replace the row label 外观 with 应用外观 and the value 跟随系统 with 浅色; remove the chevron from that informational row only. On right cache screen replace the line 仅包含可重新生成的临时文件。 with 仅包含已结束下载留下的临时文件。. In the confirmation bottom sheet replace the description with 仅清理已结束下载的临时文件。本地内容、附件与草稿保留。. Keep the separate 取消 and 清理 buttons. No other changes, no new features or decorative elements."
+  },
+  {
+    "revision": 3,
+    "prompt": "Edit this exact three-screen BookStark prototype, preserve all sizes, layout, colors, cards, icons, and text except two status badges. Left screen is currently in 本地空间: change the 网络状态 row badge from 未验证 to 无需网络, use a quiet lavender background with purple text. Middle screen already shows server unreachable banner: change the server-card badge from 未验证 to 连接失败, retain amber style. Do not alter the other screens or any other elements. These are separate truthful example states."
+  }
+]

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"database/sql"
 	"time"
 )
 
@@ -53,7 +54,15 @@ func visitLogWriter() {
 }
 
 func flushVisitLogs(logs []VisitLog) {
-	tx, err := DB.Begin()
+	// Capture once: startup/shutdown or an isolated test may have no active DB.
+	flushVisitLogsDB(DB, logs)
+}
+
+func flushVisitLogsDB(db *sql.DB, logs []VisitLog) {
+	if db == nil || len(logs) == 0 {
+		return
+	}
+	tx, err := db.Begin()
 	if err != nil {
 		return
 	}
@@ -86,9 +95,18 @@ func flushVisitLogs(logs []VisitLog) {
 
 	for _, l := range logs {
 		dateStr := l.VisitTime.Format("2006-01-02")
-		logStmt.Exec(l.IP, l.Path, l.MemberID, l.VisitTime.Format("2006-01-02 15:04:05"))
-		dailyStmt.Exec(dateStr)
-		ipStmt.Exec(dateStr, l.IP)
+		if _, err := logStmt.Exec(l.IP, l.Path, l.MemberID, l.VisitTime.Format("2006-01-02 15:04:05")); err != nil {
+			tx.Rollback()
+			return
+		}
+		if _, err := dailyStmt.Exec(dateStr); err != nil {
+			tx.Rollback()
+			return
+		}
+		if _, err := ipStmt.Exec(dateStr, l.IP); err != nil {
+			tx.Rollback()
+			return
+		}
 		dates[dateStr] = true
 	}
 
@@ -98,12 +116,19 @@ func flushVisitLogs(logs []VisitLog) {
 
 	// Recalculate unique_ips for affected dates
 	for date := range dates {
-		recalcDailyUniqueIPs(date)
+		recalcDailyUniqueIPsDB(db, date)
 	}
 }
 
 func recalcDailyUniqueIPs(date string) {
-	DB.Exec(`UPDATE md_visit_daily SET unique_ips = (SELECT COUNT(*) FROM md_visit_daily_ip WHERE date = ?) WHERE date = ?`, date, date)
+	recalcDailyUniqueIPsDB(DB, date)
+}
+
+func recalcDailyUniqueIPsDB(db *sql.DB, date string) {
+	if db == nil {
+		return
+	}
+	db.Exec(`UPDATE md_visit_daily SET unique_ips = (SELECT COUNT(*) FROM md_visit_daily_ip WHERE date = ?) WHERE date = ?`, date, date)
 }
 
 func AsyncCreateVisitLog(ip, path string, memberID int64) {

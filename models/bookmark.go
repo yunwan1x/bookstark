@@ -125,8 +125,15 @@ func QueryBookmarks(q BookmarkQuery) (*BookmarkQueryResult, error) {
 		args = append(args, kw, kw, kw)
 	}
 	if q.Site != "" {
-		where = append(where, "(b.url LIKE ? OR b.url LIKE ?)")
-		args = append(args, "https://"+q.Site+"/%", "http://"+q.Site+"/%")
+		// Match the complete authority, including root URLs without a slash.
+		// Delimiters exclude a lookalike hostname or a different port.
+		var sites []string
+		for _, scheme := range []string{"https://", "http://"} {
+			prefix := scheme + q.Site
+			sites = append(sites, "(substr(b.url,1,length(?)) = ? COLLATE NOCASE AND (length(b.url)=length(?) OR substr(b.url,length(?)+1,1) IN ('/','?','#')))")
+			args = append(args, prefix, prefix, prefix, prefix)
+		}
+		where = append(where, "("+strings.Join(sites, " OR ")+")")
 	}
 	if len(q.Labels) > 0 {
 		for _, label := range q.Labels {
@@ -1111,8 +1118,15 @@ func QueryBookmarkIDsByFilter(q BookmarkQuery) ([]int64, error) {
 		args = append(args, kw, kw, kw)
 	}
 	if q.Site != "" {
-		where = append(where, "(b.url LIKE ? OR b.url LIKE ?)")
-		args = append(args, "https://"+q.Site+"/%", "http://"+q.Site+"/%")
+		// Match the complete authority, including root URLs without a slash.
+		// Delimiters exclude a lookalike hostname or a different port.
+		var sites []string
+		for _, scheme := range []string{"https://", "http://"} {
+			prefix := scheme + q.Site
+			sites = append(sites, "(substr(b.url,1,length(?)) = ? COLLATE NOCASE AND (length(b.url)=length(?) OR substr(b.url,length(?)+1,1) IN ('/','?','#')))")
+			args = append(args, prefix, prefix, prefix, prefix)
+		}
+		where = append(where, "("+strings.Join(sites, " OR ")+")")
 	}
 	if len(q.Labels) > 0 {
 		for _, label := range q.Labels {

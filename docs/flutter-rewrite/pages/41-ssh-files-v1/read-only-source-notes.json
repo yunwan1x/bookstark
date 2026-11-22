@@ -1,0 +1,19 @@
+{
+  "status": "READ_ONLY_EXPLORATION_NOT_PROTOTYPE_OR_IMPLEMENTATION",
+  "sourceSHA256": {
+    "controllers/asset_files.go": "571dc577d36bffcba306181287dbacf0cba234cffda71d9d576dc3d1e8998c51",
+    "services/asset_files.go": "79f1eeca5a9ddc8c9b294170e33d0bb1689328b1c13cd8c4644d2d4c10a28d75",
+    "routers/router.go": "d9fbc6ade3846ae85a522bf269318c0a6676637e84f02d2befc139b388d298b5",
+    "static/js/assets.js": "9691f253fdfb4ac51e97681ea9b7b2eccdaab604f50b8d35c60913e11d31b999"
+  },
+  "findings": [
+    "administrator credential-ID host resolution server side; never expose credential to WebView",
+    "GETfiles returns items/limit1000/truncated, no full-list completeness claim",
+    "all path handlers Go TrimSpace; reject silently changed paths instead of operating on different remote target",
+    "GETcontent bound2MiB/binary and UTF8 validation; PUTcontent lacks CAS/size bound; client requires explicit preflight and bound",
+    "mkdir rename copy chmod upload delete are real SSH/SFTP mutations; unknown results no automatic replay",
+    "only isolated owned SFTP and shell-fallback fixtures, never NAS host file commands",
+    "remote text editor body will use WebView per user preference; no41 code yet"
+  ],
+  "All45Complete": false
+}

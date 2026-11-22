@@ -1,0 +1,145 @@
+--- a/static/js/excalidraw/excalidraw-percentages-BXMCSKIN.js
++++ b/static/js/excalidraw/excalidraw-percentages-BXMCSKIN.js
+@@ -17938,6 +17938,36 @@
+   var e = document.documentElement.getAttribute("data-theme");
+   return e === "dark" ? "dark" : "light";
+ }
++// Owned bridge observation only: no SDK object or command is exposed.
++var bookstarkInitialGeneration = 0;
++var bookstarkInitialLoaded = false;
++var bookstarkInitialFailed = false;
++function bookstarkObserveInitialData(value) {
++  var generation = ++bookstarkInitialGeneration;
++  bookstarkInitialLoaded = false;
++  bookstarkInitialFailed = false;
++  return Promise.resolve(value).then(function(data) {
++    if (generation === bookstarkInitialGeneration) bookstarkInitialLoaded = true;
++    return data;
++  }, function(error) {
++    if (generation === bookstarkInitialGeneration) bookstarkInitialFailed = true;
++    throw error;
++  });
++}
++function bookstarkOwnedInitializationState() {
++  var loading = true;
++  if (er) {
++    var state = er.getAppState();
++    loading = !state || state.isLoading !== false;
++  }
++  return {
++    generation: bookstarkInitialGeneration,
++    sourceLoaded: bookstarkInitialLoaded,
++    loading: loading,
++    ready: bookstarkInitialLoaded && !bookstarkInitialFailed && !loading,
++    failed: bookstarkInitialFailed
++  };
++}
+ function iF(e, t, n) {
+   var a = document.getElementById(e);
+   if (!a) return;
+@@ -17956,7 +17986,7 @@
+   function l(h, s, d) {
+     aF(d), r();
+   }
+-  var o = y3(i);
++  var o = bookstarkObserveInitialData(y3(i));
+   function c() {
+     var h = Y.useState(Os), s = h[0], d = h[1];
+     return Fc = d, Y.createElement(Q1, {
+@@ -17977,10 +18007,12 @@
+   }
+   or = Jm.createRoot(a), or.render(Y.createElement(c));
+ }
++var bookstarkReadingOnly13 = false;
+ function rF(e, t) {
+   var n = document.getElementById(e);
+   if (!n) return;
+   e0();
++  bookstarkReadingOnly13 = true;
+   bsOnChange = null;
+   var a = null;
+   try {
+@@ -17989,7 +18021,7 @@
+     a = { elements: [], appState: {} };
+   }
+   a.elements || (a.elements = []), a.appState || (a.appState = {}), Os = w3();
+-  var i = y3(a);
++  var i = bookstarkObserveInitialData(y3(a));
+   function r() {
+     var h = Y.useState(Os), s = h[0], d = h[1];
+     Fc = d;
+@@ -18023,6 +18055,10 @@
+   }), JSON.stringify({ elements: e, appState: n, files: i });
+ }
+ function e0() {
++  ++bookstarkInitialGeneration;
++  bookstarkInitialLoaded = false;
++  bookstarkInitialFailed = false;
++  bookstarkReadingOnly13 = false;
+   if (or) {
+     try {
+       or.unmount();
+@@ -18082,7 +18118,63 @@
+ function _bookstarkApplySkeleton(skeleton, opts) {
+   return _bookstarkApplyElements(_bookstarkConvertSkeleton(skeleton), opts);
+ }
++function bookstarkReadingCapture13(includeSelection) {
++  if (!bookstarkReadingOnly13 || !er) throw new Error("reading_unavailable");
++  var state = er.getAppState(), ids = includeSelection === false ? [] : Object.keys(state.selectedElementIds || {}).filter(function(id) { return state.selectedElementIds[id] === true; });
++  if (ids.length > 128 || ids.some(function(id) { return typeof id !== "string" || id.length > 256; })) throw new Error("reading_selection_limit");
++  var selected = new Set(ids), text = er.getSceneElements().filter(function(el) { return !el.isDeleted && selected.has(el.id) && el.type === "text"; }).map(function(el) { return typeof el.originalText === "string" ? el.originalText : el.text || ""; }).join("\n");
++  if (new TextEncoder().encode(text).length > 32768) throw new Error("reading_text_limit");
++  return { text: text, anchor: { type: "drawingViewport", x: state.scrollX, y: state.scrollY, zoom: state.zoom.value, elementIds: ids } };
++}
++function bookstarkReadingRestore13(anchor) {
++  if (!bookstarkReadingOnly13 || !er || !anchor || anchor.type !== "drawingViewport" ||
++      ![anchor.x,anchor.y].every(function(n) { return typeof n === "number" && Number.isFinite(n) && Math.abs(n) <= 1e9; }) ||
++      typeof anchor.zoom !== "number" || !Number.isFinite(anchor.zoom) || anchor.zoom < 0.1 || anchor.zoom > 30 ||
++      !Array.isArray(anchor.elementIds) || anchor.elementIds.length > 128) throw new Error("reading_anchor");
++  var actual = new Set(er.getSceneElements().filter(function(el) { return !el.isDeleted; }).map(function(el) { return el.id; })), ids = {};
++  anchor.elementIds.forEach(function(id) { if(typeof id !== "string" || id.length > 256 || !actual.has(id)) throw new Error("reading_element_missing"); ids[id] = true; });
++  er.updateScene({appState:{scrollX:anchor.x,scrollY:anchor.y,zoom:{value:anchor.zoom},selectedElementIds:ids}});
++  return true;
++}
++function bookstarkOwnedImageSelection() {
++  if(bookstarkReadingOnly13 || !er)throw Error("image_selection_unavailable");
++  var s=er.getAppState(),z=s.zoom&&s.zoom.value;
++  if(![s.scrollX,s.scrollY,s.width,s.height,z].every(Number.isFinite) ||
++     z<0.1||z>30||s.width<=0||s.height<=0||s.width>32768||s.height>32768)
++    throw Error("image_viewport_invalid");
++  var ids=Object.keys(s.selectedElementIds||{}).filter(function(id){return s.selectedElementIds[id]===true;}).sort();
++  if(ids.length>128||ids.some(function(id){return typeof id!=="string"||id.length>256;}))throw Error("image_selection_invalid");
++  return {kind:"drawing",x:s.scrollX,y:s.scrollY,zoom:z,width:s.width,height:s.height,elementIds:ids};
++}
++async function bookstarkOwnedInsertImage(url,width,height,selection,guard) {
++  if(typeof guard!=="function"||!guard()||
++     JSON.stringify(bookstarkOwnedImageSelection())!==JSON.stringify(selection))throw Error("image_selection_changed");
++  var response=await fetch(url,{credentials:"omit",redirect:"error"});
++  var mime=(response.headers.get("content-type")||"").split(";")[0].toLowerCase();
++  if(!response.ok||!["image/png","image/jpeg","image/gif","image/webp"].includes(mime))
++    throw Error("image_resource_refused");
++  // Native broker has already bounded and decoded this exact approved URL.
++  var bytes=await response.arrayBuffer();
++  if(bytes.byteLength<1||bytes.byteLength>5*1024*1024||!guard()||
++     JSON.stringify(bookstarkOwnedImageSelection())!==JSON.stringify(selection))throw Error("image_selection_changed");
++  var id="owned-"+Array.from(crypto.getRandomValues(new Uint32Array(4))).join("-");
++  var w=Math.min(width,720),h=Math.max(1,Math.round(height*w/width));
++  var elements=_bookstarkConvertSkeleton([{type:"image",
++    x:-selection.x+selection.width/(2*selection.zoom)-w/2,
++    y:-selection.y+selection.height/(2*selection.zoom)-h/2,
++    width:w,height:h,fileId:id,status:"saved",scale:[1,1]}]);
++  // A confirmed server URL remains a URL; aF skips it rather than issuing qm POST.
++  gi[id]=url;
++  er.addFiles([{id:id,dataURL:url,mimeType:mime,created:Date.now()}]);
++  _bookstarkApplyElements(elements,{append:true});
++  return true;
++}
+ window.BookStarkExcalidraw = {
++  ownedInitializationState: bookstarkOwnedInitializationState,
++  ownedImageSelection: bookstarkOwnedImageSelection,
++  insertOwnedImage: bookstarkOwnedInsertImage,
++  captureReading13: bookstarkReadingCapture13,
++  restoreReading13: bookstarkReadingRestore13,
+   initExcalidraw: iF,
+   initExcalidrawPreview: rF,
+   getExcalidrawData: lF,

@@ -1,0 +1,46 @@
+const previewOrigin=process.env.BOOKSTARK_VISUAL_URL||'http://127.0.0.1:8099';
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'/vol1/1000/wy/photos-apk-test/bookstark-flutter/browser-tools/node_modules/playwright-core');
+(async()=>{
+ const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH||'/root/.cache/ms-playwright/chromium-1243/chrome-linux64/chrome',args:['--no-sandbox']});
+ const page=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:2});
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ const out='/vol1/1000/wy/photos-apk-test/bookstark-flutter/screenshots';fs.mkdirSync(out,{recursive:true});
+ await page.goto(previewOrigin+'/?page=assistant',{waitUntil:'networkidle',timeout:60000});
+ const semantics=page.locator('flt-semantics-placeholder');if(await semantics.count())await semantics.dispatchEvent('click');
+ await page.getByText('AI 助手',{exact:true}).waitFor();
+ await page.mouse.move(0,0);await page.waitForTimeout(350);
+ await page.screenshot({path:out+'/06-assistant-fixture-actual.png'});
+ const review=page.getByRole('button',{name:'核对并创建',exact:true});
+ await review.click();
+ await page.getByRole('button',{name:'确认创建',exact:true}).waitFor();
+ await page.mouse.move(0,0);await page.waitForTimeout(350);
+ await page.screenshot({path:out+'/06-assistant-review-fixture-actual.png'});
+ await page.getByRole('button',{name:'确认创建',exact:true}).click();
+ await page.getByRole('button',{name:'打开已创建资源',exact:true}).waitFor();
+ await page.getByRole('button',{name:'打开已创建资源',exact:true}).click();
+ await page.getByText('来源资料',{exact:true}).or(page.getByLabel('来源资料',{exact:true})).first().waitFor();
+ await page.mouse.move(0,0);await page.waitForTimeout(350);
+ await page.screenshot({path:out+'/06-assistant-source-fixture-actual.png'});
+ await page.getByRole('button',{name:'关闭',exact:true}).click();
+ const input=page.getByRole('textbox',{name:'继续提问…',exact:true});
+ await input.click();
+ // Flutter semantics installs its editing handlers on the frame after focus.
+ await page.waitForTimeout(100);
+ await input.fill('停止测试');
+ await page.waitForTimeout(100);
+ await page.getByRole('button',{name:/^发送/}).click();
+ await page.mouse.move(0,0);
+ await page.getByRole('button',{name:/^停止回答/}).waitFor();
+ 
+ await page.getByRole('button',{name:/^停止回答/}).click();
+ await page.mouse.move(0,0);
+ await page.getByRole('button',{name:/^发送/}).waitFor();
+ assert.equal(await input.inputValue(),'停止测试');
+ await page.mouse.move(0,0);await page.waitForTimeout(350);
+ await page.screenshot({path:out+'/06-assistant-stopped-fixture-actual.png'});
+ assert.equal(errors.length,0,errors.join('\n'));
+ console.log('PASS fixture AI response, explicit draft review/confirmation, native source panel, streaming stop and retained input; no page errors');
+ await browser.close();
+})().catch(e=>{console.error(e);process.exit(1)});

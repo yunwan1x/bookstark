@@ -1094,7 +1094,7 @@ const BookStarkEditor = (function() {
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
-  function initHtmlEditor(containerId, htmlContent, onChange) {
+  function initHtmlEditor(containerId, htmlContent, onChange, sourceReadOnly) {
     var container = document.getElementById(containerId);
     if (!container) return null;
 
@@ -1104,10 +1104,11 @@ const BookStarkEditor = (function() {
     if (typeof window.CMHtml === 'undefined') {
       container.innerHTML =
         '<div class="html-editor-wrap">' +
-          '<textarea class="html-editor-textarea" spellcheck="false" aria-label="HTML 编辑器" placeholder="开始编写 HTML 内容..."></textarea>' +
+          '<textarea class="html-editor-textarea" spellcheck="false" aria-readonly="' + (!!sourceReadOnly) + '" aria-label="HTML 编辑器" placeholder="开始编写 HTML 内容..."></textarea>' +
         '</div>';
       var textarea = container.querySelector('.html-editor-textarea');
       textarea.value = _content;
+      textarea.readOnly = !!sourceReadOnly;
       var _t = null;
       textarea.addEventListener('input', function() {
         _content = textarea.value;
@@ -1157,6 +1158,9 @@ const BookStarkEditor = (function() {
         CM.drawSelection(),
         CM.dropCursor(),
         CM.EditorState.allowMultipleSelections.of(true),
+        CM.EditorState.readOnly.of(!!sourceReadOnly),
+        CM.EditorView.editable.of(!sourceReadOnly),
+        CM.EditorView.contentAttributes.of(sourceReadOnly ? { tabindex: '0', 'aria-readonly': 'true' } : {}),
         CM.indentOnInput(),
         CM.syntaxHighlighting(CM.defaultHighlightStyle, { fallback: true }),
         CM.bracketMatching(),

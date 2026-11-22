@@ -1,0 +1,110 @@
+name: bookstark_flutter
+description: BookStark native mobile knowledge workspace.
+publish_to: none
+version: 0.1.0+1
+environment:
+  sdk: '>=3.12.0 <4.0.0'
+dependencies:
+  archive: 4.6.0
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  flutter_markdown_plus: ^1.0.12
+  file_selector: ^1.1.0
+  path_provider: ^2.1.6
+  share_plus: ^12.0.2
+  url_launcher: ^6.3.3
+  html: 0.15.7
+  re_editor: 0.10.0
+  re_highlight: 0.0.3
+  webview_flutter: 4.14.1
+  webview_flutter_android: 4.14.1
+  markdown: ^7.3.1
+  mime: ^2.1.0
+  just_audio: 0.10.6
+  audio_service: 0.18.19
+  audio_session: 0.2.4
+  http: ^1.6.0
+  sqflite: ^2.4.2
+  path: ^1.9.1
+  flutter_secure_storage: ^9.2.4
+  flutter_svg: 2.3.2
+  crypto: 3.0.8
+  xml: ^7.0.1
+  pdfrx: 2.11.0
+  video_player: 2.14.1
+  two_dimensional_scrollables: 0.5.5
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  sqflite_common_ffi: 2.3.6
+  sqlite3: ^2.7.5
+  video_player_platform_interface: 6.9.0
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/licenses/spreadsheet_calc.txt
+    - assets/licenses/dejavu_sans_mono.txt
+    - assets/licenses/jbcrypt.txt
+    - assets/admin_terminal/
+    - assets/admin_files/
+    # BEGIN BOOKSTARK COMPLEX EDITOR ASSETS
+    - assets/complex_editors/host.html
+    - assets/complex_editors/host.js
+    - assets/complex_editors/local-drawing.js
+    - assets/complex_editors/local-presentation.js
+    - assets/complex_editors/reading13.js
+    - assets/complex_editors/host-merge.js
+    - assets/complex_editors/markdown-editor.js
+    - assets/complex_editors/markdown-preview.js
+    - assets/complex_editors/memory-storage.js
+    - assets/complex_editors/memory-indexeddb.js
+    - assets/complex_editors/source-manifest.json
+    - assets/complex_editors/vendor-manifest.json
+    - assets/complex_editors/messages-zh.js
+    - assets/complex_editors/messages-en.js
+    - assets/complex_editors/patches/
+    - assets/complex_editors/static/
+    - assets/complex_editors/static/css/
+    - assets/complex_editors/static/css/fonts/
+    - assets/complex_editors/static/css/xterm/
+    - assets/complex_editors/static/images/
+    - assets/complex_editors/static/js/
+    - assets/complex_editors/static/js/canvas-editor/
+    - assets/complex_editors/static/js/excalidraw/
+    - assets/complex_editors/static/js/excalidraw/fonts/Assistant/
+    - assets/complex_editors/static/js/excalidraw/fonts/Cascadia/
+    - assets/complex_editors/static/js/excalidraw/fonts/ComicShanns/
+    - assets/complex_editors/static/js/excalidraw/fonts/Excalifont/
+    - assets/complex_editors/static/js/excalidraw/fonts/Liberation/
+    - assets/complex_editors/static/js/excalidraw/fonts/Lilita/
+    - assets/complex_editors/static/js/excalidraw/fonts/Nunito/
+    - assets/complex_editors/static/js/excalidraw/fonts/Virgil/
+    - assets/complex_editors/static/js/excalidraw/fonts/Xiaolai/
+    - assets/complex_editors/static/js/mathjax/
+    - assets/complex_editors/static/js/mind-elixir/
+    - assets/complex_editors/static/js/univer/
+    - assets/complex_editors/static/js/xterm/
+    - assets/complex_editors/static/licenses/
+    - assets/complex_editors/static/pptist/
+    - assets/complex_editors/static/pptist/assets/
+    - assets/complex_editors/static/pptist/imgs/
+    - assets/complex_editors/static/pptist/mocks/
+    - assets/complex_editors/static/tv-preview/
+    - assets/complex_editors/static/vendor/three/0.185.1/
+    - assets/complex_editors/static/vendor/three/0.185.1/addons/controls/
+    - assets/complex_editors/static/webfonts/
+    - assets/complex_editors/vendor/fake-indexeddb/
+    - assets/complex_editors/vendor/fake-indexeddb/build/esm/
+    - assets/complex_editors/vendor/fake-indexeddb/build/esm/lib/
+    # END BOOKSTARK COMPLEX EDITOR ASSETS
+  fonts:
+    - family: BookstarkLogsMono
+      fonts:
+        - asset: assets/fonts/DejaVuSansMono.ttf
+
+dependency_overrides:
+  re_editor:
+    path: packages/re_editor

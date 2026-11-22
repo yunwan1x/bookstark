@@ -1,0 +1,17 @@
+{
+  "local-html-attachments-v1.png": {
+    "sourceSHA256": "3a1c58d516efc4bf3ab52f153c666962b60649b50012625d4b658100cf25f4ac",
+    "originalSavedMtimeNS": 1794358451901619446,
+    "selectedBeforeImplementation": true
+  },
+  "prompt.json": {
+    "sourceSHA256": "42e7b6bc147663d8285dbbe6e68862426be797265e60ea2bc1cc6df234bb7b3b",
+    "originalSavedMtimeNS": 1794358496044932286,
+    "selectedBeforeImplementation": true
+  },
+  "design.md": {
+    "sourceSHA256": "1d899af2f4eb592eaa15b7e4be0a5eb70e9ee218b38c421e3335ed6ea7663e0c",
+    "originalSavedMtimeNS": 1794359472598847188,
+    "selectedBeforeImplementation": true
+  }
+}

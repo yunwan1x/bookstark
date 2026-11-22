@@ -1,0 +1,208 @@
+{
+  "status": "design-only-not-implemented-or-native-accepted",
+  "checked": "2026-11-10",
+  "scope": "07 server notes; local capabilities separate",
+  "sourceFiles": [
+    "controllers/blog.go:128",
+    "models/blog.go:468",
+    "controllers/common.go:66",
+    "routers/router.go:341",
+    "controllers/blog.go:607",
+    "models/blog.go:609",
+    "controllers/label.go:367"
+  ],
+  "list": {
+    "method": "GET",
+    "path": "/api/blogs",
+    "auth": "authenticated member; SQL member_id scope; normal current-source cookie/CSRF client",
+    "query": {
+      "type": {
+        "ui": "fixed note",
+        "default": "note",
+        "wire": "note"
+      },
+      "page": {
+        "type": "integer",
+        "default": 1,
+        "minimum": 1,
+        "invalid": "clamped to 1 after atoi"
+      },
+      "page_size": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 200,
+        "default": "setting page_size_blogs if valid, else 12"
+      },
+      "keyword": {
+        "default": "",
+        "match": "SQL LIKE %value% on title or label; not content; wildcard semantics backend-existing"
+      },
+      "label": {
+        "default": "",
+        "match": "exact label name"
+      },
+      "date": {
+        "default": "",
+        "uiFormat": "YYYY-MM-DD valid calendar day",
+        "match": "DATE(create_time) = parameter; no range/from/to"
+      },
+      "pinned": {
+        "default": "omitted",
+        "enum": [
+          "",
+          "1",
+          "0"
+        ],
+        "meaning": {
+          "0": "not pinned",
+          "1": "pinned",
+          "": "all"
+        }
+      },
+      "visibility": {
+        "default": "omitted",
+        "uiEnum": [
+          "",
+          "0",
+          "1"
+        ],
+        "meaning": {
+          "0": "private",
+          "1": "public",
+          "": "all"
+        }
+      },
+      "has_code": {
+        "default": "omitted",
+        "enable": [
+          "1",
+          "true"
+        ],
+        "disable": "omit; 0 is not a no-code filter",
+        "match": "editor_type != html AND content contains backend SQL fence/backtick heuristics"
+      },
+      "shared": {
+        "default": "omitted",
+        "enum": [
+          "",
+          "1",
+          "0"
+        ],
+        "match": "share record exists/not exists; not equivalent to visibility",
+        "ui": "advanced future only"
+      },
+      "encrypted": {
+        "default": "omitted",
+        "enum": [
+          "",
+          "1",
+          "0"
+        ],
+        "match": "password nonempty/empty; does not unlock content",
+        "ui": "advanced future only"
+      },
+      "editor_type": {
+        "default": "omitted",
+        "match": "exact editor type; null coalesced markdown",
+        "knownTypes": [
+          "markdown",
+          "html",
+          "spreadsheet",
+          "drawing",
+          "mindmap",
+          "richdoc",
+          "presentation"
+        ],
+        "ui": "advanced future only"
+      }
+    },
+    "response": {
+      "code": 0,
+      "data": "array or null for empty; do not swallow malformed shape as empty",
+      "total": "integer",
+      "page": "integer",
+      "page_size": "integer",
+      "total_pages": "integer",
+      "item": {
+        "blog_id": "positive int",
+        "blog_title": "string",
+        "blog_type": "note|article",
+        "editor_type": "actual type, missing markdown compatibility",
+        "visibility": "int 0|1",
+        "is_pinned": "int 0|1 (query name is pinned)",
+        "pin_order": "int",
+        "has_password": "bool",
+        "content_preview": "string; protected empty; bounded client snippet",
+        "labels": "actual Go []string; may null",
+        "create_time": "time.Time serialized",
+        "modify_time": "time.Time serialized"
+      }
+    },
+    "ordering": "is_pinned DESC, pin_order ASC, modify_time DESC; no server sort query"
+  },
+  "actions": {
+    "singlePin": {
+      "method": "PATCH",
+      "path": "/api/blogs/:id/pin",
+      "body": "none",
+      "semantics": "toggle current value; not idempotent",
+      "response": {
+        "code": 0,
+        "data": {
+          "is_pinned": "bool"
+        }
+      },
+      "unknown": "read actual state before any next explicit toggle; no automatic retry"
+    },
+    "singleVisibility": {
+      "method": "PATCH",
+      "path": "/api/blogs/:id/visibility",
+      "body": "none",
+      "semantics": "toggle 0/1; private cleanup shares, public autocreates share; confirmation and fresh state required",
+      "response": {
+        "code": 0,
+        "data": {
+          "visibility": "int 0|1"
+        }
+      },
+      "unknown": "do not blindly repeat toggle"
+    },
+    "bulkPin": {
+      "method": "POST",
+      "path": "/api/blogs/batch-pin",
+      "body": {
+        "ids": "deduplicated positive IDs from explicit selection snapshot only"
+      },
+      "semantics": "sets is_pinned=1 only; owner-filtered; cannot unpin",
+      "response": {
+        "code": 0,
+        "data": {
+          "affected": "integer; no per-ID success list"
+        }
+      },
+      "reconciliation": "reread selected IDs; ambiguous or failed IDs remain selected across pages; affected alone never proves every ID"
+    },
+    "trash": {
+      "method": "DELETE",
+      "path": "/api/blogs/:id",
+      "scope": "one selected ID per request using existing resource trash contract; retain failed/unknown selection"
+    }
+  },
+  "labelsCompatibility": {
+    "authoritativeRead": "[]string|null",
+    "legacyRead": "serialized JSON string array or plain comma-separated text only in explicit compatibility decoder; invalid array/mixed values => retained error, not silent empty",
+    "write": "existing resource-label endpoint uses JSON object with labels CSV string; do not send list to that field",
+    "bulk": "not an invented batch endpoint; out of this first filter/pin batch"
+  },
+  "capabilities": {
+    "server": "all five visible filters date,label,pinned,visibility,has_code",
+    "local": "currently no is_pinned/visibility columns; do not show fake successful server-only filters/actions. Existing label/keyword stay; future date/code only after explicit local-query implementation+tests",
+    "complex": "article/all complex editor bodies open existing WebView; ordinary Markdown native"
+  },
+  "selection": {
+    "scope": "only explicitly selected IDs in same actual space/generation",
+    "crossPage": "preserve selected IDs and failures across loaded pages; show offscreen count",
+    "filterChange": "confirm before clearing selection and applying changed query; cancel preserves old filters/selection",
+    "maintenance": "space change retires pending reads/writes and cannot leak selection into another account"
+  }
+}

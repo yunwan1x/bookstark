@@ -1,0 +1,15 @@
+{
+  "mode": "builtin imagegen",
+  "use_case": "ui-mockup",
+  "prototype": "article-create-webview-v1.png",
+  "purpose": "article editing / unknown read-only / known cleanup",
+  "palette": {
+    "primary": "#6530ad",
+    "lavender": "#f1e8fc",
+    "background": "#f7f4fc"
+  },
+  "source_output": "/root/.codex/generated_images/01a1c606-baeb-7f50-9c35-f679e2d54bcd/exec-01aeca6a-3c4e-4fe7-a3bb-a26c784de946.png",
+  "status": "design only; no Native claim",
+  "reconstructed_design_brief": "Three purple/lavender Android article-creation states: editable real WebView source with title/labels and truthful retained/pending status; readonly unknown with exact-ID full-server-version review and no retry-create; known-ID cleanup with storage-only retry and existing-article handoff. Reuses existing BookStark complex editor visual style.",
+  "brief_provenance": "Design brief reconstructed from selected prototype and saved design; not represented as the original verbatim image-generation tool prompt."
+}

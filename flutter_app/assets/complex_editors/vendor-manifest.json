@@ -1,0 +1,193 @@
+{
+  "package": "fake-indexeddb",
+  "version": "6.2.7",
+  "license": "Apache-2.0",
+  "registry": "https://registry.npmjs.org/fake-indexeddb/-/fake-indexeddb-6.2.7.tgz",
+  "integrity": "sha512-g0ghQ+BmU3CSZaHup5FigEAAtCmtNyxkrmID7OAeK2qONHghw1aQ2l2T1RxmfhP1H1tEXVRWArUTGVCk5832ww==",
+  "files": {
+    "vendor/fake-indexeddb/LICENSE": {
+      "sha256": "0c2e77addd3045b932ae0de86b7cf66aa1eeed4248d4dab37e851f9e5499d85e",
+      "bytes": 10893
+    },
+    "vendor/fake-indexeddb/build/esm/lib/binarySearchTree.js": {
+      "sha256": "5b08fd2df0a19ab5b4985e92e21538e4644d88b1d6f60594bf5258c3fa39a931",
+      "bytes": 10041
+    },
+    "vendor/fake-indexeddb/build/esm/lib/canInjectKey.js": {
+      "sha256": "4f5edc82747f9fefe5adfda9409c7a9d23c91d1289132378eee14ebd2873d08e",
+      "bytes": 886
+    },
+    "vendor/fake-indexeddb/build/esm/lib/cloneValueForInsertion.js": {
+      "sha256": "48db0f9802a0310599a795c8911517efb8dc634638b04ed20da53f5ad1d43f19",
+      "bytes": 1062
+    },
+    "vendor/fake-indexeddb/build/esm/lib/closeConnection.js": {
+      "sha256": "3980e6cc75d681e332e8884e205629b99ca79c88b0ae7ec2374056d127eba70e",
+      "bytes": 935
+    },
+    "vendor/fake-indexeddb/build/esm/lib/cmp.js": {
+      "sha256": "5e055ecfc45ac1054e9c20779aa9cdb971703109ff3177a19688ba9d8df7e52f",
+      "bytes": 2739
+    },
+    "vendor/fake-indexeddb/build/esm/lib/Database.js": {
+      "sha256": "0211ed0b35daea3fcaaec6cfce37e3e467ed77d9c51fbf1e8c3a1274c97a2ac5",
+      "bytes": 2238
+    },
+    "vendor/fake-indexeddb/build/esm/lib/enforceRange.js": {
+      "sha256": "dd4b01502533d5355f6fd8e347ad57ac21862b82d7fa8cef4f262b3a28dcac2d",
+      "bytes": 335
+    },
+    "vendor/fake-indexeddb/build/esm/lib/errors.js": {
+      "sha256": "1e388f274166cdda947d59e711dc530528da07fce2805258867dc1935ea37969",
+      "bytes": 3591
+    },
+    "vendor/fake-indexeddb/build/esm/lib/extractGetAllOptions.js": {
+      "sha256": "e79524b8a783907f4654e039fb98afcb2de43dafee1fdcc0ebe2355cba1c31f7",
+      "bytes": 1101
+    },
+    "vendor/fake-indexeddb/build/esm/lib/extractKey.js": {
+      "sha256": "0e49ff5cc3d9dd24aa23cbdf31a8538835e4ac919f15e9ff64e0620b4893deff",
+      "bytes": 1897
+    },
+    "vendor/fake-indexeddb/build/esm/lib/FakeDOMStringList.js": {
+      "sha256": "21227f286a754746088dfa7a099f2899183baacc1b4aa629054e66ace8d53aef",
+      "bytes": 1000
+    },
+    "vendor/fake-indexeddb/build/esm/lib/FakeEvent.js": {
+      "sha256": "532189b1e822d267cd90720dda2b545ad7bb6f7f9ba84aa2ea9bc5c3681f0f4b",
+      "bytes": 925
+    },
+    "vendor/fake-indexeddb/build/esm/lib/FakeEventTarget.js": {
+      "sha256": "2e331238c3d95b49077745f98084bcb1d0c66dd5b6591dc1563e6a9ea5637e4c",
+      "bytes": 3798
+    },
+    "vendor/fake-indexeddb/build/esm/fakeIndexedDB.js": {
+      "sha256": "d5e976278c38b011fd4264152b55b3a86cee0bcfaa10edc41e57c3a4f9b7e6ba",
+      "bytes": 111
+    },
+    "vendor/fake-indexeddb/build/esm/FDBCursor.js": {
+      "sha256": "32245d3d75a7bd3dc5cb06c19d2462e6d33bab21b81f90ebafe79b4f34d4f2a3",
+      "bytes": 15946
+    },
+    "vendor/fake-indexeddb/build/esm/FDBCursorWithValue.js": {
+      "sha256": "df0387f379445153120e3e7e87ef01f463984d91890b2f9e68827911c5f38dc8",
+      "bytes": 311
+    },
+    "vendor/fake-indexeddb/build/esm/FDBDatabase.js": {
+      "sha256": "4ace3585a0df384db8ba5319c88230bbe357a630c4af0750a8cdef00330fecfd",
+      "bytes": 7297
+    },
+    "vendor/fake-indexeddb/build/esm/FDBFactory.js": {
+      "sha256": "0b931d22ca105d25270bb99e8198900de4b67f48f8bdc2dbb20baffcb777b8c7",
+      "bytes": 15634
+    },
+    "vendor/fake-indexeddb/build/esm/FDBIndex.js": {
+      "sha256": "9090153289181c0f34071e47a2e8a14a95694a6c1244dfc3ccbc8b72758314ce",
+      "bytes": 7709
+    },
+    "vendor/fake-indexeddb/build/esm/FDBKeyRange.js": {
+      "sha256": "3aed80766b035c0f1cf603992bba3f30e70cd7f1e67906139bc807b0cb8d1d1b",
+      "bytes": 2065
+    },
+    "vendor/fake-indexeddb/build/esm/FDBObjectStore.js": {
+      "sha256": "0c7a13359542f5e7abfcd6d1f548b93c189f979d7f45835dde69cce862f43b02",
+      "bytes": 14977
+    },
+    "vendor/fake-indexeddb/build/esm/FDBOpenDBRequest.js": {
+      "sha256": "08de83ff7455795bfa17b4ff6811d6adf926aa2235c743a0890e27d1d6928b3e",
+      "bytes": 232
+    },
+    "vendor/fake-indexeddb/build/esm/FDBRecord.js": {
+      "sha256": "f311f89d9252f0fdbaf5c5d1ed4e6fb9e24db0b719e21256662eccad144f896c",
+      "bytes": 493
+    },
+    "vendor/fake-indexeddb/build/esm/FDBRequest.js": {
+      "sha256": "4d87b9c1971258c20e07261ded65bfc82962181bda5f3dcb9f32e935062f9c96",
+      "bytes": 738
+    },
+    "vendor/fake-indexeddb/build/esm/FDBTransaction.js": {
+      "sha256": "b6d3cea7903219caceff9bc3f1f6be1d80c2a108e3c5fd4d1629788eda6ae35d",
+      "bytes": 9455
+    },
+    "vendor/fake-indexeddb/build/esm/FDBVersionChangeEvent.js": {
+      "sha256": "3ef84fd543dd0fb14d478a9ac9b6f3a932e08e907081584fbb39d19410ddaaa2",
+      "bytes": 439
+    },
+    "vendor/fake-indexeddb/build/esm/forceCloseDatabase.js": {
+      "sha256": "be73dfaa8eda15064dbba36dfbc15f6948fa61ddbf85852f50894aec44ddbd13",
+      "bytes": 774
+    },
+    "vendor/fake-indexeddb/build/esm/lib/getKeyPath.js": {
+      "sha256": "6a08ea6a49ca4f39ff8040b06bd07f9d67fe6dab8249491370d4a2ae99cf46ef",
+      "bytes": 550
+    },
+    "vendor/fake-indexeddb/build/esm/index.js": {
+      "sha256": "45791e33b9247a10f52e8aecb3358adef073505ea0abf3368e2dd1367b1df651",
+      "bytes": 935
+    },
+    "vendor/fake-indexeddb/build/esm/lib/Index.js": {
+      "sha256": "72b05a415f899f8a5075799680ef429beb1de3bbe4f2c55f5f710903e2b4bb1f",
+      "bytes": 6335
+    },
+    "vendor/fake-indexeddb/build/esm/lib/intersection.js": {
+      "sha256": "f9751ee9da6f0e9510a90c868b53be4a4c828fa3f97c13486cee1ff64ffbc650",
+      "bytes": 396
+    },
+    "vendor/fake-indexeddb/build/esm/lib/isPotentiallyValidKeyRange.js": {
+      "sha256": "71a3be7b6c73c6a8a77384dc560d47ff55454c9a48dd6b577e60f1382fc91e02",
+      "bytes": 616
+    },
+    "vendor/fake-indexeddb/build/esm/lib/isSharedArrayBuffer.js": {
+      "sha256": "2905b2c5472cc389c3bcb2a2ecd9f2f1694d522277c377fe83e730a6a6d1eb8a",
+      "bytes": 143
+    },
+    "vendor/fake-indexeddb/build/esm/lib/KeyGenerator.js": {
+      "sha256": "d3784ea3d14fab523d670235886d600383c047c5106a89a90e5e308c6aac1e3d",
+      "bytes": 576
+    },
+    "vendor/fake-indexeddb/build/esm/lib/ObjectStore.js": {
+      "sha256": "b526acb59a2ef1b276fc9133176729bad4979cd628f9075d18990286609781e1",
+      "bytes": 8192
+    },
+    "vendor/fake-indexeddb/build/esm/lib/RecordStore.js": {
+      "sha256": "3a3b2a47a732313bc27b6c7b569ff69646effd16b6c8498b25e87e08f456db3e",
+      "bytes": 3952
+    },
+    "vendor/fake-indexeddb/build/esm/lib/scheduling.js": {
+      "sha256": "ccec4db00f46f5fdc1c3d20c01c0e2be57ddf4eb2546acfc5785f12b857f8bfa",
+      "bytes": 2101
+    },
+    "vendor/fake-indexeddb/build/esm/lib/types.js": {
+      "sha256": "2e29cd9a98755c46896f7a2d56524db2d6d96b248e36db46de14c30bf47c8d05",
+      "bytes": 10
+    },
+    "vendor/fake-indexeddb/build/esm/lib/validateKeyPath.js": {
+      "sha256": "fc27ce74444a2693e8b259b1abca4411542c33544b92a350f6694abeba5bd5c1",
+      "bytes": 11082
+    },
+    "vendor/fake-indexeddb/build/esm/lib/validateRequiredArguments.js": {
+      "sha256": "8e7edeaf1b27b3afd79413e396f2163213605cbae87d0f8ebf6f0a1683795e7b",
+      "bytes": 484
+    },
+    "vendor/fake-indexeddb/build/esm/lib/valueToKey.js": {
+      "sha256": "b1b14fe186f2129d5ce812ab8f91bbcf2b336f2a89cff9bf764047ac02997222",
+      "bytes": 639
+    },
+    "vendor/fake-indexeddb/build/esm/lib/valueToKeyRange.js": {
+      "sha256": "e8ba602f7a0fdd98a21106ef82361d7618dbf9dbe453ff07303986af4e134285",
+      "bytes": 599
+    },
+    "vendor/fake-indexeddb/build/esm/lib/valueToKeyWithoutThrowing.js": {
+      "sha256": "672e630cade58dce5bf35e1a1bd08492698d0a1038131392f4a073027c9813a9",
+      "bytes": 3876
+    },
+    "vendor/fake-indexeddb/package.json": {
+      "sha256": "206b1017e513f8a39641d7a0328bf841cc952f107c901b17c3ed9c6c9fd780fc",
+      "bytes": 5922
+    },
+    "vendor/fake-indexeddb/README.md": {
+      "sha256": "d87ea68d71eb6c41275b8a3bea74ae7b3ff3e12e2776f02dcb16b3ad3c7b1584",
+      "bytes": 9688
+    }
+  }
+}

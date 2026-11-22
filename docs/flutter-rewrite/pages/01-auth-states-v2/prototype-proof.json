@@ -1,0 +1,9 @@
+{
+  "prototypeSavedBeforeImplementation": true,
+  "implementationStarted": false,
+  "tool": "built-in image_gen",
+  "image": "01-04-auth-states-v2.png",
+  "sha256": "33998ab89ed687cfee72caea69e611f8c3d0e986477e601eb624e43a182e6d75",
+  "nativeEvidence": false,
+  "knownRasterDeviation": "token field must remain two-line as design contract"
+}

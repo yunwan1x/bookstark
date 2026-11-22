@@ -1,0 +1,18 @@
+--- a/static/js/univer-adapter.js
++++ b/static/js/univer-adapter.js
+@@ -374,6 +374,15 @@
+     setDirty: setDirty,
+     loadData: loadData,
+     retry: retry,
++    // Owned mobile-host hook: use the original engine's public result barrier.
++    waitForCalculation: async function(timeout) {
++      if (!running || !univerAPI || typeof univerAPI.getFormula !== 'function') throw new Error('formula_unavailable');
++      var formula = univerAPI.getFormula();
++      if (!formula || typeof formula.executeCalculation !== 'function' || typeof formula.onCalculationResultApplied !== 'function') throw new Error('formula_barrier_unavailable');
++      formula.executeCalculation();
++      await formula.onCalculationResultApplied(timeout || 10000);
++      return true;
++    },
+     normalizeData: normalizeData,
+     get running() { return running; }
+   };

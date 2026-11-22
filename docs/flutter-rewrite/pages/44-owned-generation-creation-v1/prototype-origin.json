@@ -1,0 +1,17 @@
+{
+  "owned15-creation-v1.png": {
+    "sourceSHA256": "c15103b8a3fda120879c11ccffc5ba44302454bec2704cae1e2f35b06bff2e8d",
+    "originalSavedMtimeNS": 1794361268166186113,
+    "selectedBeforeImplementation": true
+  },
+  "prototype-prompt.json": {
+    "sourceSHA256": "2fde008c79d9cf7cb8b707481a61b63de972b0bbca1b54fc8ffaceae80466450",
+    "originalSavedMtimeNS": 1794361406805467131,
+    "selectedBeforeImplementation": true
+  },
+  "design.md": {
+    "sourceSHA256": "af24e2b4c2981427300fc61d863a17c755110ff65d07f1700af6f63659fa8e6d",
+    "originalSavedMtimeNS": 1794361406805624792,
+    "selectedBeforeImplementation": true
+  }
+}

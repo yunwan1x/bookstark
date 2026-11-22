@@ -1,0 +1,13 @@
+{
+  "mode": "built-in image_gen",
+  "final": "09-articles-webview-v2.png",
+  "sha256": "aa7756437eda07b6133b900f075560ab3c5f3e973e64333f70caf4e5d9022b3c",
+  "before_page_implementation": true,
+  "draft_kept": true,
+  "states": [
+    "list",
+    "HTML source editor",
+    "existing Go password modal",
+    "connection failure"
+  ]
+}

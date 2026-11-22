@@ -1,0 +1,80 @@
+{
+  "id": "/",
+  "name": "BookStark",
+  "short_name": "BookStark",
+  "description": "轻量知识管理",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "minimal-ui"
+  ],
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "categories": [
+    "productivity",
+    "utilities"
+  ],
+  "shortcuts": [
+    {
+      "name": "搜索",
+      "short_name": "搜索",
+      "url": "/search",
+      "icons": [
+        {
+          "src": "/static/shortcut-search-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "书籍",
+      "short_name": "书籍",
+      "url": "/books",
+      "icons": [
+        {
+          "src": "/static/shortcut-books-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "笔记",
+      "short_name": "笔记",
+      "url": "/notes",
+      "icons": [
+        {
+          "src": "/static/shortcut-notes-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "书签",
+      "short_name": "书签",
+      "url": "/bookmarks",
+      "icons": [
+        {
+          "src": "/static/shortcut-bookmarks-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "icons": [
+    {
+      "src": "/static/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

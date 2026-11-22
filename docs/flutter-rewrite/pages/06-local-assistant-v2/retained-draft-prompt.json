@@ -1,0 +1,6 @@
+{
+  "mode": "builtin",
+  "use_case": "ui-mockup",
+  "prompt": "Use case: ui-mockup. Create a polished Android mobile UI prototype image for BookStark in Chinese, one single portrait phone screen with a plain light gray background, generous clean spacing, white rounded cards, blue accents, restrained amber warning banner, modern Flutter Material style. Header top back arrow and exact title '保留的助手草稿', subtitle '本地空间'. Amber card text: '这次保存已放弃' and '草稿仍在本机，尚未创建资料。'. Main large white outlined card header '原编辑草稿' and a gray small badge '只读'. Preview renders Markdown, not source syntax: bold heading '每周阅读安排', bullet '周三阅读散文', bullet '周末整理摘录', small labels '阅读' and '计划'. Bottom actions: large blue outlined button '返回并保留'; below it a red text button with trash icon '清除此草稿'; footer gray caption '只清除本机草稿，不会删除已保存资料'. This is an archive page after an AI-assisted save attempt was explicitly cancelled; there is no Save or Create action. Crisp perfectly legible simplified Chinese text. Show the full interface and bottom buttons, no cropping, no extra decorative elements, no watermark.",
+  "selected_image": "retained-draft-v1.png"
+}

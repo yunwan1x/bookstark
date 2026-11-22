@@ -6,6 +6,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+ "unicode/utf8"
 )
 
 type dbTx interface {
@@ -383,59 +384,7 @@ func (l *Label) Update() error {
 }
 
 func DeleteLabel(id int64) error {
-	tx, err := DB.Begin()
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	// 事务内检查标签是否存在
-	var count int
-	if err := tx.QueryRow("SELECT COUNT(*) FROM md_label WHERE label_id = ?", id).Scan(&count); err != nil {
-		return err
-	}
-	if count == 0 {
-		return fmt.Errorf("标签不存在")
-	}
-
-	// 获取受影响的资源列表（用于后续同步 label 字段）
-	type affectedResource struct {
-		resourceID   int64
-		relationType string
-	}
-	var affected []affectedResource
-	rows, err := tx.Query("SELECT resource_id, relation_type FROM md_label_relation WHERE label_id = ?", id)
-	if err != nil {
-		return err
-	}
-	for rows.Next() {
-		var r affectedResource
-		if err := rows.Scan(&r.resourceID, &r.relationType); err != nil {
-			rows.Close()
-			return err
-		}
-		affected = append(affected, r)
-	}
-	rows.Close()
-
-	// 先删关联，再删标签
-	if _, err := tx.Exec("DELETE FROM md_label_relation WHERE label_id = ?", id); err != nil {
-		return err
-	}
-	if _, err := tx.Exec("DELETE FROM md_label WHERE label_id = ?", id); err != nil {
-		return err
-	}
-	if err := tx.Commit(); err != nil {
-		return err
-	}
-
-	// 事务提交后同步受影响资源的 label 字段
-	for _, r := range affected {
-		if err := SyncResourceLabelField(r.resourceID, r.relationType); err != nil {
-			log.Printf("DeleteLabel: SyncResourceLabelField failed for resource %d (%s): %v", r.resourceID, r.relationType, err)
-		}
-	}
-	return nil
+ return deleteLabelAtomic(id,0,false)
 }
 
 func DeleteUnusedLabels() (int64, error) {
@@ -470,16 +419,7 @@ func BindLabels(labelID int64, resourceIDs []int64, relationType string) error {
 }
 
 func UnbindLabels(labelID int64, resourceIDs []int64, relationType string) error {
-	for _, rid := range resourceIDs {
-		_, err := DB.Exec(
-			"DELETE FROM md_label_relation WHERE label_id = ? AND resource_id = ? AND relation_type = ?",
-			labelID, rid, relationType,
-		)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+ return unbindLabelsAtomic(labelID,resourceIDs,relationType,0,false)
 }
 
 // LabelDetailItem holds a single associated content item for a label
@@ -556,11 +496,28 @@ func GetLabelDetail(id int64) (*LabelDetail, error) {
 
 // MergeLabels merges source labels into the target label
 func MergeLabels(targetLabelID int64, sourceLabelIDs []int64) error {
-	tx, err := DB.Begin()
+	db := DB
+ if db == nil { return fmt.Errorf("label database unavailable") }
+ if targetLabelID<=0 || len(sourceLabelIDs)==0 || len(sourceLabelIDs)>100 {
+  return fmt.Errorf("invalid label merge identities")
+ }
+ seen:=map[int64]bool{targetLabelID:true}
+ for _,id:=range sourceLabelIDs {
+  if id<=0 || seen[id] { return fmt.Errorf("distinct positive source labels required") }
+  seen[id]=true
+ }
+ tx, err := db.Begin()
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
+
+ // Authority is checked by the admin controller. Resource identities must still
+ // exist inside this transaction; UI/preflight reads are not mutation evidence.
+ for id:=range seen {
+  var actual int64
+  if err=tx.QueryRow("SELECT label_id FROM md_label WHERE label_id=?",id).Scan(&actual);err!=nil{return err}
+ }
 
 	// 收集所有受影响的资源（用于后续同步 label 字段）
 	type affectedResource struct {
@@ -593,7 +550,8 @@ func MergeLabels(targetLabelID int64, sourceLabelIDs []int64) error {
 			relations = append(relations, r)
 			allAffected = append(allAffected, affectedResource{resourceID: r.resourceID, relationType: r.relationType})
 		}
-		rows.Close()
+		if err:=rows.Err();err!=nil{rows.Close();return err}
+		if err:=rows.Close();err!=nil{return err}
 
 		for _, r := range relations {
 			var existing int
@@ -632,17 +590,48 @@ func MergeLabels(targetLabelID int64, sourceLabelIDs []int64) error {
 		}
 	}
 
-	if err := tx.Commit(); err != nil {
-		return err
-	}
+ // Cached book/bookmark labels are part of the same mutation. Any query,
+ // malformed relation or UPDATE failure rolls back source deletion and moves.
+ synced:=map[affectedResource]bool{}
+ for _,r:=range allAffected {
+  if synced[r]{continue};synced[r]=true
+  if err:=syncMergedResourceLabelsTx(tx,r.resourceID,r.relationType);err!=nil{return err}
+ }
+ return tx.Commit()
+}
 
-	// 事务提交后同步受影响资源的 label 字段
-	for _, r := range allAffected {
-		if err := SyncResourceLabelField(r.resourceID, r.relationType); err != nil {
-			log.Printf("MergeLabels: SyncResourceLabelField failed for resource %d (%s): %v", r.resourceID, r.relationType, err)
-		}
-	}
-	return nil
+func syncMergedResourceLabelsTx(tx *sql.Tx,resourceID int64,relationType string)error {
+ if resourceID<=0{return fmt.Errorf("invalid label resource")}
+ table,idCol:="",""
+ switch relationType {
+ case "book":table,idCol="md_books","book_id"
+ case "bookmark":table,idCol="md_bookmark","bookmark_id"
+ case "blog","document":return nil // No cached label column in these actual schemas.
+ default:return fmt.Errorf("unknown label relation type")
+ }
+ var count,matched,total int64
+ if err:=tx.QueryRow("SELECT COUNT(*),COUNT(l.label_id),COALESCE(SUM(length(CAST(l.label_name AS BLOB))),0) FROM md_label_relation r LEFT JOIN md_label l ON l.label_id=r.label_id WHERE r.resource_id=? AND r.relation_type=?",resourceID,relationType).Scan(&count,&matched,&total);err!=nil{return err}
+ if matched!=count{return fmt.Errorf("orphan label relation")}
+ if count>1000||total+count>1024*1024{return fmt.Errorf("merged labels exceed cache budget")}
+ rows,err:=tx.Query("SELECT l.label_name FROM md_label l JOIN md_label_relation r ON l.label_id=r.label_id WHERE r.resource_id=? AND r.relation_type=? ORDER BY l.label_id",resourceID,relationType)
+ if err!=nil{return err}
+ names:=[]string{};bytes:=0
+ for rows.Next(){
+  var name string
+  if err=rows.Scan(&name);err!=nil{rows.Close();return err}
+  if !utf8.ValidString(name){rows.Close();return fmt.Errorf("invalid label Unicode")}
+  // Never truncate a cached label array to the historical LIMIT 100.
+  bytes+=len(name);if len(names)>0{bytes++}
+  if len(names)>=1000||bytes>1024*1024{rows.Close();return fmt.Errorf("merged labels exceed cache budget")}
+  names=append(names,name)
+ }
+ if err=rows.Err();err!=nil{rows.Close();return err}
+ if err=rows.Close();err!=nil{return err}
+ result,err:=tx.Exec("UPDATE "+table+" SET label=? WHERE "+idCol+"=?",strings.Join(names,","),resourceID)
+ if err!=nil{return err}
+ n,err:=result.RowsAffected();if err!=nil{return err}
+ if n!=1{return fmt.Errorf("merged label resource missing")}
+ return nil
 }
 
 // GetLabelsByResource returns label names for a book or blog

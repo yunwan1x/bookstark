@@ -1,0 +1,12 @@
+{
+  "tool": "builtin image_gen",
+  "reference": "owned-complex-images-v1.png",
+  "output": "owned-complex-images-v2-confirmed-library.png",
+  "selectedStructure": "same indigo/offwhite 3 states",
+  "variants": [
+    "protected public-file warning with unchecked consent",
+    "known URL explicit fresh-runtime insertion, unsaved",
+    "real bounded paginated server image selection, unknown not reconciled"
+  ],
+  "layout": "Material3 scrollable sheet; file icon and metadata rows; explicit selected radio; cancel/insert actions; no private ownership claim"
+}

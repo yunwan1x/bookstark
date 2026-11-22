@@ -1,0 +1,1 @@
+imagegen 2026-11-11: current-account creation recovery directory and target-unavailable recovery screen; teal/offwhite; explicit no automatic POST, no provenance claims; confirmation end does not mean request unexecuted.

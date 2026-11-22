@@ -1,0 +1,67 @@
+package models
+
+import (
+    "encoding/json"
+    "strings"
+    "testing"
+)
+
+func TestFlutterTrashPreservesEditorType(t *testing.T) {
+    cases := []struct{name, kind, body string; protected bool}{
+        {"html", "html", "<!doctype html>\r\n<script>window.raw='🧪';</script>\n<p>你好</p>", false},
+        {"protected_html", "html", "<!doctype html>\r\n<p>Protected source 🧪</p>\n", true},
+        {"markdown", "markdown", "# Original markdown\n", false},
+        {"spreadsheet", "spreadsheet", DefaultSpreadsheet, false},
+        {"drawing", "drawing", `{"elements":[],"appState":{}}`, false},
+        {"mindmap", "mindmap", `{"nodeData":{"id":"root","topic":"Fixture","root":true,"children":[]},"linkData":{}}`, false},
+        {"richdoc", "richdoc", DefaultRichDocument(), false},
+        {"presentation", "presentation", DefaultPresentation("Fixture"), false},
+        {"future_type", "future-format", "opaque future payload", false},
+    }
+    for _, tc := range cases {
+        t.Run(tc.name, func(t *testing.T) {
+            initAssetTestDB(t)
+            b := &Blog{BlogTitle:"typed restore fixture",BlogIdentify:"typed-restore-fixture",MemberID:1,BlogContent:tc.body,BlogType:"note",EditorType:tc.kind,Visibility:0}
+            key := " " + strings.Repeat("fixture", 4) + " "
+            if tc.protected {b.Password=key}
+            if err:=b.Insert();err!=nil {t.Fatal("insert fixture failed")}
+            stored, hash := b.BlogContent, b.Password
+            if err:=RebindLabels(b.BlogID,"blog","typed-restore-label");err!=nil {t.Fatal("bind fixture label failed")}
+            var labelID int64
+            if err:=DB.QueryRow("SELECT label_id FROM md_label_relation WHERE resource_id=? AND relation_type='blog'",b.BlogID).Scan(&labelID);err!=nil {t.Fatal("fixture label identity missing")}
+            if err:=DeleteBlog(b.BlogID);err!=nil {t.Fatal("delete fixture failed")}
+            var trashID int64;var raw string
+            if err:=DB.QueryRow("SELECT trash_id,snapshot FROM md_trash WHERE resource_type='blog' ORDER BY trash_id DESC LIMIT 1").Scan(&trashID,&raw);err!=nil {t.Fatal("trash fixture missing")}
+            var snapshot map[string]any
+            if err:=json.Unmarshal([]byte(raw),&snapshot);err!=nil {t.Fatal("invalid snapshot")}
+            blog,ok:=snapshot["blog"].(map[string]any)
+            if !ok {t.Fatal("missing blog snapshot")}
+            if blog["editor_type"]!=tc.kind {t.Errorf("snapshot editor type missing for %s",tc.kind)}
+            if err:=RestoreFromTrash(trashID);err!=nil {t.Fatal("restore fixture failed")}
+            actual,err:=GetBlogByID(b.BlogID);if err!=nil {t.Fatal("restored fixture missing")}
+            if actual.EditorType!=tc.kind {t.Errorf("restored editor type: got %s want %s",actual.EditorType,tc.kind)}
+            if actual.BlogID!=b.BlogID || actual.BlogContent!=stored || actual.Password!=hash || actual.BlogType!="note" {t.Fatal("restored identity/body/protection changed")}
+            var restoredLabelID int64
+            if err:=DB.QueryRow("SELECT label_id FROM md_label_relation WHERE resource_id=? AND relation_type='blog'",b.BlogID).Scan(&restoredLabelID);err!=nil || restoredLabelID!=labelID {t.Fatal("restored label identity changed")}
+            if tc.kind=="html" {
+                content:=actual.BlogContent
+                if tc.protected {if !actual.VerifyPassword(key) {t.Fatal("unlock verification failed")};content,err=DecryptContent(key,content);if err!=nil {t.Fatal("decrypt restored fixture failed")}}
+                decoded,decodeErr:=DecodeContentForType(actual.EditorType,content)
+                if decodeErr!=nil || decoded!=tc.body {t.Errorf("restored HTML raw source mismatch")}
+            }
+        })
+    }
+}
+func TestFlutterTrashLegacyMissingEditorType(t *testing.T) {
+    initAssetTestDB(t)
+    b:=&Blog{BlogTitle:"legacy snapshot fixture",BlogIdentify:"legacy-snapshot-fixture",MemberID:1,BlogContent:"# Legacy original\n",BlogType:"article",EditorType:"markdown"}
+    if err:=b.Insert();err!=nil {t.Fatal("insert legacy fixture failed")};if err:=DeleteBlog(b.BlogID);err!=nil {t.Fatal("delete legacy fixture failed")}
+    var id int64;var raw string
+    if err:=DB.QueryRow("SELECT trash_id,snapshot FROM md_trash ORDER BY trash_id DESC LIMIT 1").Scan(&id,&raw);err!=nil {t.Fatal("legacy trash missing")}
+    var value map[string]any;if err:=json.Unmarshal([]byte(raw),&value);err!=nil {t.Fatal("decode legacy snapshot failed")}
+    delete(value["blog"].(map[string]any),"editor_type")
+    data,err:=json.Marshal(value);if err!=nil {t.Fatal("encode legacy snapshot failed")}
+    if _,err:=DB.Exec("UPDATE md_trash SET snapshot=? WHERE trash_id=?",string(data),id);err!=nil {t.Fatal("write legacy snapshot failed")}
+    if err:=RestoreFromTrash(id);err!=nil {t.Fatal("legacy restore failed")}
+    actual,err:=GetBlogByID(b.BlogID);if err!=nil || actual.EditorType!="markdown" || actual.BlogContent!="# Legacy original\n" || actual.BlogType!="article" {t.Fatal("legacy fallback incompatible")}
+}

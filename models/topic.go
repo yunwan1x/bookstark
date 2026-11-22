@@ -268,23 +268,45 @@ func GetTopicDetail(id, memberID int64) (*TopicDetail, error) {
 }
 
 func CreateTopicSummary(summary *TopicSummary) error {
-	summary.Content = strings.TrimSpace(summary.Content)
-	summary.SummaryType = NormalizeTopicSummaryType(summary.SummaryType)
-	if !ValidTopicSummaryType(summary.SummaryType) {
-		return fmt.Errorf("不支持的小结类型")
-	}
-	now := time.Now()
-	summary.CreateTime = now
-	summary.ModifyTime = now
-	res, err := DB.Exec(`
-		INSERT INTO md_topic_summaries (topic_id, content, summary_type, order_sort, create_time, modify_time)
-		VALUES (?, ?, ?, ?, ?, ?)`,
-		summary.TopicID, summary.Content, summary.SummaryType, summary.OrderSort, summary.CreateTime, summary.ModifyTime)
-	if err != nil {
-		return err
-	}
-	summary.SummaryID, _ = res.LastInsertId()
-	return touchTopic(summary.TopicID)
+ summary.Content = strings.TrimSpace(summary.Content)
+ summary.SummaryType = NormalizeTopicSummaryType(summary.SummaryType)
+ if !ValidTopicSummaryType(summary.SummaryType) {
+  return fmt.Errorf("不支持的小结类型")
+ }
+ tx, err := DB.Begin()
+ if err != nil {
+  return err
+ }
+ defer tx.Rollback()
+ now := time.Now()
+ summary.CreateTime = now
+ summary.ModifyTime = now
+ res, err := tx.Exec("INSERT INTO md_topic_summaries (topic_id, content, summary_type, order_sort, create_time, modify_time) VALUES (?, ?, ?, ?, ?, ?)",
+  summary.TopicID, summary.Content, summary.SummaryType, summary.OrderSort, summary.CreateTime, summary.ModifyTime)
+ if err != nil {
+  return err
+ }
+ id, err := res.LastInsertId()
+ if err != nil {
+  return err
+ }
+ touched, err := tx.Exec("UPDATE md_topics SET modify_time = ? WHERE topic_id = ?", now, summary.TopicID)
+ if err != nil {
+  return err
+ }
+ affected, err := touched.RowsAffected()
+ if err != nil {
+  return err
+ }
+ if affected != 1 {
+  // A topic removed since controller ownership checking must not leave an orphan.
+  return sql.ErrNoRows
+ }
+ if err := tx.Commit(); err != nil {
+  return err
+ }
+ summary.SummaryID = id
+ return nil
 }
 
 func ListTopicSummaries(topicID int64) ([]TopicSummary, error) {

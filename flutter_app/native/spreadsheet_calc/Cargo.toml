@@ -1,0 +1,14 @@
+[package]
+name = "bookstark_spreadsheet_calc"
+version = "0.1.0"
+edition = "2021"
+publish = false
+[lib]
+crate-type = ["cdylib", "rlib"]
+[dependencies]
+ironcalc_base = { path = "vendor/ironcalc_base" }
+serde_json = "1.0"
+[profile.release]
+opt-level = 2
+lto = "thin"
+codegen-units = 1

@@ -1,0 +1,147 @@
+{
+  "go_version": "go1.25.14",
+  "synthetic_only": true,
+  "vectors": [
+    {
+      "empty": false,
+      "input": "2026-11-08T01:02:03Z",
+      "ok": true,
+      "unix_millis": 1794099723000
+    },
+    {
+      "empty": false,
+      "input": "2026-11-08T09:02:03+08:00",
+      "ok": true,
+      "unix_millis": 1794099723000
+    },
+    {
+      "empty": false,
+      "input": "2026-11-08T01:02:03.123456789Z",
+      "ok": true,
+      "unix_millis": 1794099723123
+    },
+    {
+      "empty": false,
+      "input": "2026-11-08 01:02:03",
+      "ok": true,
+      "unix_millis": 1794099723000
+    },
+    {
+      "empty": false,
+      "input": "2026-11-08 01:02:03.123",
+      "ok": true,
+      "unix_millis": 1794099723123
+    },
+    {
+      "empty": false,
+      "input": "1969-12-31T23:59:59.999999999Z",
+      "ok": true,
+      "unix_millis": -1
+    },
+    {
+      "empty": false,
+      "input": "1969-12-31T23:59:59.000000001Z",
+      "ok": true,
+      "unix_millis": -1000
+    },
+    {
+      "empty": false,
+      "input": "0001-01-01T00:00:00Z",
+      "ok": true,
+      "unix_millis": -62135596800000
+    },
+    {
+      "empty": false,
+      "input": "0000-01-01T00:00:00Z",
+      "ok": true,
+      "unix_millis": -62167219200000
+    },
+    {
+      "empty": false,
+      "input": "9999-12-31T23:59:59.999999999Z",
+      "ok": true,
+      "unix_millis": 253402300799999
+    },
+    {
+      "empty": false,
+      "input": "2024-02-29T23:59:59Z",
+      "ok": true,
+      "unix_millis": 1709251199000
+    },
+    {
+      "empty": false,
+      "input": "2026-02-29T00:00:00Z",
+      "ok": false
+    },
+    {
+      "empty": false,
+      "input": "2026-02-31T00:00:00Z",
+      "ok": false
+    },
+    {
+      "empty": false,
+      "input": "2026-13-01T00:00:00Z",
+      "ok": false
+    },
+    {
+      "empty": false,
+      "input": "2026-11-08T24:00:00Z",
+      "ok": false
+    },
+    {
+      "empty": false,
+      "input": "2026-11-08T01:02:60Z",
+      "ok": false
+    },
+    {
+      "empty": false,
+      "input": "2026-11-08T01:02:03",
+      "ok": false
+    },
+    {
+      "empty": false,
+      "input": " 2026-11-08 01:02:03 ",
+      "ok": true,
+      "unix_millis": 1794099723000
+    },
+    {
+      "empty": false,
+      "input": "﻿2026-11-08T01:02:03Z",
+      "ok": false
+    },
+    {
+      "empty": false,
+      "input": "  2026-11-08T01:02:03Z　",
+      "ok": true,
+      "unix_millis": 1794099723000
+    },
+    {
+      "empty": true,
+      "input": "",
+      "ok": false
+    },
+    {
+      "empty": true,
+      "input": " \t",
+      "ok": false
+    },
+    {
+      "empty": false,
+      "input": "2026-11-08T01:02:03,123+00:00",
+      "ok": true,
+      "unix_millis": 1794099723123
+    },
+    {
+      "empty": false,
+      "input": "2026-11-08T01:02:03.1-05:30",
+      "ok": true,
+      "unix_millis": 1794119523100
+    },
+    {
+      "empty": false,
+      "input": "2026-11-08T01:02:03+23:59",
+      "ok": true,
+      "unix_millis": 1794013383000
+    }
+  ]
+}

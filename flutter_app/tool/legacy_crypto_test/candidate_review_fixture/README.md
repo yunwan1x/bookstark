@@ -1,0 +1,1 @@
+Standalone deterministic synthetic UI fixture generator only. Uses the parent pinned Go module and actual Go bcrypt-reference hash/PBKDF2/AES-GCM/PNG/ZIP formats. Never use the fixed synthetic salt/nonce in production. Arguments: source-known-formats.zip public-go-vectors.json output.zip. It prints no supplied values.\n

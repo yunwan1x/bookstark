@@ -1,0 +1,40 @@
+--- a/models/trash.go
++++ b/models/trash.go
+@@ -74,6 +74,7 @@
+ 	CreateTime   time.Time `json:"create_time"`
+ 	Version      int       `json:"version"`
+ 	BlogType     string    `json:"blog_type"`
++	EditorType   string    `json:"editor_type,omitempty"`
+ 	Visibility   int       `json:"visibility"`
+ 	IsPinned     int       `json:"is_pinned"`
+ 	PinOrder     int       `json:"pin_order"`
+@@ -533,6 +534,10 @@
+ 		return fmt.Errorf("快照数据不完整")
+ 	}
+ 	b := snap.Blog
++	editorType := b.EditorType
++	if editorType == "" {
++		editorType = "markdown" // Compatibility with old snapshots without this field.
++	}
+ 
+ 	// identify 冲突处理
+ 	var count int
+@@ -544,8 +549,8 @@
+ 	}
+ 
+ 	_, err := tx.Exec(
+-		"INSERT INTO md_blogs (blog_id, blog_title, blog_identify, member_id, blog_content, blog_desc, password, modify_time, modify_at, create_time, version, blog_type, visibility, is_pinned, pin_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+-		b.BlogID, b.BlogTitle, b.BlogIdentify, b.MemberID, b.BlogContent, b.BlogDesc, b.Password, b.ModifyTime, b.ModifyAt, b.CreateTime, b.Version, b.BlogType, b.Visibility, b.IsPinned, b.PinOrder,
++		"INSERT INTO md_blogs (blog_id, blog_title, blog_identify, member_id, blog_content, blog_desc, password, modify_time, modify_at, create_time, version, blog_type, editor_type, visibility, is_pinned, pin_order) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
++		b.BlogID, b.BlogTitle, b.BlogIdentify, b.MemberID, b.BlogContent, b.BlogDesc, b.Password, b.ModifyTime, b.ModifyAt, b.CreateTime, b.Version, b.BlogType, editorType, b.Visibility, b.IsPinned, b.PinOrder,
+ 	)
+ 	if err != nil {
+ 		return fmt.Errorf("恢复博客失败: %w", err)
+@@ -1045,6 +1050,7 @@
+ 		CreateTime:   b.CreateTime,
+ 		Version:      b.Version,
+ 		BlogType:     b.BlogType,
++		EditorType:   b.EditorType,
+ 		Visibility:   b.Visibility,
+ 		IsPinned:     b.IsPinned,
+ 		PinOrder:     b.PinOrder,

@@ -1,0 +1,17 @@
+# Ordinary LocalStore protected articles
+
+Design before implementation. Reuse selected docs/flutter-rewrite/pages/08-unlock.png and 08-drafts-unlock.md, existing NoteUnlockDialog, AdminAssetSecureWindow and LocalComplexNotePage WebView chrome. Reuse the protected memory-only notice from 08-protected-owned-five-v2.md. No new visual prototype is needed: the same password dialog and memory-only editor states apply.
+
+A protected ordinary article opens the existing password dialog before any source reaches the WebView. Wrong password retains original SQLite bytes. Successful authentication exposes plaintext only to the route-owned memory repository and memory recovery bytes store; never NativeComplexRecoveryStore, preferences, attachment import or autosave files. Save is explicit: encrypt first, then compare the complete original SQL tuple and update the same ID transactionally. A no-op preserves original cipher byte-for-byte. Conflict retains current SQL and reports conflict; no automatic overwrite, migration or INSERT. Close/background/scope retirement reject callbacks, close WebView, cancel/drain crypto and drop password/plaintext references. Dart immutable strings are GC-managed, not claimed wiped.
+
+## Verified storage/crypto restriction
+
+Ordinary schema14/16 notes have only id,title,content,updated_at,deleted,labels,collection,editor_type; there is no password_hash. Existing NativeLocalContentCrypto.unlock/encryptExisting require an original bcrypt hash; Java LegacyContentCrypto verifies it first and Kotlin channel rejects missing hash. Owned15 can use those APIs because it preserves password metadata; ordinary storage cannot fabricate that metadata or promote itself to owned15.
+
+ENC:v1 itself contains salt(16 bytes), nonce(12 bytes), authenticated ciphertext/tag, with AES256-GCM and PBKDF2-HMAC-SHA256(100000). The contract is confirmed by models/blog.go and LegacyContentCrypto.java. For existing ordinary ENC:v1 rows, the minimum compatible API is an explicitly separate envelope-only authenticated unlock/re-encrypt operation in the existing crypto worker. AES-GCM authentication proves the entered password against the stored envelope. It must never weaken bcrypt checks of existing generation APIs. Unknown versions/BOM-reserved forms stay fail-closed until explicitly supported; do not strip or silently rewrite original bytes.
+
+This therefore needs native crypto/channel source changes as well as Dart adapter/wiring; a Dart-only wiring patch cannot honestly fix it. Existing APK cannot run a newly added native method. The eventual Root build must include it. No schema change, new hash storage, protectNew substitution or generation migration.
+
+## Core verification required
+
+Real temporary SQLite: valid existing encrypted article -> explicit unlock -> same ID/title/labels and exact plaintext -> explicit changed save stores ENC:v1 only -> close -> reopen/unlock returns changed exact source. Wrong password/no-op/conflicting original tuple do not modify cipher. Assert no plaintext in real disk SQLite or recovery storage. Existing channel-boundary tests may ACK crypto with fixed contract vectors, but must be labeled host coverage; actual Java/Go compatibility requires the existing real crypto contract test, not mocked encryption. Reuse existing page password/memory WebView tests for lifecycle behavior and add only targeted ordinary adapter/wiring cases.

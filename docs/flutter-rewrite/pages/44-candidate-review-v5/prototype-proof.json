@@ -1,0 +1,11 @@
+{
+  "generatedBeforeImplementation": true,
+  "mode": "built-in image_gen",
+  "skill": "/root/.codex/skills/.system/imagegen/SKILL.md",
+  "imageSHA256": "1383b849560e57a635528f12510bf46abba05ff8416f2fbc85ac0396a10b148c",
+  "width": 887,
+  "height": 1774,
+  "prompt": "prompt.txt",
+  "design": "design.md",
+  "review": "six states present, Chinese copy and read-only scope correct; selected as implementation reference, not actual app screenshot"
+}

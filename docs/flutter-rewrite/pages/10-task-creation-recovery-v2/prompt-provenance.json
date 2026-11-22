@@ -1,0 +1,12 @@
+{
+  "prompt": "Edit this existing four-screen Bookstark Tasks mobile UX prototype board. Keep the exact four-phone composition, white and blue Material styling, header, overall layout and other states. Correct protocol inaccuracies throughout ALL four screens: there is exactly ONE topic_id, so show only one topic chip '阅读计划', remove '个人成长' everywhere and remove any '添加主题' multi-topic affordance; a single topic may be selected or cleared only. There is exactly ONE parent_id; show one parent label/chip '阅读与学习', not multiple parents. The parent is contextual readonly metadata inherited from the task/subtask entry; remove the '+选择父任务' in-form picker. On fourth known-ID screen REMOVE the task link row '打开任务（ID 41）' and external-link icon completely. Instead show actual task ID 41 and full readonly task details followed by the sole primary action '仅重试清理记录'; no open-task link or navigation claim. Revise the explanatory caption under fourth screen to say readonly details plus cleanup-only, not opening a task. Preserve the unknown full retained snapshot, numeric explicit ID review, manual-association disclaimer that matching does not prove original request provenance, and fresh-change re-review warning. Keep the full snapshot body/due date/parent/single topic visible and the scroll affordances. Include real completed status as one compact readonly '完成状态：未完成' detail where space allows. No real private data or credentials. This v2 is a protocol-aligned product design revision, not a device screenshot or test evidence. All Chinese text must be clear and legible.",
+  "skill": "imagegen",
+  "skillSource": "/root/.codex/skills/.system/imagegen/SKILL.md",
+  "tool": "image_gen.imagegen",
+  "originalOutput": "/root/.codex/generated_images/01a1c607-22dc-71c2-be5c-5918ab489e65/exec-a99c20b2-f4a0-4eef-a135-65adc41bfe09.png",
+  "referenceOriginal": "/root/.codex/generated_images/01a1c607-22dc-71c2-be5c-5918ab489e65/exec-e9fc72ae-2e59-49a1-8df4-c0d34258f4f2.png",
+  "revision": "v2 protocol-constrained revision after original v1 prototype; no claim it preceded original v1 UI draft",
+  "nativeAccepted": false,
+  "selectedSHA256": "0f27e511a51ca84714b7476cb64ce633dfe6ab114a5677bfe63f380e7edc09dd",
+  "firstSelectedSaveTimeUTC": "2026-11-11T05:00:02.707997+00:00"
+}

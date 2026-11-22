@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="BookStark">
+  <defs>
+    <linearGradient id="bg" x1="72" y1="42" x2="440" y2="470" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0f4fd6"/>
+      <stop offset="0.58" stop-color="#2368ea"/>
+      <stop offset="1" stop-color="#38a3f5"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="30%" cy="18%" r="70%">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.28"/>
+      <stop offset="0.58" stop-color="#ffffff" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#0f172a" flood-opacity="0.24"/>
+    </filter>
+    <linearGradient id="pageLeft" x1="120" y1="150" x2="260" y2="398" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#eef6ff"/>
+    </linearGradient>
+    <linearGradient id="pageRight" x1="400" y1="150" x2="260" y2="398" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#e8f2ff"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="96" fill="url(#glow)"/>
+  <g filter="url(#shadow)">
+    <path d="M256 150 C216 126 155 124 96 144 L96 384 C158 374 216 388 256 416 Z" fill="url(#pageLeft)"/>
+    <path d="M256 150 C296 126 357 124 416 144 L416 384 C354 374 296 388 256 416 Z" fill="url(#pageRight)"/>
+  </g>
+  <path d="M256 150 C216 126 155 124 96 144 L96 384 C158 374 216 388 256 416 Z" fill="none" stroke="#0f3fbd" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M256 150 C296 126 357 124 416 144 L416 384 C354 374 296 388 256 416 Z" fill="none" stroke="#0f3fbd" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M256 150 L256 416" fill="none" stroke="#0f3fbd" stroke-width="9" stroke-linecap="round"/>
+  <path d="M132 200 C164 190 198 193 228 206" fill="none" stroke="#0f4fd6" stroke-width="13" stroke-linecap="round" opacity="0.72"/>
+  <path d="M132 244 C164 234 198 237 228 250" fill="none" stroke="#0f4fd6" stroke-width="13" stroke-linecap="round" opacity="0.72"/>
+  <path d="M132 288 C162 279 193 282 220 294" fill="none" stroke="#0f4fd6" stroke-width="13" stroke-linecap="round" opacity="0.72"/>
+  <path d="M284 206 C314 193 348 190 380 200" fill="none" stroke="#0f4fd6" stroke-width="13" stroke-linecap="round" opacity="0.72"/>
+  <path d="M284 250 C314 237 348 234 380 244" fill="none" stroke="#0f4fd6" stroke-width="13" stroke-linecap="round" opacity="0.72"/>
+  <path d="M292 294 C319 282 350 279 380 288" fill="none" stroke="#0f4fd6" stroke-width="13" stroke-linecap="round" opacity="0.72"/>
+  <path d="M378 62 L388 94 L421 94 L394 113 L405 146 L378 126 L351 146 L362 113 L335 94 L368 94 Z" fill="#fbbf24"/>
+  <path d="M378 62 L388 94 L421 94 L394 113 L405 146 L378 126 L351 146 L362 113 L335 94 L368 94 Z" fill="none" stroke="#fde68a" stroke-width="5" stroke-linejoin="round" opacity="0.9"/>
+</svg>

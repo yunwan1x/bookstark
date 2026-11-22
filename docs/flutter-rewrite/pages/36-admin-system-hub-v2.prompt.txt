@@ -1,0 +1,1 @@
+Edit this BookStark system-settings hub mockup only: in the '访问与注册' row replace its secondary text '邀请码、公开访问与 WebDAV' with exactly '邀请码与协作信令'. Everything else must remain unchanged including row titles, six rows, layout, spacing, colors, dimensions, icons, other Chinese text and safe areas. This correction matches the existing system settings categories.

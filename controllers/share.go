@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"errors"
 	"encoding/json"
 	"html/template"
 	"log"
@@ -519,113 +520,34 @@ func GetShareEdit(c *gin.Context) {
 
 // SaveShareEdit saves content via share edit token (public with token)
 func SaveShareEdit(c *gin.Context) {
-	identify := c.Param("identify")
-	token := c.Query("token")
-	if token == "" {
-		apiError(c, http.StatusForbidden, "缺少编辑令牌")
-		return
-	}
-
-	share, err := models.GetShareByIdentifyWithToken(identify)
-	if err != nil {
-		apiError(c, http.StatusNotFound, "分享不存在")
-		return
-	}
-	if share.EditToken == "" || share.EditToken != token {
-		apiError(c, http.StatusForbidden, "编辑令牌无效或已失效")
-		return
-	}
-
-	var req struct {
-		Content  string `json:"content"`
-		Password string `json:"password"`
-	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		apiError(c, http.StatusBadRequest, "参数错误")
-		return
-	}
-
-	now := time.Now()
-
-	switch share.ShareType {
-	case "blog":
-		blog, err := models.GetBlogByID(share.TargetID)
-		if err != nil {
-			apiError(c, http.StatusNotFound, "文章不存在")
-			return
-		}
-		maxEditContentLen := 500 * 1024
-		if blog.EditorType == models.PresentationType {
-			maxEditContentLen = 20 * 1024 * 1024
-		}
-		if blog.EditorType == "html" || blog.EditorType == "spreadsheet" || blog.EditorType == "drawing" || blog.EditorType == "mindmap" || blog.EditorType == models.RichDocumentType {
-			maxEditContentLen = 5 * 1024 * 1024
-		}
-		if len(req.Content) > maxEditContentLen {
-			apiError(c, http.StatusBadRequest, "内容过大")
-			return
-		}
-		if err := validateContentForType(blog.EditorType, req.Content); err != nil {
-			apiError(c, http.StatusBadRequest, err.Error())
-			return
-		}
-		if blog.HasPassword() {
-			if req.Password == "" || !blog.VerifyPassword(req.Password) {
-				apiError(c, http.StatusForbidden, "文章密码错误")
-				return
-			}
-			encoded, err := encodeContentBeforeEncryption(blog.EditorType, req.Content)
-			if err != nil {
-				apiError(c, http.StatusInternalServerError, "编码内容失败")
-				return
-			}
-			encrypted, err := models.EncryptContent(req.Password, encoded)
-			if err != nil {
-				apiError(c, http.StatusInternalServerError, "加密内容失败")
-				return
-			}
-			blog.BlogContent = encrypted
-		} else {
-			blog.BlogContent = req.Content
-		}
-		blog.ModifyAt = now.Unix()
-		if err := blog.Update(); err != nil {
-			apiError(c, http.StatusInternalServerError, "保存失败")
-			return
-		}
-	case "document":
-		doc, err := models.GetDocumentByID(share.TargetID)
-		if err != nil {
-			apiError(c, http.StatusNotFound, "文档不存在")
-			return
-		}
-		maxEditContentLen := 500 * 1024
-		if doc.DocType == models.PresentationType {
-			maxEditContentLen = 20 * 1024 * 1024
-		}
-		if doc.DocType == "html" || doc.DocType == "spreadsheet" || doc.DocType == "drawing" || doc.DocType == "mindmap" || doc.DocType == models.RichDocumentType {
-			maxEditContentLen = 5 * 1024 * 1024
-		}
-		if len(req.Content) > maxEditContentLen {
-			apiError(c, http.StatusBadRequest, "内容过大")
-			return
-		}
-		if err := validateContentForType(doc.DocType, req.Content); err != nil {
-			apiError(c, http.StatusBadRequest, err.Error())
-			return
-		}
-		if err := models.UpdateDocumentContent(share.TargetID, req.Content, now.Unix()); err != nil {
-			apiError(c, http.StatusInternalServerError, "保存失败")
-			return
-		}
-	default:
-		apiError(c, http.StatusBadRequest, "该类型不支持编辑")
-		return
-	}
-
-	apiSuccess(c, gin.H{
-		"modify_time": now.Format("2006-01-02 15:04:05"),
-	})
+ var req struct {
+  Content string `json:"content"`
+  Password string `json:"password"`
+  ExpectedSourceSHA256 *string `json:"expected_source_sha256"`
+ }
+ if err:=c.ShouldBindJSON(&req); err!=nil {
+  apiError(c,http.StatusBadRequest,"参数错误")
+  return
+ }
+ receipt,err:=models.SaveSharedContent(c.Param("identify"),c.Query("token"),
+  req.Content,req.Password,req.ExpectedSourceSHA256)
+ if err!=nil {
+  switch {
+  case errors.Is(err,models.ErrSharedEditToken),errors.Is(err,models.ErrSharedEditPassword):
+   apiError(c,http.StatusForbidden,"编辑令牌或文章密码无效")
+  case errors.Is(err,models.ErrSharedEditTarget):
+   apiError(c,http.StatusNotFound,"分享不存在或目标归属已变化")
+  case errors.Is(err,models.ErrSharedEditConflict):
+   apiError(c,http.StatusConflict,"内容已变化，请重新读取后核对")
+  case errors.Is(err,models.ErrSharedEditInput):
+   apiError(c,http.StatusBadRequest,"内容或预期指纹无效")
+  default:
+   apiError(c,http.StatusInternalServerError,"保存未能确认，请重新核对")
+  }
+  return
+ }
+ apiSuccess(c,gin.H{"modify_time":receipt.ModifyTime.Format("2006-01-02 15:04:05"),
+  "source_sha256":receipt.SourceSHA256})
 }
 
 // UploadShareEditImage lets an edit-token holder upload editor images

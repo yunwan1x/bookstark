@@ -1,0 +1,266 @@
+(function () {
+    'use strict';
+    var modules = {
+        notes: ['笔记', 'note-sticky', 'var(--color-primary)', '/notes'],
+        articles: ['文章', 'file-lines', 'var(--color-success)', '/notes?tab=articles'],
+        tasks: ['待办', 'list-check', 'var(--color-warning)', '/notes?tab=tasks'],
+        books: ['书籍', 'book-open', 'var(--color-indigo)', '/books'],
+        bookmarks: ['书签', 'link', 'var(--color-primary)', '/bookmarks'],
+        topics: ['专题', 'layer-group', 'var(--color-primary)', '/topics'],
+        nav: ['导航', 'compass', 'var(--color-primary)', '/nav'],
+        shares: ['广场', 'users', 'var(--color-success)', '/shares'],
+        assets: ['资产', 'server', 'var(--color-warning)', '/admin/assets']
+    };
+    var grid = document.getElementById('homeGrid');
+    var status = document.getElementById('homeStatus');
+    var retry = document.getElementById('homeRetry');
+    var sections = [], sort = 'updated', sequence = 0, activeRequest;
+    var activeFilter = 'notes';
+    var english = document.documentElement.lang.indexOf('en') === 0;
+    function lt(zh, en) { return english ? en : zh; }
+    var moduleEnglish = {notes:'Notes',articles:'Articles',tasks:'Tasks',books:'Books',bookmarks:'Bookmarks',topics:'Topics',nav:'Navigation',shares:'Community',assets:'Assets'};
+    function moduleName(key) { return english ? moduleEnglish[key] : modules[key][0]; }
+    function renderStats(stats) {
+        document.querySelectorAll('[data-home-stat]').forEach(function(node) {
+            var value = stats && stats[node.dataset.homeStat];
+            node.textContent = Number.isFinite(value) ? value.toLocaleString(english ? 'en-US' : 'zh-CN') : '—';
+        });
+    }
+    function renderFilters() {
+        var box = document.getElementById('homeFilters'); box.replaceChildren();
+        if (!sections.some(function(s) { return s.key === activeFilter; }) && sections.length) activeFilter = sections[0].key;
+        sections.forEach(function(section) {
+            if (!modules[section.key]) return;
+            var button = el('button','home-filter',moduleName(section.key));
+            button.type = 'button'; button.dataset.homeFilter = section.key;
+            button.setAttribute('aria-pressed',String(activeFilter === section.key));
+            button.onclick = function() {
+                activeFilter = section.key;
+                if (grid.getAttribute('aria-busy') === 'true') { renderFilters(); renderSkeleton(); }
+                else render();
+                document.querySelector('[data-home-filter="' + activeFilter + '"]').focus();
+            };
+            box.append(button);
+        });
+    }
+
+    var now = new Date();
+    function dateKey(date) { return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0'); }
+    function parseDate(value) { return new Date(value+'T12:00:00'); }
+    var selected = '', limit = 10;
+    var calendarMonth = new Date(now.getFullYear(),now.getMonth(),1), calendarView = 'day';
+    var activityCounts = {}, activityReady = false, clearingRecent = false;
+    function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; }
+    function selectDay(value) {
+        selected = value;
+        calendarMonth=new Date(parseDate(value).getFullYear(),parseDate(value).getMonth(),1);
+        syncDates(); load();
+    }
+    function dateButton(date, other) {
+        var value=dateKey(date), button=el('button','calendar-day'+(other?' other-month':'')+(value===dateKey(new Date())?' today':'')+(value===selected?' selected':''));
+        button.type='button';button.dataset.date=value;button.setAttribute('aria-pressed',String(value===selected));
+        var count=Number(activityCounts[value])||0;
+        button.dataset.level=String(activityReady?(count===0?0:count===1?1:count<=3?2:count<=7?3:4):0);
+        var known=activityReady&&(!other||Object.prototype.hasOwnProperty.call(activityCounts,value));
+        var description=date.toLocaleDateString(english?'en-US':'zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'})+' · '+(known?lt(count+' 条内容',''+count+' items'):lt('点击查看截至该日的内容','View content through this date'));
+        button.setAttribute('aria-label',description);button.title=description;
+        button.append(el('span','calendar-day-num',String(date.getDate())));
+        button.onclick=function(){selectDay(value);};return button;
+    }
+    function renderCalendar() {
+        document.getElementById('homeMonthTitle').textContent=calendarMonth.toLocaleDateString(english?'en-US':'zh-CN',calendarView==='month'?{year:'numeric'}:{year:'numeric',month:'long'});
+        document.querySelectorAll('[data-home-view]').forEach(function(b){var active=b.dataset.homeView===calendarView;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
+        document.getElementById('homeWeekdays').hidden=calendarView!=='day';
+        var days=document.getElementById('homeCalendarDays'),focused=days.contains(document.activeElement)?document.activeElement.dataset.date:'';days.replaceChildren();
+        days.dataset.view=calendarView;
+        var first=new Date(calendarMonth), offset=(first.getDay()+6)%7;first.setDate(1-offset);
+        var cells=Math.ceil((offset+new Date(calendarMonth.getFullYear(),calendarMonth.getMonth()+1,0).getDate())/7)*7;
+        if(calendarView==='day'){
+            for(var i=0;i<cells;i++){var d=new Date(first);d.setDate(first.getDate()+i);days.append(dateButton(d,d.getMonth()!==calendarMonth.getMonth()));}
+        } else {
+            var periods=[];
+            for(var p=0;p<(calendarView==='month'?12:cells/7);p++){
+                var start=calendarView==='month'?new Date(calendarMonth.getFullYear(),p,1):new Date(first);
+                if(calendarView==='week')start.setDate(first.getDate()+p*7);
+                var end=calendarView==='month'?new Date(calendarMonth.getFullYear(),p+1,0):new Date(start);
+                if(calendarView==='week')end.setDate(start.getDate()+6);
+                var count=0;
+                for(var cursor=new Date(start);cursor<=end;cursor.setDate(cursor.getDate()+1))count+=Number(activityCounts[dateKey(cursor)])||0;
+                periods.push({start:start,end:end,count:count});
+            }
+            var maximum=Math.max.apply(null,periods.map(function(p){return p.count;}));
+            periods.forEach(function(period){
+                var value=dateKey(period.end),startValue=dateKey(period.start),button=el('button','calendar-day home-calendar-period'+(selected===value?' selected':'')+(dateKey(now)>=startValue&&dateKey(now)<=value?' today':''));
+                button.type='button';button.dataset.date=value;button.dataset.periodStart=startValue;
+                button.dataset.level=String(activityReady&&period.count?Math.max(1,Math.ceil(period.count/maximum*4)):0);
+                button.setAttribute('aria-pressed',String(selected===value));
+                var label=calendarView==='month'?period.start.toLocaleDateString(english?'en-US':'zh-CN',{month:'short'}):(period.start.getMonth()+1)+'/'+period.start.getDate()+' – '+(period.end.getMonth()+1)+'/'+period.end.getDate();
+                var countLabel=activityReady?lt(period.count+' 条',''+period.count+' items'):lt('加载中','Loading');
+                button.title=startValue+' – '+value+' · '+countLabel+' · '+lt('查看截至周期末的内容','View content through period end');
+                button.setAttribute('aria-label',button.title);
+                button.append(el('span','calendar-day-num',label),el('span','home-calendar-count',countLabel));
+                button.onclick=function(){selected=value;syncDates();load();};days.append(button);
+            });
+        }
+        document.getElementById('homeCalendar').setAttribute('aria-busy',String(!activityReady));
+        var periodName=calendarView==='week'?lt('当周','that week'):calendarView==='month'?lt('当月','that month'):lt('当日','that day');
+        document.getElementById('homeActivityHint').textContent=english?'Color shows items '+(sort==='created'?'created ':'last updated ')+periodName+' · Click to filter through period end':'颜色表示'+periodName+(sort==='created'?'创建':'最近更新')+'的内容数 · 点击查看截至'+(calendarView==='day'?'该日':'周期末')+'的内容';
+        document.getElementById('homePrevMonth').setAttribute('aria-label',calendarView==='month'?lt('上一年','Previous year'):lt('上一月','Previous month'));
+        document.getElementById('homeNextMonth').setAttribute('aria-label',calendarView==='month'?lt('下一年','Next year'):lt('下一月','Next month'));
+        if(focused){var target=days.querySelector('[data-date="'+focused+'"]');if(target)target.focus();}
+    }
+    function syncDates() {
+        document.getElementById('homeSelectedDate').textContent=selected?lt('截至 ','Through ')+selected.replaceAll('-','/'):lt('全部时间 · 最近内容','All time · Recent content');
+        document.getElementById('homeClearDate').hidden=!selected;
+        renderCalendar();
+    }
+    document.getElementById('homeClearDate').onclick=function(){selected='';syncDates();load();};
+    function refreshCalendar() {activityCounts={};activityReady=false;renderCalendar();load();}
+    document.querySelectorAll('[data-home-view]').forEach(function(b){b.onclick=function(){if(calendarView===b.dataset.homeView)return;calendarView=b.dataset.homeView;refreshCalendar();};});
+    document.querySelectorAll('[data-home-current]').forEach(function(b){b.onclick=function(){var current=new Date();calendarMonth=new Date(current.getFullYear(),current.getMonth(),1);refreshCalendar();};});
+    document.getElementById('homeLimit').onchange=function(){limit=Number(this.value);load();};
+    [-1,1].forEach(function(delta){document.getElementById(delta<0?'homePrevMonth':'homeNextMonth').onclick=function(){if(calendarView==='month')calendarMonth.setFullYear(calendarMonth.getFullYear()+delta);else calendarMonth.setMonth(calendarMonth.getMonth()+delta);refreshCalendar();};});
+    document.getElementById('homeCalendar').addEventListener('keydown',function(e){
+        var button=e.target.closest('[data-date]');if(!button)return;
+        if(calendarView!=='day'){
+            var buttons=Array.from(document.querySelectorAll('#homeCalendarDays [data-date]')),columns=calendarView==='month'?3:2;
+            var step={ArrowLeft:-1,ArrowRight:1,ArrowUp:-columns,ArrowDown:columns}[e.key];
+            if(step){e.preventDefault();var target=buttons[buttons.indexOf(button)+step];if(target)target.focus();}return;
+        }
+        var shift={ArrowLeft:-1,ArrowRight:1,ArrowUp:-7,ArrowDown:7}[e.key];
+        if(shift){e.preventDefault();var next=parseDate(button.dataset.date);next.setDate(next.getDate()+shift);selectDay(dateKey(next));var target=this.querySelector('[data-date="'+dateKey(next)+'"]');if(target)target.focus();}
+    });
+    syncDates();
+    function renderRecent(items, failed) {
+        var box=document.getElementById('homeRecentList');box.replaceChildren();
+        document.getElementById('homeRecent').setAttribute('aria-busy','false');
+        document.getElementById('homeRecentClear').hidden=!items.length;
+        if(!items.length){box.append(el('p','home-empty',failed?lt('最近访问加载失败，请重试。','Could not load recent visits. Please retry.'):lt('还没有访问记录，打开笔记、文章或书籍后会显示在这里。','No visits yet. Open a note, article or book to get started.')));return;}
+        var types={note:['note-sticky',lt('笔记','Note')],article:['file-lines',lt('文章','Article')],book:['book-open',lt('书籍','Book')],document:['file-lines',lt('章节','Chapter')]};
+        items.forEach(function(item){
+            if(!item.url||!item.url.startsWith('/')||item.url.startsWith('//'))return;
+            var type=types[item.type]||types.article,link=el('a','home-row home-recent-row');link.href=item.url;
+            var icon=el('span','home-recent-icon'),glyph=el('i','fa-solid fa-'+type[0]);glyph.setAttribute('aria-hidden','true');icon.append(glyph);
+            var copy=el('span','home-recent-copy');copy.append(el('strong','home-row-title',item.title||lt('未命名','Untitled')),el('span','home-date-hint',type[1]+(item.context?' · '+item.context:'')));
+            var date=new Date(item.visited_at),time=el('time','',date.toLocaleString(english?'en-US':'zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}));time.dateTime=date.toISOString();
+            var arrow=el('i','fa-solid fa-chevron-right');arrow.setAttribute('aria-hidden','true');
+            link.append(icon,copy,time,arrow);box.append(link);
+        });
+    }
+    document.getElementById('homeRecentClear').onclick=async function(){
+        if(clearingRecent)return;
+        if(!await BSDialog.confirm2(lt('清空当前账户在所有设备上的最近访问记录？不会删除任何内容。','Clear recent visits for this account on all devices? Your content will not be deleted.')))return;
+        clearingRecent=true;this.disabled=true;
+        try{var response=await csrfFetch('/api/home/recent',{method:'DELETE'}),data=await response.json();if(!response.ok||data.code!==0)throw new Error();renderRecent([]);await load();}
+        catch(_){BSDialog.toast(lt('清空失败，请重试。','Could not clear visits. Please retry.'),'error');}
+        finally{clearingRecent=false;this.disabled=false;}
+    };
+    function appendCardHeader(card, sectionKey) {
+        var m = modules[sectionKey];
+        card.dataset.section = sectionKey; card.style.setProperty('--home-accent', 'var(--color-primary)');
+        var head = el('div', 'home-card-head');
+        var icon = el('span', 'home-card-icon'), glyph = el('i', 'fa-solid fa-' + m[1]);
+        glyph.setAttribute('aria-hidden','true'); icon.append(glyph);
+        var label = el('div'), title = el('h2', '', moduleName(sectionKey));
+        title.id = 'home-title-' + sectionKey; card.setAttribute('aria-labelledby', title.id); label.append(title);
+        var all = el('a', 'home-card-all', lt('查看全部 →','View all →'));
+        all.href = m[3]; all.setAttribute('aria-label',lt('查看全部','View all ') + moduleName(sectionKey));
+        head.append(icon,label,all); card.append(head);
+    }
+    function renderSkeleton() {
+        grid.replaceChildren();
+        var card = el('section','home-card home-loading-card');
+        appendCardHeader(card, activeFilter);
+        var lines = el('div'); lines.setAttribute('aria-hidden','true');
+        for (var i = 0; i < Math.min(limit, 10); i++) lines.append(el('div','skeleton home-skeleton-line'));
+        card.append(lines); grid.append(card);
+    }
+    function render() {
+        renderFilters();
+        grid.replaceChildren();
+        sections.forEach(function (s) {
+            if (s.key !== activeFilter) return;
+            var m = modules[s.key];
+            if (!m) return;
+            var card = el('section', 'home-card'); appendCardHeader(card, s.key);
+            var list = el('ul', 'home-list'); list.id = 'home-list-' + s.key;
+            s.items.forEach(function (item) {
+                var li = el('li'); var a = el('a', 'home-row');
+                if (typeof item.url !== 'string') return;
+                if (s.key === 'bookmarks') {
+                    // Bookmark destinations are external; reject executable URL schemes.
+                    try {
+                        var destination = new URL(item.url);
+                        if (destination.protocol !== 'http:' && destination.protocol !== 'https:') return;
+                    } catch (_) { return; }
+                    a.target = '_blank'; a.rel = 'noopener noreferrer';
+                } else if (!item.url.startsWith('/') || item.url.startsWith('//')) return;
+                a.href = item.url; a.title = item.title || lt('未命名','Untitled'); a.append(el('span','home-row-title',a.title));
+                if (item.badge) a.append(el('span','home-badge',({markdown:'MD',html:'HTML',blog:lt('文章 / 笔记','Article / Note'),book:lt('书籍','Book'),online:lt('在线','Online'),offline:lt('离线','Offline'),ssh:lt('SSH 主机','SSH host'),webdav:'WebDAV','加密':lt('加密','Protected'),'已完成':lt('已完成','Completed'),'待处理':lt('待处理','Pending')})[item.badge] || item.badge));
+                var date = el('time','',item.date ? item.date.slice(5) : ''); date.dateTime = item.date; date.title = item.date; a.append(date); li.append(a); list.append(li);
+            });
+            card.append(list);
+            if (!s.items.length) card.append(el('p','home-empty',selected ? lt('截至所选日期没有记录','No records through the selected date') : lt('暂无记录','No records yet')));
+            grid.append(card);
+        });
+        status.hidden = grid.childElementCount > 0;
+        if (!grid.childElementCount) status.textContent = lt('暂无可用板块。','No sections available.');
+    }
+    async function requestSummary(ticket) {
+        for (var attempt = 0; attempt < 2; attempt++) {
+            var controller = new AbortController(); activeRequest = controller;
+            // A cold browser may queue this behind fonts/common assets on slow links.
+            var timeout = setTimeout(function () { controller.abort(); }, 60000);
+            try {
+                var query = new URLSearchParams({order:sort,end:selected,limit:String(limit),month:dateKey(calendarMonth).slice(0,7),view:calendarView});
+                var response = await fetch('/api/home?' + query, {credentials:'same-origin',cache:'no-store',signal:controller.signal});
+                var data = await response.json();
+                return {response:response,data:data};
+            } catch (err) {
+                // Only retry this read-only GET, once; never retry HTTP/business errors.
+                if (ticket !== sequence || attempt || (err.name !== 'AbortError' && err.name !== 'TypeError')) throw err;
+                status.textContent = lt('网络较慢，正在重试加载…','Slow connection. Retrying…');
+            } finally { clearTimeout(timeout); }
+        }
+    }
+    async function load() {
+        var ticket = ++sequence;
+        if (activeRequest) activeRequest.abort();
+        status.hidden = false; status.textContent = lt('正在加载最近的记录…','Loading recent records…'); retry.hidden = true; grid.setAttribute('aria-busy','true');
+        // Remove previous user's/stale records if authentication or loading fails.
+        renderSkeleton();
+        try {
+            var result = await requestSummary(ticket);
+            var response = result.response, data = result.data;
+            if (ticket !== sequence) return;
+            if (response.status === 401) { window.location.replace('/login'); return; }
+            if (!response.ok || data.code !== 0 || !Array.isArray(data.sections)) throw new Error('home request failed');
+            sections = data.sections;
+            renderStats(data.stats);
+            activityCounts=data.activity||{};activityReady=true;renderCalendar();
+            renderRecent(Array.isArray(data.recent)?data.recent:[]);
+            render();
+        } catch (err) {
+            if (ticket !== sequence) return;
+            console.warn('Home load failed:',err);
+            grid.replaceChildren();
+            renderStats(null); document.getElementById('homeFilters').replaceChildren();
+            activityCounts={};activityReady=false;renderCalendar();renderRecent([],true);
+            sections = []; status.hidden = false; status.textContent = err.name === 'AbortError' ? lt('请求超时，请重试','Request timed out. Please retry.') : lt('首页加载失败，请检查网络后重试。','Could not load your home page. Check your connection and retry.'); retry.hidden = false;
+        } finally { if (ticket === sequence) grid.setAttribute('aria-busy','false'); }
+    }
+    document.querySelectorAll('[data-home-sort]').forEach(function (button) { button.onclick = function () {
+        if (sort === button.dataset.homeSort) return;
+        sort = button.dataset.homeSort;
+        document.querySelectorAll('[data-home-sort]').forEach(function (b) { b.setAttribute('aria-pressed',String(b === button)); b.classList.toggle('active',b === button); }); load();
+    }; });
+    document.querySelectorAll('[data-home-dialog]').forEach(function (b) { b.onclick = function () {
+        document.getElementById(b.dataset.homeDialog).showModal();
+    }; });
+    document.querySelectorAll('[data-home-close]').forEach(function (b) { b.onclick = function () { b.closest('dialog').close(); }; });
+    document.querySelectorAll('.home-dialog').forEach(function (d) { d.addEventListener('click',function(e) { if (e.target === d) { var r=d.getBoundingClientRect(); if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)d.close(); } }); });
+    retry.onclick = load;
+    window.addEventListener('pageshow',function(e) { if(e.persisted) load(); });
+    window.addEventListener('bookstark:assistant-created',load);
+    load();
+})();

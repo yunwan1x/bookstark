@@ -1,0 +1,61 @@
+--- a/static/js/pptist-adapter.js
++++ b/static/js/pptist-adapter.js
+@@ -348,9 +348,58 @@
+   }
+ 
+   global.BookStarkPPTist = {
++    ownedImageSelection: function() {
++      if(currentOptions.readonly||!frame||!ready)throw Error('image_selection_unavailable');
++      var bridge=frame.contentWindow&&frame.contentWindow.BookStarkPPTistBridge;
++      if(!bridge||typeof bridge.ownedImageSelection!=='function')throw Error('image_insertion_unsupported');
++      return bridge.ownedImageSelection();
++    },
++    insertOwnedImage: async function(url,width,height,selection,guard) {
++      if(currentOptions.readonly||!frame||!ready||typeof guard!=='function'||!guard())
++        throw Error('image_selection_changed');
++      var target=frame,bridge=target.contentWindow&&target.contentWindow.BookStarkPPTistBridge;
++      if(!bridge||typeof bridge.insertOwnedImage!=='function')throw Error('image_insertion_unsupported');
++      await bridge.insertOwnedImage(url,selection,function(){
++        return frame===target&&ready&&!currentOptions.readonly&&guard();
++      });
++      currentContent=readFrameContent();
++      return true;
++    },
+     mount: mount,
+     destroy: destroy,
+     setContent: setContent,
++    captureReading13: function (includeSelection) {
++      if (!currentOptions.readonly || !frame || !ready) throw new Error('reading_unavailable');
++      var bridge = frame.contentWindow && frame.contentWindow.BookStarkPPTistBridge;
++      if (!bridge || typeof bridge.getReadingState !== 'function') throw new Error('reading_unsupported');
++      var state = bridge.getReadingState();
++      if(includeSelection===false)return {text:'',anchor:{type:'presentationSlide',slideId:state.slideId}};
++      var project = bridge.getPresentation();
++      if (!state || typeof state.slideId !== 'string' || state.slideId.length > 256 ||
++          !project || !Array.isArray(project.slides)) throw new Error('reading_slide');
++      var matches = project.slides.filter(function(slide) { return slide.id === state.slideId; });
++      if (matches.length !== 1 || !Array.isArray(matches[0].elements)) throw new Error('reading_slide');
++      var text = '';
++      matches[0].elements.forEach(function(element) {
++        if (element.type !== 'text' || typeof element.content !== 'string') return;
++        // Detached parsing yields plain text; no script or resource is mounted.
++        var node = new DOMParser().parseFromString(element.content, 'text/html');
++        node.querySelectorAll('script,style,iframe,object,template').forEach(function(n) { n.remove(); });
++        var next = node.body.textContent || '';
++        text += (text ? '\n' : '') + next;
++        if (new TextEncoder().encode(text).length > 32768) throw new Error('reading_text_limit');
++      });
++      return {text:text, anchor:{type:'presentationSlide',slideId:state.slideId}};
++    },
++    restoreReading13: function(anchor) {
++      if (!currentOptions.readonly || !frame || !ready || !anchor ||
++          anchor.type !== 'presentationSlide' || typeof anchor.slideId !== 'string' ||
++          anchor.slideId.length > 256) throw new Error('reading_anchor');
++      var bridge = frame.contentWindow && frame.contentWindow.BookStarkPPTistBridge;
++      if (!bridge || typeof bridge.restoreReadingSlide !== 'function' ||
++          bridge.restoreReadingSlide(anchor.slideId) !== true) throw new Error('reading_slide_missing');
++      return true;
++    },
+     getContent: function () {
+       var nextContent = readFrameContent();
+       if (nextContent) currentContent = nextContent;

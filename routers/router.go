@@ -260,6 +260,9 @@ func Setup() *gin.Engine {
 	r.POST("/api/shares/:identify/edit/content/unlock", controllers.UnlockShareEditRawContent)
 	r.POST("/api/shares/:identify/edit/uploads", controllers.UploadShareEditImage)
 	r.PUT("/api/shares/:identify/edit", controllers.SaveShareEdit)
+	r.GET("/api/shares/:identify/edit/cas", controllers.ReadSharedEditCAS)
+	r.POST("/api/shares/:identify/edit/cas/read", middleware.CSRFMiddleware(), controllers.ReadSharedEditCAS)
+	r.PUT("/api/shares/:identify/edit/cas", middleware.CSRFMiddleware(), controllers.SaveSharedEditCAS)
 	r.GET("/dav-public/:account/*filepath", controllers.ServeDAVPublicAsset)
 	r.HEAD("/dav-public/:account/*filepath", controllers.ServeDAVPublicAsset)
 	for _, method := range []string{
@@ -346,6 +349,14 @@ func Setup() *gin.Engine {
 		auth.PATCH("/api/docs/:id/reorder", controllers.ReorderDocument)
 
 		// Blog APIs
+		// Owned body CAS uses the existing auth/CSRF group.
+		auth.GET("/api/owned-complex/notes/:id", controllers.GetOwnedComplexSource)
+		auth.POST("/api/owned-complex/notes/:id/unlock", controllers.UnlockProtectedOwnedComplexSource)
+		auth.POST("/api/owned-complex/notes/:id/protected-review", controllers.ReadOwnedProtectedRecoverySource)
+		auth.PUT("/api/owned-complex/notes/:id/protected", controllers.PutProtectedOwnedComplexSource)
+		auth.PUT("/api/owned-complex/notes/:id", controllers.PutOwnedComplexSource)
+		auth.GET("/api/owned-complex/books/:book/docs/:id", controllers.GetOwnedComplexSource)
+		auth.PUT("/api/owned-complex/books/:book/docs/:id", controllers.PutOwnedComplexSource)
 		auth.GET("/api/blogs", controllers.ListBlogs)
 		auth.POST("/api/blogs", controllers.CreateBlog)
 		auth.GET("/api/blogs/:id", controllers.GetBlog)
@@ -360,6 +371,9 @@ func Setup() *gin.Engine {
 		auth.GET("/api/blogs/daily-counts", controllers.GetBlogDailyCountsAPI)
 
 		// Bookmark APIs
+		auth.POST("/api/bookmarks/create-owned", controllers.CreateOwnedBookmarkAPI)
+		auth.POST("/api/bookmarks/creation-check", controllers.CheckOwnedBookmarkCreationAPI)
+		auth.GET("/api/bookmarks/:id/creation-review", controllers.ReadOwnedBookmarkCreationAPI)
 		auth.POST("/api/bookmarks", controllers.CreateBookmark)
 		auth.POST("/api/bookmarks/batch-delete", controllers.BatchDeleteBookmarks)
 		auth.POST("/api/bookmarks/batch-share", controllers.BatchShareBookmarks)
@@ -392,12 +406,15 @@ func Setup() *gin.Engine {
 		auth.GET("/api/topics", controllers.ListTopicsAPI)
 		auth.POST("/api/topics", controllers.CreateTopicAPI)
 		auth.GET("/api/topics/daily-counts", controllers.GetTopicDailyCountsAPI)
+		auth.GET("/api/topic-creation-review/:kind/:resourceId", controllers.GetTopicCreationReviewAPI)
 		auth.GET("/api/topics/:id", controllers.GetTopicAPI)
 		auth.PUT("/api/topics/:id", controllers.UpdateTopicAPI)
 		auth.DELETE("/api/topics/:id", controllers.DeleteTopicAPI)
 		auth.PATCH("/api/topics/:id/pin", controllers.ToggleTopicPinAPI)
 		auth.POST("/api/topics/:id/summaries", controllers.CreateTopicSummaryAPI)
 		auth.PUT("/api/topics/:id/summaries/:summaryId", controllers.UpdateTopicSummaryAPI)
+		auth.GET("/api/topics/:id/summaries/:summaryId/content", controllers.ReadTopicSummaryContentAPI)
+		auth.PUT("/api/topics/:id/summaries/:summaryId/content", controllers.UpdateTopicSummaryContentAPI)
 		auth.DELETE("/api/topics/:id/summaries/:summaryId", controllers.DeleteTopicSummaryAPI)
 		auth.PATCH("/api/topics/:id/summaries/sort", controllers.SortTopicSummariesAPI)
 		auth.POST("/api/topics/:id/resources", controllers.CreateTopicResourceAPI)
@@ -437,6 +454,7 @@ func Setup() *gin.Engine {
 		auth.GET("/api/labels/recommendations", controllers.ListRecommendedLabels)
 		auth.GET("/api/labels/recommendation-settings", controllers.GetTagRecommendationSettings)
 		auth.PUT("/api/labels/recommendation-settings", controllers.UpdateTagRecommendationSettings)
+		auth.GET("/api/label-creation-review/:id", controllers.ReadLabelCreationReviewAPI)
 		auth.POST("/api/labels", controllers.CreateLabel)
 		auth.DELETE("/api/labels/unused", controllers.DeleteUnusedLabels)
 		auth.PUT("/api/labels/:id", controllers.UpdateLabel)
