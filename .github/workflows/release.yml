@@ -197,7 +197,7 @@ jobs:
             macos-universal)
               python3 native/build_macos.py --out "dist/$BASE.zip"
               ditto -x -k "dist/$BASE.zip" client-stage
-              lipo -verify_arch arm64 x86_64 client-stage/BookStark.app/Contents/MacOS/BookStark
+              lipo client-stage/BookStark.app/Contents/MacOS/BookStark -verify_arch arm64 x86_64
               codesign --verify --strict client-stage/BookStark.app
               ;;
             linux-amd64)
