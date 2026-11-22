@@ -1,7 +1,7 @@
 # Retro Player HTML article
 
-Published admin article: blog ID `229`, share
-`https://books.vs2010wy.top/shares/share-1794884468768088985`.
+Example: the publicly shared Retro Player HTML article. See the
+[local screenshot gallery](../../docs/html-examples.md) for its interface.
 
 Single-page BookStark HTML article using Nostalgist.js 0.23.0 and fflate 0.8.2.
 Public runtime resources live in built-in WebDAV under `retro-player/v1/`, served

@@ -8,12 +8,11 @@
     {
       "file": "extension-webrtc.png",
       "title": "WebRTC会议室",
-      "url": "https://books.vs2010wy.top/shares/share-1783071864572357387"
+      "captured_at": "2026-11-21"
     },
     {
       "file": "extension-world-tv.png",
       "title": "世界电视 · 全球直播",
-      "url": "https://books.vs2010wy.top/shares/world-tv",
       "channel": "Biz TV",
       "country": "美国",
       "playback_verified": {
@@ -22,12 +21,12 @@
         "time_before": 2.025192,
         "time_after": 6.030424,
         "paused": false
-      }
+      },
+      "captured_at": "2026-11-21"
     },
     {
       "file": "extension-tv.png",
       "title": "电视直播 · 央视与卫视",
-      "url": "https://books.vs2010wy.top/shares/superlive-web",
       "channel": "CCTV-1 综合",
       "country": "中国",
       "playback_verified": {
@@ -36,92 +35,220 @@
         "time_before": 2.056635,
         "time_after": 6.074508,
         "paused": false
-      }
+      },
+      "captured_at": "2026-11-21"
     },
     {
-      "file": "extension-craft.png",
-      "title": "Craft Anything 文件识别工具（Web 简化版）",
-      "url": "https://books.vs2010wy.top/shares/share-1794789598464242574"
+      "file": "extension-public-238.png",
+      "title": "收音机",
+      "captured_at": "2026-11-22"
     },
     {
-      "file": "extension-materialcraft.png",
-      "title": "MaterialCraft 节点材质设计工作台",
-      "url": "https://books.vs2010wy.top/shares/share-1794789598462783312"
+      "file": "extension-arcade.png",
+      "title": "复古游戏机 · Retro Player",
+      "captured_at": "2026-11-21"
     },
     {
       "file": "extension-texturecraft.png",
       "title": "TextureCraft 3D 纹理绘制工作台",
-      "url": "https://books.vs2010wy.top/shares/share-1794789598457971194"
+      "captured_at": "2026-11-21"
     },
     {
-      "file": "extension-figcraft.png",
-      "title": "FigCraft 界面设计工作台",
-      "url": "https://books.vs2010wy.top/shares/share-1794187401324570176"
+      "file": "extension-materialcraft.png",
+      "title": "MaterialCraft 节点材质设计工作台",
+      "captured_at": "2026-11-21"
     },
     {
-      "file": "extension-deckcraft.png",
-      "title": "DeckCraft 演示文稿工作台",
-      "url": "https://books.vs2010wy.top/shares/share-1794187401324513960"
-    },
-    {
-      "file": "extension-gridcraft.png",
-      "title": "GridCraft 电子表格工作台",
-      "url": "https://books.vs2010wy.top/shares/share-1794187401324439749"
-    },
-    {
-      "file": "extension-cadcraft.png",
-      "title": "CADCraft 工程制图工作台",
-      "url": "https://books.vs2010wy.top/shares/share-1794187401324386511"
-    },
-    {
-      "file": "extension-wordcraft.png",
-      "title": "WordCraft 文档编辑工作台",
-      "url": "https://books.vs2010wy.top/shares/share-1794187401324333258"
-    },
-    {
-      "file": "extension-soundcraft.png",
-      "title": "SoundCraft 音频制作工作台",
-      "url": "https://books.vs2010wy.top/shares/share-1794187401324237823"
-    },
-    {
-      "file": "extension-filmcraft.png",
-      "title": "FilmCraft 视频剪辑工作台",
-      "url": "https://books.vs2010wy.top/shares/share-1794187401324181070"
-    },
-    {
-      "file": "extension-designcraft.png",
-      "title": "DesignCraft 版式设计工作台",
-      "url": "https://books.vs2010wy.top/shares/share-1794187401324126188"
-    },
-    {
-      "file": "extension-pdfcraft.png",
-      "title": "PdfCraft PDF 工作台",
-      "url": "https://books.vs2010wy.top/shares/share-1794187401324071182"
-    },
-    {
-      "file": "extension-effectcraft.png",
-      "title": "EffectCraft 动效与视觉特效工作台",
-      "url": "https://books.vs2010wy.top/shares/share-1794187401324010725"
-    },
-    {
-      "file": "extension-lightcraft.png",
-      "title": "LightCraft 照片与 RAW 工作台",
-      "url": "https://books.vs2010wy.top/shares/share-1794187401323942367"
-    },
-    {
-      "file": "extension-vectorcraft.png",
-      "title": "VectorCraft 矢量设计工作台",
-      "url": "https://books.vs2010wy.top/shares/share-1794187401323859029"
+      "file": "extension-craft.png",
+      "title": "Craft Anything 文件识别工具（Web 简化版）",
+      "captured_at": "2026-11-21"
     },
     {
       "file": "extension-photocraft.png",
       "title": "PhotoCraft 图片编辑器",
-      "url": "https://books.vs2010wy.top/shares/share-1794187401322531391"
+      "captured_at": "2026-11-21"
     },
     {
-      "file": "extension-arcade.png",
-      "title": "街机游戏厅",
-      "url": "https://books.vs2010wy.top/shares/share-1794884468768088985"
+      "file": "extension-vectorcraft.png",
+      "title": "VectorCraft 矢量设计工作台",
+      "captured_at": "2026-11-21"
+    },
+    {
+      "file": "extension-lightcraft.png",
+      "title": "LightCraft 照片与 RAW 工作台",
+      "captured_at": "2026-11-21"
+    },
+    {
+      "file": "extension-effectcraft.png",
+      "title": "EffectCraft 动效与视觉特效工作台",
+      "captured_at": "2026-11-21"
+    },
+    {
+      "file": "extension-pdfcraft.png",
+      "title": "PdfCraft PDF 工作台",
+      "captured_at": "2026-11-21"
+    },
+    {
+      "file": "extension-designcraft.png",
+      "title": "DesignCraft 版式设计工作台",
+      "captured_at": "2026-11-21"
+    },
+    {
+      "file": "extension-filmcraft.png",
+      "title": "FilmCraft 视频剪辑工作台",
+      "captured_at": "2026-11-21"
+    },
+    {
+      "file": "extension-soundcraft.png",
+      "title": "SoundCraft 音频制作工作台",
+      "captured_at": "2026-11-21"
+    },
+    {
+      "file": "extension-wordcraft.png",
+      "title": "WordCraft 文档编辑工作台",
+      "captured_at": "2026-11-21"
+    },
+    {
+      "file": "extension-cadcraft.png",
+      "title": "CADCraft 工程制图工作台",
+      "captured_at": "2026-11-21"
+    },
+    {
+      "file": "extension-gridcraft.png",
+      "title": "GridCraft 电子表格工作台",
+      "captured_at": "2026-11-21"
+    },
+    {
+      "file": "extension-deckcraft.png",
+      "title": "DeckCraft 演示文稿工作台",
+      "captured_at": "2026-11-21"
+    },
+    {
+      "file": "extension-figcraft.png",
+      "title": "FigCraft 界面设计工作台",
+      "captured_at": "2026-11-21"
+    },
+    {
+      "file": "extension-public-151.png",
+      "title": "K线技术术语教学",
+      "captured_at": "2026-11-22"
+    },
+    {
+      "file": "extension-public-162.png",
+      "title": "时间冻结摄影棚",
+      "captured_at": "2026-11-22"
+    },
+    {
+      "file": "extension-public-181.png",
+      "title": "PDF 工作台：本地 PDF 阅读、批注与页面整理",
+      "captured_at": "2026-11-22"
+    },
+    {
+      "file": "extension-public-180.png",
+      "title": "PPTist：在线演示文稿工作台",
+      "captured_at": "2026-11-22"
+    },
+    {
+      "file": "extension-public-177.png",
+      "title": "电子表格工具",
+      "captured_at": "2026-11-22"
+    },
+    {
+      "file": "extension-public-173.png",
+      "title": "docx文档编辑器",
+      "captured_at": "2026-11-22"
+    },
+    {
+      "file": "extension-public-161.png",
+      "title": "简历排版工作台",
+      "captured_at": "2026-11-22"
+    },
+    {
+      "file": "extension-public-167.png",
+      "title": "人声效果器",
+      "captured_at": "2026-11-22"
+    },
+    {
+      "file": "extension-public-171.png",
+      "title": "画板",
+      "captured_at": "2026-11-22"
+    },
+    {
+      "file": "extension-public-170.png",
+      "title": "prompt管理工具",
+      "captured_at": "2026-11-22"
+    },
+    {
+      "file": "extension-public-166.png",
+      "title": "书签星图：Canvas 书签档案馆",
+      "captured_at": "2026-11-22"
+    },
+    {
+      "file": "extension-public-165.png",
+      "title": "道德经研习录：81章互动学习地图",
+      "captured_at": "2026-11-22"
+    },
+    {
+      "file": "extension-public-164.png",
+      "title": "选股决策台",
+      "captured_at": "2026-11-22"
+    },
+    {
+      "file": "extension-public-160.png",
+      "title": "知识卡片",
+      "captured_at": "2026-11-22"
+    },
+    {
+      "file": "extension-public-159.png",
+      "title": "airdrop文件分享助手",
+      "captured_at": "2026-11-22"
+    },
+    {
+      "file": "extension-public-152.png",
+      "title": "图片效果工厂",
+      "captured_at": "2026-11-22"
+    },
+    {
+      "file": "extension-public-150.png",
+      "title": "摄像头实验室",
+      "captured_at": "2026-11-22"
+    },
+    {
+      "file": "extension-public-149.png",
+      "title": "暗房工具箱",
+      "captured_at": "2026-11-22"
+    },
+    {
+      "file": "extension-public-148.png",
+      "title": "二维码生成",
+      "captured_at": "2026-11-22"
+    },
+    {
+      "file": "extension-public-147.png",
+      "title": "图片文字隐写工具",
+      "captured_at": "2026-11-22"
+    },
+    {
+      "file": "extension-public-146.png",
+      "title": "简单的交易模拟器",
+      "captured_at": "2026-11-22"
+    },
+    {
+      "file": "extension-public-145.png",
+      "title": "投资底层逻辑",
+      "captured_at": "2026-11-22"
+    },
+    {
+      "file": "extension-public-144.png",
+      "title": "股票交易决策地图",
+      "captured_at": "2026-11-22"
+    },
+    {
+      "file": "extension-public-143.png",
+      "title": "凯利投资模拟",
+      "captured_at": "2026-11-22"
     }
-  ]
+  ],
+  "catalog_checked_at": "2026-11-22",
+  "public_html_count": 45
 }

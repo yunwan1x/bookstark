@@ -1,5 +1,7 @@
 <div align="center">
 
+**Languages / 语言： 简体中文 | [English](README.en.md)**
+
 # BookStark
 
 ### 把灵感、知识与行动，装进自己的工作台。
@@ -15,7 +17,7 @@
 [![SQLite](https://img.shields.io/badge/SQLite-自托管-003B57?style=flat-square&logo=sqlite&logoColor=white)](docs/usage-and-deployment.md)
 [![License](https://img.shields.io/github/license/yunwan1x/bookstark?style=flat-square)](LICENSE)
 
-[快速部署](#快速部署) · [功能全景](#功能全景) · [书签与浏览器插件](#书签管理收藏得快也找得回来) · [HTML 工具与案例](#html-扩展平台把想用的工具装进同一个工作台) · [访问统计与管理后台](#访问统计与管理后台把站点运营也放进工作台) · [六套主题](#六套主题让工作台有自己的性格) · [截图导览](#从记录到输出一条完整的工作流) · [参与贡献](#一起把-bookstark-做得更好)
+[快速部署](#快速部署) · [功能全景](#功能全景) · [书签与浏览器插件](#书签管理收藏得快也找得回来) · [HTML 工具与案例](#html-扩展平台把想用的工具装进同一个工作台) · [访问统计与管理后台](#访问统计与管理后台把站点运营也放进工作台) · [六套主题](#六套主题让工作台有自己的性格) · [截图导览](#从记录到输出一条完整的工作流) · [语言指南](#语言指南) · [参与贡献](#一起把-bookstark-做得更好)
 
 **喜欢这个方向？点亮右上角的 ⭐ Star，让更多人发现 BookStark。**
 
@@ -24,6 +26,13 @@
 ![BookStark 冰川青蓝 HUD 首页：统计、最近访问、个人内容与日历](docs/screenshots/theme-hud-light.png)
 
 > 上图及下方界面图均来自实际运行的 BookStark，知识管理界面使用独立演示数据，HTML 扩展案例拍摄自公开工具页面。点击图片可查看大图。
+
+## 语言指南
+
+- **阅读介绍**：**简体中文**（当前页面） · [English](README.en.md)。两版顶部均可切换，英文版包含完整功能介绍、45 个 HTML 实例、截图图注与部署说明。
+- **切换应用语言**：BookStark 支持中文与英文；桌面端点击顶部地球图标选择语言，主题在个人设置中单独选择。
+- **查看详细文档**：当前配图主要展示中文界面，部分详细指南和独立 HTML 图册仍以中文为主；英文版已标注这些链接。接入的第三方工具可能有各自的语言选项。
+- **参与翻译**：欢迎通过 Pull Request 改进中英文文案；更新时请同步功能范围、截图引用与部署步骤。
 
 ## 为什么值得放进你的自托管清单？
 
@@ -193,6 +202,95 @@ BookStark 的 HTML 文章和文档可以承载 HTML、CSS 与 JavaScript，运�
 ![WebRTC 会议室：房间入口、屏幕共享与协作标注工具栏](docs/screenshots/extension-webrtc.png)
 
 浏览器媒体权限、信令和网络连通性按实际部署配置。图中为会议入口，不代表正在进行多人通话。
+
+### 更多公开 HTML 实例：45 个实例的完整展示
+
+截至 2026-11-22，广场公开的 **45 篇 HTML 文章**均已配图：前文展示 Craft、电视、游戏厅与会议室，下面补齐其余 25 个实例。这里只展示名称与实际界面，不提供线上实例地址。截图是拍摄时的界面；需要摄像头、麦克风、本地文件或协作对象的工具展示入口，不代表已经授权设备或建立连接。
+
+<details open>
+<summary><strong>办公与内容创作</strong></summary>
+
+<table>
+  <tr>
+    <td width="50%"><strong>PDF 工作台：本地 PDF 阅读、批注与页面整理</strong><br><img src="docs/screenshots/extension-public-181.png" alt="PDF 工作台：本地 PDF 阅读、批注与页面整理实际运行界面" width="100%"></td>
+    <td width="50%"><strong>PPTist：在线演示文稿工作台</strong><br><img src="docs/screenshots/extension-public-180.png" alt="PPTist：在线演示文稿工作台实际运行界面" width="100%"></td>
+  </tr>
+  <tr>
+    <td width="50%"><strong>电子表格工具</strong><br><img src="docs/screenshots/extension-public-177.png" alt="电子表格工具实际运行界面" width="100%"></td>
+    <td width="50%"><strong>docx文档编辑器</strong><br><img src="docs/screenshots/extension-public-173.png" alt="docx文档编辑器实际运行界面" width="100%"></td>
+  </tr>
+  <tr>
+    <td width="50%"><strong>简历排版工作台</strong><br><img src="docs/screenshots/extension-public-161.png" alt="简历排版工作台实际运行界面" width="100%"></td>
+    <td width="50%"><strong>画板</strong><br><img src="docs/screenshots/extension-public-171.png" alt="画板实际运行界面" width="100%"></td>
+  </tr>
+  <tr>
+    <td width="50%"><strong>prompt管理工具</strong><br><img src="docs/screenshots/extension-public-170.png" alt="prompt管理工具实际运行界面" width="100%"></td>
+    <td width="50%"><strong>知识卡片</strong><br><img src="docs/screenshots/extension-public-160.png" alt="知识卡片实际运行界面" width="100%"></td>
+  </tr>
+</table>
+
+</details>
+
+<details open>
+<summary><strong>图像、摄影与音频</strong></summary>
+
+<table>
+  <tr>
+    <td width="50%"><strong>时间冻结摄影棚</strong><br><img src="docs/screenshots/extension-public-162.png" alt="时间冻结摄影棚实际运行界面" width="100%"></td>
+    <td width="50%"><strong>人声效果器</strong><br><img src="docs/screenshots/extension-public-167.png" alt="人声效果器实际运行界面" width="100%"></td>
+  </tr>
+  <tr>
+    <td width="50%"><strong>图片效果工厂</strong><br><img src="docs/screenshots/extension-public-152.png" alt="图片效果工厂实际运行界面" width="100%"></td>
+    <td width="50%"><strong>摄像头实验室</strong><br><img src="docs/screenshots/extension-public-150.png" alt="摄像头实验室实际运行界面" width="100%"></td>
+  </tr>
+  <tr>
+    <td width="50%"><strong>暗房工具箱</strong><br><img src="docs/screenshots/extension-public-149.png" alt="暗房工具箱实际运行界面" width="100%"></td>
+    <td width="50%"><strong>图片文字隐写工具</strong><br><img src="docs/screenshots/extension-public-147.png" alt="图片文字隐写工具实际运行界面" width="100%"></td>
+  </tr>
+</table>
+
+</details>
+
+<details open>
+<summary><strong>学习与投资演示</strong></summary>
+
+<table>
+  <tr>
+    <td width="50%"><strong>K线技术术语教学</strong><br><img src="docs/screenshots/extension-public-151.png" alt="K线技术术语教学实际运行界面" width="100%"></td>
+    <td width="50%"><strong>道德经研习录：81章互动学习地图</strong><br><img src="docs/screenshots/extension-public-165.png" alt="道德经研习录：81章互动学习地图实际运行界面" width="100%"></td>
+  </tr>
+  <tr>
+    <td width="50%"><strong>选股决策台</strong><br><img src="docs/screenshots/extension-public-164.png" alt="选股决策台实际运行界面" width="100%"></td>
+    <td width="50%"><strong>简单的交易模拟器</strong><br><img src="docs/screenshots/extension-public-146.png" alt="简单的交易模拟器实际运行界面" width="100%"></td>
+  </tr>
+  <tr>
+    <td width="50%"><strong>投资底层逻辑</strong><br><img src="docs/screenshots/extension-public-145.png" alt="投资底层逻辑实际运行界面" width="100%"></td>
+    <td width="50%"><strong>股票交易决策地图</strong><br><img src="docs/screenshots/extension-public-144.png" alt="股票交易决策地图实际运行界面" width="100%"></td>
+  </tr>
+  <tr>
+    <td width="50%"><strong>凯利投资模拟</strong><br><img src="docs/screenshots/extension-public-143.png" alt="凯利投资模拟实际运行界面" width="100%"></td>
+  </tr>
+</table>
+
+</details>
+
+<details open>
+<summary><strong>电台、协作与实用工具</strong></summary>
+
+<table>
+  <tr>
+    <td width="50%"><strong>收音机</strong><br><img src="docs/screenshots/extension-public-238.png" alt="收音机实际运行界面" width="100%"></td>
+    <td width="50%"><strong>书签星图：Canvas 书签档案馆</strong><br><img src="docs/screenshots/extension-public-166.png" alt="书签星图：Canvas 书签档案馆实际运行界面" width="100%"></td>
+  </tr>
+  <tr>
+    <td width="50%"><strong>airdrop文件分享助手</strong><br><img src="docs/screenshots/extension-public-159.png" alt="airdrop文件分享助手实际运行界面" width="100%"></td>
+    <td width="50%"><strong>二维码生成</strong><br><img src="docs/screenshots/extension-public-148.png" alt="二维码生成实际运行界面" width="100%"></td>
+  </tr>
+</table>
+
+</details>
+
+全部实例也可在 [HTML 实例截图目录](docs/html-examples.md) 中按分类浏览。
 
 > 以上为公开站点实际接入案例，不代表安装 BookStark 后自动附带全部工具、媒体源和第三方资源。BookStark 提供 HTML 编辑、运行与分享的基础，让你按自己的需求搭出一站式工作台。
 
