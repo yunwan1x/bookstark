@@ -70,7 +70,12 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--color-focus); o
 .search-trigger:hover { background: var(--color-gray-100); color: var(--color-gray-700); }
 .search-trigger:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 .header-theme-toggle { display: none !important; }
-.header-search-bar { display: none; flex: 1; align-items: center; gap: 8px; }
+.header-search-bar { display: none; flex: 1; min-width: 0; align-items: center; gap: 8px; }
+.header-search-field { display: flex; align-items: center; min-width: 0; padding: 0 4px; background: var(--color-bg-card); }
+.header-search-field:focus-within { border-color: var(--color-focus); box-shadow: 0 0 0 2px var(--color-focus-ring); }
+header .header-search-field #headerSearchInput { min-width: 0; width: 0; padding: 4px; background: transparent !important; border: 0 !important; border-image: none !important; box-shadow: none !important; outline: none !important; }
+.header-search-field .header-close-search { color: var(--color-gray-500); }
+.header-search-bar button:focus-visible { outline: 2px solid var(--color-focus); outline-offset: -2px; }
 header.search-expanded nav { display: none !important; }
 header.search-expanded .header-cmdk-hint { display: none !important; }
 header.search-expanded .search-trigger { display: none !important; }
@@ -195,8 +200,10 @@ button:active:not(:disabled), .page-btn:active:not(:disabled) {
     {{if .Account}}
     <button class="search-trigger ml-auto" id="searchTrigger" aria-label="{{call .T "header.search.label"}}" title="{{call .T "header.search.label"}}"><i class="fa-solid fa-magnifying-glass"></i></button>
     <div class="header-search-bar" id="headerSearchBar">
-        <i class="fa-solid fa-magnifying-glass" style="color:var(--color-gray-400);font-size:14px;flex-shrink:0;"></i>
-        <input type="text" id="headerSearchInput" placeholder="{{call .T "header.search.placeholder"}}" autocomplete="off" aria-label="{{call .T "search.aria"}}">
+        <div class="search-input header-search-field">
+            <button type="button" class="header-close-search" id="headerSearchSubmit" aria-label="{{call .T "header.search.label"}}"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></button>
+            <input type="text" id="headerSearchInput" placeholder="{{call .T "header.search.placeholder"}}" autocomplete="off" aria-label="{{call .T "search.aria"}}">
+        </div>
         <button class="header-close-search" id="headerCloseSearch" aria-label="{{call .T "header.search.close"}}"><i class="fa-solid fa-xmark" style="font-size:12px;"></i></button>
     </div>
     <button class="search-trigger header-theme-toggle" id="themeToggle" aria-label="{{call .T "header.theme.toggle"}}" title="{{call .T "header.theme.toggle"}}" onclick="BookStarkTheme.toggle()"><i class="fa-solid fa-moon" id="theme-icon"></i></button>
@@ -506,20 +513,25 @@ window.addEventListener('pageshow', closeHeaderDropdowns);
         }, 150);
     });
 
-    searchInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            var q = searchInput.value.trim();
-            if (q) {
-                if (window.location.pathname === '/search' && window.BookStarkSearch && window.BookStarkSearch.doSearch) {
-                    // Already on search page - use AJAX instead of full page reload
-                    window.BookStarkSearch.doSearch(q);
-                    closeSearch();
-                    var pageInput = document.getElementById('search-page-input');
-                    if (pageInput) pageInput.focus();
-                } else {
-                    window.location.href = '/search?q=' + encodeURIComponent(q);
-                }
+    function submitSearch() {
+        var q = searchInput.value.trim();
+        if (q) {
+            if (window.location.pathname === '/search' && window.BookStarkSearch && window.BookStarkSearch.doSearch) {
+                // Already on search page - use AJAX instead of full page reload
+                window.BookStarkSearch.doSearch(q);
+                closeSearch();
+                var pageInput = document.getElementById('search-page-input');
+                if (pageInput) pageInput.focus();
+            } else {
+                window.location.href = '/search?q=' + encodeURIComponent(q);
             }
+        }
+    }
+    document.getElementById('headerSearchSubmit').addEventListener('click', submitSearch);
+    searchInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.isComposing) {
+            e.preventDefault();
+            submitSearch();
         }
         if (e.key === 'Escape') {
             closeSearch();
