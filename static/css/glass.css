@@ -403,11 +403,11 @@ html[data-theme-style="glass"][data-theme="light"] .home-date-layout .calendar-d
 }
 
 /* Composite search: the form owns the glass surface and focus ring. */
-html[data-theme-style="glass"][data-theme="light"] .public-search {
+html[data-theme-style="glass"][data-theme="light"] :is(.public-search,.header-search-field) {
   background:var(--glass-control),var(--glass-input); border-radius:var(--glass-tab-radius);
   border-color:var(--color-border); box-shadow:var(--glass-field-shadow);
 }
-html[data-theme-style="glass"][data-theme="light"] .public-search:focus-within {
+html[data-theme-style="glass"][data-theme="light"] :is(.public-search,.header-search-field):focus-within {
   border-color:var(--color-focus); box-shadow:var(--glass-field-shadow),var(--glass-focus-shadow);
 }
 html[data-theme-style="glass"][data-theme="light"] .public-search input[type="search"],
