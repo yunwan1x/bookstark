@@ -100,6 +100,8 @@ def main():
     with tempfile.TemporaryDirectory(prefix="bookstark-wails-android-") as scratch:
         project = Path(scratch) / "android"
         shutil.copytree(template, project)
+        # Go's module cache is read-only, including the copied root directory.
+        project.chmod(project.stat().st_mode | 0o200)
         for p in project.rglob("*"):
             p.chmod(p.stat().st_mode | 0o200)
         configure_host(project, args.abi)
