@@ -1,3 +1,5 @@
+//go:build !wails
+
 package main
 
 import (
@@ -63,19 +65,8 @@ func main() {
 		os.Setenv("TZ", conf.App.Timezone)
 	}
 
-	if err := models.InitDB(conf.App.DBPath); err != nil {
-		log.Fatalf("init db: %v", err)
-	}
-	if err := models.InitWebDAVDB(conf.App.WebDAVDBPath); err != nil {
-		log.Fatalf("init webdav db: %v", err)
-	}
-	if err := models.InitShareCommentDB(); err != nil {
-		log.Fatalf("init share comments db: %v", err)
-	}
-	// 把内置 AI 默认 prompt 一次性 backfill 到 settings（仅当对应行为空），
-	// 让 admin 在设置页能直接看到并修改默认文案。已 backfill 后不会再覆盖。
-	if err := models.BackfillAIDefaults(); err != nil {
-		log.Printf("backfill ai defaults: %v", err)
+	if err := initDatabases(); err != nil {
+		log.Fatal(err)
 	}
 
 	// Handle -reset-admin-password: reset and print, then exit
@@ -132,26 +123,4 @@ func main() {
 	if err := srv.ListenAndServe(); err != nil {
 		log.Fatalf("start server: %v", err)
 	}
-}
-
-// headMethodFallback wraps a handler so that HEAD requests are routed
-// to GET handlers. Gin's router does not fall back HEAD→GET automatically,
-// causing HEAD to hit NoRoute and get redirected.
-func headMethodFallback(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodHead {
-			r.Method = http.MethodGet
-			h.ServeHTTP(&headResponseWriter{ResponseWriter: w}, r)
-			return
-		}
-		h.ServeHTTP(w, r)
-	})
-}
-
-type headResponseWriter struct {
-	http.ResponseWriter
-}
-
-func (w *headResponseWriter) Write(b []byte) (int, error) {
-	return len(b), nil
 }

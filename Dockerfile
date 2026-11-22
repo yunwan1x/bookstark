@@ -1,5 +1,5 @@
 # Stage 1: Build (production mode embeds static/templates/conf into binary)
-ARG GO_BUILDER_IMAGE=golang:1.25-alpine
+ARG GO_BUILDER_IMAGE=golang:1.26-alpine
 FROM --platform=$BUILDPLATFORM ${GO_BUILDER_IMAGE} AS builder
 WORKDIR /src
 ARG ALPINE_MIRROR=
