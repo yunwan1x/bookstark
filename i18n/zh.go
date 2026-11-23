@@ -306,7 +306,7 @@ var zhMessages = map[string]string{
 	"background.solid":                   "纯色",
 	"background.dynamic":                 "动态背景",
 	"background.image":                   "图片背景",
-	"background.hint":                    "设置随账号同步，仅用于登录后的页面。调整后即时预览，保存后生效。",
+	"background.hint":                    "设置随账号同步，仅用于登录后的页面。调整后即时预览，点击下方「保存」统一保存。",
 	"background.animate":                 "播放动画（关闭后保留静态图案）",
 	"background.upload":                  "上传 / 替换背景图片",
 	"background.upload_hint":             "PNG、JPG、WebP，最大5MB、2000万像素；自动压缩，居中铺满。",
@@ -3103,6 +3103,8 @@ var zhMessages = map[string]string{
 	"public.radio_empty_hint":         "搜索电台，收藏后可在这里快速播放",
 	"public.radio_local_favorites":    "收藏仅保存在当前浏览器",
 	"public.radio_storage_error":      "无法保存本机收藏，请检查浏览器存储设置。",
+
+	"profile.save.background_error": "个人信息已保存，但背景保存失败：{message}。请重试。",
 
 	// Login password visibility.
 	"auth.field.password.show": "显示密码",

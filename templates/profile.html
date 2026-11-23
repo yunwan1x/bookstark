@@ -74,6 +74,7 @@
             </div>
 
             <div id="panel-profile" role="tabpanel" aria-labelledby="tab-profile" class="profile-panel bg-white rounded-b-lg shadow-sm p-4 sm:p-7">
+                <div id="profile-settings">
                 <h1 class="page-title mb-5">{{call .T "profile.section.profile"}}</h1>
                 <div id="profile-error" class="hidden mb-4 p-3 bg-red-50 text-red-600 text-sm rounded"></div>
                 <div class="mb-4">
@@ -113,7 +114,6 @@
                         <label for="background-fade">{{call .T "background.fade"}} <output id="background-fade-value" for="background-fade"></output></label><input id="background-fade" type="range" min="0" max="100" value="65">
                     </div>
                     <p id="background-status" role="status" aria-live="polite"></p>
-                    <div class="profile-background-actions"><button type="button" id="background-reset" class="ai-dlg-btn ai-dlg-btn-cancel">{{call .T "background.reset"}}</button><button type="button" id="background-save" class="ai-dlg-btn ai-dlg-btn-confirm">{{call .T "background.save"}}</button></div>
                 </section>
                 <script defer src="/static/js/profile-background.js?v={{assetVer "/static/js/profile-background.js"}}"></script>
                 <div class="mb-4 flex items-center justify-between gap-4 rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5">
@@ -144,8 +144,10 @@
                         <option value="search" {{if eq .DefaultHome "search"}}selected{{end}}>{{call .T "profile.default_home.search"}}</option>
                     </select>
                 </div>
-                <div class="flex justify-end">
-                    <button onclick="saveProfile(this)" class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700">{{call .T "profile.save"}}</button>
+                <div class="profile-settings-actions">
+                    <button type="button" id="background-reset" class="bs-btn bs-btn-cancel" aria-label="{{call .T "background.title"}} · {{call .T "background.reset"}}">{{call .T "background.reset"}}</button>
+                    <button type="button" id="profile-save" onclick="saveProfile(this)" class="bs-btn bs-btn-primary">{{call .T "profile.save"}}</button>
+                </div>
                 </div>
 
                 <section class="profile-section">
@@ -254,7 +256,26 @@
     </main>
     {{template "footer" .}}
     <script>
-    async function saveProfile(btn){BookStarkErrors.clearField('profile-error');try{const r=await csrfFetch('/api/profile',{method:'PUT',lockKey:'profile:save',lockControl:btn,headers:{'Content-Type':'application/json'},body:JSON.stringify({email:document.getElementById('email').value.trim(),default_home:document.getElementById('default-home').value})});if(r.ok)BSDialog.alert2(window.__('profile.save.success'));else{const d=await r.json();BookStarkErrors.field('profile-error', d, window.__('profile.save.error'));}}catch(err){BookStarkErrors.field('profile-error', err, window.__('profile.save.error'));}}
+    async function saveProfile(btn) {
+      if (btn.disabled) return;
+      BookStarkErrors.clearField('profile-error');
+      let controls = [], profileSaved = false;
+      try {
+        // Validate and capture the background before writing any profile fields.
+        const saveBackground = window.BookStarkProfileBackground.prepareSave();
+        const body = {email:document.getElementById('email').value.trim(),default_home:document.getElementById('default-home').value};
+        controls = Array.from(document.querySelectorAll('#profile-settings button,#profile-settings input,#profile-settings select')).filter(el => !el.disabled);
+        controls.forEach(el => el.disabled = true);
+        const r = await csrfFetch('/api/profile',{method:'PUT',lockKey:'profile:save',offlinePolicy:'reject',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+        if (!r.ok) { const d = await r.json(); BookStarkErrors.field('profile-error',d,window.__('profile.save.error')); return; }
+        profileSaved = true;
+        if (saveBackground) await saveBackground();
+        BSDialog.alert2(window.__('profile.save.success'));
+      } catch (err) {
+        const message = profileSaved ? window.__('profile.save.background_error').replace('{message}',err.message || window.__('background.error')) : err;
+        BookStarkErrors.field('profile-error',message,window.__('profile.save.error'));
+      } finally { controls.forEach(el => el.disabled = false); }
+    }
     async function changePassword(btn){BookStarkErrors.clearField('pwd-error');const o=document.getElementById('old_password').value,n=document.getElementById('new_password').value,c=document.getElementById('confirm_password').value;if(n!==c){BookStarkErrors.field('pwd-error', window.__('profile.pwd.mismatch'));return;}try{const r=await csrfFetch('/api/password',{method:'PUT',lockKey:'profile:password',lockControl:btn,headers:{'Content-Type':'application/json'},body:JSON.stringify({old_password:o,new_password:n})});if(r.ok){if(window.BookStarkClient && await window.BookStarkClient.ready){try{await window.BookStarkClient.updateCredentials(document.getElementById('account-display').textContent.trim(),n);}catch(_){BSDialog.toast(window.__('native.login.save_failed'),'error');}}BSDialog.alert2(window.__('profile.pwd.success'));document.getElementById('old_password').value='';document.getElementById('new_password').value='';document.getElementById('confirm_password').value='';}else{const d=await r.json();BookStarkErrors.field('pwd-error', d, window.__('profile.pwd.error'));}}catch(err){BookStarkErrors.field('pwd-error', err, window.__('profile.pwd.error'));}}
 
     const isAdmin = {{if .IsAdmin}}true{{else}}false{{end}};

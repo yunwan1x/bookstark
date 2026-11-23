@@ -25,6 +25,10 @@ func TestCSRFMutationBrowser(t *testing.T) {
 	runIsolatedBrowser(t, "csrf_browser_test.cjs")
 }
 
+func TestProfileSettingsBrowser(t *testing.T) {
+	runIsolatedBrowser(t, "profile_settings_browser_test.cjs")
+}
+
 func TestLoginPasswordBrowser(t *testing.T) {
 	runIsolatedBrowser(t, "login_password_browser_test.cjs")
 }

@@ -7,5 +7,5 @@
 .profile-background input[type=file],.profile-background select{width:100%;max-width:100%;min-width:0}
 .profile-background input[type=range]{width:100%;accent-color:var(--color-primary)}
 .profile-background p{font-size:12px;color:var(--color-text-secondary);margin:var(--spacing-sm) 0}
-.profile-background-actions{display:flex;gap:var(--spacing-sm);flex-wrap:wrap;margin-top:var(--spacing-md)}
+.profile-settings-actions{display:flex;justify-content:flex-end;gap:var(--spacing-sm);flex-wrap:wrap}
 .profile-background [hidden]{display:none!important}

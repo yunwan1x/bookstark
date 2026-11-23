@@ -3,7 +3,7 @@
     const root=document.getElementById('profile-background');
     if(!root || !window.BookStarkAppearance)return;
     const mode=document.getElementById('background-mode'),animated=document.getElementById('background-animated'),fade=document.getElementById('background-fade'),file=document.getElementById('background-file'),status=document.getElementById('background-status');
-    let saved={...window.BookStarkAppearance},url='',remove=false,busy=false;
+    let saved={...window.BookStarkAppearance},url='',remove=false;
     const t=k=>window.__(k);
     function revoke(){if(url)URL.revokeObjectURL(url);url='';}
     function value(){return {mode:mode.value,animated:animated.checked,fade:Number(fade.value),image_hash:remove?'':saved.image_hash};}
@@ -22,19 +22,21 @@
         status.textContent=t('background.unsaved');preview();
     };
     document.getElementById('background-reset').onclick=()=>{revoke();file.value='';remove=true;fill({mode:'dynamic',animated:true,fade:65});status.textContent=t('background.unsaved');};
-    document.getElementById('background-save').onclick=async()=>{
-        if(busy)return;
-        const p=value();if(p.mode==='image'&&!url&&!p.image_hash){status.textContent=t('background.required');return;}
-        busy=true;root.querySelectorAll('button,input,select').forEach(el=>el.disabled=true);status.textContent=t('background.saving');
-        try{
-            const body=new FormData();body.append('mode',p.mode);body.append('animated',p.animated);body.append('fade',p.fade);body.append('remove',remove);
-            if(file.files[0])body.append('file',file.files[0]);
-            const res=await csrfFetch('/api/profile/background',{method:'PUT',body,offlinePolicy:'reject'}),data=await res.json();
-            if(!res.ok||data.code!==0)throw new Error(data.message||t('background.error'));
-            saved=data.data;remove=false;revoke();file.value='';fill(saved);status.textContent=t('background.saved');
-        }catch(err){status.textContent=t('background.error')+' '+(err.message||'');}
-        finally{busy=false;root.querySelectorAll('button,input,select').forEach(el=>el.disabled=false);}
-    };
+    window.BookStarkProfileBackground = {prepareSave() {
+        const p=value();
+        if(p.mode==='image'&&!url&&!p.image_hash){status.textContent=t('background.required');throw new Error(t('background.required'));}
+        if(!remove&&!file.files[0]&&['mode','animated','fade','image_hash'].every(key=>p[key]===saved[key]))return null;
+        const body=new FormData();body.append('mode',p.mode);body.append('animated',p.animated);body.append('fade',p.fade);body.append('remove',remove);
+        if(file.files[0])body.append('file',file.files[0]);
+        return async()=>{
+            status.textContent=t('background.saving');
+            try{
+                const res=await csrfFetch('/api/profile/background',{method:'PUT',body,offlinePolicy:'reject'}),data=await res.json();
+                if(!res.ok||data.code!==0)throw new Error(data.message||t('background.error'));
+                saved=data.data;remove=false;revoke();file.value='';fill(saved);status.textContent=t('background.saved');
+            }catch(err){status.textContent=t('background.error')+' '+(err.message||'');throw err;}
+        };
+    }};
     window.addEventListener('pagehide',revoke);
     fill(saved);
 })();

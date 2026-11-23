@@ -306,7 +306,7 @@ var enMessages = map[string]string{
 	"background.solid":                   "Solid color",
 	"background.dynamic":                 "Dynamic background",
 	"background.image":                   "Image background",
-	"background.hint":                    "Synced to your account for signed-in pages. Preview changes here, then save to apply.",
+	"background.hint":                    "Synced to your account for signed-in pages. Preview changes here, then use Save below to save everything.",
 	"background.animate":                 "Play animation (keep static graphics when off)",
 	"background.upload":                  "Upload / replace background",
 	"background.upload_hint":             "PNG, JPG or WebP, up to 5 MB and 20 megapixels. Compressed automatically, centered to cover.",
@@ -3103,6 +3103,8 @@ var enMessages = map[string]string{
 	"public.radio_empty_hint":         "Find stations and save them here for quick playback",
 	"public.radio_local_favorites":    "Favorites are saved only in this browser",
 	"public.radio_storage_error":      "Could not save favorites. Check browser storage settings.",
+
+	"profile.save.background_error": "Profile saved, but the background could not be saved: {message}. Please retry.",
 
 	// Login password visibility.
 	"auth.field.password.show": "Show password",
