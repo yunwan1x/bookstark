@@ -36,7 +36,7 @@
  <div><dt>{{call $.T "public.total_pv"}}</dt><dd data-visit-number>{{.TotalViews}}</dd></div>
  <div><dt>{{call $.T "public.total_uv"}}</dt><dd data-visit-number>{{.TotalVisitors}}</dd></div>
  </dl><svg class="public-visit-chart" viewBox="0 0 260 60" role="img" aria-label="{{call $.T "public.trend"}}"><polygon points="4,60 {{.TrendPoints}} 256,60" fill="currentColor" opacity=".08"/><polyline points="{{.TrendPoints}}" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
- <p class="public-widget-caption">{{call $.T "public.trend"}}</p><p class="public-widget-footnote">{{call $.T "public.visits_note"}}</p>
+ <p class="public-widget-caption">{{call $.T "public.trend"}}</p>
  {{else}}<p>{{call .T "public.unavailable"}}</p>{{end}}</section>
 </aside>
 {{end}}

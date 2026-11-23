@@ -110,7 +110,9 @@
         if(focused){var target=days.querySelector('[data-date="'+focused+'"]');if(target)target.focus();}
     }
     function syncDates() {
-        document.getElementById('homeSelectedDate').textContent=selected?lt('截至 ','Through ')+selected.replaceAll('-','/'):lt('全部时间 · 最近内容','All time · Recent content');
+        var dateStatus=document.getElementById('homeSelectedDate');
+        dateStatus.textContent=selected?lt('截至 ','Through ')+selected.replaceAll('-','/'):'';
+        dateStatus.parentElement.hidden=!selected;
         document.getElementById('homeClearDate').hidden=!selected;
         renderCalendar();
     }

@@ -21,12 +21,11 @@
   <section class="home-recent" id="homeRecent" aria-labelledby="homeRecentTitle" aria-busy="true">
     <div class="home-recent-heading"><h2 id="homeRecentTitle">{{call .T "home.recent.title"}}</h2><span class="home-date-hint">{{call .T "home.recent.sync"}}</span><button type="button" class="row-action" id="homeRecentClear" hidden aria-label="{{call .T "home.recent.clear"}}" title="{{call .T "home.recent.clear"}}"><i class="fa-solid fa-trash-can" aria-hidden="true"></i></button></div>
     <div id="homeRecentList" aria-live="polite"><div class="skeleton home-skeleton-line" aria-hidden="true"></div><div class="skeleton home-skeleton-line" aria-hidden="true"></div><div class="skeleton home-skeleton-line" aria-hidden="true"></div></div>
-    <p class="home-date-hint">{{call .T "home.recent.hint"}}</p>
   </section>
   <section class="home-content-panel">
   <h2 class="home-content-title">{{call .T "home.content"}}</h2>
   <div class="home-content-controls">
-    <div class="home-date-summary"><span id="homeSelectedDate" role="status"></span><button type="button" class="home-button" id="homeClearDate" hidden>{{call .T "home.all_time"}}</button></div>
+    <div class="home-date-summary" hidden><span id="homeSelectedDate" role="status"></span><button type="button" class="home-button" id="homeClearDate" hidden>{{call .T "home.all_time"}}</button></div>
   <div class="home-toolbar"><div class="main-tabs" role="group" aria-label="{{call .T "home.sort"}}"><button type="button" class="main-tab active" data-home-sort="updated" aria-pressed="true"><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i>{{call .T "home.updated"}}</button><button type="button" class="main-tab" data-home-sort="created" aria-pressed="false"><i class="fa-regular fa-square-plus" aria-hidden="true"></i>{{call .T "home.created"}}</button></div></div>
     <div class="home-limit-row"><label for="homeLimit">{{call .T "home.per_section"}}</label><select class="dialog-input" id="homeLimit"><option value="5">{{call .T "home.limit5"}}</option><option value="10" selected>{{call .T "home.limit10"}}</option><option value="20">{{call .T "home.limit20"}}</option><option value="50">{{call .T "home.limit50"}}</option></select></div>
   </div>

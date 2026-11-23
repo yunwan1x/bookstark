@@ -45,7 +45,8 @@ const fs=require('node:fs'),assert=require('node:assert/strict');
   assert.equal(lastQuery.get('start'),null);assert.equal(lastQuery.get('end'),'');assert.equal(lastQuery.get('limit'),'10');
   assert.equal(await page.locator('.calendar-day.selected').count(),0);
   assert.equal(await page.locator('[data-home-range],#homeRangeForm,#homeHeatmap').count(),0);
-  assert.equal(await page.locator('#homeSelectedDate').textContent(),lang==='zh'?'全部时间 · 最近内容':'All time · Recent content');
+  assert.equal(await page.locator('#homeSelectedDate').textContent(),'');
+  assert.equal(await page.locator('.home-date-summary').isVisible(),false);
   assert(await page.locator('#homeCalendar').isVisible(),'monthly calendar visible on phones too');
   const calendarFooter=await page.locator('.home-calendar-footer').evaluate(footer=>{
     const legend=footer.querySelector('.home-calendar-legend').getBoundingClientRect();
