@@ -14,6 +14,7 @@ h1{font-size:clamp(1.85rem,5vw,2.6rem);margin:.45rem 0 1.4rem;letter-spacing:-.0
 .options{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 section{background:white;border:1px solid #e0e4ed;border-radius:16px;padding:20px;display:flex;flex-direction:column}
 section a:last-child,section form:last-child{margin-top:auto}
+[hidden]{display:none!important}.remember{display:flex;align-items:center;gap:8px;margin-top:18px;font-weight:400}.remember input{width:auto;margin:0}.startup-actions{display:flex;gap:12px}.startup-actions button,.startup-actions a{flex:1}.status{color:#2563eb}.card-button{background:transparent;color:#202834;border:0;text-align:left;padding:0;margin-bottom:12px}.card-button span{display:block;font-size:.9rem;font-weight:400;color:#4b566b;margin-top:6px}
 h2{font-size:1.15rem;margin:0 0 .5rem}p{margin:0 0 1rem;color:#4b566b}
 label{display:block;font-size:.875rem;font-weight:650}
 input{font:inherit;width:100%;padding:9px 11px;border:1px solid #aeb8cb;border-radius:8px;margin:5px 0 12px}
@@ -34,7 +35,14 @@ a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #8394
 <body>
 <main>
 <span class="brand">BookStark</span>
-{{if .FirstLogin}}
+{{if .AutoStart}}
+<section id="startup-panel" class="single">
+<h1 id="startup-title">{{call .T "native.startup.opening"}}</h1>
+<p id="startup-message">{{call .T "native.startup.wait"}}</p>
+<p>{{call .T "native.startup.kept"}}</p>
+<div class="startup-actions"><a class="action secondary" href="/__bookstark/?choose=1">{{call .T "native.startup.switch"}}</a><button id="startup-retry" type="button" hidden>{{call .T "native.startup.retry"}}</button></div>
+</section>
+{{else if .FirstLogin}}
 <h1>{{call .T "native.local.ready"}}</h1>
 <section class="single">
 <p>{{call .T "native.local.login_hint"}}</p>
@@ -47,35 +55,28 @@ a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #8394
 {{else}}
 <h1>{{call .T "native.workspace.title"}}</h1>
 {{if .Error}}<p class="alert" role="alert">{{.Error}}</p>{{end}}
+<p>{{call .T "native.startup.choose_hint"}}</p>
 <div class="options">
 <section>
-<h2>{{call .T "native.remote.title"}}</h2>
-<p>{{call .T "native.remote.hint"}}</p>
-<form method="post" action="/__bookstark/remote">
+<form method="post" action="/__bookstark/local" class="workspace-choice">
+<input type="hidden" name="remember" value="on">
+<button class="card-button" type="submit"><h2>{{call .T "native.local.title"}}</h2><span>{{call .T "native.local.hint"}}</span></button>
+{{if .NeedsSetup}}<p>{{call .T "native.setup.default_hint"}} <code>admin / wy19870714</code></p>{{end}}
+</form>
+</section>
+<section>
+<button class="card-button" id="show-remote" type="button" aria-expanded="false" aria-controls="remote-form"><h2>{{call .T "native.remote.title"}}</h2><span>{{call .T "native.remote.hint"}}</span></button>
+<form method="post" action="/__bookstark/remote" id="remote-form" class="workspace-choice" hidden>
+<input type="hidden" name="remember" value="on">
 <label for="address">{{call .T "native.remote.address"}}</label>
 <input id="address" name="address" type="url" autocomplete="url" value="{{.Remote}}" placeholder="https://bookstark.example.com" required>
 <button type="submit">{{call .T "native.remote.connect"}}</button>
 </form>
 </section>
-<section>
-<h2>{{call .T "native.local.title"}}</h2>
-<p>{{call .T "native.local.hint"}}</p>
-<form method="post" action="/__bookstark/local">
-{{if .NeedsSetup}}
-<p id="passwordHint">{{call .T "native.setup.hint"}}</p>
-<label for="password">{{call .T "native.local.password"}}</label>
-<input id="password" name="password" type="password" autocomplete="new-password" minlength="8" maxlength="72" aria-describedby="passwordHint" required>
-<label for="confirmPassword">{{call .T "native.setup.confirm"}}</label>
-<input id="confirmPassword" name="confirm_password" type="password" autocomplete="new-password" minlength="8" maxlength="72" required>
-<button class="secondary" type="submit">{{call .T "native.setup.create"}}</button>
-{{else}}
-<button class="secondary" type="submit">{{call .T "native.local.open"}}</button>
-{{end}}
-</form>
-</section>
 </div>
+<label class="remember"><input id="remember-workspace" type="checkbox" {{if not .Ask}}checked{{end}}> {{call .T "native.startup.remember"}}</label>
 {{end}}
 </main>
-<script src="/__bookstark/launcher.js" defer></script>
+<script src="/__bookstark/launcher.js" data-error="{{call .T "native.startup.failed"}}" data-detail="{{call .T "native.startup.unreachable"}}" data-loading="{{call .T "native.startup.opening"}}" defer></script>
 </body>
 </html>

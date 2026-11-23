@@ -111,7 +111,6 @@ func TestNativeWorkspaces(t *testing.T) {
 	read(response, err, http.StatusForbidden)
 
 	for _, values := range []url.Values{
-		{},
 		{"password": {"short"}, "confirm_password": {"short"}},
 		{"password": {"Local-Admin-2026!"}, "confirm_password": {"different"}},
 	} {
@@ -121,8 +120,8 @@ func TestNativeWorkspaces(t *testing.T) {
 			t.Fatal("invalid setup initialized a database")
 		}
 	}
-	chosenPassword := "Local-Admin-2026!"
-	response, err = client.PostForm(base+"/__bookstark/local", url.Values{"password": {chosenPassword}, "confirm_password": {chosenPassword}})
+	chosenPassword := defaultLocalAdminPassword
+	response, err = client.PostForm(base+"/__bookstark/local", url.Values{})
 	if data := read(response, err, http.StatusOK); l.initialPassword != chosenPassword || !strings.Contains(data, chosenPassword) || !strings.Contains(data, `id="copyPassword"`) {
 		t.Fatal("first login screen did not supply initial credentials")
 	}

@@ -27,11 +27,15 @@
             <div id="error" class="hidden mb-4 p-3 bg-red-50 text-red-600 text-sm rounded"></div>
             <div class="mb-4">
                 <label for="account" class="block text-sm font-medium mb-1.5">{{call .T "auth.field.account.label"}}</label>
-                <input id="account" type="text" class="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20" placeholder="{{call .T "auth.field.account.placeholder"}}">
+                <input id="account" name="username" autocomplete="username" type="text" class="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20" placeholder="{{call .T "auth.field.account.placeholder"}}">
             </div>
             <div class="mb-5">
                 <label for="password" class="block text-sm font-medium mb-1.5">{{call .T "auth.field.password.label"}}</label>
-                <input id="password" type="password" class="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20" placeholder="{{call .T "auth.field.password.placeholder"}}">
+                <input id="password" name="password" autocomplete="current-password" type="password" class="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20" placeholder="{{call .T "auth.field.password.placeholder"}}">
+            </div>
+            <div id="remember-client-credentials" hidden class="mb-4 text-sm text-slate-500">
+                <label><input id="client-remember-password" type="checkbox" checked> {{call .T "native.login.remember"}}</label>
+                <p id="client-login-status" role="status" aria-live="polite"></p>
             </div>
             <button onclick="doLogin()" class="w-full bg-blue-600 text-white py-2.5 rounded-md text-sm font-medium hover:bg-blue-700">{{call .T "auth.login.submit"}}</button>
             <div class="text-center mt-4 text-sm text-slate-500">
@@ -63,6 +67,15 @@
                 if (window.BookStarkPWA && window.BookStarkPWA.clearPageCache) {
                     await window.BookStarkPWA.clearPageCache().catch(function() {});
                 }
+                if (window.BookStarkClient && await window.BookStarkClient.ready) {
+                    try {
+                        if (document.getElementById('client-remember-password').checked) await window.BookStarkClient.saveCredentials(account,password);
+                        else await window.BookStarkClient.clearCredentials();
+                    } catch (_) {
+                        document.getElementById('client-login-status').textContent = window.__('native.login.save_failed');
+                        await new Promise(resolve => setTimeout(resolve,1800));
+                    }
+                }
                 window.location.href = {{jsonJS .LoginReturn}};
             } else {
                 errEl.textContent = data.message || window.__('auth.login.error.default');
@@ -80,6 +93,8 @@
 window.__I18N_MESSAGES = {{.JSBundle}};
 window.__currentLang = "{{.Lang}}";
 </script>
+<script src="/static/js/native-compat.js?v={{assetVer "/static/js/native-compat.js"}}"></script>
+<script src="/static/js/client-workspace.js?v={{assetVer "/static/js/client-workspace.js"}}" defer></script>
 <script src="/static/js/sw-register.js?v={{assetVer "/static/js/sw-register.js"}}"></script>
 </body>
 </html>

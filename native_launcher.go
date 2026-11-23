@@ -3,12 +3,9 @@
 package main
 
 import (
-	"crypto/hmac"
 	"crypto/rand"
-	"crypto/sha256"
 	"crypto/subtle"
 	_ "embed"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"html/template"
@@ -27,7 +24,6 @@ import (
 
 	"bookstark/conf"
 	"bookstark/i18n"
-	"bookstark/models"
 	"bookstark/routers"
 )
 
@@ -54,8 +50,11 @@ var launcherJS string
 var launcherPage = template.Must(template.New("launcher").Parse(launcherHTML))
 
 type launcher struct {
+	bridgeTokens     map[string]string
 	addr, token, dir string
 	mu               sync.Mutex
+	settingsMu       sync.Mutex
+	credentialMu     sync.Mutex
 	backend          http.Handler
 	startError       error
 	initialPassword  string
@@ -65,6 +64,8 @@ type launcherPageData struct {
 	Remote     string
 	Error      string
 	FirstLogin string
+	AutoStart  bool
+	Ask        bool
 	NeedsSetup bool
 	Lang       string
 	T          func(string) string
@@ -117,7 +118,7 @@ func (l *launcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		})
 		// Commit a loopback document before using the Strict cookie. Android
 		// reaches this page from its separate Wails asset origin.
-		l.render(w, r, http.StatusOK, launcherPageData{})
+		l.render(w, r, http.StatusOK, launcherPageData{AutoStart: r.URL.Query().Get("choose") != "1"})
 		return
 	}
 	// Extensions do not share the WebView cookie. Only the Linkding API may
@@ -136,6 +137,10 @@ func (l *launcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	switch {
+	case r.URL.Path == "/__bookstark/resume" && r.Method == http.MethodPost:
+		l.resumeWorkspace(w, r)
+	case r.URL.Path == "/__bookstark/client" && r.Method == http.MethodPost:
+		l.serveClient(w, r)
 	case r.URL.Path == "/__bookstark/launcher.js" && r.Method == http.MethodGet:
 		w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
 		w.Header().Set("Cache-Control", "no-store")
@@ -157,6 +162,15 @@ func (l *launcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			l.render(w, r, http.StatusInternalServerError, launcherPageData{Error: "无法保存服务器地址。"})
 			return
 		}
+		if err := probeWorkspace(address); err != nil {
+			l.render(w, r, http.StatusServiceUnavailable, launcherPageData{Error: "native.startup.unreachable", Remote: address})
+			return
+		}
+		ask := r.PostForm.Get("remember") == "off"
+		if err := l.rememberWorkspace("remote", address, &ask); err != nil {
+			l.render(w, r, 500, launcherPageData{Error: "native.startup.save_error"})
+			return
+		}
 		w.Header().Set("Cache-Control", "no-store")
 		http.Redirect(w, r, address, http.StatusSeeOther)
 	case r.URL.Path == "/__bookstark/local" && r.Method == http.MethodPost:
@@ -173,6 +187,11 @@ func (l *launcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 			log.Printf("start local workspace: %v", err)
 			l.render(w, r, http.StatusInternalServerError, launcherPageData{Error: "本地工作区启动失败。请检查磁盘空间和文件权限后重新打开应用。"})
+			return
+		}
+		ask := r.PostForm.Get("remember") == "off"
+		if err := l.rememberWorkspace("local", "", &ask); err != nil {
+			l.render(w, r, 500, launcherPageData{Error: "native.startup.save_error"})
 			return
 		}
 		if password != "" {
@@ -213,6 +232,13 @@ func (l *launcher) render(w http.ResponseWriter, r *http.Request, status int, da
 		data.Error = data.T("native.setup.check_failed")
 	}
 	data.NeedsSetup = needsSetup
+	p, prefsErr := l.preferences()
+	if prefsErr != nil {
+		data.AutoStart = false
+		data.Error = data.T("native.startup.save_error")
+	}
+	data.Ask = p.Ask
+	data.AutoStart = data.AutoStart && !p.Ask && p.Last != "" && data.Error == ""
 
 	if data.Remote == "" {
 		previous, err := os.ReadFile(filepath.Join(l.dir, "remote-url"))
@@ -222,7 +248,7 @@ func (l *launcher) render(w http.ResponseWriter, r *http.Request, status int, da
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
-	w.Header().Set("Content-Security-Policy", "default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; form-action 'self' http: https:; frame-ancestors 'none'")
+	w.Header().Set("Content-Security-Policy", "default-src 'none'; connect-src 'self'; script-src 'self'; style-src 'unsafe-inline'; form-action 'self' http: https:; frame-ancestors 'none'")
 	w.WriteHeader(status)
 	if err := launcherPage.Execute(w, data); err != nil {
 		log.Printf("render BookStark launcher: %v", err)
@@ -284,12 +310,16 @@ func validateLocalPassword(password, confirmation string) error {
 func (l *launcher) startLocal(password, confirmation string) (string, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	if l.backend == nil && l.startError == nil {
+	if l.backend == nil {
+		l.startError = nil
 		needsSetup, err := l.needsLocalSetup()
 		if err != nil {
 			return "", err
 		}
 		if needsSetup {
+			if password == "" && confirmation == "" {
+				password, confirmation = defaultLocalAdminPassword, defaultLocalAdminPassword
+			}
 			if err := validateLocalPassword(password, confirmation); err != nil {
 				return "", err
 			}
@@ -297,13 +327,17 @@ func (l *launcher) startLocal(password, confirmation string) (string, error) {
 			password = ""
 		}
 		l.startError = l.openLocal(password)
+		if l.startError == nil && needsSetup {
+			if _, err := l.credential("http://"+l.addr, &savedCredential{Account: "admin", Password: password}, false); err != nil {
+				return "", err
+			}
+			return password, nil
+		}
 	}
 	if l.startError != nil {
 		return "", l.startError
 	}
-	if admin, err := models.GetMemberByAccount("admin"); err == nil && admin.VerifyPassword(l.initialPassword) {
-		return l.initialPassword, nil
-	}
+
 	return "", nil
 }
 
@@ -324,9 +358,7 @@ func (l *launcher) openLocal(password string) error {
 	if err != nil {
 		return err
 	}
-	passwordMAC := hmac.New(sha256.New, []byte(secret))
-	passwordMAC.Write([]byte("BookStark initial local admin password"))
-	l.initialPassword = base64.RawURLEncoding.EncodeToString(passwordMAC.Sum(nil)[:12])
+	l.initialPassword = defaultLocalAdminPassword
 	if password != "" {
 		l.initialPassword = password
 	}

@@ -51,7 +51,7 @@ def configure_host(root, abi, debug=False):
                 if (request.getUrl().getHost() != null &&''')
     replace_once(java, '        webView = findViewById(R.id.webview);',
                  '''        webView = findViewById(R.id.webview);
-        findViewById(R.id.switch_workspace).setOnClickListener(view -> bookstarkHost.navigate(this::loadApplication));
+        findViewById(R.id.switch_workspace).setOnClickListener(view -> bookstarkHost.chooseWorkspace());
         findViewById(R.id.native_back).setOnClickListener(view -> bookstarkHost.navigate(() -> { if (webView.canGoBack()) webView.goBack(); }));
         findViewById(R.id.native_forward).setOnClickListener(view -> bookstarkHost.navigate(() -> { if (webView.canGoForward()) webView.goForward(); }));''')
     replace_once(java, 'public class MainActivity extends AppCompatActivity {',
@@ -74,7 +74,16 @@ def configure_host(root, abi, debug=False):
                 else finish();
             });
         } else super.onBackPressed();''')
+    replace_once(java, '        webView.setWebViewClient(new WebViewClient() {',
+                 '''        webView.setWebViewClient(new WebViewClient() {
+            @Override public void onPageStarted(WebView view, String url, android.graphics.Bitmap icon) {
+                super.onPageStarted(view, url, icon);
+                bookstarkHost.trackWorkspace(url);
+            }''')
+    replace_once(java, '                super.onPageFinished(view, url);',
+                 '                super.onPageFinished(view, url);\n                bookstarkHost.trackWorkspace(url);')
     replace_once(java, '        super.onPause();', '''        super.onPause();
+        android.webkit.CookieManager.getInstance().flush();
         if (webView != null) webView.evaluateJavascript("window.dispatchEvent(new Event('bookstark:background'))", null);''')
     replace_once(java, '        super.onDestroy();', '''        super.onDestroy();
         if (bookstarkHost != null) bookstarkHost.destroy();''')

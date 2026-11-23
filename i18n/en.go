@@ -1,6 +1,19 @@
 package i18n
 
 var enMessages = map[string]string{
+	"native.startup.opening":         "Opening your last workspace",
+	"native.startup.wait":            "Connecting, please wait…",
+	"native.startup.kept":            "Your workspace selection is retained.",
+	"native.startup.switch":          "Switch workspace",
+	"native.startup.retry":           "Retry",
+	"native.startup.failed":          "Could not open your last workspace",
+	"native.startup.unreachable":     "The workspace is unavailable. Check your network or local file permissions and retry.",
+	"native.startup.save_error":      "Could not save startup preferences. Check file permissions and retry.",
+	"native.startup.choose_hint":     "Choose where to keep and use your data.",
+	"native.startup.remember":        "Continue last workspace next time",
+	"native.setup.default_hint":      "New workspaces use the default admin account. You can change the password after signing in.",
+	"native.login.remember":          "Remember account and password for autofill",
+	"native.login.save_failed":       "Signed in, but credentials could not be saved. Check client storage permissions.",
 	"native.workspace.title":         "Choose a workspace",
 	"native.local.ready":             "Local workspace is ready",
 	"native.local.login_hint":        "Sign in with these local administrator credentials. You can change your password in account security.",

@@ -32,6 +32,7 @@ type nativeTransfer struct {
 }
 type nativeCapabilities struct {
 	app          *application.App
+	workspace    *launcher
 	mu           sync.Mutex
 	transfers    map[string]*nativeTransfer
 	closeTokens  map[uint]string

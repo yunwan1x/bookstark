@@ -111,7 +111,7 @@
     return '<!doctype html>' + clone.outerHTML;
   }
   async function printDocument(doc) { return saveBlob(new Blob([printable(doc)], {type: 'text/html'}), doc.title || 'BookStark', 'print'); }
-  window.BookStarkHost = {get available() { return enabled; }, get isLeaving() { return leaveApproved; }, request, navigate, saveBlob, downloadURL: (url, name) => downloadURL(url,name).catch(fail), printDocument};
+  window.BookStarkHost = {ready, get available() { return enabled; }, get isLeaving() { return leaveApproved; }, request, navigate, saveBlob, downloadURL: (url, name) => downloadURL(url,name).catch(fail), printDocument};
   function activate() {
   const docs = new WeakSet();
   function connect(doc) {

@@ -4,48 +4,81 @@ const assert=require('node:assert/strict');
  const browser=await chromium.launch({args:['--no-sandbox']});
  try {
   const context=await browser.newContext({locale:'en-US',permissions:['clipboard-read','clipboard-write'],viewport:{width:390,height:844}});
+  // Exercise the native client API against the real isolated launcher and vault.
+  // This only substitutes the WebView message transport, not saved data or auth.
+  await context.addInitScript(()=>{
+   const copy=navigator.clipboard?.writeText.bind(navigator.clipboard);
+   window.BookStarkNative={request(payload){
+    const {id,action,args}=JSON.parse(payload);
+    (async()=>{
+     try{
+      let result;
+      if(action==='client'){
+       const response=await fetch('/__bookstark/client',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(args)});
+       if(!response.ok)throw new Error('client request '+response.status+' '+await response.text());result=await response.json();
+      }else if(action==='clipboard-write'){await copy(args.text);result=true;}
+      else throw new Error('Unsupported action '+action);
+      window.BookStarkHostReply(id,result,null);
+     }catch(error){window.BookStarkHostReply(id,null,error.message);}
+    })();
+   }};
+  });
+  await context.addCookies([{name:'lang',value:'en',url:new URL(process.env.NATIVE_START_URL).origin}]);
   const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+  const origin=new URL(process.env.NATIVE_START_URL).origin;
   await page.goto(process.env.NATIVE_START_URL);
   assert.equal(await page.locator('html').getAttribute('lang'),'en');
-  await page.getByRole('button',{name:'Create local workspace',exact:true}).waitFor();
-  assert.equal(await page.locator('#password').getAttribute('autocomplete'),'new-password');
-  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
-  const password='Chosen-Admin-2026!';
-  await page.locator('#password').fill(password);await page.locator('#confirmPassword').fill('Not-The-Same!');
-  await page.getByRole('button',{name:'Create local workspace',exact:true}).click();
-  await page.getByRole('alert').filter({hasText:'The passwords do not match.'}).waitFor();
-  assert.equal(await page.locator('#password').inputValue(),'');
-  await page.locator('#password').fill(password);await page.locator('#confirmPassword').fill(password);
-  await page.getByRole('button',{name:'Create local workspace',exact:true}).click();
-  await page.locator('#copyPassword').waitFor();assert.equal(await page.locator('#passwordValue').textContent(),password);
-  await page.locator('#copyPassword').click();await page.getByRole('status').filter({hasText:'Password copied'}).waitFor();
-  assert.equal(await page.evaluate(()=>navigator.clipboard.readText()),password);
-  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
-  if(process.env.NATIVE_SCREENSHOT)await page.screenshot({path:process.env.NATIVE_SCREENSHOT});
-  await page.evaluate(()=>{Object.defineProperty(navigator,'clipboard',{configurable:true,value:undefined});document.execCommand=()=>false;});
-  await page.locator('#copyPassword').click();await page.getByRole('status').filter({hasText:'copy it manually'}).waitFor();
-  await context.addCookies([{name:'lang',value:'zh',url:new URL(process.env.NATIVE_START_URL).origin}]);
-  await page.goto(process.env.NATIVE_START_URL);await page.getByRole('button',{name:'打开本地工作区',exact:true}).waitFor();
   assert.equal(await page.locator('#password').count(),0);
-  await page.getByRole('button',{name:'打开本地工作区',exact:true}).click();
-  await page.getByRole('button',{name:'复制密码',exact:true}).waitFor();
-  const origin=new URL(process.env.NATIVE_START_URL).origin;
-  const login=await context.request.post(origin+'/api/login',{data:{account:'admin',password}});
-  assert.equal(login.status(),200);
+  assert.equal(await page.locator('#remember-workspace').isChecked(),true);
+  await page.getByRole('button',{name:'Local workspace',exact:false}).click();
+  await page.locator('#copyPassword').waitFor();
+  assert.equal(await page.locator('#passwordValue').textContent(),'wy19870714');
+  await page.locator('#copyPassword').click();await page.getByRole('status').filter({hasText:'Password copied'}).waitFor();
+  assert.equal(await page.evaluate(()=>navigator.clipboard.readText()),'wy19870714');
+  await page.getByRole('link',{name:'Open sign-in page',exact:true}).click();
+  await page.waitForFunction(()=>document.getElementById('password')?.value==='wy19870714');
+  assert.equal(await page.locator('#account').inputValue(),'admin');
+  assert.equal(await page.locator('#client-remember-password').isChecked(),true);
+  await page.locator('button[onclick="doLogin()"]').click();
+  await page.waitForURL(url=>url.pathname!='/login');
+  await page.goto(origin+'/profile?tab=workspace');
+  await page.locator('#panel-workspace').waitFor({state:'visible'});
+  assert.equal(await page.locator('input[name="client-startup"][value="continue"]').isChecked(),true);
+  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  await page.locator('input[value="ask"]').check();await page.locator('#client-save-workspace').click();
+  await page.waitForFunction(()=>document.getElementById('client-workspace-status').textContent);
+  assert.equal(await page.locator('#client-workspace-status').textContent(),'Saved. Applies at next startup.');
+  await page.goto(process.env.NATIVE_START_URL);
+  await page.locator('#remember-workspace').waitFor();assert.equal(await page.locator('#remember-workspace').isChecked(),false);
+  await page.locator('#remember-workspace').check();
+  await page.getByRole('button',{name:'Local workspace',exact:false}).click();
+  await page.waitForURL(url=>!url.pathname.startsWith('/__bookstark/'));
+  await page.goto(process.env.NATIVE_START_URL);
+  await page.waitForURL(url=>!url.pathname.startsWith('/__bookstark/'));
+  // Discard the login cookie to confirm stored credentials refill the login form.
+  await context.clearCookies({name:'token'});await page.goto(origin+'/login');
+  await page.waitForFunction(()=>document.getElementById('password')?.value==='wy19870714');
+  assert.equal(await page.locator('#account').inputValue(),'admin');
+  await page.locator('button[onclick="doLogin()"]').click();await page.waitForURL(url=>url.pathname!='/login');
+  await context.addCookies([{name:'lang',value:'zh',url:origin}]);
+  await page.goto(origin+'/profile?tab=workspace');await page.locator('#panel-workspace').waitFor({state:'visible'});
+  await page.getByText('启动方式',{exact:true}).waitFor();
+  await page.locator('#client-forget-credentials').click();
+  await page.getByText('已清除记住的账号密码，当前登录不受影响。',{exact:true}).waitFor();
+  await context.clearCookies({name:'token'});await page.goto(origin+'/login');
+  await page.waitForFunction(()=>!document.getElementById('remember-client-credentials').hidden);
+  assert.equal(await page.locator('#password').inputValue(),'');assert.equal(await page.locator('#account').inputValue(),'');
+  const login=await context.request.post(origin+'/api/login',{data:{account:'admin',password:'wy19870714'}});assert.equal(login.status(),200);
   await page.goto(origin+'/profile?tab=api');
   const address=page.locator('#bookmark-extension-url');
   await address.waitFor({state:'visible'});assert.equal(await address.inputValue(),origin);
-  assert.equal(await address.getAttribute('readonly'),'');
-  await page.getByRole('button',{name:'复制',exact:true}).click();
-  assert.equal(await page.evaluate(()=>navigator.clipboard.readText()),origin);
-  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  await page.getByRole('button',{name:'复制',exact:true}).click();assert.equal(await page.evaluate(()=>navigator.clipboard.readText()),origin);
   await page.evaluate(()=>{window.BookStarkCopyText=async()=>{throw new Error('denied')};});
-  await page.getByRole('button',{name:'复制',exact:true}).click();
-  await page.getByText('复制失败，请选中地址手动复制。',{exact:true}).waitFor();
-  await context.addCookies([{name:'lang',value:'en',url:origin}]);
-  await page.setViewportSize({width:1280,height:850});await page.reload();
-  assert.equal(await address.inputValue(),origin);
-  await page.getByText('Browser extension server address (Base URL)',{exact:true}).waitFor();
+  await page.getByRole('button',{name:'复制',exact:true}).click();await page.getByText('复制失败，请选中地址手动复制。',{exact:true}).waitFor();
+  await page.setViewportSize({width:1280,height:900});
+  await page.evaluate(()=>BookStarkTheme.set('hud-light'));
+  assert.equal(await page.evaluate(()=>getComputedStyle(document.querySelector('body>header'),'::after').content),'none');
+  if(process.env.NATIVE_SCREENSHOT){await page.goto(origin+'/profile?tab=workspace');await page.locator('#panel-workspace').waitFor({state:'visible'});await page.screenshot({path:process.env.NATIVE_SCREENSHOT});}
   // Optional upstream extension smoke test, using a real extension origin and
   // its configuration UI in a separate profile without any workspace cookies.
   if(process.env.BOOKSTARK_TEST_EXTENSION) {
@@ -79,6 +112,7 @@ const assert=require('node:assert/strict');
     console.log('PASS: real Linkding extension connection, save, search, delete without native cookies');
    }finally{await extContext.close()}
   }
-  assert.deepEqual(errors,[]);console.log('PASS: en/zh setup, mismatch, custom password, real clipboard copy, fallback feedback, existing workspace, mobile layout, plugin Base URL, copy and failure feedback');
+  assert.deepEqual(errors,[]);
+  console.log('PASS: default password, first launch, saved startup setting, auto resume, credential autofill and forget, en/zh settings, mobile layout, plugin URL copy, HUD header label removed');
  }finally{await browser.close()}
 })().catch(e=>{console.error(e);process.exit(1)});

@@ -40,6 +40,7 @@ func nativeInstanceID(dir string) string {
 }
 
 func configureNativeApplication(options *application.Options, dir string, restorer *nativeWindowRestorer) {
+	options.Windows.WebviewUserDataPath = filepath.Join(dir, "webview")
 	options.SingleInstance = &application.SingleInstanceOptions{
 		UniqueID:               nativeInstanceID(dir),
 		OnSecondInstanceLaunch: func(application.SecondInstanceData) { restorer.activate() },
@@ -61,7 +62,7 @@ func configureNativeWindow(app *application.App, launcher *launcher, capabilitie
 	})
 	connection.Add("切换工作区").OnClick(func(_ *application.Context) {
 		if window := app.Window.Current(); window != nil {
-			window.ExecJS("window.BookStarkHost ? BookStarkHost.navigate(function(){location.href=" + strconv.Quote(launcher.startURL()) + "}) : location.assign(" + strconv.Quote(launcher.startURL()) + ")")
+			window.ExecJS("window.BookStarkHost ? BookStarkHost.navigate(function(){location.href=" + strconv.Quote(launcher.startURL()+"?choose=1") + "}) : location.assign(" + strconv.Quote(launcher.startURL()+"?choose=1") + ")")
 		}
 	})
 	app.Menu.Set(menu)
@@ -83,7 +84,7 @@ func configureNativeWindow(app *application.App, launcher *launcher, capabilitie
 					w.ExecJS("window.BookStarkHost ? BookStarkHost.navigate(function(){history.forward()}) : history.forward()")
 				},
 				"Ctrl+Shift+L": func(window application.Window) {
-					window.ExecJS("window.BookStarkHost ? BookStarkHost.navigate(function(){location.href=" + strconv.Quote(launcher.startURL()) + "}) : location.assign(" + strconv.Quote(launcher.startURL()) + ")")
+					window.ExecJS("window.BookStarkHost ? BookStarkHost.navigate(function(){location.href=" + strconv.Quote(launcher.startURL()+"?choose=1") + "}) : location.assign(" + strconv.Quote(launcher.startURL()+"?choose=1") + ")")
 				},
 			},
 		})

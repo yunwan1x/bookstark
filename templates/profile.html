@@ -16,6 +16,8 @@
     .tab-btn:not(.active):hover { color: var(--color-gray-500); background: var(--color-gray-100); }
     .profile-tabs { overflow-x: auto; scrollbar-width: thin; }
     .profile-tabs .tab-btn { min-width: max-content; white-space: nowrap; }
+    .client-startup-option:has(input:checked) { border-color:var(--color-primary); background:var(--color-primary-light, #eff6ff); }
+    .client-startup-option input { accent-color:var(--color-primary); }
     .profile-section { padding-top: 18px; margin-top: 18px; border-top: 1px solid var(--color-border); }
     .profile-section-title { font-size: 15px; font-weight: 600; color: var(--color-text); margin-bottom: 14px; }
     [data-theme="dark"] .profile-panel { background: var(--color-bg-card, #1e293b) !important; border: 1px solid var(--color-border, #334155); }
@@ -253,12 +255,13 @@
     {{template "footer" .}}
     <script>
     async function saveProfile(btn){BookStarkErrors.clearField('profile-error');try{const r=await csrfFetch('/api/profile',{method:'PUT',lockKey:'profile:save',lockControl:btn,headers:{'Content-Type':'application/json'},body:JSON.stringify({email:document.getElementById('email').value.trim(),default_home:document.getElementById('default-home').value})});if(r.ok)BSDialog.alert2(window.__('profile.save.success'));else{const d=await r.json();BookStarkErrors.field('profile-error', d, window.__('profile.save.error'));}}catch(err){BookStarkErrors.field('profile-error', err, window.__('profile.save.error'));}}
-    async function changePassword(btn){BookStarkErrors.clearField('pwd-error');const o=document.getElementById('old_password').value,n=document.getElementById('new_password').value,c=document.getElementById('confirm_password').value;if(n!==c){BookStarkErrors.field('pwd-error', window.__('profile.pwd.mismatch'));return;}try{const r=await csrfFetch('/api/password',{method:'PUT',lockKey:'profile:password',lockControl:btn,headers:{'Content-Type':'application/json'},body:JSON.stringify({old_password:o,new_password:n})});if(r.ok){BSDialog.alert2(window.__('profile.pwd.success'));document.getElementById('old_password').value='';document.getElementById('new_password').value='';document.getElementById('confirm_password').value='';}else{const d=await r.json();BookStarkErrors.field('pwd-error', d, window.__('profile.pwd.error'));}}catch(err){BookStarkErrors.field('pwd-error', err, window.__('profile.pwd.error'));}}
+    async function changePassword(btn){BookStarkErrors.clearField('pwd-error');const o=document.getElementById('old_password').value,n=document.getElementById('new_password').value,c=document.getElementById('confirm_password').value;if(n!==c){BookStarkErrors.field('pwd-error', window.__('profile.pwd.mismatch'));return;}try{const r=await csrfFetch('/api/password',{method:'PUT',lockKey:'profile:password',lockControl:btn,headers:{'Content-Type':'application/json'},body:JSON.stringify({old_password:o,new_password:n})});if(r.ok){if(window.BookStarkClient && await window.BookStarkClient.ready){try{await window.BookStarkClient.updateCredentials(document.getElementById('account-display').textContent.trim(),n);}catch(_){BSDialog.toast(window.__('native.login.save_failed'),'error');}}BSDialog.alert2(window.__('profile.pwd.success'));document.getElementById('old_password').value='';document.getElementById('new_password').value='';document.getElementById('confirm_password').value='';}else{const d=await r.json();BookStarkErrors.field('pwd-error', d, window.__('profile.pwd.error'));}}catch(err){BookStarkErrors.field('pwd-error', err, window.__('profile.pwd.error'));}}
 
     const isAdmin = {{if .IsAdmin}}true{{else}}false{{end}};
     function profileTabList() {
       const tabs = ['profile', 'reminders', 'pwa', 'api'];
       if (isAdmin) tabs.push('friend-links');
+      if (document.getElementById('tab-workspace')) tabs.push('workspace');
       return tabs;
     }
     function switchProfileLanguage(lang) {

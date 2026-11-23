@@ -29,6 +29,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -50,6 +52,8 @@ public final class BookStarkLinkBridge {
     private String navigationToken;
     private Runnable navigation;
     private WebView printView;
+    private String workspaceOrigin;
+    private String workspaceStartURL;
 
     private static class Transfer {
         File file;
@@ -63,6 +67,52 @@ public final class BookStarkLinkBridge {
     public BookStarkLinkBridge(Activity activity, WebView webView) {
         this.activity = activity;
         this.webView = webView;
+    }
+    public void trackWorkspace(String address) {
+        try {
+            URI uri=new URI(address);
+            if ("http".equals(uri.getScheme()) && "127.0.0.1".equals(uri.getHost()) && uri.getPath().startsWith("/__bookstark/open/")) {
+                workspaceOrigin="http://"+uri.getAuthority();
+                workspaceStartURL=workspaceOrigin+uri.getPath()+"?choose=1";
+            }
+        } catch(Exception ignored) {}
+    }
+    public void chooseWorkspace() {
+        if (workspaceStartURL != null) navigate(() -> webView.loadUrl(workspaceStartURL));
+    }
+    private static String originOf(String address) throws Exception {
+        URI uri=new URI(address);
+        if (!("http".equals(uri.getScheme()) || "https".equals(uri.getScheme())) || uri.getHost()==null) throw new Exception("Invalid workspace");
+        return uri.getScheme()+"://"+uri.getAuthority();
+    }
+    private void clientRequest(String id, JSONObject args) throws Exception {
+        final String expected=originOf(webView.getUrl());
+        if (workspaceOrigin==null || !expected.equals(args.optString("origin"))) throw new Exception("Untrusted workspace");
+        final String endpoint=workspaceOrigin+"/__bookstark/client";
+        final String cookies=CookieManager.getInstance().getCookie(workspaceOrigin);
+        final byte[] body=args.toString().getBytes(StandardCharsets.UTF_8);
+        new Thread(() -> {
+            Object result=null;String error=null;
+            HttpURLConnection connection=null;
+            try {
+                connection=(HttpURLConnection)new URL(endpoint).openConnection();
+                connection.setConnectTimeout(5000);connection.setReadTimeout(5000);
+                connection.setRequestMethod("POST");connection.setDoOutput(true);
+                connection.setRequestProperty("Content-Type","application/json");
+                if(cookies!=null)connection.setRequestProperty("Cookie",cookies);
+                try(OutputStream out=connection.getOutputStream()){out.write(body);}
+                if(connection.getResponseCode()!=200)throw new Exception("Client settings request failed");
+                java.io.ByteArrayOutputStream buffer=new java.io.ByteArrayOutputStream();
+                try(java.io.InputStream input=connection.getInputStream()) {
+                    byte[] chunk=new byte[4096];int size;
+                    while((size=input.read(chunk))!=-1){if(buffer.size()+size>16384)throw new Exception("Client response too large");buffer.write(chunk,0,size);}
+                }
+                byte[] bytes=buffer.toByteArray();
+                result=new org.json.JSONTokener(new String(bytes,StandardCharsets.UTF_8)).nextValue();
+            }catch(Exception e){error="Client settings request failed";}finally{if(connection!=null)connection.disconnect();}
+            final Object value=result;final String failure=error;
+            activity.runOnUiThread(() -> {try{if(expected.equals(originOf(webView.getUrl()))) { if(failure==null && "switch".equals(args.optString("operation"))) chooseWorkspace(); else reply(id,value,failure); }}catch(Exception ignored){}});
+        }).start();
     }
     private String text(String zh, String en) { return Locale.getDefault().getLanguage().equals("zh") ? zh : en; }
     static boolean isWebAddress(String address) {
@@ -82,7 +132,7 @@ public final class BookStarkLinkBridge {
     }
     private void reply(String id, Object value, String error) {
         String script = "window.BookStarkHostReply && window.BookStarkHostReply(" + JSONObject.quote(id) + "," +
-            (value == null ? "null" : value instanceof String ? JSONObject.quote((String) value) : String.valueOf(value)) + "," + (error == null ? "null" : JSONObject.quote(error)) + ")";
+            (value == null || value == JSONObject.NULL ? "null" : value instanceof String ? JSONObject.quote((String) value) : String.valueOf(value)) + "," + (error == null ? "null" : JSONObject.quote(error)) + ")";
         activity.runOnUiThread(() -> webView.evaluateJavascript(script, null));
     }
     @JavascriptInterface public void request(String json) {
@@ -97,6 +147,7 @@ public final class BookStarkLinkBridge {
                 JSONObject args = request.optJSONObject("args");
                 if (args == null) args = new JSONObject();
                 switch (action) {
+                    case "client": clientRequest(id,args); break;
                     case "clipboard-write":
                         ((ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE))
                             .setPrimaryClip(ClipData.newPlainText("BookStark", args.getString("text")));

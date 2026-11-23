@@ -175,10 +175,6 @@ html:is([data-theme-style="hud"][data-theme="dark"],[data-theme-style="hud-light
 html:is([data-theme-style="hud"][data-theme="dark"],[data-theme-style="hud-light"][data-theme="light"]) .tv-search input { border:0!important; background:transparent!important; }
 html:is([data-theme-style="hud"][data-theme="dark"],[data-theme-style="hud-light"][data-theme="light"]) :where(.compose-card .cm-editor,.compose-card textarea) { border:1px solid var(--color-border)!important; }
 html:is([data-theme-style="hud"][data-theme="dark"],[data-theme-style="hud-light"][data-theme="light"]) .home-new-icon { background:var(--hud-selected)!important; color:var(--color-primary)!important; border:1px solid var(--color-primary); border-image:var(--hud-active) 12 / 8px / 0 stretch; border-radius:0!important; box-shadow:none!important; }
-@media(min-width:1024px) {
- html:is([data-theme-style="hud"][data-theme="dark"],[data-theme-style="hud-light"][data-theme="light"]) body>header::after { content:"////  01 / CYAN HUD"; color:var(--color-primary); margin-left:var(--spacing-xl); font-size:12px; white-space:nowrap; font-weight:700; }
- html[lang="zh"]:is([data-theme-style="hud"][data-theme="dark"],[data-theme-style="hud-light"][data-theme="light"]) body>header::after { content:"////  01 / 青蓝航空 HUD"; }
-}
 @media(max-width:640px) {
  html:is([data-theme-style="hud"][data-theme="dark"],[data-theme-style="hud-light"][data-theme="light"]) #bm-list .bm-row-title { font-size:14px; }
  html:is([data-theme-style="hud"][data-theme="dark"],[data-theme-style="hud-light"][data-theme="light"]) #bm-list .bm-row-content { padding:var(--spacing-sm) var(--spacing-md); }
@@ -195,13 +191,8 @@ html:is([data-theme-style="hud"][data-theme="dark"],[data-theme-style="hud-light
 }
 html:is([data-theme-style="hud"][data-theme="dark"],[data-theme-style="hud-light"][data-theme="light"]) .nav-link { white-space:nowrap; }
 html:is([data-theme-style="hud"][data-theme="dark"],[data-theme-style="hud-light"][data-theme="light"]) .calendar-legend { flex-wrap:wrap; gap:var(--spacing-sm); }
-@media(min-width:1024px) {
- html:is([data-theme-style="hud"][data-theme="dark"],[data-theme-style="hud-light"][data-theme="light"]) body>header::after { flex:0 1 auto; min-width:0; overflow:hidden; }
- html:is([data-theme-style="hud"][data-theme="dark"],[data-theme-style="hud-light"][data-theme="light"]) body>header.search-expanded::after { display:none; }
-}
 @media(max-width:1024px) {
  html:is([data-theme-style="hud"][data-theme="dark"],[data-theme-style="hud-light"][data-theme="light"]) body>header { font-size:14px; }
- html:is([data-theme-style="hud"][data-theme="dark"],[data-theme-style="hud-light"][data-theme="light"]) body>header::after { display:none; }
 }
 html:is([data-theme-style="hud"][data-theme="dark"],[data-theme-style="hud-light"][data-theme="light"]) .calendar-card>.calendar-legend { display:flex; flex-wrap:wrap; justify-content:space-between; }
 html:is([data-theme-style="hud"][data-theme="dark"],[data-theme-style="hud-light"][data-theme="light"]) .calendar-type-legend { flex-wrap:wrap; }
@@ -265,10 +256,6 @@ html[data-theme-style="hud-light"][data-theme="light"] {
   --radius-sm:2px; --radius-md:3px; --radius-lg:3px; --radius-xl:3px;
   --surface-radius:3px; --surface-border:var(--color-border); --surface-shadow-hover:var(--hud-glow);
   --chart-fill-start:#00a9bd33; --chart-fill-end:#00a9bd03;
-}
-@media(min-width:1024px) {
-  html[data-theme-style="hud-light"][data-theme="light"] body>header::after { content:"////  01 / GLACIER CYAN HUD"; }
-  html[lang="zh"][data-theme-style="hud-light"][data-theme="light"] body>header::after { content:"////  01 / 冰川青蓝 HUD"; }
 }
 html[data-theme-style="hud-light"][data-theme="light"] #user-menu-trigger > .bg-blue-600 {
   background:var(--color-gray-200)!important; border:0!important; border-image:none!important; border-radius:50%!important;

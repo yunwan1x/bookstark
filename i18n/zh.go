@@ -1,6 +1,19 @@
 package i18n
 
 var zhMessages = map[string]string{
+	"native.startup.opening":         "正在打开上次工作区",
+	"native.startup.wait":            "正在连接，请稍候…",
+	"native.startup.kept":            "你的工作区选择已保留。",
+	"native.startup.switch":          "切换工作区",
+	"native.startup.retry":           "重试",
+	"native.startup.failed":          "无法打开上次工作区",
+	"native.startup.unreachable":     "工作区暂时无法访问，请检查网络或本地文件权限后重试。",
+	"native.startup.save_error":      "无法保存启动设置，请检查文件权限后重试。",
+	"native.startup.choose_hint":     "选择数据保存和使用的位置。",
+	"native.startup.remember":        "以后继续上次工作区",
+	"native.setup.default_hint":      "首次创建使用默认管理员账号，登录后可修改密码。",
+	"native.login.remember":          "记住账号和密码，下次自动填充",
+	"native.login.save_failed":       "登录成功，但无法记住账号密码，请检查客户端存储权限。",
 	"native.workspace.title":         "选择工作区",
 	"native.local.ready":             "本地工作区已就绪",
 	"native.local.login_hint":        "使用以下本地管理员凭据登录。登录后可以在账户安全中修改密码。",

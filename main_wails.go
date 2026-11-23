@@ -62,7 +62,10 @@ func runNativeWithOptions(override func(*application.Options)) error {
 		Name:        "BookStark",
 		Description: "BookStark local and remote workspaces",
 		Assets:      application.AssetOptions{Handler: nativeAssetHandler(launcher)},
-		RawMessageHandler: func(window application.Window, message string, _ *application.OriginInfo) {
+		RawMessageHandler: func(window application.Window, message string, origin *application.OriginInfo) {
+			if capabilities.handleClient(window, message, origin) {
+				return
+			}
 			capabilities.handle(window, message)
 			if address, ok := nativeExternalURL(message); ok {
 				if err := openNativeExternalURL(app, address); err != nil {
@@ -91,6 +94,7 @@ func runNativeWithOptions(override func(*application.Options)) error {
 		}
 	}
 	capabilities.app = app
+	capabilities.workspace = launcher
 	configureNativeWindow(app, launcher, capabilities, restorer)
 	return app.Run()
 }
