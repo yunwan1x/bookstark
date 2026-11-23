@@ -18,6 +18,9 @@
   };
   window.BookStarkClient = {
     ready: infoPromise.then(Boolean),
+    marketSettings: () => client('market-settings'),
+    saveMarketSettings: args => client('market-settings-save',args),
+    openTools: () => host.navigate(()=>client('tools-open')),
     saveCredentials: (account, password) => client('credentials-save', {account, password}),
     clearCredentials: () => client('credentials-clear'),
     updateCredentials: async (account,password) => {const saved=await client('credentials-load');if(saved && saved.account===account)await client('credentials-save',{account,password});}
@@ -25,6 +28,7 @@
   async function init() {
     const info = await infoPromise;
     if (!info) return;
+    document.addEventListener('click',event=>{const link=event.target.closest('a[href]');if(!link)return;const u=new URL(link.href,location.href);if(u.origin===location.origin&&u.pathname==='/market'&&!info.local){event.preventDefault();event.stopImmediatePropagation();window.BookStarkClient.openTools();}},true);
     const account = document.getElementById('account'), password = document.getElementById('password');
     if (account && password) {
       document.getElementById('remember-client-credentials')?.removeAttribute('hidden');

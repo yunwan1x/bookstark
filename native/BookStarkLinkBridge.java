@@ -111,7 +111,7 @@ public final class BookStarkLinkBridge {
                 result=new org.json.JSONTokener(new String(bytes,StandardCharsets.UTF_8)).nextValue();
             }catch(Exception e){error="Client settings request failed";}finally{if(connection!=null)connection.disconnect();}
             final Object value=result;final String failure=error;
-            activity.runOnUiThread(() -> {try{if(expected.equals(originOf(webView.getUrl()))) { if(failure==null && "switch".equals(args.optString("operation"))) chooseWorkspace(); else reply(id,value,failure); }}catch(Exception ignored){}});
+            activity.runOnUiThread(() -> {try{if(expected.equals(originOf(webView.getUrl()))) { if(failure==null && "switch".equals(args.optString("operation"))) chooseWorkspace(); else if(failure==null && "tools-open".equals(args.optString("operation"))) navigate(() -> webView.loadUrl(workspaceStartURL.replace("?choose=1","?tools=1"))); else reply(id,value,failure); }}catch(Exception ignored){}});
         }).start();
     }
     private String text(String zh, String en) { return Locale.getDefault().getLanguage().equals("zh") ? zh : en; }

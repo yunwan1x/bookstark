@@ -109,6 +109,7 @@ func InstallMarketTool(router http.Handler) gin.HandlerFunc {
 			return
 		}
 		var req struct {
+			Hash     string `json:"hash"`
 			Revision string `json:"revision"`
 			Expected string `json:"expected"`
 			Instance string `json:"instance"`
@@ -126,10 +127,14 @@ func InstallMarketTool(router http.Handler) gin.HandlerFunc {
 			fetch = fetchToolURL
 		}
 		if err != nil {
-			c.Status(404)
+			if id < 0 {
+				remoteMarketError(c, err)
+			} else {
+				c.Status(404)
+			}
 			return
 		}
-		if req.Revision != pkg.Revision {
+		if req.Revision != pkg.Revision || (req.Hash != "" && req.Hash != pkg.Hash) {
 			toolAPIError(c, models.ErrToolConflict)
 			return
 		}
@@ -140,12 +145,24 @@ func InstallMarketTool(router http.Handler) gin.HandlerFunc {
 		}
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Minute)
 		defer cancel()
-		content, resources, err := toolpackage.Build(ctx, pkg.Content, base, fetch)
+		if id > 0 && !mayInstallTool(c, pkg.ToolMetadata) {
+			return
+		}
+		if id > 0 {
+			if err := loadPublishedToolPackage(&pkg); err != nil {
+				c.Status(404)
+				return
+			}
+		}
+		content, resources := pkg.Content, pkg.Resources
+		if !pkg.Frozen {
+			content, resources, err = toolpackage.Build(ctx, pkg.Content, base, fetch)
+		}
 		if err != nil {
 			c.JSON(422, gin.H{"error": "resource_download_failed"})
 			return
 		}
-		t := models.InstalledTool{ID: id, Title: pkg.Title, Description: pkg.Description, Author: pkg.Author, Source: source, Revision: pkg.Revision, Content: content, Resources: resources}
+		t := models.InstalledTool{ToolMetadata: pkg.ToolMetadata, ID: id, Title: pkg.Title, Description: pkg.Description, Author: pkg.Author, Source: source, Revision: pkg.Revision, Content: content, Resources: resources}
 		if err = models.SaveInstalledTool(member, t, req.Expected, req.Instance); err != nil {
 			toolAPIError(c, err)
 			return
@@ -159,6 +176,7 @@ func DeleteToolInstall(c *gin.Context) {
 		return
 	}
 	var req struct {
+		KeepData bool   `json:"keep_data"`
 		Revision string `json:"revision"`
 		Instance string `json:"instance"`
 	}
@@ -167,7 +185,7 @@ func DeleteToolInstall(c *gin.Context) {
 		c.Status(400)
 		return
 	}
-	if err := models.DeleteInstalledTool(member, id, req.Revision, req.Instance); err != nil {
+	if err := models.DeleteInstalledTool(member, id, req.Revision, req.Instance, req.KeepData); err != nil {
 		toolAPIError(c, err)
 		return
 	}

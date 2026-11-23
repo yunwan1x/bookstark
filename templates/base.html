@@ -23,6 +23,7 @@
 <script {{if eq .Nav "home"}}defer{{end}} src="/static/js/utils.js?v={{assetVer "/static/js/utils.js"}}"></script>
 <script src="/static/js/native-compat.js?v={{assetVer "/static/js/native-compat.js"}}"></script>
 <script src="/static/js/client-workspace.js?v={{assetVer "/static/js/client-workspace.js"}}" defer></script>
+<script src="/static/js/tool-market-background.js?v={{assetVer "/static/js/tool-market-background.js"}}" defer></script>
 <script {{if eq .Nav "home"}}defer{{end}} src="/static/js/theme.js?v={{assetVer "/static/js/theme.js"}}"></script>
 <script {{if eq .Nav "home"}}defer{{end}} src="/static/js/tab-url.js?v={{assetVer "/static/js/tab-url.js"}}"></script>
 <style>
@@ -232,6 +233,7 @@ button:active:not(:disabled), .page-btn:active:not(:disabled) {
         <div id="user-menu-dropdown" class="hidden absolute right-0 top-full pt-1 z-50" role="menu">
             <div style="background:var(--color-bg-card);border:1px solid var(--color-border);border-radius:var(--radius-lg);box-shadow:0 4px 12px rgba(0,0,0,0.15)" class="py-1 w-32">
                 <a href="/home" class="header-menu-item" role="menuitem"><i class="fa-solid fa-house menu-icon"></i>{{call .T "home.title"}}</a>
+                {{if .IsAdmin}}<a href="/admin/tool-market" class="header-menu-item" role="menuitem"><i class="fa-solid fa-store menu-icon"></i>{{call .T "market.title"}}</a>{{end}}
                 {{if .IsAdmin}}<a href="/admin/system" class="header-menu-item" role="menuitem"><i class="fa-solid fa-gear menu-icon"></i>{{call .T "user.menu.system"}}</a>{{end}}
                 {{if .IsAdmin}}<a href="/admin/dashboard" class="header-menu-item" role="menuitem"><i class="fa-solid fa-chart-line menu-icon"></i>{{call .T "user.menu.dashboard"}}</a>{{end}}
                 <a href="/profile" class="header-menu-item" role="menuitem"><i class="fa-solid fa-id-card menu-icon"></i>{{call .T "user.menu.profile"}}</a>

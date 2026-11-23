@@ -16,8 +16,8 @@ import (
 )
 
 const Prefix = "__BOOKSTARK_TOOL_ASSETS__/"
-const MaxBytes = 100 << 20
-const MaxFile = 20 << 20
+const MaxBytes = 256 << 20
+const MaxFile = 64 << 20
 const MaxFiles = 256
 
 type Asset struct {

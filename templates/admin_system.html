@@ -236,7 +236,8 @@
             <div class="mx-auto" style="width:100%;max-width:var(--admin-content-width,960px);">
 
                 <!-- Tabs -->
-                <div role="tablist" class="admin-tabs flex bg-slate-100 rounded-t-lg p-1 gap-1">
+                <a href="/admin/tool-market" class="bs-btn bs-btn-cancel" style="margin-bottom:12px">{{call .T "market.title"}}</a>
+<div role="tablist" class="admin-tabs flex bg-slate-100 rounded-t-lg p-1 gap-1">
                     <button role="tab" aria-selected="true" aria-controls="panel-members" id="tab-members" onclick="switchTab('members')" class="tab-btn active flex-1">
                         <i class="fa-solid fa-users-gear" style="margin-right:4px"></i>{{call .T "admin.tab.members"}}
                     </button>

@@ -92,7 +92,7 @@ func (r *rateLimiter) reset(key string) {
 
 func LoginPage(c *gin.Context) {
 	loginReturn := "/"
-	if next, err := url.Parse(c.Query("next")); err == nil && next.Scheme == "" && next.Host == "" && !strings.ContainsAny(next.Path, "\\\r\n") && (next.Path == "/shares" || strings.HasPrefix(next.Path, "/shares/")) {
+	if next, err := url.Parse(c.Query("next")); err == nil && next.Scheme == "" && next.Host == "" && !strings.ContainsAny(next.Path, "\\\r\n") && (next.Path == "/shares" || strings.HasPrefix(next.Path, "/shares/") || next.Path == "/market" || strings.HasPrefix(next.Path, "/market/")) {
 		loginReturn = next.String()
 	}
 	lang := middleware.GetLang(c)

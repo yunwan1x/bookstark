@@ -65,6 +65,7 @@ type launcherPageData struct {
 	Error      string
 	FirstLogin string
 	AutoStart  bool
+	Tools      bool
 	Ask        bool
 	NeedsSetup bool
 	Lang       string
@@ -118,7 +119,7 @@ func (l *launcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		})
 		// Commit a loopback document before using the Strict cookie. Android
 		// reaches this page from its separate Wails asset origin.
-		l.render(w, r, http.StatusOK, launcherPageData{AutoStart: r.URL.Query().Get("choose") != "1"})
+		l.render(w, r, http.StatusOK, launcherPageData{AutoStart: r.URL.Query().Get("choose") != "1", Tools: r.URL.Query().Get("tools") == "1"})
 		return
 	}
 	// Extensions do not share the WebView cookie. Only the Linkding API may
@@ -137,6 +138,13 @@ func (l *launcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	switch {
+	case r.URL.Path == "/__bookstark/tools" && r.Method == http.MethodPost:
+		if _, err := l.startLocal("", ""); err != nil {
+			http.Error(w, "local tools unavailable", 503)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{"url":"/market"}`))
 	case r.URL.Path == "/__bookstark/resume" && r.Method == http.MethodPost:
 		l.resumeWorkspace(w, r)
 	case r.URL.Path == "/__bookstark/client" && r.Method == http.MethodPost:
@@ -238,7 +246,7 @@ func (l *launcher) render(w http.ResponseWriter, r *http.Request, status int, da
 		data.Error = data.T("native.startup.save_error")
 	}
 	data.Ask = p.Ask
-	data.AutoStart = data.AutoStart && !p.Ask && p.Last != "" && data.Error == ""
+	data.AutoStart = (data.Tools || (data.AutoStart && !p.Ask && p.Last != "")) && data.Error == ""
 
 	if data.Remote == "" {
 		previous, err := os.ReadFile(filepath.Join(l.dir, "remote-url"))

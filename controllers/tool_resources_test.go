@@ -93,20 +93,20 @@ func TestToolDownloadedResourcesSurviveSourceRemoval(t *testing.T) {
 			t.Fatal("nested CSS not rewritten")
 		}
 	}
-	// Missing resources abort an update and keep the previous working code/files.
-	revision2 := publish()
-	w = adminAssetRequest(router, token, "PUT", base, map[string]any{"revision": revision2, "expected": meta.Revision, "instance": meta.Instance})
-	if w.Code != 422 {
-		t.Fatalf("failed download accepted %d", w.Code)
+	// Dependency failure aborts publication, keeping the installed and published versions intact.
+	failed := adminAssetRequest(router, token, "POST", "/api/blogs/"+id+"/tool", nil)
+	if failed.Code != 422 {
+		t.Fatalf("missing dependencies published: %d", failed.Code)
 	}
 	same, _ := models.GetInstalledTool(1, b.BlogID)
 	if same.Revision != revision {
-		t.Fatal("failed update replaced installation")
+		t.Fatal("failed publication changed installed version")
 	}
 	// Restore sources, update, and confirm obsolete asset URLs are gone.
 	put("image.svg", "image/svg+xml", `<svg xmlns="http://www.w3.org/2000/svg"><title>v2</title></svg>`)
 	put("theme.css", "text/css", `body{background:url('./image.svg')}`)
 	put("app.js", "text/javascript", `window.loadedFromLocal=2;`)
+	revision2 := publish()
 	w = adminAssetRequest(router, token, "PUT", base, map[string]any{"revision": revision2, "expected": meta.Revision, "instance": meta.Instance})
 	if w.Code != 200 {
 		t.Fatal(w.Body.String())

@@ -25,6 +25,7 @@ func toolLock(member, id int64) *sync.Mutex {
 }
 
 type InstalledTool struct {
+	ToolMetadata
 	ID          int64               `json:"id"`
 	Title       string              `json:"title"`
 	Description string              `json:"description"`
@@ -52,7 +53,7 @@ func initToolTables() error {
 			return err
 		}
 	}
-	return nil
+	return initToolMarketTables()
 }
 
 const installedToolColumns = "tool_id,title,description,author,source,revision,instance,pinned,used,installed,assets"
@@ -76,10 +77,19 @@ func ListInstalledTools(member int64) ([]InstalledTool, error) {
 		}
 		result = append(result, *t)
 	}
-	return result, rows.Err()
+	err = rows.Err()
+	rows.Close()
+	for i := range result {
+		result[i].ToolMetadata = ReadToolMetadata(member, result[i].ID)
+	}
+	return result, err
 }
 func GetInstalledTool(member, id int64) (*InstalledTool, error) {
-	return scanInstalledTool(DB.QueryRow("SELECT "+installedToolColumns+" FROM md_tool_installs WHERE member_id=? AND tool_id=?", member, id))
+	t, err := scanInstalledTool(DB.QueryRow("SELECT "+installedToolColumns+" FROM md_tool_installs WHERE member_id=? AND tool_id=?", member, id))
+	if err == nil {
+		t.ToolMetadata = ReadToolMetadata(member, id)
+	}
+	return t, err
 }
 func GetInstalledToolContent(member, id int64) (string, error) {
 	var raw string
@@ -129,6 +139,13 @@ func SaveInstalledTool(member int64, t InstalledTool, expected, instance string)
 		}
 		t.Instance = old.Instance
 	}
+	t.DataRoot = ""
+	retainedValues := "{}"
+	if old != nil && old.Instance != "" {
+		t.DataRoot = old.DataRoot
+	} else {
+		_ = DB.QueryRow("SELECT root,values_json FROM md_tool_retained WHERE member_id=? AND tool_id=?", member, t.ID).Scan(&t.DataRoot, &retainedValues)
+	}
 	epoch, err := toolNonce()
 	if err != nil {
 		return err
@@ -164,7 +181,7 @@ func SaveInstalledTool(member int64, t InstalledTool, expected, instance string)
 	}
 	defer tx.Rollback()
 	if old == nil || old.Instance == "" {
-		_, err = tx.Exec(`INSERT INTO md_tool_installs(member_id,tool_id,title,description,author,source,revision,instance,content,assets,installed) VALUES(?,?,?,?,?,?,?,?,?,?,?)`, member, t.ID, t.Title, t.Description, t.Author, t.Source, t.Revision, t.Instance, encoded, t.Assets, time.Now().UnixMilli())
+		_, err = tx.Exec(`INSERT INTO md_tool_installs(member_id,tool_id,title,description,author,source,revision,instance,content,assets,installed,values_json) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)`, member, t.ID, t.Title, t.Description, t.Author, t.Source, t.Revision, t.Instance, encoded, t.Assets, time.Now().UnixMilli(), retainedValues)
 	} else {
 		if _, err = tx.Exec(`INSERT OR IGNORE INTO md_tool_cleanup(member_id,tool_id,path) VALUES(?,?,?)`, member, t.ID, old.Assets); err != nil {
 			return err
@@ -172,6 +189,12 @@ func SaveInstalledTool(member int64, t InstalledTool, expected, instance string)
 		_, err = tx.Exec(`UPDATE md_tool_installs SET title=?,description=?,author=?,source=?,revision=?,content=?,assets=? WHERE member_id=? AND tool_id=?`, t.Title, t.Description, t.Author, t.Source, t.Revision, encoded, t.Assets, member, t.ID)
 	}
 	if err != nil {
+		return err
+	}
+	if _, err = tx.Exec("DELETE FROM md_tool_retained WHERE member_id=? AND tool_id=?", member, t.ID); err != nil {
+		return err
+	}
+	if err = SaveToolMetadata(tx, member, t.ID, t.ToolMetadata); err != nil {
 		return err
 	}
 	if _, err = tx.Exec("DELETE FROM md_tool_cleanup WHERE member_id=? AND path=?", member, t.Assets); err != nil {
@@ -184,10 +207,11 @@ func SaveInstalledTool(member int64, t InstalledTool, expected, instance string)
 	return ToolCleanupError(cleanupToolResources(member, t.ID))
 }
 
-func DeleteInstalledTool(member, id int64, revision, instance string) error {
+func DeleteInstalledTool(member, id int64, revision, instance string, keep ...bool) error {
 	lock := toolLock(member, id)
 	lock.Lock()
 	defer lock.Unlock()
+	metadata := ReadToolMetadata(member, id)
 	tx, err := DB.Begin()
 	if err != nil {
 		return err
@@ -203,9 +227,32 @@ func DeleteInstalledTool(member, id int64, revision, instance string) error {
 	if old.Revision != revision || old.Instance != instance {
 		return ErrToolConflict
 	}
-	if _, err = tx.Exec(`INSERT OR IGNORE INTO md_tool_cleanup(member_id,tool_id,path) VALUES(?,?,?)`, member, id, toolRoot(instance)); err != nil {
+	root := toolRoot(instance)
+	dataRoot := metadata.DataRoot
+	if dataRoot == "" {
+		dataRoot = root + "/data"
+	}
+	if len(keep) > 0 && keep[0] {
+		var values string
+		if err = tx.QueryRow("SELECT values_json FROM md_tool_installs WHERE member_id=? AND tool_id=?", member, id).Scan(&values); err != nil {
+			return err
+		}
+		if _, err = tx.Exec(`INSERT INTO md_tool_retained(member_id,tool_id,root,values_json) VALUES(?,?,?,?) ON CONFLICT(member_id,tool_id) DO UPDATE SET root=excluded.root,values_json=excluded.values_json`, member, id, dataRoot, values); err != nil {
+			return err
+		}
+		root = old.Assets
+	} else if metadata.DataRoot != "" {
+		if _, err = tx.Exec(`INSERT OR IGNORE INTO md_tool_cleanup(member_id,tool_id,path) VALUES(?,?,?)`, member, id, metadata.DataRoot); err != nil {
+			return err
+		}
+	}
+	if _, err = tx.Exec(`INSERT OR IGNORE INTO md_tool_cleanup(member_id,tool_id,path) VALUES(?,?,?)`, member, id, root); err != nil {
 		return err
 	}
+	if _, err = tx.Exec("DELETE FROM md_tool_install_metadata WHERE member_id=? AND tool_id=?", member, id); err != nil {
+		return err
+	}
+
 	if _, err = tx.Exec(`DELETE FROM md_tool_installs WHERE member_id=? AND tool_id=?`, member, id); err != nil {
 		return err
 	}
@@ -356,6 +403,9 @@ func ToolResourcePath(t *InstalledTool, area, name string) (string, error) {
 	root := t.Assets
 	if area == "data" {
 		root = toolRoot(t.Instance) + "/data"
+		if t.DataRoot != "" {
+			root = t.DataRoot
+		}
 	}
 	return root + "/" + strings.TrimPrefix(normalized, "/"), nil
 }
@@ -410,6 +460,7 @@ func GetInstalledToolRuntime(member, id int64) (*InstalledTool, error) {
 	if err != nil {
 		return nil, err
 	}
+	t.ToolMetadata = ReadToolMetadata(member, id)
 	err = json.Unmarshal([]byte(values), &t.Values)
 	return &t, err
 }

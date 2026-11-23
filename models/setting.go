@@ -22,6 +22,13 @@ var defaultSettings = map[string]struct {
 	Value       string
 	Description string
 }{
+	"tool_market_enabled":         {"1", "工具市场开关"},
+	"tool_market_name":            {"BookStark 工具市场", "工具市场名称"},
+	"tool_market_public_url":      {"", "工具市场对外地址"},
+	"tool_market_login_required":  {"1", "安装工具需要登录市场"},
+	"tool_market_members_publish": {"1", "允许成员发布工具"},
+	"tool_market_review_required": {"1", "成员发布需要审核"},
+
 	"page_size_books":                          {"12", "书籍页分页大小"},
 	"page_size_blogs":                          {"12", "博客页分页大小"},
 	"page_size_shares":                         {"12", "分享页分页大小"},

@@ -36,7 +36,7 @@ a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #8394
 <main>
 <span class="brand">BookStark</span>
 {{if .AutoStart}}
-<section id="startup-panel" class="single">
+<section id="startup-panel" data-tools="{{if .Tools}}1{{end}}" class="single">
 <h1 id="startup-title">{{call .T "native.startup.opening"}}</h1>
 <p id="startup-message">{{call .T "native.startup.wait"}}</p>
 <p>{{call .T "native.startup.kept"}}</p>

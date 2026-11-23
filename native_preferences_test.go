@@ -126,6 +126,41 @@ func TestCredentialVaultDetectsTampering(t *testing.T) {
 	}
 }
 
+func TestNativeMarketPreferencesRetainedAcrossWorkspaceChanges(t *testing.T) {
+	l := &launcher{dir: t.TempDir(), addr: "127.0.0.1:12345"}
+	if err := l.rememberWorkspace("remote", "https://workspace.example", nil); err != nil {
+		t.Fatal(err)
+	}
+	origin := "http://" + l.addr
+	info, err := l.clientAction(clientRequest{Origin: origin, Operation: "info"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	token := info.(map[string]any)["bridgeToken"].(string)
+	if _, err := l.clientAction(clientRequest{Origin: origin, BridgeToken: token, Operation: "market-settings-save", MarketURL: "https://tools.example/market", CheckUpdates: false, AutoUpdate: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := l.rememberWorkspace("local", "", nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := l.rememberWorkspace("remote", "https://other-workspace.example", nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := l.clientAction(clientRequest{Origin: origin, BridgeToken: token, Operation: "tools-open"}); err != nil {
+		t.Fatal(err)
+	}
+	reopened := &launcher{dir: l.dir, addr: l.addr}
+	p, err := reopened.preferences()
+	if err != nil || p.ToolMarketURL != "https://tools.example/market" || p.ToolCheckUpdates == nil || *p.ToolCheckUpdates || !p.ToolAutoUpdate || p.Last != "remote" || p.Remote != "https://other-workspace.example" {
+		t.Fatalf("opening tools or changing workspace lost saved preferences: %+v %v", p, err)
+	}
+	for _, operation := range []string{"market-settings", "market-settings-save", "tools-open"} {
+		if _, err := l.clientAction(clientRequest{Origin: origin, Operation: operation}); err == nil {
+			t.Fatalf("%s bypassed main-document handshake", operation)
+		}
+	}
+}
+
 func TestNativeRemoteResumeBrowser(t *testing.T) {
 	if os.Getenv("BOOKSTARK_BROWSER_TEST") != "1" {
 		t.Skip("set BOOKSTARK_BROWSER_TEST=1")

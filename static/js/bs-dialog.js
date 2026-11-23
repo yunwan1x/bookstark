@@ -178,3 +178,19 @@ var BSDialog = (function() {
 
   return { confirm2: confirm2, prompt2: prompt2, alert2: alert2, toast: toast };
 })();
+
+// Rich forms share a native modal so focus trapping, Escape and focus restoration
+// also work on small screens and in the native client webview.
+function createBSDialog(title, content, closeLabel) {
+  var dialog = document.createElement('dialog');
+  var titleID = 'bs-form-title-' + Date.now();
+  dialog.className = 'bs-form-dialog';
+  dialog.setAttribute('aria-labelledby', titleID);
+  dialog.innerHTML = '<div class="bs-form-dialog-head"><h2 id="' + titleID + '">' + escHtml(title) + '</h2><button type="button" aria-label="' + escAttr(closeLabel || 'Close') + '">✕</button></div>' + content;
+  dialog.querySelector('button').onclick = function() { dialog.close(); };
+  dialog.addEventListener('close', function() { dialog.remove(); }, {once: true});
+  document.body.appendChild(dialog);
+  if (window.BookStarkFormGuards) BookStarkFormGuards.apply(dialog);
+  dialog.showModal();
+  return dialog;
+}

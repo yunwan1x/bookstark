@@ -11,7 +11,7 @@ function worker(options={}) {
 }
 test('market catalog and packages never fall back to cached publications',()=>{
  const handler=worker({caches:{match:()=>{throw Error('must not read stale packages');}}});
- for(const path of ['/api/blogs/12/tool','/api/tool-assets/instance/epoch/image.png','/api/tool-sources/1','/api/tool-market','/api/tool-market/12','/api/tool-installs','/api/tool-installs/12?part=data']){
+ for(const path of ['/market/index.json','/market/packages/revision','/market/login','/__bookstark/open/capability','/api/blogs/12/tool','/api/tool-assets/instance/epoch/image.png','/api/tool-sources/1','/api/tool-market','/api/tool-market/12','/api/tool-installs','/api/tool-installs/12?part=data']){
   let intercepted=false;
   handler({request:new Request('https://books.test'+path),respondWith:()=>{intercepted=true;}});
   assert.equal(intercepted,false,path);

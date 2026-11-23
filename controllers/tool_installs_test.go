@@ -14,6 +14,7 @@ import (
 
 func TestToolInstallDatabaseLifecycle(t *testing.T) {
 	router, token := initAssetControllerTest(t)
+	models.BatchUpdateSettings(map[string]string{"tool_market_login_required": "0"})
 	davPath := filepath.Join(t.TempDir(), "files.db")
 	if err := models.InitWebDAVDB(davPath); err != nil {
 		t.Fatal(err)

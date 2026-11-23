@@ -14,9 +14,12 @@ import (
 const defaultLocalAdminPassword = "wy19870714"
 
 type workspacePreferences struct {
-	Ask    bool   `json:"ask"`
-	Last   string `json:"last"`
-	Remote string `json:"remote"`
+	ToolMarketURL    string `json:"tool_market_url,omitempty"`
+	ToolCheckUpdates *bool  `json:"tool_check_updates,omitempty"`
+	ToolAutoUpdate   bool   `json:"tool_auto_update,omitempty"`
+	Ask              bool   `json:"ask"`
+	Last             string `json:"last"`
+	Remote           string `json:"remote"`
 }
 
 func (l *launcher) preferences() (workspacePreferences, error) {

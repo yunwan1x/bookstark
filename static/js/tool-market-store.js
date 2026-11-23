@@ -18,8 +18,8 @@
   }
   async function list(){if(!authenticated)return [];return (await request('')).tools;}
   async function get(name,id){try{return await request('/'+id+(name==='packages'?'?part=package':name==='data'?'?part=data':''));}catch(error){if(error.message==='not_found')return undefined;throw error;}}
-  async function install(pkg,expected,instance){await request('/'+pkg.id,'PUT',{revision:pkg.revision,expected:expected||'',instance:instance||''});announce();}
-  async function remove(id,revision,instance){await request('/'+id,'DELETE',{revision,instance});announce();}
+  async function install(pkg,expected,instance){await request('/'+pkg.id,'PUT',{revision:pkg.revision,hash:pkg.hash||'',expected:expected||'',instance:instance||''});announce();}
+  async function remove(id,revision,instance,keep_data=false){await request('/'+id,'DELETE',{revision,instance,keep_data});announce();}
   async function patch(id,values){await request('/'+id,'PATCH',values);announce();}
   async function writeData(id,revision,instance,op,key,value){await request('/'+id+'/data','POST',{revision,instance,op,key,value});}
   async function file(id,revision,instance,method,name,content){

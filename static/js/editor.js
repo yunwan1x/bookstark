@@ -2195,16 +2195,9 @@
   }
   window.publishEditorTool=async function(){
     const button=document.getElementById('publish-tool-btn');if(!button||button.disabled)return;
-    if(!await BSDialog.confirm2(__('market.publish_help')))return;
     button.disabled=true;
-    try {
-      if(htmlEditor)currentMarkdown=htmlEditor.getMarkdown();
-      if(!saveMgr)throw Error('failed');await saveMgr.manualSave();
-      const response=await fetchWithCurrentCSRF('/api/blogs/'+blogId+'/tool',{method:'POST'});
-      if(!response.ok){const data=await response.json().catch(()=>({}));throw Error(data.error||'failed');}
-      await refreshToolPublication();BookStarkEditor.toast(__('market.published'),'success');
-    }catch(error){BookStarkEditor.toast(__(error.message==='publish_requires_public_html'?'market.publish_requires_public_html':'market.failed'),'error');}
-    finally{button.disabled=false;}
+    try{if(htmlEditor)currentMarkdown=htmlEditor.getMarkdown();if(!saveMgr)throw Error('failed');await saveMgr.manualSave();location.assign('/market/publish/'+blogId);}
+    catch(error){BookStarkEditor.toast(__('market.failed'),'error');button.disabled=false;}
   };
   window.unpublishEditorTool=async function(){
     if(!await BSDialog.confirm2(__('market.unpublish')))return;

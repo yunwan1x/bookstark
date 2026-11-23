@@ -160,6 +160,23 @@ button.is-submitting {
 }
 
 /* --- Row Action --- */
+.bs-form-dialog {
+    width: min(620px, calc(100% - 32px));
+    max-height: 90dvh;
+    overflow: auto;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin: auto;
+    background: var(--color-bg-card);
+    color: var(--color-text);
+}
+.bs-form-dialog::backdrop { background: color-mix(in srgb, var(--color-text) 40%, transparent); }
+.bs-form-dialog-head { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+.bs-form-dialog-head h2 { font-size: 20px; font-weight: 600; }
+.bs-form-dialog-head button { padding: 0 8px; }
+@media (max-width: 640px) { .bs-form-dialog { padding: 16px; } }
+
 .row-action {
     background: none;
     border: none;

@@ -18,7 +18,7 @@
     retry.disabled = true; retry.hidden = true;
     document.getElementById('startup-title').textContent = script.dataset.loading;
     try {
-      var response = await fetch('/__bookstark/resume', {method:'POST'});
+      var response = await fetch(document.getElementById('startup-panel').dataset.tools==='1'?'/__bookstark/tools':'/__bookstark/resume', {method:'POST'});
       var data = await response.json();
       if (!response.ok || !data.url) throw new Error('resume failed');
       location.replace(data.url);

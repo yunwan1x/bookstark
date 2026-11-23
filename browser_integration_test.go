@@ -6,6 +6,9 @@ import (
 	"bookstark/routers"
 	"bookstark/services"
 	"bookstark/services/worldtv"
+	"bytes"
+	"compress/gzip"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -196,6 +199,52 @@ func TestWorldTVBrowser(t *testing.T) {
 
 func TestToolMarketBrowser(t *testing.T) {
 	runIsolatedBrowser(t, "tool_market_browser_test.cjs", func(t *testing.T) {
+		// A separate marketplace authenticates independently of the local workspace.
+		var packageBytes bytes.Buffer
+		zipped := gzip.NewWriter(&packageBytes)
+		_ = json.NewEncoder(zipped).Encode(map[string]any{"version": "1.0.0", "permissions": map[string]bool{}, "access": "login", "title": "远端工具", "description": "市场账号独立验证", "content": "<h1>Remote tool installed</h1>", "assets": []any{}})
+		_ = zipped.Close()
+		revision := strings.Repeat("a", 64)
+		tool := map[string]any{"id": 777, "title": "远端工具", "description": "市场账号独立验证", "author": "Remote author", "revision": revision, "version": "1.0.0", "category": "document", "size": packageBytes.Len(), "hash": fmt.Sprintf("%x", sha256.Sum256(packageBytes.Bytes())), "offline": true, "access": "login", "frozen": true, "source": "remote-fixture", "permissions": map[string]bool{}}
+		remote := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			switch r.URL.Path {
+			case "/market/index.json":
+				json.NewEncoder(w).Encode(map[string]any{"protocol": 1, "name": "远端工具市场", "login_required": true})
+			case "/api/tool-market":
+				json.NewEncoder(w).Encode(map[string]any{"tools": []any{tool}})
+			case "/market/login":
+				var credentials struct {
+					Account  string `json:"account"`
+					Password string `json:"password"`
+				}
+				json.NewDecoder(r.Body).Decode(&credentials)
+				if credentials.Account != "remote-user" || credentials.Password != "remote-password" {
+					w.WriteHeader(401)
+					json.NewEncoder(w).Encode(map[string]string{"error": "market_login_failed"})
+					return
+				}
+				json.NewEncoder(w).Encode(map[string]string{"token": "fixture-remote-market-session", "account": "remote-user"})
+			case "/api/tool-market/777":
+				if r.Header.Get("Authorization") != "Market fixture-remote-market-session" {
+					w.WriteHeader(401)
+					json.NewEncoder(w).Encode(map[string]string{"error": "market_login_required"})
+					return
+				}
+				json.NewEncoder(w).Encode(tool)
+			case "/market/packages/" + revision:
+				if r.Header.Get("Authorization") != "Market fixture-remote-market-session" {
+					w.WriteHeader(401)
+					return
+				}
+				w.Header().Set("Content-Type", "application/gzip")
+				w.Write(packageBytes.Bytes())
+			default:
+				w.WriteHeader(404)
+			}
+		}))
+		t.Cleanup(remote.Close)
+		t.Setenv("BOOKSTARK_MARKET_REMOTE_URL", remote.URL)
 		if err := models.InitWebDAVDB(filepath.Join(t.TempDir(), "tool-files.db")); err != nil {
 			t.Fatal(err)
 		}
@@ -222,13 +271,11 @@ func TestToolMarketBrowser(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			b := &models.Blog{BlogTitle: title, BlogIdentify: fmt.Sprintf("market-browser-%d", i), MemberID: 1, BlogType: "article", EditorType: "html", Visibility: 1, BlogContent: raw, BlogDesc: "HTML 工具"}
+			b := &models.Blog{BlogTitle: title, BlogIdentify: fmt.Sprintf("market-browser-%d", i), MemberID: 1, BlogType: "article", EditorType: "html", Visibility: 0, BlogContent: raw, BlogDesc: "HTML 工具"}
 			if err := b.Insert(); err != nil {
 				t.Fatal(err)
 			}
-			if _, err := models.DB.Exec("INSERT INTO md_tool_releases(blog_id,title,description,content,revision) VALUES(?,?,?,?,?)", b.BlogID, b.BlogTitle, b.BlogDesc, b.BlogContent, fmt.Sprintf("fixture-%d", i)); err != nil {
-				t.Fatal(err)
-			}
+
 		}
 	})
 }

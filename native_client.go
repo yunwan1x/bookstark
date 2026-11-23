@@ -7,15 +7,20 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/url"
+	"strings"
 )
 
 type clientRequest struct {
-	BridgeToken string `json:"bridgeToken"`
-	Operation   string `json:"operation"`
-	Origin      string `json:"origin"`
-	Ask         bool   `json:"ask"`
-	Account     string `json:"account"`
-	Password    string `json:"password"`
+	MarketURL    string `json:"market_url"`
+	CheckUpdates bool   `json:"check_updates"`
+	AutoUpdate   bool   `json:"auto_update"`
+	BridgeToken  string `json:"bridgeToken"`
+	Operation    string `json:"operation"`
+	Origin       string `json:"origin"`
+	Ask          bool   `json:"ask"`
+	Account      string `json:"account"`
+	Password     string `json:"password"`
 }
 
 func (l *launcher) clientAction(request clientRequest) (any, error) {
@@ -38,6 +43,34 @@ func (l *launcher) clientAction(request clientRequest) (any, error) {
 	case "info":
 		p, err := l.preferences()
 		return map[string]any{"ask": p.Ask, "last": p.Last, "remote": p.Remote, "local": request.Origin == "http://"+l.addr, "bridgeToken": bridgeToken}, err
+	case "tools-open":
+		return true, nil
+	case "market-settings":
+		p, err := l.preferences()
+		check := true
+		if p.ToolCheckUpdates != nil {
+			check = *p.ToolCheckUpdates
+		}
+		address := p.ToolMarketURL
+		if address == "" && p.Remote != "" {
+			address = strings.TrimRight(p.Remote, "/") + "/market"
+		}
+		return map[string]any{"url": address, "check_updates": check, "auto_update": p.ToolAutoUpdate}, err
+	case "market-settings-save":
+		u, err := url.Parse(request.MarketURL)
+		if err != nil || u.Host == "" || u.User != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Path != "/market" || u.RawQuery != "" || u.Fragment != "" {
+			return nil, errors.New("invalid market URL")
+		}
+		l.settingsMu.Lock()
+		defer l.settingsMu.Unlock()
+		p, err := l.preferences()
+		if err != nil {
+			return nil, err
+		}
+		p.ToolMarketURL = u.String()
+		p.ToolCheckUpdates = &request.CheckUpdates
+		p.ToolAutoUpdate = request.AutoUpdate
+		return true, l.savePreferences(p)
 	case "switch":
 		return true, nil
 	case "save":

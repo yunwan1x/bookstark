@@ -34,7 +34,11 @@ func TestToolRemoteInstallDownloadsToWorkspace(t *testing.T) {
 		case "/api/tool-market":
 			json.NewEncoder(w).Encode(map[string]any{"tools": []marketTool{{ID: 7, Title: "Remote", Source: "remote", Revision: "v1"}}})
 		case "/api/tool-market/7":
-			json.NewEncoder(w).Encode(marketTool{ID: 7, Title: "Remote", Source: "remote", Revision: "v1", Content: `<script src="/static/remote.js"></script>`})
+			item := marketTool{ID: 7, Title: "Remote", Source: "remote", Revision: "v1"}
+			if r.URL.Query().Get("metadata") != "1" {
+				item.Content = `<script src="/static/remote.js"></script>`
+			}
+			json.NewEncoder(w).Encode(item)
 		case "/static/remote.js":
 			w.Header().Set("Content-Type", "text/javascript")
 			w.Write([]byte(`window.remoteInstalled=true;`))

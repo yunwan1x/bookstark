@@ -11,6 +11,9 @@ import (
 
 func TestToolMarketPublicPackages(t *testing.T) {
 	router, token := initAssetControllerTest(t)
+	if err := models.BatchUpdateSettings(map[string]string{"tool_market_login_required": "0"}); err != nil {
+		t.Fatal(err)
+	}
 	var publicID int64
 	for i, kind := range []string{"public", "private", "password", "markdown", "note"} {
 		b := &models.Blog{BlogTitle: kind, BlogIdentify: "market-" + kind, MemberID: 1, BlogType: "article", EditorType: "html", Visibility: 1, BlogContent: "<h1>TOOL_" + kind + "</h1>"}
@@ -40,17 +43,17 @@ func TestToolMarketPublicPackages(t *testing.T) {
 			t.Fatal("unpublished article listed")
 		}
 		pub := adminAssetRequest(router, token, "POST", "/api/blogs/"+strconv.FormatInt(b.BlogID, 10)+"/tool", nil)
-		if i == 0 && pub.Code != 200 {
+		if i <= 1 && pub.Code != 200 {
 			t.Fatal(pub.Body.String())
 		}
-		if i != 0 && pub.Code != 422 {
+		if i > 1 && pub.Code != 422 {
 			t.Fatalf("invalid publication: %d", pub.Code)
 		}
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, httptest.NewRequest("GET", "/api/tool-market/"+strconv.FormatInt(b.BlogID, 10), nil))
-		if i == 0 {
+		if i <= 1 {
 			publicID = b.BlogID
-			if w.Code != 200 || !strings.Contains(w.Body.String(), "TOOL_public") || strings.Contains(w.Body.String(), "CMP:v1") {
+			if w.Code != 200 || !strings.Contains(w.Body.String(), "TOOL_"+kind) || strings.Contains(w.Body.String(), "CMP:v1") {
 				t.Fatalf("package %d: %s", w.Code, w.Body.String())
 			}
 		} else if w.Code != 404 {
@@ -75,7 +78,7 @@ func TestToolMarketPublicPackages(t *testing.T) {
 	if err := json.Unmarshal([]byte(get("/api/tool-market")), &catalog); err != nil {
 		t.Fatal(err)
 	}
-	if len(catalog.Tools) != 1 || catalog.Tools[0].ID != publicID || catalog.Tools[0].Content != "" {
+	if len(catalog.Tools) != 2 || catalog.Tools[0].ID != publicID || catalog.Tools[0].Content != "" {
 		t.Fatalf("catalog %#v", catalog)
 	}
 	old := catalog.Tools[0].Revision
@@ -94,8 +97,11 @@ func TestToolMarketPublicPackages(t *testing.T) {
 	if _, err := models.DB.Exec("UPDATE md_blogs SET visibility=0 WHERE blog_id=?", publicID); err != nil {
 		t.Fatal(err)
 	}
-	if get("/api/tool-market") != "{\"tools\":[]}" {
-		t.Fatal("unpublished tool still listed")
+	if len(get("/api/tool-market")) < 20 {
+		t.Fatal("private source unexpectedly unpublished tool")
+	}
+	if w := adminAssetRequest(router, token, "DELETE", "/api/blogs/"+strconv.FormatInt(publicID, 10)+"/tool", nil); w.Code != 200 {
+		t.Fatal(w.Body.String())
 	}
 	get("/market")
 }

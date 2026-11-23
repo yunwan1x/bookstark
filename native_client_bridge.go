@@ -29,6 +29,10 @@ func (h *nativeCapabilities) handleClient(window application.Window, message str
 	}
 	go func() {
 		value, err := h.workspace.clientAction(request.Args)
+		if err == nil && request.Args.Operation == "tools-open" {
+			window.SetURL(h.workspace.startURL() + "?tools=1")
+			return
+		}
 		if err == nil && request.Args.Operation == "switch" {
 			window.SetURL(h.workspace.startURL() + "?choose=1")
 			return
