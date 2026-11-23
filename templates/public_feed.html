@@ -44,14 +44,7 @@
  <div class="public-content" data-login-url="{{.LoginURL}}">
  <script type="application/json" class="public-feed-state">{{.PublicFeedStateJSON}}</script>
  <p class="public-load-status" role="status" hidden></p>
- <nav class="public-nav" aria-label="{{call .T "public.navigation"}}">
-  <a href="{{index .TypeURLs "news"}}" {{if eq .Type "news"}}aria-current="page"{{end}}><i class="fa-solid fa-newspaper" aria-hidden="true"></i> {{call .T "public.news"}}</a>
-  <a href="{{index .TypeURLs "article"}}" {{if eq .Type "article"}}aria-current="page"{{end}}><i class="fa-solid fa-pen-nib" aria-hidden="true"></i> {{call .T "public.articles"}}</a>
-  <a href="{{index .TypeURLs "note"}}" {{if eq .Type "note"}}aria-current="page"{{end}}><i class="fa-solid fa-note-sticky" aria-hidden="true"></i> {{call .T "public.notes"}}</a>
-  <a href="{{index .TypeURLs "book"}}" {{if eq .Type "book"}}aria-current="page"{{end}}><i class="fa-solid fa-book" aria-hidden="true"></i> {{call .T "public.books"}}</a>
-  <a href="{{index .TypeURLs "bookmark"}}" {{if eq .Type "bookmark"}}aria-current="page"{{end}}><i class="fa-solid fa-bookmark" aria-hidden="true"></i> {{call .T "public.bookmarks"}}</a>
-  <a href="/market"><i class="fa-solid fa-shapes" aria-hidden="true"></i> {{call .T "market.title"}}</a>
- </nav>
+ {{template "public-plaza-nav" .}}
   <div class="public-toolbar">
   <form id="publicSearch" class="public-search" action="/shares" role="search">
    <input type="hidden" name="type" value="{{.Type}}"><input type="hidden" name="sort" value="{{.Sort}}"><input type="hidden" name="label" value="{{.Label}}">
@@ -112,4 +105,15 @@
   <nav class="public-pagination" aria-label="{{call .T "public.pagination"}}">{{if .PrevURL}}<a class="page-btn" href="{{.PrevURL}}">{{call .T "public.prev"}}</a>{{end}}<span>{{.Page}}</span>{{if .NextURL}}<a class="page-btn" href="{{.NextURL}}">{{call .T "public.next"}}</a>{{end}}</nav>
  </section>
  </div>
+{{end}}
+
+{{define "public-plaza-nav"}}
+ <nav class="public-nav" aria-label="{{call .T "public.navigation"}}">
+  <a href="{{if .TypeURLs}}{{index .TypeURLs "news"}}{{else}}/shares?type=news{{end}}" {{if eq .Type "news"}}aria-current="page"{{end}}><i class="fa-solid fa-newspaper" aria-hidden="true"></i> {{call .T "public.news"}}</a>
+  <a href="{{if .TypeURLs}}{{index .TypeURLs "article"}}{{else}}/shares?type=article{{end}}" {{if eq .Type "article"}}aria-current="page"{{end}}><i class="fa-solid fa-pen-nib" aria-hidden="true"></i> {{call .T "public.articles"}}</a>
+  <a href="{{if .TypeURLs}}{{index .TypeURLs "note"}}{{else}}/shares?type=note{{end}}" {{if eq .Type "note"}}aria-current="page"{{end}}><i class="fa-solid fa-note-sticky" aria-hidden="true"></i> {{call .T "public.notes"}}</a>
+  <a href="{{if .TypeURLs}}{{index .TypeURLs "book"}}{{else}}/shares?type=book{{end}}" {{if eq .Type "book"}}aria-current="page"{{end}}><i class="fa-solid fa-book" aria-hidden="true"></i> {{call .T "public.books"}}</a>
+  <a href="{{if .TypeURLs}}{{index .TypeURLs "bookmark"}}{{else}}/shares?type=bookmark{{end}}" {{if eq .Type "bookmark"}}aria-current="page"{{end}}><i class="fa-solid fa-bookmark" aria-hidden="true"></i> {{call .T "public.bookmarks"}}</a>
+  <a href="/market" {{if eq .Type "tool"}}aria-current="page"{{end}}><i class="fa-solid fa-shapes" aria-hidden="true"></i> {{call .T "market.tools"}}</a>
+ </nav>
 {{end}}

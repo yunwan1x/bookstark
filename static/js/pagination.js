@@ -10,6 +10,10 @@ function renderPagination(containerId, currentPage, totalPages, onPageClick, opt
     }
 
     var compact = opts && opts.compact;
+    var zh = document.documentElement.lang.indexOf('zh') === 0;
+    var prevLabel = zh ? '上一页' : 'Previous';
+    var nextLabel = zh ? '下一页' : 'Next';
+    function pageLabel(n) { return zh ? '第' + n + '页' : 'Page ' + n; }
     var hideText = opts && opts.hideText;
     var customMax = opts && opts.maxVisible;
     var maxVisible = customMax || (compact ? 3 : 5);
@@ -19,7 +23,7 @@ function renderPagination(containerId, currentPage, totalPages, onPageClick, opt
     // 上一页
     html += '<button class="page-btn' + (compact ? ' page-btn-compact' : '') + '" ' + (currentPage <= 1 ? 'disabled' : '') +
             ' data-page="' + (currentPage - 1) + '"' +
-            (currentPage <= 1 ? '' : ' aria-label="上一页"') + '>' +
+            (currentPage <= 1 ? '' : ' aria-label="' + prevLabel + '"') + '>' +
             '<i class="fa-solid fa-chevron-left"></i></button>';
 
     // 页码（首尾页计入 maxVisible，最多 maxVisible 个页码按钮）
@@ -27,7 +31,7 @@ function renderPagination(containerId, currentPage, totalPages, onPageClick, opt
         // 页数不多，全部显示
         for (var i = 1; i <= totalPages; i++) {
             html += '<button class="page-btn' + (i === currentPage ? ' active' : '') + (compact ? ' page-btn-compact' : '') +
-                    '" data-page="' + i + '" aria-label="第' + i + '页"' +
+                    '" data-page="' + i + '" aria-label="' + pageLabel(i) + '"' +
                     (i === currentPage ? ' aria-current="page"' : '') + '>' + i + '</button>';
         }
     } else {
@@ -48,26 +52,26 @@ function renderPagination(containerId, currentPage, totalPages, onPageClick, opt
         }
 
         if (showFirst) {
-            html += '<button class="page-btn' + (compact ? ' page-btn-compact' : '') + '" data-page="1" aria-label="第1页">1</button>';
+            html += '<button class="page-btn' + (compact ? ' page-btn-compact' : '') + '" data-page="1" aria-label="'+pageLabel(1)+'">1</button>';
             if (rangeStart > 2) html += '<span class="page-ellipsis px-1 text-slate-400">...</span>';
         }
 
         for (var i = rangeStart; i <= rangeEnd; i++) {
             html += '<button class="page-btn' + (i === currentPage ? ' active' : '') + (compact ? ' page-btn-compact' : '') +
-                    '" data-page="' + i + '" aria-label="第' + i + '页"' +
+                    '" data-page="' + i + '" aria-label="' + pageLabel(i) + '"' +
                     (i === currentPage ? ' aria-current="page"' : '') + '>' + i + '</button>';
         }
 
         if (showLast) {
             if (rangeEnd < totalPages - 1) html += '<span class="page-ellipsis px-1 text-slate-400">...</span>';
-            html += '<button class="page-btn' + (compact ? ' page-btn-compact' : '') + '" data-page="' + totalPages + '" aria-label="第' + totalPages + '页">' + totalPages + '</button>';
+            html += '<button class="page-btn' + (compact ? ' page-btn-compact' : '') + '" data-page="' + totalPages + '" aria-label="' + pageLabel(totalPages) + '">' + totalPages + '</button>';
         }
     }
 
     // 下一页
     html += '<button class="page-btn' + (compact ? ' page-btn-compact' : '') + '" ' + (currentPage >= totalPages ? 'disabled' : '') +
             ' data-page="' + (currentPage + 1) + '"' +
-            (currentPage >= totalPages ? '' : ' aria-label="下一页"') + '>' +
+            (currentPage >= totalPages ? '' : ' aria-label="' + nextLabel + '"') + '>' +
             '<i class="fa-solid fa-chevron-right"></i></button>';
 
     // 总数显示

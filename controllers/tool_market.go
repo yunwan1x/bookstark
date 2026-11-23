@@ -1,9 +1,11 @@
 package controllers
 
 import (
+	"bookstark/middleware"
 	"bookstark/models"
 	"bytes"
 	"compress/gzip"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -26,7 +28,11 @@ type marketTool struct {
 
 func ToolMarketPage(c *gin.Context) {
 	c.Header("Cache-Control", "private, no-store")
-	c.HTML(http.StatusOK, "tool_market.html", commonData(c, "shares"))
+	data := commonData(c, "shares")
+	data["Type"] = "tool"
+	data["CanConfigureTools"] = isAdmin(c)
+	data["CanPublishTools"] = middleware.GetMemberID(c) > 0 && readMarketSettings(c).Enabled && (isAdmin(c) || readMarketSettings(c).MembersPublish)
+	c.HTML(http.StatusOK, "tool_market.html", data)
 }
 
 func ToolMarketCatalog(c *gin.Context) {
@@ -36,10 +42,10 @@ func ToolMarketCatalog(c *gin.Context) {
 		return
 	}
 	rows, err := models.DB.Query(`SELECT b.blog_id,p.title,p.description,COALESCE(m.account,''),
- COALESCE((SELECT s.share_identify FROM md_shares s WHERE s.share_type='blog' AND s.target_id=b.blog_id LIMIT 1),b.blog_identify),p.revision
- FROM md_tool_releases p JOIN md_blogs b ON b.blog_id=p.blog_id LEFT JOIN md_members m ON m.member_id=b.member_id
+ COALESCE((SELECT s.share_identify FROM md_shares s WHERE s.share_type='blog' AND s.target_id=b.blog_id LIMIT 1),b.blog_identify),p.revision,v.metadata,v.created
+ FROM md_tool_releases p JOIN md_blogs b ON b.blog_id=p.blog_id JOIN md_tool_versions v ON v.revision=p.revision AND v.status='published' LEFT JOIN md_members m ON m.member_id=b.member_id
  WHERE b.editor_type='html' AND COALESCE(b.blog_type,'article')='article'
- ORDER BY b.modify_at DESC,b.blog_id DESC`)
+ ORDER BY v.created DESC,b.blog_id DESC`)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "catalog_unavailable"})
 		return
@@ -48,10 +54,17 @@ func ToolMarketCatalog(c *gin.Context) {
 	items := []marketTool{}
 	for rows.Next() {
 		var item marketTool
-		if err := rows.Scan(&item.ID, &item.Title, &item.Description, &item.Author, &item.Source, &item.Revision); err != nil {
+		var raw string
+		var updated int64
+		if err := rows.Scan(&item.ID, &item.Title, &item.Description, &item.Author, &item.Source, &item.Revision, &raw, &updated); err != nil {
 			c.JSON(500, gin.H{"error": "catalog_unavailable"})
 			return
 		}
+		if err := json.Unmarshal([]byte(raw), &item.ToolMetadata); err != nil {
+			toolAPIError(c, err)
+			return
+		}
+		item.Updated = updated
 		items = append(items, item)
 	}
 	if rows.Err() != nil {
@@ -59,13 +72,7 @@ func ToolMarketCatalog(c *gin.Context) {
 		return
 	}
 	rows.Close()
-	for i := range items {
-		items[i].ToolMetadata = latestToolMetadata(items[i].ID)
-		if items[i].Access == "" {
-			items[i].Access = "inherit"
-		}
-	}
-	c.JSON(200, gin.H{"tools": items})
+	c.JSON(200, gin.H{"tools": items, "market": gin.H{"name": readMarketSettings(c).Name}})
 }
 
 func ToolMarketItem(c *gin.Context) {

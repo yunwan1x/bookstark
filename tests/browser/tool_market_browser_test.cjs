@@ -6,11 +6,12 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
  await context.addCookies([{name:'lang',value:'zh',url:origin}]);const page=await context.newPage(),errors=[];page.on('pageerror',err=>errors.push(err.message));
  const api=async(path,method='GET',data)=>{const csrf=(await(await context.request.get(origin+'/api/csrf-token')).json()).csrf_token;const response=await context.request.fetch(origin+path,{method,headers:{'X-CSRF-Token':csrf},data});assert.equal(response.ok(),true,await response.text());return response.json();};
  async function until(fn){const deadline=Date.now()+20000;while(!await fn()){if(Date.now()>deadline)throw Error('Timed out waiting for persisted tool state');await new Promise(resolve=>setTimeout(resolve,80));}}
- const act=(a,id)=>page.locator(`[data-market-action="${a}"][data-id="${id}"]`).first();
+ const act=(a,id)=>page.locator(`[data-market-action="${a}"][data-id="${id}"]:visible`).first();
  try{
   await page.goto(origin+'/market');await page.locator('.market-empty').waitFor();
   assert.equal(await page.locator('#marketSource').count(),0,'obsolete source form removed');
-  await page.locator('#marketPublish').click();await page.waitForURL('**/login?next=*');
+  assert.equal(await page.locator('#marketPublish,#marketSettings,#marketCatalogTab,#marketInstalledTab,.market-switch').count(),0,'guest and nested controls must be absent');
+  assert.equal(await page.locator('#marketMain>.public-nav').count(),1);assert.equal(await page.locator('#marketMain>.public-nav a[aria-current]').textContent().then(x=>x.trim()),'工具');
   const signedIn=await context.request.post(origin+'/api/login',{data:{account:'admin',password:process.env.BOOKSTARK_TEST_PASSWORD}});assert.equal(signedIn.status(),200);
   await page.goto(origin+'/admin/tool-market');await page.locator('#marketAdminForm input[name="name"]').waitFor();
   await page.locator('input[name="name"]').fill('我的工具市场');await page.locator('#marketAdminForm button[type="submit"]').click();await page.getByText('设置已保存',{exact:true}).waitFor();
@@ -34,10 +35,31 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
   await frame.locator('body').evaluate(async()=>{await BookStark.files.write('notes/saved.txt','saved file');});
   assert.equal(await frame.locator('body').evaluate(async()=>new TextDecoder().decode(await BookStark.files.read('notes/saved.txt'))),'saved file');
   assert.equal(await frame.locator('body').evaluate(()=>window.marketStaticLoaded),true);await page.waitForFunction(()=>true);assert.equal(await frame.locator('body').evaluate(()=>window.marketModule),42);
+  // One list supports state/category/search/sort, pagination and list view.
+  const mockTools=[{...tool,revision:'available-update'},...Array.from({length:20},(_,i)=>({...tool,id:1000+i,title:'筛选工具 '+String(i).padStart(2,'0'),category:i%2?'image':'document',size:1024+i,updated:1000+i}))];
+  await page.route(origin+'/api/tool-market',route=>route.fulfill({json:{tools:mockTools,market:{name:'我的工具市场'}}}));
+  await page.goto(origin+'/market');await until(async()=>await page.locator('.market-card').count()===12);assert.equal(await page.locator('#marketResultCount').textContent(),'21 个结果');
+  await page.locator('#marketCategory').selectOption('image');assert.equal(await page.locator('.market-card').count(),10);
+  await page.locator('#marketQuery').fill('工具 03');assert.equal(await page.locator('.market-card').count(),1);assert.equal(await page.locator('.market-card').getAttribute('data-tool-id'),'1003');
+  await page.locator('#marketQuery').fill('');await page.locator('#marketCategory').selectOption('all');await page.locator('#marketState').selectOption('installed');assert.equal(await page.locator('.market-card').count(),1);
+  await page.locator('#marketState').selectOption('updates');assert.equal(await page.locator('.market-card').count(),1);await page.locator('.market-install-state.has-update').waitFor();
+  await page.locator('#marketState').selectOption('uninstalled');assert.equal(await page.locator('#marketResultCount').textContent(),'20 个结果');
+  await page.locator('#marketSort').selectOption('size');assert.equal(await page.locator('.market-card').first().getAttribute('data-tool-id'),'1000');
+  await page.locator('#marketPagination [data-page="2"]').first().click();assert.equal(await page.locator('.market-card').count(),8);
+  await page.locator('#marketListView').click();assert.equal(await page.locator('#marketItems').evaluate(el=>el.classList.contains('is-list')),true);await page.reload();await until(async()=>await page.locator('.market-card').count()===8);assert.equal(await page.locator('#marketState').inputValue(),'uninstalled');
+  await page.locator('#marketPageSize').selectOption('24');assert.equal(await page.locator('.market-card').count(),20);
+  await page.screenshot({path:out+'/07-flat-list-view.png',fullPage:true});
+  await page.locator('#marketGridView').click();await page.locator('#marketPageSize').selectOption('12');await page.locator('#marketState').selectOption('all');await page.locator('#marketSort').selectOption('updated');await page.screenshot({path:out+'/08-flat-tools-grid.png',fullPage:true});
+  await page.unroute(origin+'/api/tool-market');
+  const viewer=await browser.newContext();await viewer.addCookies([{name:'lang',value:'zh',url:origin}]);assert.equal((await viewer.request.post(origin+'/api/login',{data:{account:'tools-viewer',password:'viewer-password-2026'}})).status(),200);
+  const viewerPage=await viewer.newPage();await viewerPage.goto(origin+'/market');await viewerPage.locator('.market-card').waitFor();assert.equal(await viewerPage.locator('#marketSettings').count(),0,'ordinary members must not see configuration');
+  const viewerConfig=await(await viewer.request.get(origin+'/api/tool-market/client')).json();assert.equal(viewerConfig.can_configure,false);
+  const viewerCSRF=(await(await viewer.request.get(origin+'/api/csrf-token')).json()).csrf_token;for(const [path,method]of [['/api/tool-market/client','PUT'],['/api/tool-market/client/test','POST']]){const denied=await viewer.request.fetch(origin+path,{method,headers:{'X-CSRF-Token':viewerCSRF},data:{url:origin+'/market'}});assert.equal(denied.status(),403);}
+  await viewer.close();
   // Startup checks must visibly announce updates without downloading by default.
   await page.evaluate(()=>{for(let i=sessionStorage.length-1;i>=0;i--){const key=sessionStorage.key(i);if(key.startsWith('bookstark-tool-update-check:'))sessionStorage.removeItem(key);}});
   await page.route(origin+'/api/tool-market',route=>route.fulfill({json:{tools:catalog.map(x=>({...x,revision:'available-update'}))}}));
-  await page.goto(origin+'/profile');await page.getByText('发现 1 个工具更新，可在「我的工具」查看。',{exact:true}).waitFor();
+  await page.goto(origin+'/profile');await page.getByText('发现 1 个工具更新，可在「工具」中筛选「有更新」查看。',{exact:true}).waitFor();
   assert.equal((await api('/api/tool-installs')).tools[0].revision,tool.revision,'default startup checks must not install updates');
   await page.unroute(origin+'/api/tool-market');await page.goto(origin+'/market?open='+id);await frame.locator('#value').waitFor();
   // Removing source assets does not change a downloaded installation.
@@ -49,13 +71,13 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
    await api('/api/webdav/files/content','PUT',{path:'/'+name,content,content_type:name.endsWith('.css')?'text/css':'text/javascript'});
    await api('/api/webdav/files/public','POST',{path:'/'+name});
   }
-  await page.goto(origin+'/market?view=installed');await page.locator('.market-card').waitFor();
-  await act('pin',id).click();await until(async()=>(await api('/api/tool-installs')).tools.find(x=>x.id===id).pinned===false);await page.getByRole('button',{name:'固定到广场',exact:true}).waitFor();
-  await act('pin',id).click();await until(async()=>(await api('/api/tool-installs')).tools.find(x=>x.id===id).pinned===true);await page.getByRole('button',{name:'取消固定',exact:true}).waitFor();
-  await act('uninstall',id).click();await page.locator('dialog input[name="keep"]').waitFor();assert.equal(await page.locator('dialog input[name="keep"]').isChecked(),true);await page.getByRole('button',{name:'确认卸载',exact:true}).click();await until(async()=>(await api('/api/tool-installs')).tools.length===0);
+  await page.goto(origin+'/market?status=installed');await page.locator('.market-card').waitFor();
+  await page.locator(`.market-card[data-tool-id="${id}"] summary`).click();await act('pin',id).click();await until(async()=>(await api('/api/tool-installs')).tools.find(x=>x.id===id).pinned===false);await page.locator(`[data-market-action="pin"][data-id="${id}"]`).filter({hasText:'固定到广场'}).waitFor({state:'attached'});
+  await page.locator(`.market-card[data-tool-id="${id}"] summary`).click();await act('pin',id).click();await until(async()=>(await api('/api/tool-installs')).tools.find(x=>x.id===id).pinned===true);await page.locator(`[data-market-action="pin"][data-id="${id}"]`).filter({hasText:'取消固定'}).waitFor({state:'attached'});
+  await page.locator(`.market-card[data-tool-id="${id}"] summary`).click();await act('uninstall',id).click();await page.locator('dialog input[name="keep"]').waitFor();assert.equal(await page.locator('dialog input[name="keep"]').isChecked(),true);await page.getByRole('button',{name:'确认卸载',exact:true}).click();await until(async()=>(await api('/api/tool-installs')).tools.length===0);
   await page.goto(origin+'/market?selected='+id);await act('install',id).click();await page.getByRole('button',{name:/^确认安装/}).click();await until(async()=>(await api('/api/tool-installs')).tools.length===1);
   await page.goto(origin+'/market?open='+id);await frame.locator('#value').waitFor();assert.equal(await frame.locator('#value').inputValue(),'keep this');assert.equal(await frame.locator('body').evaluate(async()=>new TextDecoder().decode(await BookStark.files.read('notes/saved.txt'))),'saved file');
-  await page.goto(origin+'/market');await page.locator('#marketSettings').click();await page.locator('dialog input[name="url"]').waitFor();assert.equal(await page.locator('dialog input[name="url"]').inputValue(),origin+'/market');await page.getByRole('button',{name:'测试连接',exact:true}).click();await page.getByText('连接成功，点击保存设置后生效。',{exact:true}).waitFor();await page.screenshot({path:out+'/04-client-market-settings.png',fullPage:true});await page.getByRole('button',{name:'保存设置',exact:true}).click();
+  await page.goto(origin+'/market');await page.locator('#marketSettings').click();await page.locator('dialog input[name="url"]').waitFor();assert.equal(await page.locator('dialog input[name="url"]').inputValue(),origin+'/market');await page.getByRole('button',{name:'测试连接',exact:true}).click();await page.getByText('✓ 连接成功 · 我的工具市场',{exact:true}).waitFor();await page.screenshot({path:out+'/04-client-market-settings.png',fullPage:true});await page.getByRole('button',{name:'保存设置',exact:true}).click();
   for(const [width,lang,theme]of [[1440,'zh','light'],[390,'zh','hud-light'],[320,'en','glass'],[1440,'en','hud']]){
    await context.addCookies([{name:'lang',value:lang,url:origin}]);await page.evaluate(theme=>localStorage.setItem('bookstark-theme',theme),theme);await page.setViewportSize({width,height:950});await page.reload();await page.locator('.market-card').first().waitFor();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,`${width}/${lang}/${theme}`);await page.screenshot({path:out+`/05-${width}-${lang}-${theme}.png`,fullPage:true});
   }
@@ -64,7 +86,8 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
   // Installing from a different market must request that market's account,
   // without replacing the already authenticated local workspace identity.
   const remote=process.env.BOOKSTARK_MARKET_REMOTE_URL;
-  await page.goto(origin+'/market');await page.locator('#marketSettings').click();await page.locator('dialog input[name="url"]').fill(remote+'/market');await page.getByRole('button',{name:'保存设置',exact:true}).click();
+  await page.goto(origin+'/market');await page.locator('#marketSettings').click();await page.locator('dialog input[name="url"]').fill(remote+'/market');await page.getByRole('button',{name:'测试连接',exact:true}).click();await page.getByText('✓ 连接成功 · 远端工具市场',{exact:true}).waitFor();assert.equal((await api('/api/tool-market/client')).url,origin+'/market','connection testing must not save settings');await page.getByRole('button',{name:'取消',exact:true}).click();
+  await page.locator('#marketSettings').click();assert.equal(await page.locator('dialog input[name="url"]').inputValue(),origin+'/market');await page.locator('dialog input[name="url"]').fill(remote+'/market');await page.getByRole('button',{name:'保存设置',exact:true}).click();
   await page.locator('.market-card').filter({hasText:'远端工具'}).waitFor();
   const remoteTools=(await api('/api/tool-sources','POST',{server:remote+'/market'})).tools,remoteID=remoteTools[0].id;
   await act('details',remoteID).click();await act('install',remoteID).click();await page.getByRole('heading',{name:'登录工具市场',exact:true}).waitFor();
@@ -74,11 +97,13 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
   assert.equal((await api('/api/profile')).data.account,'admin');
   const runtime=await api('/api/tool-installs/'+remoteID+'?part=runtime');assert.match(runtime.content,/Remote tool installed/);
   await page.goto(origin+'/market?open='+remoteID);await page.frameLocator('#marketFrameHost iframe').getByRole('heading',{name:'Remote tool installed'}).waitFor();await until(async()=>await page.frameLocator('#marketFrameHost iframe').locator('body').evaluate(()=>window.remoteReferenceDownloaded===true));
+  await page.goto(origin+'/market');await page.locator('#marketSettings').click();await page.locator('dialog [data-account]').filter({hasText:'remote-user'}).waitFor();await page.getByRole('button',{name:'退出市场',exact:true}).click();await page.locator('dialog [data-account]').filter({hasText:'尚未登录'}).waitFor();
+  await page.getByRole('button',{name:'登录市场',exact:true}).click();await page.locator('dialog input[name="account"]').fill('remote-user');await page.locator('dialog input[name="password"]').fill('remote-password');await page.locator('dialog').last().locator('button[type=submit]').click();await page.locator('dialog [data-account]').filter({hasText:'remote-user'}).waitFor();await page.getByRole('button',{name:'取消',exact:true}).click();assert.equal((await api('/api/profile')).data.account,'admin');
   // An installed tool keeps its original market even after changing the default.
   // Reauthentication must target that original market without changing the default.
   await api('/api/tool-market/client/login','DELETE',{server:remote+'/market'});
   await api('/api/tool-market/client','PUT',{url:origin+'/market',check_updates:true,auto_update:false});
-  await page.goto(origin+'/market?view=installed');await act('details',remoteID).click();await act('update',remoteID).click();
+  await page.goto(origin+'/market?status=installed');await act('details',remoteID).click();await act('update',remoteID).click();
   await page.getByRole('heading',{name:'登录工具市场',exact:true}).waitFor();
   assert.equal(await page.locator('dialog .market-info').textContent(),remote,'login must target the installed tool source');
   await page.locator('dialog input[name="account"]').fill('remote-user');await page.locator('dialog input[name="password"]').fill('remote-password');await page.getByRole('button',{name:'登录并继续安装',exact:true}).click();
@@ -89,6 +114,6 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
   await page.goto(origin+'/market/publish/'+id);await page.getByRole('button',{name:'下架 / 撤回工具',exact:true}).click();await page.locator('#bs-confirm-ok').click();await page.getByText('已下架并撤回待审核版本，现在可以删除来源文章。',{exact:true}).waitFor();
   await api('/api/blogs/'+id,'DELETE');
   await page.goto(origin+'/market?open='+id);await frame.locator('#value').waitFor();assert.equal(await frame.locator('#value').inputValue(),'keep this');
-  assert.deepEqual(errors,[]);console.log('PASS: server market settings, private HTML publication, original resource references and guarded source deletion, access policy, install confirmation, isolated runtime, preserved uninstall data, native resource independence, editor wizard, bilingual responsive themes.');
+  assert.deepEqual(errors,[]);console.log('PASS: flat Plaza Tools tab, role-gated settings, category/status/search/sort, pagination, list/grid, settings cancel and marketplace sign-in, source isolation, publication, installation and preserved data, bilingual responsive themes.');
  }catch(error){await page.screenshot({path:out+'/failure.png',fullPage:true});throw error;}finally{await browser.close();}
 })().catch(error=>{console.error(error);process.exit(1)});

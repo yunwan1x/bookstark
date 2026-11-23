@@ -16,7 +16,7 @@
    const catalog=(own?await request('/api/tool-market'):await request('/api/tool-sources','POST',{server:config.url})).tools;
    const updates=installed.filter(old=>catalog.some(next=>next.id===old.id&&next.revision!==old.revision));
    window.dispatchEvent(new CustomEvent('tool-market-updates',{detail:{count:updates.length}}));
-   if(!config.auto_update){if(updates.length&&window.BSDialog){const zh=document.documentElement.lang.startsWith('zh');BSDialog.toast(zh?'发现 '+updates.length+' 个工具更新，可在「我的工具」查看。':updates.length+' tool update(s) available. Review them in My tools.','info',6000);}return;}
+   if(!config.auto_update){if(updates.length&&window.BSDialog){const zh=document.documentElement.lang.startsWith('zh');BSDialog.toast(zh?'发现 '+updates.length+' 个工具更新，可在「工具」中筛选「有更新」查看。':updates.length+' tool update(s) available. Use the Updates available filter in Tools.','info',6000);}return;}
    for(const old of updates){
     const pkg=await request(old.id<0?'/api/tool-sources/'+old.id+'?metadata=1':'/api/tool-market/'+old.id+'?metadata=1');
     // New permissions require an explicit review, even with automatic updates on.

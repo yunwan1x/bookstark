@@ -114,6 +114,10 @@ func requestMarket(ctx context.Context, origin, path, method string, body []byte
 func MarketClientSettings(c *gin.Context) {
 	member := middleware.GetMemberID(c)
 	if c.Request.Method == "PUT" || c.Request.Method == "POST" {
+		if !isAdmin(c) {
+			c.JSON(403, gin.H{"error": "market_config_forbidden"})
+			return
+		}
 		var p struct {
 			URL   string `json:"url"`
 			Check bool   `json:"check_updates"`
@@ -128,7 +132,8 @@ func MarketClientSettings(c *gin.Context) {
 			c.JSON(400, gin.H{"error": "invalid_market_url"})
 			return
 		}
-		data, status, err := []byte(`{"protocol":1}`), 200, error(nil)
+		data, _ := json.Marshal(gin.H{"protocol": 1, "name": readMarketSettings(c).Name})
+		status, err := 200, error(nil)
 		if ownMarketplace(c, origin) && !readMarketSettings(c).Enabled {
 			c.JSON(503, gin.H{"error": "market_disabled"})
 			return
@@ -165,9 +170,18 @@ func MarketClientSettings(c *gin.Context) {
 	if err != nil {
 		address = readMarketSettings(c).PublicURL
 	}
-	_ = models.DB.QueryRow("SELECT account FROM md_tool_market_credentials WHERE member_id=? AND url=?", member, address).Scan(&account)
+	accountURL := address
+	if server := c.Query("server"); server != "" {
+		origin, e := normalizeMarketURL(server)
+		if e != nil {
+			c.Status(400)
+			return
+		}
+		accountURL = origin + "/market"
+	}
+	_ = models.DB.QueryRow("SELECT account FROM md_tool_market_credentials WHERE member_id=? AND url=?", member, accountURL).Scan(&account)
 	c.Header("Cache-Control", "private, no-store")
-	c.JSON(200, gin.H{"url": address, "account": account, "check_updates": check, "auto_update": auto})
+	c.JSON(200, gin.H{"url": address, "account": account, "check_updates": check, "auto_update": auto, "can_configure": isAdmin(c), "workspace_account": middleware.GetAccount(c)})
 }
 func MarketClientLogin(c *gin.Context) {
 	var p struct {

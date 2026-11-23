@@ -197,6 +197,10 @@ func TestWorldTVBrowser(t *testing.T) {
 
 func TestToolMarketBrowser(t *testing.T) {
 	runIsolatedBrowser(t, "tool_market_browser_test.cjs", func(t *testing.T) {
+		viewer := &models.Member{Account: "tools-viewer", Password: "viewer-password-2026", Email: "tools-viewer@example.test", Role: 1, Status: 1}
+		if err := viewer.Insert(); err != nil {
+			t.Fatal(err)
+		}
 		// A separate marketplace authenticates independently of the local workspace.
 		revision := strings.Repeat("a", 64)
 		content := `<h1>Remote tool installed</h1><script src="/static/remote-reference.js"></script>`

@@ -2,6 +2,16 @@ package i18n
 
 var enMessages = map[string]string{
 	"market.source_delete_blocked": "This article is published as a tool or awaiting review. Withdraw it on the tool publishing page before deleting the article.",
+	"market.publish_tool":          "Publish tool",
+	"market.settings":              "Settings",
+	"market.category":              "Category",
+	"market.install_status":        "Installation status",
+	"market.sort":                  "Sort",
+	"market.grid_view":             "Grid view",
+	"market.list_view":             "List view",
+	"market.per_page":              "Per page",
+	"market.pagination":            "Tool pages",
+	"market.tools":                 "Tools",
 	"market.publish":               "Publish as tool",
 	"market.republish":             "Publish update",
 	"market.publish_help":          "Save the article and check resources, version and installation access.",

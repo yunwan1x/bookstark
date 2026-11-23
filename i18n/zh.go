@@ -2,6 +2,16 @@ package i18n
 
 var zhMessages = map[string]string{
 	"market.source_delete_blocked": "该文章已发布为工具或正在审核，请先在工具发布页下架或撤回，再删除文章。",
+	"market.publish_tool":          "发布工具",
+	"market.settings":              "设置",
+	"market.category":              "分类",
+	"market.install_status":        "安装状态",
+	"market.sort":                  "排序",
+	"market.grid_view":             "网格视图",
+	"market.list_view":             "列表视图",
+	"market.per_page":              "每页",
+	"market.pagination":            "工具分页",
+	"market.tools":                 "工具",
 	"market.publish":               "发布为工具",
 	"market.republish":             "发布更新",
 	"market.publish_help":          "保存文章并检查资源、版本和安装权限。",

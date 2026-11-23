@@ -16,11 +16,13 @@ import (
 func loadPublishedTool(id int64) (marketTool, error) {
 	var t marketTool
 	var raw string
-	err := models.DB.QueryRow(`SELECT b.blog_id,p.title,p.description,COALESCE(m.account,''),COALESCE((SELECT share_identify FROM md_shares WHERE share_type='blog' AND target_id=b.blog_id LIMIT 1),b.blog_identify),p.revision,v.metadata,v.resource_base FROM md_tool_releases p JOIN md_blogs b ON b.blog_id=p.blog_id JOIN md_tool_versions v ON v.revision=p.revision AND v.status='published' LEFT JOIN md_members m ON m.member_id=b.member_id WHERE b.blog_id=? AND b.editor_type='html' AND COALESCE(b.blog_type,'article')='article'`, id).Scan(&t.ID, &t.Title, &t.Description, &t.Author, &t.Source, &t.Revision, &raw, &t.ResourceBase)
+	err := models.DB.QueryRow(`SELECT b.blog_id,p.title,p.description,COALESCE(m.account,''),COALESCE((SELECT share_identify FROM md_shares WHERE share_type='blog' AND target_id=b.blog_id LIMIT 1),b.blog_identify),p.revision,v.metadata,v.resource_base,v.created FROM md_tool_releases p JOIN md_blogs b ON b.blog_id=p.blog_id JOIN md_tool_versions v ON v.revision=p.revision AND v.status='published' LEFT JOIN md_members m ON m.member_id=b.member_id WHERE b.blog_id=? AND b.editor_type='html' AND COALESCE(b.blog_type,'article')='article'`, id).Scan(&t.ID, &t.Title, &t.Description, &t.Author, &t.Source, &t.Revision, &raw, &t.ResourceBase, &t.Updated)
 	if err != nil {
 		return t, err
 	}
+	updated := t.Updated
 	err = json.Unmarshal([]byte(raw), &t.ToolMetadata)
+	t.Updated = updated
 	return t, err
 }
 
@@ -109,7 +111,8 @@ func RemoteToolCatalog(c *gin.Context) {
 		return
 	}
 	var result struct {
-		Tools []marketTool `json:"tools"`
+		Tools  []marketTool      `json:"tools"`
+		Market map[string]string `json:"market"`
 	}
 	if json.Unmarshal(data, &result) != nil || len(result.Tools) > 10000 {
 		c.Status(502)

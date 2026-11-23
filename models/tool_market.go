@@ -20,6 +20,7 @@ type ToolPermissions struct {
 	Network   bool `json:"network"`
 }
 type ToolMetadata struct {
+	Updated      int64           `json:"updated"`
 	Distribution string          `json:"distribution,omitempty"`
 	Title        string          `json:"title,omitempty"`
 	Description  string          `json:"description,omitempty"`
