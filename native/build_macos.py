@@ -5,7 +5,6 @@ import os
 from pathlib import Path
 import platform
 import plistlib
-import shutil
 import struct
 import subprocess
 import tempfile
@@ -23,19 +22,13 @@ def build_binary(arch, output):
     ], cwd=ROOT, env=env, check=True)
 
 
-def package_bundle(bundle, arch, lipo, scratch):
+def package_bundle(bundle, arch):
     contents = bundle / "Contents"
     executable = contents / "MacOS" / APP
     resources = contents / "Resources"
     executable.parent.mkdir(parents=True)
     resources.mkdir()
-    if arch == "universal":
-        binaries = [scratch / target for target in ("arm64", "amd64")]
-        for binary in binaries:
-            build_binary(binary.name, binary)
-        subprocess.run([lipo, "-create", *map(str, binaries), "-output", str(executable)], check=True)
-    else:
-        build_binary(arch, executable)
+    build_binary(arch, executable)
     executable.chmod(0o755)
 
     # Modern ICNS supports a PNG payload for the 512x512 icon.
@@ -66,19 +59,15 @@ def package_bundle(bundle, arch, lipo, scratch):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--arch", choices=["universal", "arm64", "amd64"], default="universal")
-    parser.add_argument("--lipo", help="Path to lipo or llvm-lipo for universal builds")
+    parser.add_argument("--arch", choices=["arm64", "amd64"], default="arm64")
     parser.add_argument("--out", type=Path, help="Destination ZIP")
     args = parser.parse_args()
-    lipo = args.lipo or shutil.which("lipo") or shutil.which("llvm-lipo")
-    if args.arch == "universal" and not lipo:
-        parser.error("A universal build needs lipo or llvm-lipo; use --lipo PATH")
     out = (args.out or ROOT / "artifacts" / f"bookstark-wails-macos-{args.arch}.zip").resolve()
     out.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix=".bookstark-macos-", dir=out.parent) as temp:
         scratch = Path(temp)
         bundle = scratch / f"{APP}.app"
-        package_bundle(bundle, args.arch, lipo, scratch)
+        package_bundle(bundle, args.arch)
         if platform.system() == "Darwin":
             subprocess.run(["codesign", "--force", "--sign", "-", str(bundle)], check=True)
             subprocess.run(["codesign", "--verify", "--strict", str(bundle)], check=True)

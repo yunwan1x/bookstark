@@ -478,7 +478,7 @@ sed -n 's/^ADMIN_PASSWORD=//p' data/bookstark.env
 
 访问 **http://localhost:8089**，使用 `admin` 和生成的密码登录。远程访问请配置 HTTPS 反向代理，并支持 WebSocket 与 SSE。
 
-桌面和 Android 用户可从 [GitHub Releases](https://github.com/yunwan1x/bookstark/releases) 下载 GUI 客户端，选择本地工作区或连接远程服务器。本地首次初始化时自行设置 admin 密码，并可在创建完成页复制密码。Release 同时提供独立服务端二进制（Linux、macOS、Windows 的 amd64/arm64），解压后运行即可通过浏览器访问，无需 GUI 或 Docker。服务器也可使用 Docker 镜像部署。完整的 Docker Compose 示例、GHCR 镜像、环境变量、本地运行、升级和备份方法见 [部署与维护手册](docs/usage-and-deployment.md)。请使用手册中的 BookStark Compose 示例；开发机代理工具单独放在 `tools/dev-proxy/`。
+桌面和 Android 用户可从 [GitHub Releases](https://github.com/yunwan1x/bookstark/releases) 下载 GUI 客户端，选择本地工作区或连接远程服务器。macOS 请按芯片选择 `macos-arm64`（Apple Silicon）或 `macos-amd64`（Intel），两者为独立安装包。本地首次初始化时自行设置 admin 密码，并可在创建完成页复制密码。Release 同时提供独立服务端二进制（Linux、macOS、Windows 的 amd64/arm64），解压后运行即可通过浏览器访问，无需 GUI 或 Docker。服务器也可使用 Docker 镜像部署。完整的 Docker Compose 示例、GHCR 镜像、环境变量、本地运行、升级和备份方法见 [部署与维护手册](docs/usage-and-deployment.md)。请使用手册中的 BookStark Compose 示例；开发机代理工具单独放在 `tools/dev-proxy/`。
 
 > 升级前备份数据库、上传文件与密钥。首次生成的环境文件不要提交到 Git，也不要在升级时重新生成；已有账号密码不会因初始化环境变量改变。
 

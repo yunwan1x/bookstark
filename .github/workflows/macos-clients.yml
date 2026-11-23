@@ -1,0 +1,94 @@
+# Reused by release; manual dispatch backfills an existing tag without rebuilding other clients.
+name: macos-clients
+on:
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+      source_ref:
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to backfill
+        required: true
+        type: string
+      upload_to_release:
+        description: Attach separate macOS clients to the existing release
+        default: true
+        type: boolean
+permissions:
+  contents: read
+concurrency:
+  group: macos-clients-${{ inputs.tag }}
+  cancel-in-progress: false
+jobs:
+  build:
+    name: macOS ${{ matrix.arch }}
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            macho: arm64
+          - arch: amd64
+            macho: x86_64
+    env:
+      TAG: ${{ inputs.tag }}
+      ARCH: ${{ matrix.arch }}
+      MACHO: ${{ matrix.macho }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref || inputs.tag }}
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Build and verify single-architecture app
+        shell: bash
+        run: |
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+(\.[0-9]+)?(-[A-Za-z0-9][A-Za-z0-9.-]*)?$ ]]; then
+            echo 'Invalid release tag' >&2
+            exit 1
+          fi
+          BASE="bookstark-client-${TAG#v}-macos-$ARCH"
+          python3 native/build_macos.py --arch "$ARCH" --out "dist/$BASE.zip"
+          ditto -x -k "dist/$BASE.zip" client-stage
+          test "$(lipo -archs client-stage/BookStark.app/Contents/MacOS/BookStark)" = "$MACHO"
+          codesign --verify --strict client-stage/BookStark.app
+          (cd dist && shasum -a 256 "$BASE.zip" > "$BASE.zip.sha256")
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bookstark-client-${{ inputs.tag }}-macos-${{ matrix.arch }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 7
+  attach:
+    name: Attach macOS clients to existing release
+    if: inputs.upload_to_release == true
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ inputs.tag }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: bookstark-client-*-macos-*
+          path: dist
+          merge-multiple: true
+      - name: Verify checksums and upload without replacing existing assets
+        run: |
+          gh release view "$TAG" --json tagName --jq .tagName
+          (cd dist && for checksum in *.sha256; do sha256sum -c "$checksum"; done)
+          gh release upload "$TAG" dist/*

@@ -78,9 +78,6 @@ jobs:
           - target: linux-amd64
             runner: ubuntu-latest
             extension: tar.gz
-          - target: macos-universal
-            runner: macos-latest
-            extension: zip
     env:
       VERSION: ${{ needs.prepare.outputs.version }}
       TARGET: ${{ matrix.target }}
@@ -101,12 +98,6 @@ jobs:
           mkdir -p dist client-stage
           BASE="bookstark-client-$VERSION-$TARGET"
           case "$TARGET" in
-            macos-universal)
-              python3 native/build_macos.py --out "dist/$BASE.zip"
-              ditto -x -k "dist/$BASE.zip" client-stage
-              lipo client-stage/BookStark.app/Contents/MacOS/BookStark -verify_arch arm64 x86_64
-              codesign --verify --strict client-stage/BookStark.app
-              ;;
             linux-amd64)
               GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -trimpath \
                 -tags wails,production,gtk3,purego -ldflags="-s -w" -o client-stage/BookStark .
@@ -128,6 +119,16 @@ jobs:
           path: dist/bookstark-client-${{ env.VERSION }}-${{ matrix.target }}.*
           if-no-files-found: error
           retention-days: 7
+
+  client-macos:
+    name: Package macOS clients
+    needs: prepare
+    permissions:
+      contents: write
+    uses: ./.github/workflows/macos-clients.yml
+    with:
+      tag: ${{ needs.prepare.outputs.tag }}
+      source_ref: ${{ github.sha }}
 
   client-android:
     name: Package BookStark client (Android ${{ matrix.abi }})
@@ -224,7 +225,7 @@ jobs:
 
   release:
     name: Publish Release
-    needs: [prepare, server, client-desktop, client-android, docker]
+    needs: [prepare, server, client-desktop, client-macos, client-android, docker]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -262,7 +263,7 @@ jobs:
           body: |
             **BookStark clients** use Wails 3 and offer local workspaces and remote connections.
             Assets named `bookstark-client-*` include Windows x64, Linux x64,
-            macOS Universal (Apple silicon and Intel), and Android ARM64 and x86_64.
+            separate macOS arm64 (Apple silicon) and amd64 (Intel) packages, and Android ARM64 and x86_64.
             The macOS app uses ad-hoc signing. The Android APKs use test signing for sideloading.
             Local workspaces let you choose the admin password during first-time setup.
             The credentials screen includes a copy-password button.
