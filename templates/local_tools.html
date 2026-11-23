@@ -4,27 +4,37 @@
 <link rel="stylesheet" href="/static/css/local-tools.css?v={{assetVer "/static/css/local-tools.css"}}">
 </head><body class="local-tools-body">
 <header class="local-tools-header">
-<button type="button" class="row-action local-drawer-toggle" id="toolsDrawer" aria-expanded="false" aria-controls="toolsSidebar" aria-label="{{call .T "tools.drafts"}}"><i class="fa-solid fa-bars"></i></button>
-<a class="local-tools-brand" href="/shares" title="{{call .T "tools.back"}}"><i class="fa-solid fa-book-open"></i><span>BookStark</span></a>
-<h1 class="page-title">{{call .T "tools.title"}}</h1>
+<div class="local-tools-navigation">
+<button type="button" class="row-action local-drawer-toggle" id="toolsDrawer" aria-expanded="false" aria-controls="toolsSidebar" aria-label="{{call .T "tools.drafts"}}"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
+<a class="local-tools-brand" href="/shares" data-tools-back aria-label="BookStark · {{call .T "tools.back"}}"><i class="fa-solid fa-book-open" aria-hidden="true"></i><span>BookStark</span></a>
+<h1 class="page-title"><span class="local-tools-title-full">{{call .T "tools.title"}}</span><span class="local-tools-title-compact">{{call .T "tools.compact_title"}}</span></h1>
+</div>
+<a id="toolsBack" class="bs-btn bs-btn-cancel local-tools-back" href="/shares" data-tools-back><i class="fa-solid fa-arrow-left" aria-hidden="true"></i><span>{{call .T "tools.back"}}</span></a>
+</header>
+<section class="local-document-toolbar" id="toolsDocument" aria-label="{{call .T "tools.filename"}}" hidden>
+<div class="local-document-name">
 <label class="sr-only" for="toolsTitle">{{call .T "tools.filename"}}</label><input id="toolsTitle" class="dialog-input" maxlength="120" hidden>
 <span id="toolsStatus" role="status" aria-live="polite"></span>
+</div>
+<div class="local-document-actions">
 <button id="toolsRetry" class="bs-btn bs-btn-cancel" hidden>{{call .T "tools.retry"}}</button>
 <button id="toolsCopy" class="bs-btn bs-btn-cancel" hidden>{{call .T "tools.copy"}}</button>
-<details class="local-export" id="toolsExport" hidden><summary class="bs-btn bs-btn-primary"><i class="fa-solid fa-download"></i> {{call .T "tools.export"}}</summary><div class="header-dropdown-panel" id="toolsExportMenu"></div></details>
-</header>
+<details class="local-export" id="toolsExport" hidden><summary class="bs-btn bs-btn-primary"><i class="fa-solid fa-download" aria-hidden="true"></i> {{call .T "tools.export"}}</summary><div class="header-dropdown-panel" id="toolsExportMenu"></div></details>
+</div>
+</section>
 <div class="local-tools-layout">
 <button class="local-drawer-backdrop" id="toolsBackdrop" aria-label="{{call .T "tools.close"}}" hidden></button>
-<aside id="toolsSidebar" class="local-tools-sidebar">
-<h2>{{call .T "tools.local"}}</h2>
-<button id="toolsNew" class="bs-btn bs-btn-primary"><i class="fa-solid fa-plus"></i> {{call .T "tools.new"}}</button>
-<button id="toolsImport" class="bs-btn bs-btn-cancel"><i class="fa-solid fa-file-import"></i> {{call .T "tools.import"}}</button>
+<aside id="toolsSidebar" class="local-tools-sidebar" aria-labelledby="toolsSidebarTitle">
+<div class="local-sidebar-heading"><h2 id="toolsSidebarTitle">{{call .T "tools.local"}}</h2><button id="toolsSidebarClose" type="button" class="row-action local-drawer-close" aria-label="{{call .T "tools.close"}}"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button></div>
+<button id="toolsNew" class="bs-btn bs-btn-primary" aria-label="{{call .T "tools.new"}}" title="{{call .T "tools.new"}}"><i class="fa-solid fa-plus" aria-hidden="true"></i><span class="local-sidebar-label">{{call .T "tools.new"}}</span></button>
+<button id="toolsImport" class="bs-btn bs-btn-cancel" aria-label="{{call .T "tools.import"}}" title="{{call .T "tools.import"}}"><i class="fa-solid fa-file-import" aria-hidden="true"></i><span class="local-sidebar-label">{{call .T "tools.import"}}</span></button>
 <input id="toolsImportFile" type="file" accept=".json,.bookstark.json" hidden>
+<h3 class="local-recent-heading">{{call .T "tools.recent"}}</h3>
 <div id="toolsDrafts" class="local-draft-list"></div>
 <div class="local-storage-note"><p id="toolsUsage"></p><p>{{call .T "tools.notice"}}</p></div>
 </aside>
 <main class="local-tools-main" role="main">
-<section id="toolsWelcome"><h2>{{call .T "tools.choose"}}</h2>{{template "local-tool-grid" .}}<p>{{call .T "tools.native_hint"}}</p></section>
+<section id="toolsWelcome" aria-labelledby="toolsWelcomeTitle"><div class="local-welcome-heading"><h2 id="toolsWelcomeTitle">{{call .T "tools.choose"}}</h2><p>{{call .T "tools.subtitle"}}</p></div>{{template "local-tool-grid" .}}<p class="local-welcome-hint">{{call .T "tools.native_hint"}}</p></section>
 <div id="toolsLoading" role="status" hidden>{{call .T "tools.loading"}}</div>
 <div id="toolsEditor" hidden></div>
 </main></div>
@@ -40,11 +50,11 @@
 
 {{define "local-tool-grid"}}
 <div class="local-tool-grid">
-<a class="bs-btn bs-btn-cancel" href="/tools?type=markdown" target="_blank" rel="noopener"><i class="fa-solid fa-file-lines"></i>Markdown</a>
-<a class="bs-btn bs-btn-cancel" href="/tools?type=richdoc" target="_blank" rel="noopener"><i class="fa-solid fa-file-word"></i>{{call .T "tools.richdoc"}}</a>
-<a class="bs-btn bs-btn-cancel" href="/tools?type=spreadsheet" target="_blank" rel="noopener"><i class="fa-solid fa-table"></i>{{call .T "tools.spreadsheet"}}</a>
-<a class="bs-btn bs-btn-cancel" href="/tools?type=drawing" target="_blank" rel="noopener"><i class="fa-solid fa-pen-ruler"></i>{{call .T "tools.drawing"}}</a>
-<a class="bs-btn bs-btn-cancel" href="/tools?type=mindmap" target="_blank" rel="noopener"><i class="fa-solid fa-diagram-project"></i>{{call .T "tools.mindmap"}}</a>
-<a class="bs-btn bs-btn-cancel" href="/tools?type=presentation" target="_blank" rel="noopener"><i class="fa-solid fa-display"></i>{{call .T "tools.presentation"}}</a>
+<a class="bs-btn bs-btn-cancel" href="/tools?type=markdown" target="_blank" rel="noopener"><i class="fa-solid fa-file-lines"></i><span class="local-tool-label"><strong>Markdown</strong><small class="local-tool-description">{{call .T "tools.markdown_hint"}}</small></span></a>
+<a class="bs-btn bs-btn-cancel" href="/tools?type=richdoc" target="_blank" rel="noopener"><i class="fa-solid fa-file-word"></i><span class="local-tool-label"><strong>{{call .T "tools.richdoc"}}</strong><small class="local-tool-description">{{call .T "tools.richdoc_hint"}}</small></span></a>
+<a class="bs-btn bs-btn-cancel" href="/tools?type=spreadsheet" target="_blank" rel="noopener"><i class="fa-solid fa-table"></i><span class="local-tool-label"><strong>{{call .T "tools.spreadsheet"}}</strong><small class="local-tool-description">{{call .T "tools.spreadsheet_hint"}}</small></span></a>
+<a class="bs-btn bs-btn-cancel" href="/tools?type=drawing" target="_blank" rel="noopener"><i class="fa-solid fa-pen-ruler"></i><span class="local-tool-label"><strong>{{call .T "tools.drawing"}}</strong><small class="local-tool-description">{{call .T "tools.drawing_hint"}}</small></span></a>
+<a class="bs-btn bs-btn-cancel" href="/tools?type=mindmap" target="_blank" rel="noopener"><i class="fa-solid fa-diagram-project"></i><span class="local-tool-label"><strong>{{call .T "tools.mindmap"}}</strong><small class="local-tool-description">{{call .T "tools.mindmap_hint"}}</small></span></a>
+<a class="bs-btn bs-btn-cancel" href="/tools?type=presentation" target="_blank" rel="noopener"><i class="fa-solid fa-display"></i><span class="local-tool-label"><strong>{{call .T "tools.presentation"}}</strong><small class="local-tool-description">{{call .T "tools.presentation_hint"}}</small></span></a>
 </div>
 {{end}}

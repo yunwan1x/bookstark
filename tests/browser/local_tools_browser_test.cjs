@@ -20,6 +20,21 @@ const origin = process.env.BOOKSTARK_TEST_ORIGIN;
   await page.locator('#localMarkdown .cm-content').click();await page.keyboard.type('# Local draft\n\nHello browser');
   await page.locator('#toolsTitle').fill('Local markdown');await saved();
   const id=new URL(page.url()).searchParams.get('draft');assert.ok(id);
+  // The explicit return button must flush an edit before leaving the workspace.
+  await page.locator('#toolsTitle').fill('Saved by back');
+  await page.locator('#toolsBack').click();await page.waitForURL(url=>url.pathname==='/shares');
+  await page.goto(origin+'/tools?draft='+id);await ready();
+  assert.equal(await page.locator('#toolsTitle').inputValue(),'Saved by back');
+  // Failed saves still offer cancellation through the shared confirmation dialog.
+  await page.evaluate(()=>{window.restoreDraftSave=BookStarkLocalDrafts.save;BookStarkLocalDrafts.save=async()=>{throw new Error('storage unavailable');};});
+  await page.locator('#toolsTitle').fill('Keep this unsaved title');
+  await page.locator('#toolsBack').click();await page.locator('.bs-dialog-overlay.active').waitFor();
+  await page.locator('.bs-dialog-overlay.active .bs-btn-cancel').click();
+  assert.equal(new URL(page.url()).pathname,'/tools');
+  assert.equal(await page.locator('#toolsTitle').inputValue(),'Keep this unsaved title');
+  await page.evaluate(()=>{BookStarkLocalDrafts.save=window.restoreDraftSave;delete window.restoreDraftSave;});
+  await page.locator('#toolsRetry').click();await saved();
+  await page.locator('#toolsTitle').fill('Local markdown');await saved();
   await page.reload();await ready();assert.equal(await page.locator('#toolsTitle').inputValue(),'Local markdown');
   assert.ok((await page.locator('#localMarkdown').innerText()).includes('Hello browser'));
   await page.locator('#toolsExport summary').click();
@@ -33,7 +48,7 @@ const origin = process.env.BOOKSTARK_TEST_ORIGIN;
    console.log('TEST TYPE',type);await page.goto(origin+'/tools?type='+type);await ready();
    if(type==='presentation'){await page.waitForFunction(()=>{const f=document.querySelector('#pptist-editor iframe');return f?.contentWindow?.BookStarkPPTistBridge},{timeout:45000});await page.frameLocator('#pptist-editor iframe').getByText('添加幻灯片',{exact:true}).first().click();}
    if(type==='drawing')await page.waitForSelector('.excalidraw');
-   if(type==='spreadsheet'){await page.waitForFunction(()=>BookStarkUniverAdapter.running);await page.mouse.dblclick(320,200);await page.keyboard.type('42');await page.keyboard.press('Enter');await page.waitForFunction(()=>{const w=JSON.parse(BookStarkUniverAdapter.getContent());return String(w.sheets[w.sheetOrder[0]].cellData?.[0]?.[0]?.v)==='42';});}
+   if(type==='spreadsheet'){await page.waitForFunction(()=>BookStarkUniverAdapter.running);const bounds=await page.locator('#toolsEditor').boundingBox();await page.mouse.dblclick(bounds.x+80,bounds.y+136);await page.keyboard.type('42');await page.keyboard.press('Enter');await page.waitForFunction(()=>{const w=JSON.parse(BookStarkUniverAdapter.getContent());return String(w.sheets[w.sheetOrder[0]].cellData?.[0]?.[0]?.v)==='42';});}
    if(type==='mindmap'){await page.locator('me-tpc').first().dblclick();await page.keyboard.press('Control+a');await page.keyboard.type('Local mind map');await page.keyboard.press('Enter');}
    if(type==='richdoc')await page.evaluate(async()=>{
     BookStarkRichDoc.active.command('executeSetRange',0,0);BookStarkRichDoc.active.insertAIText('Local document text',false,false);
@@ -83,16 +98,43 @@ const origin = process.env.BOOKSTARK_TEST_ORIGIN;
   // No HTML import, or malformed rich documents.
   await page.setInputFiles('#toolsImportFile',{name:'bad.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({schema:'bookstark-local-draft',version:1,type:'html',title:'x',content:'<script>'}))});
   await page.waitForTimeout(300);assert.ok(!page.url().includes('type=html'));
-  for(const lang of ['zh','en']) for(const theme of ['light','nvidia']) for(const width of [390,1440]){
+  for(const lang of ['zh','en']) for(const theme of ['light','nvidia']) for(const width of [320,390,768,1440]){
    await context.addCookies([{name:'lang',value:lang,url:origin}]);await page.setViewportSize({width,height:900});await page.goto(origin+'/tools');
    await page.evaluate(theme=>localStorage.setItem('bookstark-theme',theme),theme);await page.reload();
    assert.equal(await page.locator('#toolsWelcome .local-tool-grid a').count(),6);
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
-   if(width===390){await page.locator('#toolsDrawer').click();assert.equal(await page.locator('#toolsDrawer').getAttribute('aria-expanded'),'true');await page.locator('#toolsBackdrop').click({position:{x:380,y:500}});}
+   await page.locator('#toolsBack').waitFor({state:'visible'});
+   const layout=await page.evaluate(()=>{
+    const rect=selector=>{const b=document.querySelector(selector).getBoundingClientRect();return {x:b.x,y:b.y,width:b.width,height:b.height,center:b.y+b.height/2,right:b.right};};
+    return {header:rect('.local-tools-header'),title:rect('.local-tools-header h1'),back:rect('#toolsBack'),brand:rect('.local-tools-brand')};
+   });
+   assert.ok(Math.abs(layout.title.center-layout.back.center)<2,'heading and return button are misaligned');
+   assert.ok(layout.back.right<=width && layout.back.x>=0,'return button is clipped');
+   if(width>640)assert.ok(Math.abs(layout.title.center-layout.brand.center)<2,'brand and heading are misaligned');
+   if(width<=640){
+    await page.locator('#toolsDrawer').click();assert.equal(await page.locator('#toolsDrawer').getAttribute('aria-expanded'),'true');
+    assert.equal(await page.locator('#toolsSidebar').getAttribute('aria-modal'),'true');
+    await page.locator('#toolsSidebarClose').click();assert.equal(await page.locator('#toolsDrawer').getAttribute('aria-expanded'),'false');
+    await page.locator('#toolsDrawer').click();
+    if(width===390 && lang==='zh' && theme==='light')await page.screenshot({path:'/tmp/bookstark-tools-mobile-drawer.png'});
+    await page.keyboard.press('Escape');assert.equal(await page.locator('#toolsDrawer').getAttribute('aria-expanded'),'false');
+    await page.locator('#toolsDrawer').click();await page.locator('#toolsBackdrop').click({position:{x:width-8,y:500}});
+   }
+   if(width===1440 && lang==='zh' && theme==='light'){
+    const expanded=await page.locator('.local-tools-main').boundingBox();
+    await page.locator('#toolsDrawer').click();
+    assert.equal(await page.locator('#toolsDrawer').getAttribute('aria-expanded'),'false');
+    const collapsed=await page.locator('.local-tools-main').boundingBox();
+    assert.ok(collapsed.width-expanded.width>=160,'collapsing sidebar did not free workspace width');
+    await page.locator('#toolsNew').waitFor({state:'visible'});await page.locator('#toolsImport').waitFor({state:'visible'});
+    await page.reload();assert.equal(await page.locator('#toolsDrawer').getAttribute('aria-expanded'),'false');
+    await page.screenshot({path:'/tmp/bookstark-tools-desktop-collapsed.png'});
+    await page.locator('#toolsDrawer').click();assert.equal(await page.locator('#toolsDrawer').getAttribute('aria-expanded'),'true');
+   }
    await page.screenshot({path:`/tmp/bookstark-local-home-${lang}-${theme}-${width}.png`});
   }
   await page.goto(origin+'/shares');await page.screenshot({path:'/tmp/bookstark-local-sidebar.png',fullPage:true});await page.waitForFunction(()=>document.querySelectorAll('#publicLocalDrafts a').length===2);
   assert.equal(writes.length,0,'tools must never write server APIs');assert.deepEqual(errors,[]);
-  console.log('PASS local editors, IndexedDB persistence, import/export, conflicts, responsive themes and no API writes');
+  console.log('PASS local editors, IndexedDB persistence, import/export, conflicts, responsive themes, aligned headers, persistent sidebar collapse, save-before-return and no API writes');
  }catch(e){await page.screenshot({path:'/tmp/bookstark-local-test-error.png'}).catch(()=>{});throw e;}finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exit(1)});

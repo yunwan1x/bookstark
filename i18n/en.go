@@ -88,6 +88,16 @@ var enMessages = map[string]string{
 	"tools.initial":        "Autosaves when you edit",
 	"tools.discard":        "Changes are not saved. Leave and discard them?",
 
+	"tools.compact_title":     "Tools",
+	"tools.markdown_hint":     "Write and format with focus",
+	"tools.richdoc_hint":      "Bring text and images together",
+	"tools.spreadsheet_hint":  "Organize data and lists",
+	"tools.drawing_hint":      "Sketch and express your ideas",
+	"tools.mindmap_hint":      "Connect ideas and structure",
+	"tools.presentation_hint": "Present your ideas clearly",
+	"tools.sidebar_expand":    "Expand drafts sidebar",
+	"tools.sidebar_collapse":  "Collapse drafts sidebar",
+
 	"news.unknown_date": "Publication date unavailable",
 
 	"news.task_failed": "Failed",

@@ -85,11 +85,35 @@
       el('toolsUsage').textContent = t('usage').replace('{count}',rows.length).replace('{size}',(rows.reduce((n,d)=>n+d.bytes,0)/1048576).toFixed(2));
     } catch (_) { el('toolsDrafts').textContent = t('unavailable'); }
   }
-  function drawer(open) {
-    el('toolsSidebar').classList.toggle('is-open',open); el('toolsBackdrop').hidden=!open;
-    el('toolsDrawer').setAttribute('aria-expanded',String(open));
-    if (open) el('toolsNew').focus(); else el('toolsDrawer').focus();
+  const sidebarViewport = window.matchMedia('(max-width: 640px)');
+  let sidebarCollapsed = false;
+  try { sidebarCollapsed = localStorage.getItem('bookstark-tools-sidebar-collapsed') === 'true'; } catch (_) {}
+  function updateSidebar() {
+    const mobile = sidebarViewport.matches;
+    el('toolsSidebar').classList.toggle('is-collapsed', !mobile && sidebarCollapsed);
+    const expanded = mobile ? el('toolsSidebar').classList.contains('is-open') : !sidebarCollapsed;
+    const label = t(mobile ? (expanded ? 'close' : 'drafts') : (expanded ? 'sidebar_collapse' : 'sidebar_expand'));
+    el('toolsDrawer').setAttribute('aria-expanded', String(expanded));
+    el('toolsDrawer').setAttribute('aria-label', label);
+    el('toolsDrawer').title = label;
   }
+  function drawer(open) {
+    const wasOpen = el('toolsSidebar').classList.contains('is-open');
+    open = open && sidebarViewport.matches;
+    el('toolsSidebar').classList.toggle('is-open', open);
+    el('toolsBackdrop').hidden = !open;
+    if (open) {
+      el('toolsSidebar').setAttribute('role', 'dialog');
+      el('toolsSidebar').setAttribute('aria-modal', 'true');
+      el('toolsSidebarClose').focus();
+    } else {
+      el('toolsSidebar').removeAttribute('role');
+      el('toolsSidebar').removeAttribute('aria-modal');
+      if (wasOpen) el('toolsDrawer').focus();
+    }
+    updateSidebar();
+  }
+  sidebarViewport.addEventListener('change', () => drawer(false));
   function download(value, name, mime) {
     const url = URL.createObjectURL(value instanceof Blob ? value : new Blob([value],{type:mime||'application/json'}));
     const a=document.createElement('a'); a.href=url; a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(url),30000);
@@ -134,6 +158,7 @@
   function waitUntil(check) { return new Promise((resolve,reject)=>{let count=0;const poll=setInterval(()=>{if(check()){clearInterval(poll);resolve();}else if(++count>250){clearInterval(poll);reject(new Error(t('load_error')));}},100);}); }
   async function mount() {
     document.body.classList.add('has-local-editor');
+    el('toolsDocument').hidden=false;
     el('toolsWelcome').hidden=true; el('toolsEditor').hidden=false; el('toolsLoading').hidden=false;
     el('toolsTitle').hidden=false; el('toolsTitle').value=draft.title;
     const host=el('toolsEditor');
@@ -193,7 +218,13 @@
   el('toolsTitle').addEventListener('input',changed);
   el('toolsRetry').onclick=()=>{failed=false;flush();};
   el('toolsCopy').onclick=async()=>{if(saving)await saving;draft.id=uuid();revision=0;failed=false;dirty=true;await flush();await refreshList();};
-  el('toolsDrawer').onclick=()=>drawer(!el('toolsSidebar').classList.contains('is-open'));
+  el('toolsDrawer').onclick=()=>{
+    if (sidebarViewport.matches) { drawer(!el('toolsSidebar').classList.contains('is-open')); return; }
+    sidebarCollapsed = !sidebarCollapsed;
+    try { localStorage.setItem('bookstark-tools-sidebar-collapsed', String(sidebarCollapsed)); } catch (_) {}
+    updateSidebar();
+  };
+  el('toolsSidebarClose').onclick=()=>drawer(false);
   el('toolsBackdrop').onclick=()=>drawer(false);
   el('toolsNew').onclick=()=>leave('/tools');
   el('toolsImport').onclick=()=>el('toolsImportFile').click();
@@ -207,9 +238,15 @@
       await store.save(imported,0);dirty=false;ready=false;location.href='/tools?draft='+encodeURIComponent(imported.id);
     }catch(e){BSDialog.toast(t('invalid'),'error');}finally{event.target.value='';}
   };
-  document.querySelector('.local-tools-brand').onclick=e=>{e.preventDefault();leave('/shares');};
+  document.querySelectorAll('[data-tools-back]').forEach(link=>{link.onclick=e=>{e.preventDefault();leave('/shares');};});
   window.addEventListener('local-drafts-changed',refreshList);window.addEventListener('focus',refreshList);
-  document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();flush();}if(e.key==='Escape'){el('toolsExport').open=false;drawer(false);}});
+  document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();flush();}if(e.key==='Escape'){el('toolsExport').open=false;drawer(false);}
+    if(e.key==='Tab' && sidebarViewport.matches && el('toolsSidebar').classList.contains('is-open')){
+      const focusable=Array.from(el('toolsSidebar').querySelectorAll('button,a[href],input')).filter(node=>!node.hidden && node.getClientRects().length);
+      const first=focusable[0],last=focusable[focusable.length-1];
+      if(e.shiftKey && document.activeElement===first){e.preventDefault();last.focus();}
+      else if(!e.shiftKey && document.activeElement===last){e.preventDefault();first.focus();}
+    }});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)flush();});
   if (window.BookStarkNativeGuards) BookStarkNativeGuards.add(flush);
   window.addEventListener('bookstark:background', () => { flush(); });
@@ -223,5 +260,6 @@
     }catch(e){state('unavailable');}
     await refreshList();
   }
+  updateSidebar();
   init();
 })();

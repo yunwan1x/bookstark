@@ -88,6 +88,16 @@ var zhMessages = map[string]string{
 	"tools.initial":        "编辑后自动保存",
 	"tools.discard":        "当前内容尚未保存。离开将丢失修改，是否继续？",
 
+	"tools.compact_title":     "创作工具",
+	"tools.markdown_hint":     "专注文字与排版",
+	"tools.richdoc_hint":      "图文混排，轻松记录",
+	"tools.spreadsheet_hint":  "整理数据与清单",
+	"tools.drawing_hint":      "自由绘制与表达",
+	"tools.mindmap_hint":      "梳理想法与结构",
+	"tools.presentation_hint": "把观点呈现清楚",
+	"tools.sidebar_expand":    "展开草稿栏",
+	"tools.sidebar_collapse":  "收起草稿栏",
+
 	"news.unknown_date": "发布时间未知",
 
 	"news.task_failed": "失败",
