@@ -54,6 +54,15 @@ func PublishMarketTool(router http.Handler) gin.HandlerFunc {
 		_ = models.DB.QueryRow("SELECT revision FROM md_tool_releases WHERE blog_id=?", id).Scan(&current)
 		if c.Request.Method == "GET" {
 			m := latestToolMetadata(id)
+			if current == "" {
+				var pending string
+				if err := models.DB.QueryRow("SELECT metadata FROM md_tool_versions WHERE blog_id=? AND status='pending' ORDER BY created DESC,rowid DESC LIMIT 1", id).Scan(&pending); err == nil {
+					if err := json.Unmarshal([]byte(pending), &m); err != nil {
+						toolAPIError(c, err)
+						return
+					}
+				}
+			}
 			rows, err := models.DB.Query("SELECT version,revision,status,created FROM md_tool_versions WHERE blog_id=? ORDER BY created DESC,rowid DESC", id)
 			if err != nil {
 				toolAPIError(c, err)
@@ -82,7 +91,7 @@ func PublishMarketTool(router http.Handler) gin.HandlerFunc {
 					accounts = append(accounts, account)
 				}
 			}
-			c.JSON(200, gin.H{"published": current != "", "revision": current, "title": blog.BlogTitle, "description": blog.BlogDesc, "metadata": m, "member_accounts": accounts, "versions": versions, "market": readMarketSettings(c)})
+			c.JSON(200, gin.H{"published": current != "", "revision": current, "title": blog.BlogTitle, "description": blog.BlogDesc, "metadata": m, "member_accounts": accounts, "versions": versions, "market": readMarketSettings(c), "icons": models.ToolIconOptions})
 			return
 		}
 		if c.Request.Method == "DELETE" {
@@ -128,6 +137,11 @@ func PublishMarketTool(router http.Handler) gin.HandlerFunc {
 			}
 		}
 		req.Title = strings.TrimSpace(req.Title)
+		if !models.ValidToolAppearance(req.Icon, req.IconStyle, req.IconColor) {
+			c.JSON(400, gin.H{"error": "invalid_tool_appearance"})
+			return
+		}
+		req.IconColor = strings.ToLower(req.IconColor)
 		if req.Version == "" {
 			var count int
 			models.DB.QueryRow("SELECT COUNT(*) FROM md_tool_versions WHERE blog_id=?", id).Scan(&count)

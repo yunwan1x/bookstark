@@ -26,6 +26,9 @@ type ToolMetadata struct {
 	Description  string          `json:"description,omitempty"`
 	Version      string          `json:"version"`
 	Category     string          `json:"category"`
+	Icon         string          `json:"icon,omitempty"`
+	IconStyle    string          `json:"icon_style,omitempty"`
+	IconColor    string          `json:"icon_color,omitempty"`
 	Size         int64           `json:"size"`
 	AssetCount   int             `json:"asset_count"`
 	Offline      bool            `json:"offline"`
