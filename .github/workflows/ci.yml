@@ -33,5 +33,5 @@ jobs:
       - name: Build
         run: python3 build.py --build --output dist/bookstark
 
-      - name: Smoke binary
-        run: ./dist/bookstark --help || true
+      - name: Native workspace setup tests
+        run: go test -tags wails,gtk3,purego -run 'TestNativeWorkspaces|TestValidateServerURL|TestValidateLocalPassword' .

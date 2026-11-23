@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="{{.Lang}}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>BookStark · 选择工作区</title>
+<title>BookStark · {{call .T "native.workspace.title"}}</title>
 <style>
 :root{font:16px/1.55 system-ui,sans-serif;color:#202834;background:#f5f6f9;color-scheme:light}
 *{box-sizing:border-box}
@@ -23,6 +23,11 @@ a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #8394
 .alert{border-left:3px solid #ab352d;background:#fff2f1;color:#812a23;padding:10px 12px}
 .credential{user-select:all;overflow-wrap:anywhere;color:#242e45;background:#edf0fa;padding:10px;border-radius:6px}
 .single{max-width:460px}
+.credential-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;min-width:0}
+.credential-row .credential{flex:1;min-width:0}
+.credential-row button{width:auto;flex-shrink:0}
+#copyStatus{font-size:.875rem;min-height:1.55em}
+@media(max-width:640px){.credential-row{flex-wrap:wrap}}
 @media(max-width:600px){.options{grid-template-columns:1fr}body{place-items:start center}}
 </style>
 </head>
@@ -30,36 +35,47 @@ a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #8394
 <main>
 <span class="brand">BookStark</span>
 {{if .FirstLogin}}
-<h1>本地工作区已创建</h1>
+<h1>{{call .T "native.local.ready"}}</h1>
 <section class="single">
-<p>使用以下本地管理员凭据登录。登录后可以在账户安全中修改密码。</p>
-<p>账号 <code>admin</code></p>
-<p>初始密码</p>
-<p class="credential"><code>{{.FirstLogin}}</code></p>
-<a class="action" href="/login">打开登录页</a>
+<p>{{call .T "native.local.login_hint"}}</p>
+<p>{{call .T "native.local.account"}} <code>admin</code></p>
+<p>{{call .T "native.local.password"}}</p>
+<div class="credential-row"><code class="credential" id="passwordValue">{{.FirstLogin}}</code><button type="button" class="secondary" id="copyPassword" data-copied="{{call .T "native.local.copied"}}" data-failed="{{call .T "native.local.copy_failed"}}">{{call .T "native.local.copy"}}</button></div>
+<p id="copyStatus" role="status" aria-live="polite"></p>
+<a class="action" href="/login">{{call .T "native.local.login"}}</a>
 </section>
 {{else}}
-<h1>选择工作区</h1>
+<h1>{{call .T "native.workspace.title"}}</h1>
 {{if .Error}}<p class="alert" role="alert">{{.Error}}</p>{{end}}
 <div class="options">
 <section>
-<h2>远程服务器</h2>
-<p>连接已有的 BookStark。使用该服务器上的账号和数据。</p>
+<h2>{{call .T "native.remote.title"}}</h2>
+<p>{{call .T "native.remote.hint"}}</p>
 <form method="post" action="/__bookstark/remote">
-<label for="address">服务器地址</label>
+<label for="address">{{call .T "native.remote.address"}}</label>
 <input id="address" name="address" type="url" autocomplete="url" value="{{.Remote}}" placeholder="https://bookstark.example.com" required>
-<button type="submit">连接服务器</button>
+<button type="submit">{{call .T "native.remote.connect"}}</button>
 </form>
 </section>
 <section>
-<h2>本地工作区</h2>
-<p>数据库和附件保存在这台设备。笔记、文档和编辑器可以离线使用。</p>
+<h2>{{call .T "native.local.title"}}</h2>
+<p>{{call .T "native.local.hint"}}</p>
 <form method="post" action="/__bookstark/local">
-<button class="secondary" type="submit">打开本地工作区</button>
+{{if .NeedsSetup}}
+<p id="passwordHint">{{call .T "native.setup.hint"}}</p>
+<label for="password">{{call .T "native.local.password"}}</label>
+<input id="password" name="password" type="password" autocomplete="new-password" minlength="8" maxlength="72" aria-describedby="passwordHint" required>
+<label for="confirmPassword">{{call .T "native.setup.confirm"}}</label>
+<input id="confirmPassword" name="confirm_password" type="password" autocomplete="new-password" minlength="8" maxlength="72" required>
+<button class="secondary" type="submit">{{call .T "native.setup.create"}}</button>
+{{else}}
+<button class="secondary" type="submit">{{call .T "native.local.open"}}</button>
+{{end}}
 </form>
 </section>
 </div>
 {{end}}
 </main>
+<script src="/__bookstark/launcher.js" defer></script>
 </body>
 </html>

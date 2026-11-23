@@ -480,7 +480,7 @@ sed -n 's/^ADMIN_PASSWORD=//p' data/bookstark.env
 
 Open **http://localhost:8089** and sign in as `admin` with the generated password. For remote access, configure an HTTPS reverse proxy with WebSocket and SSE support.
 
-You can also use binaries from [GitHub Releases](https://github.com/yunwan1x/bookstark/releases). See the [deployment and maintenance guide (Chinese)](docs/usage-and-deployment.md) for Docker Compose, GHCR images, environment variables, local development, upgrades, and backups. Use its BookStark Compose example; development proxy tools live separately under `tools/dev-proxy/`.
+Desktop and Android users can download GUI clients from [GitHub Releases](https://github.com/yunwan1x/bookstark/releases) and choose a local workspace or a remote server. First-time local setup lets you choose the admin password and copy it from the completion screen. Releases no longer include standalone server binaries; use Docker images for server deployments. See the [deployment and maintenance guide (Chinese)](docs/usage-and-deployment.md) for Docker Compose, GHCR images, environment variables, local development, upgrades, and backups. Use its BookStark Compose example; development proxy tools live separately under `tools/dev-proxy/`.
 
 > Back up databases, uploads, and secrets before upgrading. Do not commit the generated environment file or regenerate it on upgrade. Changing initialization variables does not reset an existing account's password.
 

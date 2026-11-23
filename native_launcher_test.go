@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -88,9 +89,27 @@ func TestNativeWorkspaces(t *testing.T) {
 	response, err = client.Do(request)
 	read(response, err, http.StatusForbidden)
 
-	response, err = client.PostForm(base+"/__bookstark/local", nil)
-	if data := read(response, err, http.StatusOK); l.initialPassword == "" || !strings.Contains(data, l.initialPassword) {
+	for _, values := range []url.Values{
+		{},
+		{"password": {"short"}, "confirm_password": {"short"}},
+		{"password": {"Local-Admin-2026!"}, "confirm_password": {"different"}},
+	} {
+		response, err = client.PostForm(base+"/__bookstark/local", values)
+		read(response, err, http.StatusBadRequest)
+		if _, err := os.Stat(filepath.Join(dir, "local", "bookstark.db")); !os.IsNotExist(err) {
+			t.Fatal("invalid setup initialized a database")
+		}
+	}
+	chosenPassword := "Local-Admin-2026!"
+	response, err = client.PostForm(base+"/__bookstark/local", url.Values{"password": {chosenPassword}, "confirm_password": {chosenPassword}})
+	if data := read(response, err, http.StatusOK); l.initialPassword != chosenPassword || !strings.Contains(data, chosenPassword) || !strings.Contains(data, `id="copyPassword"`) {
 		t.Fatal("first login screen did not supply initial credentials")
+	}
+	response, err = client.Get(base + "/__bookstark/launcher.js")
+	read(response, err, http.StatusOK)
+	response, err = client.Get(base + "/__bookstark/")
+	if data := read(response, err, http.StatusOK); strings.Contains(data, `name="confirm_password"`) {
+		t.Fatal("existing workspace asks for initialization again")
 	}
 	response, err = client.Get(base + "/login")
 	if data := read(response, err, http.StatusOK); !strings.Contains(data, "BookStark") {
@@ -109,9 +128,24 @@ func TestNativeWorkspaces(t *testing.T) {
 	if err := models.UpdateMemberPassword(admin.MemberID, "a-changed-test-password"); err != nil {
 		t.Fatal(err)
 	}
-	response, err = client.PostForm(base+"/__bookstark/local", nil)
+	response, err = client.PostForm(base+"/__bookstark/local", url.Values{"password": {"must-not-reset-existing"}, "confirm_password": {"must-not-reset-existing"}})
 	if data := read(response, err, http.StatusOK); strings.Contains(data, l.initialPassword) {
 		t.Fatal("launcher exposed the old password")
+	}
+	admin, err = models.GetMemberByAccount("admin")
+	if err != nil || !admin.VerifyPassword("a-changed-test-password") {
+		t.Fatal("existing admin password was replaced")
+	}
+	// Reopen the persisted workspace: a supplied setup password must not reset it.
+	_ = models.DB.Close()
+	_ = models.CloseShareCommentDB()
+	reopened := &launcher{dir: dir}
+	if password, err := reopened.startLocal("must-not-reset-existing", "must-not-reset-existing"); err != nil || password != "" {
+		t.Fatalf("reopen: password disclosed=%v err=%v", password != "", err)
+	}
+	admin, err = models.GetMemberByAccount("admin")
+	if err != nil || !admin.VerifyPassword("a-changed-test-password") {
+		t.Fatal("reopen replaced the existing password")
 	}
 }
 
@@ -125,5 +159,52 @@ func TestValidateServerURL(t *testing.T) {
 		if _, err := validateServerURL(value); err == nil {
 			t.Errorf("invalid server address accepted %s", value)
 		}
+	}
+}
+
+func TestValidateLocalPassword(t *testing.T) {
+	for _, password := range []string{"abcdefgh", "密码安全测试八个", strings.Repeat("x", 72), "  keep spaces  "} {
+		if err := validateLocalPassword(password, password); err != nil {
+			t.Errorf("valid password rejected: %v", err)
+		}
+	}
+	for _, password := range []string{"", "1234567", strings.Repeat("x", 73), strings.Repeat("密", 25), "        "} {
+		if err := validateLocalPassword(password, password); err == nil {
+			t.Error("invalid password accepted")
+		}
+	}
+	if validateLocalPassword("abcdefgh", "abcdefgi") != errLocalPasswordMismatch {
+		t.Fatal("mismatch accepted")
+	}
+}
+
+func TestNativeLauncherBrowser(t *testing.T) {
+	if os.Getenv("BOOKSTARK_BROWSER_TEST") != "1" {
+		t.Skip("set BOOKSTARK_BROWSER_TEST=1")
+	}
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	l, listener, err := newLauncher(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	server := newLauncherServer(l)
+	go func() { _ = server.Serve(listener) }()
+	t.Cleanup(func() {
+		_ = server.Close()
+		if models.DB != nil {
+			_ = models.DB.Close()
+		}
+		_ = models.CloseShareCommentDB()
+		_ = os.Chdir(cwd)
+	})
+	cmd := exec.Command("node", filepath.Join(cwd, "tests/browser/native_launcher_browser_test.cjs"))
+	cmd.Env = append(os.Environ(), "NATIVE_START_URL="+l.startURL())
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("native browser: %v\n%s", err, output)
+	} else {
+		t.Log(string(output))
 	}
 }
