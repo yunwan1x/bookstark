@@ -1,0 +1,155 @@
+# Reused by release; manual dispatch backfills an existing release from its immutable tag.
+name: server-binaries
+on:
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+      source_ref:
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to backfill
+        required: true
+        type: string
+      upload_to_release:
+        description: Attach server packages to the existing release
+        default: true
+        type: boolean
+permissions:
+  contents: read
+concurrency:
+  group: server-binaries-${{ inputs.tag }}
+  cancel-in-progress: false
+jobs:
+  build:
+    name: Server ${{ matrix.goos }}/${{ matrix.goarch }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            archive: tar.gz
+          - goos: linux
+            goarch: arm64
+            archive: tar.gz
+          - goos: darwin
+            goarch: amd64
+            archive: tar.gz
+          - goos: darwin
+            goarch: arm64
+            archive: tar.gz
+          - goos: windows
+            goarch: amd64
+            archive: zip
+          - goos: windows
+            goarch: arm64
+            archive: zip
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref || inputs.tag }}
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Resolve tag & version
+        id: meta
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+(\.[0-9]+)?(-[A-Za-z0-9][A-Za-z0-9.-]*)?$ ]]; then
+            echo 'Invalid release tag' >&2
+            exit 1
+          fi
+          # 去掉前导 v 作为版本号（用于产物文件名内的版本字符串）
+          VERSION="${TAG#v}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          # 二进制名（windows 自动 .exe）
+          BIN="bookstark-${{ matrix.goos }}-${{ matrix.goarch }}"
+          if [ "${{ matrix.goos }}" = "windows" ]; then BIN="$BIN.exe"; fi
+          echo "bin=$BIN" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        run: |
+          python3 build.py --build \
+            --tags timetzdata \
+            --goos ${{ matrix.goos }} \
+            --goarch ${{ matrix.goarch }} \
+            --output dist/${{ steps.meta.outputs.bin }}
+
+      - name: Stage release files
+        id: stage
+        run: |
+          STAGE="dist/stage"
+          PKG="bookstark-${{ steps.meta.outputs.version }}-${{ matrix.goos }}-${{ matrix.goarch }}"
+          mkdir -p "$STAGE/$PKG"
+          cp dist/${{ steps.meta.outputs.bin }} "$STAGE/$PKG/"
+          # 附带 README / LICENSE（如存在）+ 默认配置参考
+          for f in README.md readme.md README.en.md LICENSE LICENSE.txt conf/app.conf; do
+            [ -e "$f" ] && cp "$f" "$STAGE/$PKG/" || true
+          done
+          echo "pkg=$PKG" >> "$GITHUB_OUTPUT"
+          echo "stage=$STAGE" >> "$GITHUB_OUTPUT"
+
+      - name: Archive (tar.gz)
+        if: matrix.archive == 'tar.gz'
+        run: |
+          cd "${{ steps.stage.outputs.stage }}"
+          tar -czf "${{ steps.stage.outputs.pkg }}.tar.gz" "${{ steps.stage.outputs.pkg }}"
+          sha256sum "${{ steps.stage.outputs.pkg }}.tar.gz" > "${{ steps.stage.outputs.pkg }}.tar.gz.sha256"
+
+      - name: Archive (zip)
+        if: matrix.archive == 'zip'
+        run: |
+          cd "${{ steps.stage.outputs.stage }}"
+          zip -qr "${{ steps.stage.outputs.pkg }}.zip" "${{ steps.stage.outputs.pkg }}"
+          sha256sum "${{ steps.stage.outputs.pkg }}.zip" > "${{ steps.stage.outputs.pkg }}.zip.sha256"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.stage.outputs.pkg }}
+          path: |
+            ${{ steps.stage.outputs.stage }}/${{ steps.stage.outputs.pkg }}.${{ matrix.archive }}
+            ${{ steps.stage.outputs.stage }}/${{ steps.stage.outputs.pkg }}.${{ matrix.archive }}.sha256
+          if-no-files-found: error
+          retention-days: 7
+
+  attach:
+    name: Attach server binaries to existing release
+    if: inputs.upload_to_release == true
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ inputs.tag }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: bookstark-*
+          path: dist
+          merge-multiple: true
+      - name: Verify checksums and upload without replacing existing assets
+        run: |
+          gh release view "$TAG" --json tagName --jq .tagName
+          (cd dist && for checksum in *.sha256; do sha256sum -c "$checksum"; done)
+          gh release upload "$TAG" dist/*

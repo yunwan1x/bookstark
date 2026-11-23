@@ -1,4 +1,4 @@
-# 发布流水线：推 v* tag 时发布 GUI 客户端和 Docker 镜像。
+# 发布流水线：推 v* tag 时发布服务端二进制、GUI 客户端和 Docker 镜像。
 # 也支持手动触发，用 workflow_dispatch 输入 tag 名。
 name: release
 
@@ -53,6 +53,16 @@ jobs:
           echo "image=ghcr.io/${REPOSITORY,,}" >> "$GITHUB_OUTPUT"
           if [[ "$RELEASE_TAG" == *-* ]]; then STABLE=false; else STABLE=true; fi
           echo "stable=$STABLE" >> "$GITHUB_OUTPUT"
+
+  server:
+    name: Package standalone servers
+    needs: prepare
+    permissions:
+      contents: write
+    uses: ./.github/workflows/server-binaries.yml
+    with:
+      tag: ${{ needs.prepare.outputs.tag }}
+      source_ref: ${{ github.sha }}
 
   client-desktop:
     name: Package BookStark client (${{ matrix.target }})
@@ -214,7 +224,7 @@ jobs:
 
   release:
     name: Publish Release
-    needs: [prepare, client-desktop, client-android, docker]
+    needs: [prepare, server, client-desktop, client-android, docker]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -233,7 +243,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: dist
-          pattern: bookstark-client-*
+          pattern: bookstark-*
           merge-multiple: true
 
       - name: List artifacts
@@ -256,7 +266,9 @@ jobs:
             The macOS app uses ad-hoc signing. The Android APKs use test signing for sideloading.
             Local workspaces let you choose the admin password during first-time setup.
             The credentials screen includes a copy-password button.
-            Standalone server binaries are no longer published; use Docker for server deployments.
+            **Standalone servers:** `bookstark-VERSION-OS-ARCH` archives run without a GUI or Docker.
+            Linux, macOS (darwin), and Windows are available for amd64 and arm64.
+            Extract the archive and run the included executable; open the service in your browser.
 
             Docker image (linux/amd64, linux/arm64):
             ```sh
