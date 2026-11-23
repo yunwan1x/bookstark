@@ -438,6 +438,13 @@ func DeleteBlog(id int64) error {
 	if count == 0 {
 		return fmt.Errorf("博客不存在")
 	}
+	usedByTool, err := toolSourceInUse(tx, id)
+	if err != nil {
+		return err
+	}
+	if usedByTool {
+		return ErrBlogUsedByTool
+	}
 
 	// 快照到回收站
 	snap, name, snapErr := SnapshotBlog(tx, id)

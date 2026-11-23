@@ -880,6 +880,14 @@ func BatchDeleteTrash(ids []int64, memberID int64, isAdmin bool) ([]string, erro
 		case "blog":
 			if snap.Blog != nil {
 				resourceID := snap.Blog.BlogID
+				used, err := toolSourceInUse(tx, resourceID)
+				if err != nil {
+					return nil, err
+				}
+				if used {
+					errors = append(errors, fmt.Sprintf("记录 %d: %s", id, ErrBlogUsedByTool))
+					continue
+				}
 				tx.Exec("DELETE FROM md_label_relation WHERE resource_id = ? AND relation_type = 'blog'", resourceID)
 				for _, s := range snap.Shares {
 					tx.Exec("DELETE FROM md_shares WHERE share_id = ?", s.ShareID)

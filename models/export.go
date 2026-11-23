@@ -1640,6 +1640,14 @@ func importBlogs(data *ExportData, targetMemberID int64, getStrategy func(string
 		if err == nil {
 			switch strategy {
 			case "overwrite":
+				used, err := toolSourceInUse(tx, existingBlogID)
+				if err != nil {
+					return nil, err
+				}
+				if used {
+					result.BlogsSkipped++
+					continue
+				}
 				// 删除关联数据
 				if _, err := tx.Exec("DELETE FROM md_label_relation WHERE resource_id = ? AND relation_type = 'blog'", existingBlogID); err != nil {
 					log.Printf("importBlogs: 删除标签关系失败: %v", err)

@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"path"
 	"strings"
 	"time"
 
@@ -75,13 +76,54 @@ func fetchToolURL(ctx context.Context, u *url.URL) ([]byte, string, error) {
 	return data, resp.Header.Get("Content-Type"), err
 }
 
+func publicToolResourcePath(p string) bool {
+	if path.Clean(p) != p || strings.Contains(p, "\\") {
+		return false
+	}
+	return strings.HasPrefix(p, "/dav-public/") || strings.HasPrefix(p, "/upload-files/") || strings.HasPrefix(p, "/static/")
+}
+
+// A configured LAN marketplace can also serve its public static resources.
+// No marketplace/workspace credentials are sent, and redirects cannot escape
+// the explicitly configured origin or the public resource handlers.
+func marketResourceFetch(origin string) toolpackage.Fetch {
+	return func(ctx context.Context, u *url.URL) ([]byte, string, error) {
+		if u.Scheme+"://"+u.Host != origin {
+			return fetchToolURL(ctx, u)
+		}
+		if u.User != nil || !publicToolResourcePath(u.Path) {
+			return nil, "", fmt.Errorf("not a public market resource")
+		}
+		client := marketplaceHTTPClient()
+		defer client.CloseIdleConnections()
+		client.CheckRedirect = func(r *http.Request, via []*http.Request) error { return http.ErrUseLastResponse }
+		req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
+		if err != nil {
+			return nil, "", err
+		}
+		response, err := client.Do(req)
+		if err != nil {
+			return nil, "", err
+		}
+		defer response.Body.Close()
+		if response.StatusCode != 200 {
+			return nil, "", fmt.Errorf("resource returned %d", response.StatusCode)
+		}
+		data, err := io.ReadAll(io.LimitReader(response.Body, toolpackage.MaxFile+1))
+		if len(data) > toolpackage.MaxFile {
+			return nil, "", fmt.Errorf("resource too large")
+		}
+		return data, response.Header.Get("Content-Type"), err
+	}
+}
+
 // Local public resources are read through the same public handlers, without loopback networking.
 func localToolFetch(router http.Handler, origin string) toolpackage.Fetch {
 	return func(ctx context.Context, u *url.URL) ([]byte, string, error) {
 		if !strings.HasSuffix(origin, "://"+u.Host) {
 			return fetchToolURL(ctx, u)
 		}
-		if !strings.HasPrefix(u.Path, "/dav-public/") && !strings.HasPrefix(u.Path, "/upload-files/") && !strings.HasPrefix(u.Path, "/static/") {
+		if !publicToolResourcePath(u.Path) {
 			return nil, "", fmt.Errorf("not a public static resource")
 		}
 		req := httptest.NewRequest("GET", u.String(), nil).WithContext(ctx)

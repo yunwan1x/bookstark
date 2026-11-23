@@ -1,11 +1,12 @@
 package i18n
 
 var enMessages = map[string]string{
-	"market.publish":      "Publish as tool",
-	"market.republish":    "Publish update",
-	"market.publish_help": "Save the article and check resources, version and installation access.",
-	"market.unpublish":    "Unpublish tool",
-	"market.unpublished":  "Tool unpublished",
+	"market.source_delete_blocked": "This article is published as a tool or awaiting review. Withdraw it on the tool publishing page before deleting the article.",
+	"market.publish":               "Publish as tool",
+	"market.republish":             "Publish update",
+	"market.publish_help":          "Save the article and check resources, version and installation access.",
+	"market.unpublish":             "Unpublish tool",
+	"market.unpublished":           "Tool unpublished",
 
 	"market.title":         "Tool market",
 	"market.mine":          "My tools",

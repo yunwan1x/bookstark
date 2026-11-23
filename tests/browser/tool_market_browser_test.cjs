@@ -19,7 +19,7 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
   await page.goto(origin+'/market');await page.locator('#marketPublish').click();await page.locator('dialog a[href^="/market/publish/"]').first().waitFor();
   const candidates=await api('/api/tool-market/articles');const id=candidates.articles.find(x=>x.title==='Craft 白板').id;
   await page.locator(`dialog a[href="/market/publish/${id}"]`).click();await page.waitForURL('**/market/publish/'+id);await page.locator('#toolPublishForm input[name="title"]').waitFor();
-  await page.locator('input[name="title"]').fill('PDF 工具箱');await page.locator('select[name="category"]').selectOption('document');await page.locator('textarea[name="notes"]').fill('首次发布，资源随工具包固定保存。');
+  await page.locator('input[name="title"]').fill('PDF 工具箱');await page.locator('select[name="category"]').selectOption('document');await page.locator('textarea[name="notes"]').fill('首次发布，原始资源在安装时下载。');
   await page.locator('select[name="access"]').selectOption('members');await page.locator('input[name="members"]').fill('admin');
   await page.screenshot({path:out+'/02-publish-article.png',fullPage:true});
   await page.locator('#toolPublishForm button[type="submit"]').click();await page.locator('#publishStatus').filter({hasText:'发布成功'}).waitFor();
@@ -40,9 +40,15 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
   await page.goto(origin+'/profile');await page.getByText('发现 1 个工具更新，可在「我的工具」查看。',{exact:true}).waitFor();
   assert.equal((await api('/api/tool-installs')).tools[0].revision,tool.revision,'default startup checks must not install updates');
   await page.unroute(origin+'/api/tool-market');await page.goto(origin+'/market?open='+id);await frame.locator('#value').waitFor();
-  // Source deletion cannot change an immutable published package or the installed copy.
+  // Removing source assets does not change a downloaded installation.
   for(const name of ['market-fixture.js','market-fixture.css','market-module.js','market-dep.js'])await api('/api/webdav/files?path='+encodeURIComponent('/'+name),'DELETE');
   await page.reload();await frame.locator('#value').waitFor();assert.equal(await frame.locator('body').evaluate(()=>window.marketStaticLoaded),true);
+  // Restore original resources before reinstalling. New installations now read
+  // those resources directly rather than retrieving a saved archive.
+  for(const [name,content]of Object.entries({'market-fixture.js':'window.marketStaticLoaded=true;','market-fixture.css':'body { --market-local-style: ready; }','market-module.js':"import {value} from './market-dep.js'; window.marketModule=value;",'market-dep.js':'export const value=42;'})){
+   await api('/api/webdav/files/content','PUT',{path:'/'+name,content,content_type:name.endsWith('.css')?'text/css':'text/javascript'});
+   await api('/api/webdav/files/public','POST',{path:'/'+name});
+  }
   await page.goto(origin+'/market?view=installed');await page.locator('.market-card').waitFor();
   await act('pin',id).click();await until(async()=>(await api('/api/tool-installs')).tools.find(x=>x.id===id).pinned===false);await page.getByRole('button',{name:'固定到广场',exact:true}).waitFor();
   await act('pin',id).click();await until(async()=>(await api('/api/tool-installs')).tools.find(x=>x.id===id).pinned===true);await page.getByRole('button',{name:'取消固定',exact:true}).waitFor();
@@ -78,6 +84,11 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
   await page.locator('dialog input[name="account"]').fill('remote-user');await page.locator('dialog input[name="password"]').fill('remote-password');await page.getByRole('button',{name:'登录并继续安装',exact:true}).click();
   await page.getByText('已经是最新版本',{exact:true}).waitFor();
   assert.equal((await api('/api/tool-market/client')).url,origin+'/market','logging into an old tool source must not change the default market');
-  assert.deepEqual(errors,[]);console.log('PASS: server market settings, private HTML publication, fixed resource snapshot, access policy, install confirmation, isolated runtime, preserved uninstall data, native resource independence, editor wizard, bilingual responsive themes.');
+  const guardCSRF=(await(await context.request.get(origin+'/api/csrf-token')).json()).csrf_token;
+  const blockedDelete=await context.request.delete(origin+'/api/blogs/'+id,{headers:{'X-CSRF-Token':guardCSRF}});assert.equal(blockedDelete.status(),409);assert.match((await blockedDelete.json()).message,/先.*下架|先.*撤回/);
+  await page.goto(origin+'/market/publish/'+id);await page.getByRole('button',{name:'下架 / 撤回工具',exact:true}).click();await page.locator('#bs-confirm-ok').click();await page.getByText('已下架并撤回待审核版本，现在可以删除来源文章。',{exact:true}).waitFor();
+  await api('/api/blogs/'+id,'DELETE');
+  await page.goto(origin+'/market?open='+id);await frame.locator('#value').waitFor();assert.equal(await frame.locator('#value').inputValue(),'keep this');
+  assert.deepEqual(errors,[]);console.log('PASS: server market settings, private HTML publication, original resource references and guarded source deletion, access policy, install confirmation, isolated runtime, preserved uninstall data, native resource independence, editor wizard, bilingual responsive themes.');
  }catch(error){await page.screenshot({path:out+'/failure.png',fullPage:true});throw error;}finally{await browser.close();}
 })().catch(error=>{console.error(error);process.exit(1)});

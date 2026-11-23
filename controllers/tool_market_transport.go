@@ -8,8 +8,8 @@ import (
 	"time"
 )
 
-// This transport only serves fixed marketplace protocol routes. It cannot be
-// used by a tool's dependency downloader. Pin the actual resolved address, reject
+// This transport serves marketplace protocol routes and explicitly scoped public
+// static resource paths on a configured market origin. Pin resolved addresses, reject
 // link-local/metadata addresses, never use a proxy or forward a redirect token.
 func marketplaceHTTPClient() *http.Client {
 	return &http.Client{Timeout: 2 * time.Minute, Transport: &http.Transport{Proxy: nil, DialContext: func(ctx context.Context, network, address string) (net.Conn, error) {

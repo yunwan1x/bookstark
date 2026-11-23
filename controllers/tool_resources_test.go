@@ -48,6 +48,13 @@ func TestToolDownloadedResourcesSurviveSourceRemoval(t *testing.T) {
 		return x["revision"].(string)
 	}
 	revision := publish()
+	var archivedBytes int
+	var referencedHTML, resourceBase string
+	if err := models.DB.QueryRow("SELECT length(package),content,resource_base FROM md_tool_versions WHERE blog_id=?", b.BlogID).Scan(&archivedBytes, &referencedHTML, &resourceBase); err != nil || archivedBytes != 0 || !strings.Contains(referencedHTML, "/dav-public/admin/app.js") || resourceBase == "" {
+		t.Fatalf("publication stored an archive or lost original references: bytes=%d html=%s base=%s err=%v", archivedBytes, referencedHTML, resourceBase, err)
+	}
+	// Installation reads the original resource as it exists at installation time.
+	put("app.js", "text/javascript", `window.loadedFromLocal="changed-after-publication";`)
 	// Publishing must not create an installation resource copy.
 	var count int
 	models.WebDAVDB.QueryRow("SELECT COUNT(*) FROM dav_nodes WHERE path LIKE '/BookStark/tools/%'").Scan(&count)
@@ -70,6 +77,15 @@ func TestToolDownloadedResourcesSurviveSourceRemoval(t *testing.T) {
 	paths := regexp.MustCompile(`/api/tool-assets/[^"\s<>]+`).FindAllString(content, -1)
 	if len(paths) != 3 {
 		t.Fatalf("assets: %s", content)
+	}
+	for _, p := range paths {
+		if strings.HasSuffix(p, ".js") {
+			resource := httptest.NewRecorder()
+			router.ServeHTTP(resource, httptest.NewRequest("GET", p, nil))
+			if !strings.Contains(resource.Body.String(), "changed-after-publication") {
+				t.Fatal("installer read a frozen resource copy")
+			}
+		}
 	}
 	for _, name := range []string{"image.svg", "theme.css", "app.js"} {
 		if err := models.DeleteDAVNode(1, "/"+name, true); err != nil {
@@ -107,6 +123,18 @@ func TestToolDownloadedResourcesSurviveSourceRemoval(t *testing.T) {
 	put("theme.css", "text/css", `body{background:url('./image.svg')}`)
 	put("app.js", "text/javascript", `window.loadedFromLocal=2;`)
 	revision2 := publish()
+	if err := models.DeleteDAVNode(1, "/app.js", true); err != nil {
+		t.Fatal(err)
+	}
+	failedUpdate := adminAssetRequest(router, token, "PUT", base, map[string]any{"revision": revision2, "expected": meta.Revision, "instance": meta.Instance})
+	if failedUpdate.Code != 422 {
+		t.Fatalf("missing original resource installed: %d %s", failedUpdate.Code, failedUpdate.Body.String())
+	}
+	unchanged, _ := models.GetInstalledTool(1, b.BlogID)
+	if unchanged.Revision != meta.Revision || unchanged.Assets != meta.Assets {
+		t.Fatal("failed download replaced the working installation")
+	}
+	put("app.js", "text/javascript", `window.loadedFromLocal=2;`)
 	w = adminAssetRequest(router, token, "PUT", base, map[string]any{"revision": revision2, "expected": meta.Revision, "instance": meta.Instance})
 	if w.Code != 200 {
 		t.Fatal(w.Body.String())

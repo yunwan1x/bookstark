@@ -77,8 +77,8 @@ func TestToolMarketplacePublishingAccessAndReview(t *testing.T) {
 	if w := req("GET", path, "Market "+session.Token, nil); w.Code != 200 || !strings.Contains(w.Body.String(), "Frozen source") {
 		t.Fatalf("market credential %d %s", w.Code, w.Body.String())
 	}
-	if w := req("GET", "/market/packages/"+result.Revision, "Market "+session.Token, nil); w.Code != 200 || w.Header().Get("Content-Type") != "application/gzip" {
-		t.Fatal("frozen download unavailable")
+	if w := req("GET", "/market/packages/"+result.Revision, "Market "+session.Token, nil); w.Code != 200 || !strings.HasPrefix(w.Header().Get("Content-Type"), "application/json") {
+		t.Fatal("reference manifest unavailable")
 	}
 	if w := post(source.BlogID, admin, "1.0.0"); w.Code != 409 {
 		t.Fatal("immutable version overwritten")

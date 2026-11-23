@@ -15,15 +15,16 @@ import (
 
 type marketTool struct {
 	models.ToolMetadata
-	Resources   []toolpackage.Asset `json:"resources,omitempty"`
-	Frozen      bool                `json:"frozen"`
-	ID          int64               `json:"id"`
-	Title       string              `json:"title"`
-	Description string              `json:"description"`
-	Author      string              `json:"author"`
-	Source      string              `json:"source"`
-	Revision    string              `json:"revision"`
-	Content     string              `json:"content,omitempty"`
+	ResourceBase string              `json:"resource_base,omitempty"`
+	Resources    []toolpackage.Asset `json:"resources,omitempty"`
+	Frozen       bool                `json:"frozen"`
+	ID           int64               `json:"id"`
+	Title        string              `json:"title"`
+	Description  string              `json:"description"`
+	Author       string              `json:"author"`
+	Source       string              `json:"source"`
+	Revision     string              `json:"revision"`
+	Content      string              `json:"content,omitempty"`
 }
 
 func ToolMarketPage(c *gin.Context) {

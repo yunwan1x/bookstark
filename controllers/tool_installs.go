@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -120,11 +121,11 @@ func InstallMarketTool(router http.Handler) gin.HandlerFunc {
 			return
 		}
 		pkg, err := loadPublishedTool(id)
-		origin := requestToolOrigin(c)
+		origin := strings.TrimSuffix(readMarketSettings(c).PublicURL, "/market")
 		fetch := localToolFetch(router, origin)
 		if id < 0 {
 			pkg, origin, err = remoteTool(c.Request.Context(), member, id)
-			fetch = fetchToolURL
+			fetch = marketResourceFetch(origin)
 		}
 		if err != nil {
 			if id < 0 {
@@ -142,6 +143,9 @@ func InstallMarketTool(router http.Handler) gin.HandlerFunc {
 		base := origin + "/shares/" + url.PathEscape(source)
 		if id < 0 {
 			base = source
+		}
+		if pkg.ResourceBase != "" {
+			base = pkg.ResourceBase
 		}
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Minute)
 		defer cancel()

@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"math"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"bookstark/i18n"
 	"bookstark/middleware"
 	"bookstark/models"
 )
@@ -534,7 +536,9 @@ func DeleteBlog(c *gin.Context) {
 	}
 
 	if err := models.DeleteBlog(id); err != nil {
-		if strings.Contains(err.Error(), "不存在") {
+		if errors.Is(err, models.ErrBlogUsedByTool) || strings.Contains(err.Error(), models.ErrBlogUsedByTool.Error()) {
+			apiError(c, http.StatusConflict, i18n.MakeT(middleware.GetLang(c))("market.source_delete_blocked"))
+		} else if strings.Contains(err.Error(), "不存在") {
 			apiError(c, http.StatusNotFound, err.Error())
 		} else {
 			apiError(c, http.StatusInternalServerError, "删除失败")

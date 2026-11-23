@@ -38,17 +38,6 @@ type toolBundle struct {
 	Assets      []toolpackage.Asset    `json:"assets"`
 }
 
-func encodeToolBundle(b toolBundle) ([]byte, error) {
-	var out bytes.Buffer
-	writer := gzip.NewWriter(&out)
-	if err := json.NewEncoder(writer).Encode(b); err != nil {
-		return nil, err
-	}
-	if err := writer.Close(); err != nil {
-		return nil, err
-	}
-	return out.Bytes(), nil
-}
 func decodeToolBundle(data []byte) (toolBundle, error) {
 	var b toolBundle
 	r, err := gzip.NewReader(bytes.NewReader(data))
@@ -120,7 +109,19 @@ func PublishMarketTool(router http.Handler) gin.HandlerFunc {
 			return
 		}
 		if c.Request.Method == "DELETE" {
-			_, err = models.DB.Exec("DELETE FROM md_tool_releases WHERE blog_id=?", id)
+			tx, err := models.DB.Begin()
+			if err != nil {
+				toolAPIError(c, err)
+				return
+			}
+			defer tx.Rollback()
+			_, err = tx.Exec("UPDATE md_tool_versions SET status='withdrawn',metadata=json_set(metadata,'$.status','withdrawn') WHERE blog_id=? AND status='pending'", id)
+			if err == nil {
+				_, err = tx.Exec("DELETE FROM md_tool_releases WHERE blog_id=?", id)
+			}
+			if err == nil {
+				err = tx.Commit()
+			}
 			if err != nil {
 				toolAPIError(c, err)
 				return
@@ -193,29 +194,34 @@ func PublishMarketTool(router http.Handler) gin.HandlerFunc {
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Minute)
 		defer cancel()
 		base := strings.TrimSuffix(settings.PublicURL, "/market")
-		content, assets, err := toolpackage.Build(ctx, content, base+"/shares/"+blog.BlogIdentify, localToolFetch(router, base))
+		resourceBase := base + "/shares/" + blog.BlogIdentify
+		// Validate and measure dependencies without retaining a second copy.
+		_, assets, err := toolpackage.Build(ctx, content, resourceBase, localToolFetch(router, base))
 		if err != nil {
 			c.JSON(422, gin.H{"error": "resource_download_failed"})
-			return
-		}
-		data, err := encodeToolBundle(toolBundle{Version: req.Version, Permissions: req.Permissions, Access: req.Access, Members: req.Members, Title: req.Title, Description: req.Description, Content: content, Assets: assets})
-		if err != nil {
-			toolAPIError(c, err)
 			return
 		}
 		req.Title = strings.TrimSpace(req.Title)
 		req.ToolMetadata.Title = req.Title
 		req.ToolMetadata.Description = req.Description
 		req.DataRoot = ""
-		req.Size = int64(len(data))
+		req.Size = int64(len(content))
+		for _, asset := range assets {
+			req.Size += int64(len(asset.Data))
+		}
+		req.Distribution = "references"
 		req.AssetCount = len(assets)
 		req.Offline = !req.Permissions.Network
 		req.Status = "published"
 		if !isAdmin(c) && settings.ReviewRequired {
 			req.Status = "pending"
 		}
-		req.Hash = fmt.Sprintf("%x", sha256.Sum256(data))
-		revision := fmt.Sprintf("%x", sha256.Sum256(append(append([]byte{}, data...), []byte(req.Version+req.Title+req.Description+fmt.Sprint(time.Now().UnixNano()))...)))
+		req.Hash, err = referenceDigest(marketTool{ToolMetadata: req.ToolMetadata, Title: req.Title, Description: req.Description, Content: content, ResourceBase: resourceBase})
+		if err != nil {
+			toolAPIError(c, err)
+			return
+		}
+		revision := fmt.Sprintf("%x", sha256.Sum256([]byte(req.Hash+fmt.Sprint(time.Now().UnixNano()))))
 		if c.Query("preview") == "1" {
 			c.JSON(200, gin.H{"metadata": req.ToolMetadata})
 			return
@@ -227,10 +233,9 @@ func PublishMarketTool(router http.Handler) gin.HandlerFunc {
 			return
 		}
 		defer tx.Rollback()
-		_, err = tx.Exec("INSERT INTO md_tool_versions(blog_id,version,revision,metadata,package,status,created) VALUES(?,?,?,?,?,?,?)", id, req.Version, revision, string(metadata), data, req.Status, time.Now().UnixMilli())
+		_, err = tx.Exec("INSERT INTO md_tool_versions(blog_id,version,revision,metadata,package,status,created,content,resource_base) VALUES(?,?,?,?,?,?,?,?,?)", id, req.Version, revision, string(metadata), []byte{}, req.Status, time.Now().UnixMilli(), content, resourceBase)
 		if err == nil && req.Status == "published" {
-			encoded, _ := models.EncodeHTMLContent(content)
-			_, err = tx.Exec(`INSERT INTO md_tool_releases(blog_id,title,description,content,revision) VALUES(?,?,?,?,?) ON CONFLICT(blog_id) DO UPDATE SET title=excluded.title,description=excluded.description,content=excluded.content,revision=excluded.revision`, id, req.Title, req.Description, encoded, revision)
+			_, err = tx.Exec(`INSERT INTO md_tool_releases(blog_id,title,description,content,revision) VALUES(?,?,?,?,?) ON CONFLICT(blog_id) DO UPDATE SET title=excluded.title,description=excluded.description,content=excluded.content,revision=excluded.revision`, id, req.Title, req.Description, content, revision)
 		}
 		if err == nil {
 			err = tx.Commit()
@@ -278,8 +283,8 @@ func ToolMarketReviews(c *gin.Context) {
 	}
 	var id int64
 	var raw string
-	var data []byte
-	err := models.DB.QueryRow("SELECT blog_id,metadata,package FROM md_tool_versions WHERE revision=? AND status='pending'", req.Revision).Scan(&id, &raw, &data)
+	var content, resourceBase string
+	err := models.DB.QueryRow("SELECT blog_id,metadata,content,resource_base FROM md_tool_versions WHERE revision=? AND status='pending'", req.Revision).Scan(&id, &raw, &content, &resourceBase)
 	if err != nil {
 		c.Status(404)
 		return
@@ -309,13 +314,22 @@ func ToolMarketReviews(c *gin.Context) {
 	}
 
 	if err == nil && req.Approve {
-		bundle, e := decodeToolBundle(data)
-		if e != nil {
-			toolAPIError(c, e)
-			return
+		if resourceBase == "" {
+			// Compatibility for submissions made before reference-based publishing.
+			var archive []byte
+			if err = tx.QueryRow("SELECT package FROM md_tool_versions WHERE revision=?", req.Revision).Scan(&archive); err != nil {
+				toolAPIError(c, err)
+				return
+			}
+			bundle, e := decodeToolBundle(archive)
+			if e != nil {
+				toolAPIError(c, e)
+				return
+			}
+			content, _ = models.EncodeHTMLContent(bundle.Content)
+			m.Title, m.Description = bundle.Title, bundle.Description
 		}
-		encoded, _ := models.EncodeHTMLContent(bundle.Content)
-		_, err = tx.Exec(`INSERT INTO md_tool_releases(blog_id,title,description,content,revision) VALUES(?,?,?,?,?) ON CONFLICT(blog_id) DO UPDATE SET title=excluded.title,description=excluded.description,content=excluded.content,revision=excluded.revision`, id, bundle.Title, bundle.Description, encoded, req.Revision)
+		_, err = tx.Exec(`INSERT INTO md_tool_releases(blog_id,title,description,content,revision) VALUES(?,?,?,?,?) ON CONFLICT(blog_id) DO UPDATE SET title=excluded.title,description=excluded.description,content=excluded.content,revision=excluded.revision`, id, m.Title, m.Description, content, req.Revision)
 	}
 	if err == nil {
 		err = tx.Commit()
@@ -354,6 +368,21 @@ func ToolVersionPackage(c *gin.Context) {
 		return
 	}
 	if !mayInstallTool(c, metadata) {
+		return
+	}
+	var resourceBase string
+	if models.DB.QueryRow("SELECT resource_base FROM md_tool_versions WHERE revision=?", revision).Scan(&resourceBase) != nil {
+		c.Status(404)
+		return
+	}
+	if resourceBase != "" {
+		var content string
+		if models.DB.QueryRow("SELECT content FROM md_tool_versions WHERE revision=? AND status='published'", revision).Scan(&content) != nil {
+			c.Status(404)
+			return
+		}
+		c.Header("Cache-Control", "private, no-store")
+		c.JSON(200, marketTool{ToolMetadata: metadata, ID: id, Title: metadata.Title, Description: metadata.Description, Revision: revision, Content: content, ResourceBase: resourceBase})
 		return
 	}
 	var data []byte

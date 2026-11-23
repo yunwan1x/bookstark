@@ -1,11 +1,12 @@
 package i18n
 
 var zhMessages = map[string]string{
-	"market.publish":      "发布为工具",
-	"market.republish":    "发布更新",
-	"market.publish_help": "保存文章并检查资源、版本和安装权限。",
-	"market.unpublish":    "下架工具",
-	"market.unpublished":  "工具已下架",
+	"market.source_delete_blocked": "该文章已发布为工具或正在审核，请先在工具发布页下架或撤回，再删除文章。",
+	"market.publish":               "发布为工具",
+	"market.republish":             "发布更新",
+	"market.publish_help":          "保存文章并检查资源、版本和安装权限。",
+	"market.unpublish":             "下架工具",
+	"market.unpublished":           "工具已下架",
 
 	"market.title":         "工具市场",
 	"market.mine":          "我的工具",

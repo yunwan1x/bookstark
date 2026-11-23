@@ -19,7 +19,7 @@ import (
 func loadPublishedTool(id int64) (marketTool, error) {
 	var t marketTool
 	var raw string
-	err := models.DB.QueryRow(`SELECT b.blog_id,p.title,p.description,COALESCE(m.account,''),COALESCE((SELECT share_identify FROM md_shares WHERE share_type='blog' AND target_id=b.blog_id LIMIT 1),b.blog_identify),p.revision,COALESCE(v.metadata,''),v.revision IS NOT NULL FROM md_tool_releases p JOIN md_blogs b ON b.blog_id=p.blog_id LEFT JOIN md_members m ON m.member_id=b.member_id LEFT JOIN md_tool_versions v ON v.revision=p.revision AND v.status='published' WHERE b.blog_id=? AND b.editor_type='html' AND COALESCE(b.blog_type,'article')='article'`, id).Scan(&t.ID, &t.Title, &t.Description, &t.Author, &t.Source, &t.Revision, &raw, &t.Frozen)
+	err := models.DB.QueryRow(`SELECT b.blog_id,p.title,p.description,COALESCE(m.account,''),COALESCE((SELECT share_identify FROM md_shares WHERE share_type='blog' AND target_id=b.blog_id LIMIT 1),b.blog_identify),p.revision,COALESCE(v.metadata,''),v.revision IS NOT NULL AND COALESCE(v.resource_base,'')='',COALESCE(v.resource_base,'') FROM md_tool_releases p JOIN md_blogs b ON b.blog_id=p.blog_id LEFT JOIN md_members m ON m.member_id=b.member_id LEFT JOIN md_tool_versions v ON v.revision=p.revision AND v.status='published' WHERE b.blog_id=? AND b.editor_type='html' AND COALESCE(b.blog_type,'article')='article'`, id).Scan(&t.ID, &t.Title, &t.Description, &t.Author, &t.Source, &t.Revision, &raw, &t.Frozen, &t.ResourceBase)
 	if err != nil {
 		return t, err
 	}
@@ -48,9 +48,14 @@ func loadPublishedToolPackage(t *marketTool) error {
 		return nil
 	}
 	var raw string
-	if err := models.DB.QueryRow("SELECT content FROM md_tool_releases WHERE blog_id=? AND revision=?", t.ID, t.Revision).Scan(&raw); err != nil {
+	if t.ResourceBase != "" {
+		if err := models.DB.QueryRow("SELECT content FROM md_tool_versions WHERE revision=? AND status='published'", t.Revision).Scan(&raw); err != nil {
+			return err
+		}
+	} else if err := models.DB.QueryRow("SELECT content FROM md_tool_releases WHERE blog_id=? AND revision=?", t.ID, t.Revision).Scan(&raw); err != nil {
 		return err
 	}
+
 	var err error
 	t.Content, err = decodeMarketContent(raw)
 	return err
@@ -78,6 +83,9 @@ func remoteTool(ctx context.Context, member, id int64, withAssets ...bool) (mark
 	if t.ID != remoteID || t.Revision == "" {
 		return t, "", fmt.Errorf("invalid remote tool")
 	}
+	if !t.Frozen && (t.Version != "" || t.Hash != "") && t.Distribution != "references" {
+		return t, "", fmt.Errorf("invalid tool distribution")
+	}
 	if !t.Frozen && includeAssets && t.Content == "" {
 		// Upgraded servers still expose legacy releases. Their metadata response
 		// intentionally omits HTML; fetch it only for an actual installation.
@@ -91,6 +99,12 @@ func remoteTool(ctx context.Context, member, id int64, withAssets ...bool) (mark
 		}
 		if json.Unmarshal(data, &legacy) != nil || legacy.ID != remoteID || legacy.Revision != t.Revision || legacy.Frozen || legacy.Content == "" {
 			return t, "", fmt.Errorf("invalid legacy tool")
+		}
+		if t.Distribution == "references" {
+			if legacy.Hash != t.Hash || legacy.ResourceBase == "" || legacy.Version != t.Version || legacy.Permissions != t.Permissions || legacy.Access != t.Access || !reflect.DeepEqual(legacy.Members, t.Members) {
+				return t, "", fmt.Errorf("reference manifest mismatch")
+			}
+			t.ResourceBase = legacy.ResourceBase
 		}
 		t.Content = legacy.Content
 	}
@@ -117,6 +131,12 @@ func remoteTool(ctx context.Context, member, id int64, withAssets ...bool) (mark
 		}
 		t.Content = bundle.Content
 		t.Resources = bundle.Assets
+	}
+	if includeAssets && t.Distribution == "references" {
+		digest, e := referenceDigest(t)
+		if e != nil || digest != t.Hash || t.ResourceBase == "" {
+			return t, "", fmt.Errorf("reference manifest mismatch")
+		}
 	}
 	if err := validateFrozenTool(t); includeAssets && err != nil {
 		return t, "", err
@@ -206,10 +226,13 @@ func remoteMarketError(c *gin.Context, err error) {
 	}
 }
 func validateFrozenTool(t marketTool) error {
+	if len(t.Content) > 20<<20 {
+		return fmt.Errorf("invalid tool HTML size")
+	}
 	if !t.Frozen {
 		return nil
 	}
-	if len(t.Content) > 20<<20 || len(t.Resources) > toolpackage.MaxFiles {
+	if len(t.Resources) > toolpackage.MaxFiles {
 		return fmt.Errorf("invalid package")
 	}
 	names := map[string]bool{}

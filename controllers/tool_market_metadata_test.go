@@ -21,7 +21,7 @@ func TestToolMarketMetadataDoesNotReadPackageBeforeAuthorization(t *testing.T) {
 	}
 	// A broken archive makes any accidental decoding observable without a
 	// large fixture. Reading a manifest or denying access must not decode it.
-	if _, err := models.DB.Exec("UPDATE md_tool_versions SET package=? WHERE blog_id=?", []byte("not a gzip archive"), b.BlogID); err != nil {
+	if _, err := models.DB.Exec("UPDATE md_tool_versions SET package=?,resource_base='',content='',metadata=json_remove(metadata,'$.distribution') WHERE blog_id=?", []byte("not a gzip archive"), b.BlogID); err != nil {
 		t.Fatal(err)
 	}
 	path := "/api/tool-market/" + id

@@ -3,7 +3,16 @@ package models
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 )
+
+var ErrBlogUsedByTool = errors.New("blog_in_tool_market")
+
+func toolSourceInUse(tx *sql.Tx, id int64) (bool, error) {
+	var used bool
+	err := tx.QueryRow(`SELECT EXISTS(SELECT 1 FROM md_tool_releases WHERE blog_id=?) OR EXISTS(SELECT 1 FROM md_tool_versions WHERE blog_id=? AND status='pending')`, id, id).Scan(&used)
+	return used, err
+}
 
 type ToolPermissions struct {
 	ReadFiles bool `json:"read_files"`
@@ -11,20 +20,21 @@ type ToolPermissions struct {
 	Network   bool `json:"network"`
 }
 type ToolMetadata struct {
-	Title       string          `json:"title,omitempty"`
-	Description string          `json:"description,omitempty"`
-	Version     string          `json:"version"`
-	Category    string          `json:"category"`
-	Size        int64           `json:"size"`
-	AssetCount  int             `json:"asset_count"`
-	Offline     bool            `json:"offline"`
-	Access      string          `json:"access"`
-	Members     []int64         `json:"members,omitempty"`
-	Permissions ToolPermissions `json:"permissions"`
-	Notes       string          `json:"notes"`
-	Status      string          `json:"status"`
-	Hash        string          `json:"hash"`
-	DataRoot    string          `json:"data_root,omitempty"`
+	Distribution string          `json:"distribution,omitempty"`
+	Title        string          `json:"title,omitempty"`
+	Description  string          `json:"description,omitempty"`
+	Version      string          `json:"version"`
+	Category     string          `json:"category"`
+	Size         int64           `json:"size"`
+	AssetCount   int             `json:"asset_count"`
+	Offline      bool            `json:"offline"`
+	Access       string          `json:"access"`
+	Members      []int64         `json:"members,omitempty"`
+	Permissions  ToolPermissions `json:"permissions"`
+	Notes        string          `json:"notes"`
+	Status       string          `json:"status"`
+	Hash         string          `json:"hash"`
+	DataRoot     string          `json:"data_root,omitempty"`
 }
 
 func initToolMarketTables() error {
@@ -40,7 +50,41 @@ func initToolMarketTables() error {
 			return err
 		}
 	}
-	return nil
+	// Existing archives remain readable. New versions store only their HTML and
+	// resource base; no asset bytes are written to the legacy package column.
+	rows, err := DB.Query("PRAGMA table_info(md_tool_versions)")
+	if err != nil {
+		return err
+	}
+	columns := map[string]bool{}
+	for rows.Next() {
+		var cid, notNull, primary int
+		var name, kind string
+		var defaultValue any
+		if err := rows.Scan(&cid, &name, &kind, &notNull, &defaultValue, &primary); err != nil {
+			rows.Close()
+			return err
+		}
+		columns[name] = true
+	}
+	err = rows.Err()
+	rows.Close()
+	if err != nil {
+		return err
+	}
+	for _, name := range []string{"content", "resource_base"} {
+		if !columns[name] {
+			if _, err := DB.Exec("ALTER TABLE md_tool_versions ADD COLUMN " + name + " TEXT NOT NULL DEFAULT ''"); err != nil {
+				return err
+			}
+		}
+	}
+	_, err = DB.Exec(`CREATE TRIGGER IF NOT EXISTS md_tool_source_delete_guard
+	BEFORE DELETE ON md_blogs
+	WHEN EXISTS(SELECT 1 FROM md_tool_releases WHERE blog_id=OLD.blog_id)
+	  OR EXISTS(SELECT 1 FROM md_tool_versions WHERE blog_id=OLD.blog_id AND status='pending')
+	BEGIN SELECT RAISE(ABORT, 'blog_in_tool_market'); END`)
+	return err
 }
 func ReadToolMetadata(member, id int64) ToolMetadata {
 	var raw string
