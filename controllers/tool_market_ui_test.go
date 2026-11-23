@@ -32,7 +32,10 @@ func TestToolMarketConfigurationRequiresWorkspaceAdministrator(t *testing.T) {
 			if strings.Contains(body, `id="marketSettings"`) != tc.configure || strings.Contains(body, `id="marketPublish"`) != tc.publish {
 				t.Fatalf("wrong actions for %s", tc.name)
 			}
-			for _, obsolete := range []string{`id="marketCatalogTab"`, `id="marketInstalledTab"`, `id="marketAdmin"`, `class="market-switch"`} {
+			if strings.Contains(body, `id="marketMore"`) != (tc.configure || tc.publish) {
+				t.Fatalf("wrong management menu visibility for %s", tc.name)
+			}
+			for _, obsolete := range []string{`id="marketIntro"`, `id="marketHeading"`, `id="marketCatalogTab"`, `id="marketInstalledTab"`, `id="marketAdmin"`, `class="market-switch"`} {
 				if strings.Contains(body, obsolete) {
 					t.Fatalf("obsolete nested UI: %s", obsolete)
 				}
@@ -67,8 +70,8 @@ func TestToolMarketConfigurationRequiresWorkspaceAdministrator(t *testing.T) {
 		t.Fatal(err)
 	}
 	page := adminAssetRequest(router, token.Token, "GET", "/market", nil)
-	if strings.Contains(page.Body.String(), `id="marketPublish"`) {
-		t.Fatal("publication action exposed after permission revoked")
+	if strings.Contains(page.Body.String(), `id="marketPublish"`) || strings.Contains(page.Body.String(), `id="marketMore"`) {
+		t.Fatal("publication menu exposed after permission revoked")
 	}
 	articles := adminAssetRequest(router, token.Token, "GET", "/notes?tab=articles", nil)
 	if articles.Code != 200 || strings.Contains(articles.Body.String(), "canPublishTools: true") {

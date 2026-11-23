@@ -10,19 +10,35 @@
 </head><body data-market-workspace="{{if .MemberID}}member-{{.MemberID}}{{else}}guest{{end}}" data-market-admin="{{if .IsAdmin}}1{{end}}">
 {{template "header" .}}
 <main class="market-page" id="marketMain">
-{{template "public-plaza-nav" .}}
-<div class="market-heading"><div><h1 id="marketHeading" class="page-title">{{call .T "market.tools"}}</h1><p id="marketIntro" aria-live="polite"></p></div><div class="market-actions">{{if .CanPublishTools}}<a href="/market/publish" class="bs-btn bs-btn-cancel" id="marketPublish"><i class="fa-solid fa-plus" aria-hidden="true"></i> {{call .T "market.publish_tool"}}</a>{{end}}{{if .CanConfigureTools}}<button type="button" id="marketSettings" class="bs-btn bs-btn-cancel"><i class="fa-solid fa-gear" aria-hidden="true"></i> {{call .T "market.settings"}}</button>{{end}}</div></div>
+<h1 class="page-title sr-only">{{call .T "market.tools"}}</h1>
+<div class="market-plaza-bar">
+ {{template "public-plaza-nav" .}}
+ {{if or .CanPublishTools .CanConfigureTools}}
+ <div id="marketActions" class="bs-action-dropdown">
+  <button type="button" id="marketMore" class="bs-action-dd-btn row-action" data-bs-action-dropdown-toggle aria-label="{{call .T "tools.actions"}}" aria-haspopup="menu" aria-expanded="false" aria-controls="marketActionsMenu"><i class="fa-solid fa-ellipsis" aria-hidden="true"></i></button>
+  <div id="marketActionsMenu" class="bs-action-dd-menu" role="menu" aria-labelledby="marketMore">
+   {{if .CanPublishTools}}<a href="/market/publish" class="bs-action-menu-item" id="marketPublish" role="menuitem"><i class="fa-solid fa-plus" aria-hidden="true"></i> {{call .T "market.publish_tool"}}</a>{{end}}
+   {{if .CanConfigureTools}}<button type="button" id="marketSettings" class="bs-action-menu-item" role="menuitem"><i class="fa-solid fa-gear" aria-hidden="true"></i> {{call .T "market.settings"}}</button>{{end}}
+  </div>
+ </div>
+ {{end}}
+</div>
 <div class="market-toolbar">
  <form id="marketSearch" role="search" class="market-search"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><label class="sr-only" for="marketQuery">{{call .T "market.search"}}</label><input class="search-input" id="marketQuery" type="search" placeholder="{{call .T "market.search"}}"></form>
  <label class="sr-only" for="marketCategory">{{call .T "market.category"}}</label><select id="marketCategory" class="dialog-input" aria-label="{{call .T "market.category"}}"></select>
  <label class="sr-only" for="marketState">{{call .T "market.install_status"}}</label><select id="marketState" class="dialog-input" aria-label="{{call .T "market.install_status"}}"></select>
  <label class="sr-only" for="marketSort">{{call .T "market.sort"}}</label><select id="marketSort" class="dialog-input" aria-label="{{call .T "market.sort"}}"></select>
- <div class="market-view-actions"><button type="button" id="marketGridView" class="row-action" aria-label="{{call .T "market.grid_view"}}" aria-pressed="true"><i class="fa-solid fa-table-cells-large" aria-hidden="true"></i></button><button type="button" id="marketListView" class="row-action" aria-label="{{call .T "market.list_view"}}" aria-pressed="false"><i class="fa-solid fa-list" aria-hidden="true"></i></button><button type="button" id="marketCheck" class="row-action" aria-label="{{call .T "market.check"}}"><i class="fa-solid fa-rotate" aria-hidden="true"></i></button></div>
 </div>
-<div class="market-results"><span id="marketResultCount" role="status"></span><label for="marketPageSize">{{call .T "market.per_page"}} <select id="marketPageSize" class="dialog-input"><option value="12">12</option><option value="24">24</option><option value="48">48</option></select></label></div>
 <p id="marketStatus" role="status" aria-live="polite" hidden></p>
 <div class="market-layout"><section id="marketItems" class="market-grid" aria-label="{{call .T "market.tools"}}"></section><aside id="marketDetail" class="market-detail" hidden></aside></div>
-<nav id="marketPagination" class="market-pagination" aria-label="{{call .T "market.pagination"}}"></nav>
+<div class="market-results">
+ <span id="marketResultCount" role="status"></span>
+ <div class="market-actions">
+  <div class="market-view-actions"><button type="button" id="marketGridView" class="row-action" aria-label="{{call .T "market.grid_view"}}" aria-pressed="true"><i class="fa-solid fa-table-cells-large" aria-hidden="true"></i></button><button type="button" id="marketListView" class="row-action" aria-label="{{call .T "market.list_view"}}" aria-pressed="false"><i class="fa-solid fa-list" aria-hidden="true"></i></button><button type="button" id="marketCheck" class="row-action" aria-label="{{call .T "market.check"}}"><i class="fa-solid fa-rotate" aria-hidden="true"></i></button></div>
+  <nav id="marketPagination" class="market-pagination" aria-label="{{call .T "market.pagination"}}"></nav>
+  <label for="marketPageSize">{{call .T "market.per_page"}} <select id="marketPageSize" class="dialog-input"><option value="12">12</option><option value="24">24</option><option value="48">48</option></select></label>
+ </div>
+</div>
 </main>
 <section id="marketRunner" class="market-runner" hidden><div class="market-heading"><a href="/market?status=installed" class="bs-btn bs-btn-cancel">← {{call .T "market.tools"}}</a><h1 id="marketRunnerTitle" class="page-title"></h1><span id="marketSaveStatus" role="status"></span><button type="button" class="bs-btn bs-btn-cancel" id="marketRetry" hidden>{{call .T "tools.retry"}}</button><button type="button" class="bs-btn bs-btn-cancel" id="marketRunExport">{{call .T "market.export"}}</button></div><div id="marketFrameHost"></div></section>
 {{template "footer" .}}
