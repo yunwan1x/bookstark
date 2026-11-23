@@ -234,6 +234,15 @@
                     </div>
                     <button type="button" onclick="createApiToken(this)" class="shrink-0 px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700">{{call .T "profile.api_token.create"}}</button>
                 </div>
+                <div class="mb-4 p-3 rounded-lg border border-slate-200 bg-slate-50">
+                    <label for="bookmark-extension-url" class="block text-sm font-medium mb-2">{{call .T "profile.api_token.server_url"}}</label>
+                    <div class="flex items-center gap-2">
+                        <input id="bookmark-extension-url" type="text" readonly spellcheck="false" class="min-w-0 flex-1 px-3 py-2 border border-slate-300 rounded-md text-sm font-mono bg-white" onclick="this.select()">
+                        <button type="button" onclick="copyBookmarkExtensionURL()" class="shrink-0 px-3 py-2 text-sm border border-slate-300 rounded-md hover:bg-slate-100">{{call .T "profile.api_token.copy"}}</button>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-2">{{call .T "profile.api_token.server_url_help"}}</p>
+                    <p class="text-xs text-slate-500 mt-1">{{call .T "profile.api_token.local_help"}}</p>
+                </div>
                 <div id="api-token-error" class="hidden mb-4 p-3 bg-red-50 text-red-600 text-sm rounded"></div>
                 <div id="api-token-list" class="flex flex-col gap-2"></div>
                 <div id="api-token-empty" class="hidden border border-dashed border-slate-300 rounded-lg px-4 py-6 text-sm text-slate-500 text-center">{{call .T "profile.api_token.empty"}}</div>
@@ -369,6 +378,18 @@
         BSDialog.toast(window.__('profile.reminder.test_success'),'success');
       } catch(err){BookStarkErrors.field('reminder-error',err,window.__('profile.reminder.test_fail'));}
       finally{btn.disabled=false;}
+    }
+
+    // The current origin is the actual local listener or selected remote server.
+    document.getElementById('bookmark-extension-url').value = window.location.origin;
+    async function copyBookmarkExtensionURL() {
+      try {
+        await window.BookStarkCopyText(document.getElementById('bookmark-extension-url').value);
+        BSDialog.toast(window.__('profile.api_token.copied'), 'success');
+      } catch (err) {
+        document.getElementById('bookmark-extension-url').select();
+        BSDialog.toast(window.__('profile.api_token.copy_url_error'), 'error');
+      }
     }
 
     // API Token management

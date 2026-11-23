@@ -120,6 +120,11 @@ func (l *launcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		l.render(w, r, http.StatusOK, launcherPageData{})
 		return
 	}
+	// Extensions do not share the WebView cookie. Only the Linkding API may
+	// enter with an API token; launcher controls and other routes stay private.
+	if l.serveBookmarkExtension(w, r) {
+		return
+	}
 	if r.Header.Get("Sec-Fetch-Site") == "cross-site" ||
 		(r.Header.Get("Origin") != "" && r.Header.Get("Origin") != "http://"+l.addr) {
 		http.Error(w, "Invalid origin", http.StatusForbidden)

@@ -4,6 +4,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -145,6 +146,59 @@ func TestNativeWorkspaces(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// A browser extension has no native or login cookie. Its API token must
+	// support the full bookmark flow, without opening other native routes.
+	apiToken, err := models.CreateApiToken(admin.MemberID, "browser extension test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	extensionRequest := func(method, path, body, token string, expected int) string {
+		t.Helper()
+		req, _ := http.NewRequest(method, base+path, strings.NewReader(body))
+		req.Header.Set("Origin", "chrome-extension://test-extension")
+		req.Header.Set("Sec-Fetch-Site", "cross-site")
+		req.Header.Set("Content-Type", "application/json")
+		if token != "" {
+			req.Header.Set("Authorization", "Token "+token)
+		}
+		// A stale browser login must not override the valid API token.
+		req.AddCookie(&http.Cookie{Name: "token", Value: "expired-browser-session"})
+		resp, err := http.DefaultClient.Do(req)
+		return read(resp, err, expected)
+	}
+	extensionRequest("GET", "/api/bookmarks/", "", "", http.StatusForbidden)
+	extensionRequest("GET", "/api/bookmarks/", "", "invalid", http.StatusUnauthorized)
+	extensionRequest("GET", "/api/tags/", "", apiToken.Token, http.StatusOK)
+	extensionRequest("GET", "/api/bookmarks/check/?url=https://example.org", "", apiToken.Token, http.StatusOK)
+	created := extensionRequest("POST", "/api/bookmarks/", `{"url":"https://example.org/native-extension","title":"Native extension bookmark","tag_names":["native-test"],"unread":true}`, apiToken.Token, http.StatusCreated)
+	var bookmark struct {
+		ID int64 `json:"id"`
+	}
+	if err := json.Unmarshal([]byte(created), &bookmark); err != nil || bookmark.ID <= 0 {
+		t.Fatalf("invalid bookmark response: %s (%v)", created, err)
+	}
+	path := fmt.Sprintf("/api/bookmarks/%d/", bookmark.ID)
+	extensionRequest("GET", path, "", apiToken.Token, http.StatusOK)
+	extensionRequest("PATCH", path, `{"title":"Updated by extension"}`, apiToken.Token, http.StatusOK)
+	if got := extensionRequest("GET", "/api/bookmarks/?q=Updated", "", apiToken.Token, http.StatusOK); !strings.Contains(got, "Updated by extension") {
+		t.Fatal("extension could not search its saved bookmark")
+	}
+	extensionRequest("DELETE", path, "", apiToken.Token, http.StatusNoContent)
+	for _, path := range []string{"/profile", "/api/api-tokens", "/api/bookmarks", "/__bookstark/local", "/__bookstark/remote"} {
+		extensionRequest("POST", path, `{}`, apiToken.Token, http.StatusForbidden)
+	}
+	response, err = client.Get(base + "/api/csrf-token")
+	read(response, err, http.StatusOK)
+	revoke, _ := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/api/api-tokens/%d", base, apiToken.TokenID), nil)
+	baseURL, _ := url.Parse(base)
+	for _, cookie := range jar.Cookies(baseURL) {
+		if cookie.Name == "csrf_token" {
+			revoke.Header.Set("X-CSRF-Token", cookie.Value)
+		}
+	}
+	response, err = client.Do(revoke)
+	read(response, err, http.StatusOK)
+	extensionRequest("GET", "/api/bookmarks/", "", apiToken.Token, http.StatusUnauthorized)
 	if err := models.UpdateMemberPassword(admin.MemberID, "a-changed-test-password"); err != nil {
 		t.Fatal(err)
 	}
