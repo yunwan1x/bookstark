@@ -3,9 +3,24 @@ package controllers
 import (
 	"bookstark/middleware"
 	"bookstark/models"
-	"github.com/gin-gonic/gin"
+	"database/sql"
+	"errors"
+	"net/http"
 	"strconv"
+	"strings"
+	"time"
+
+	"github.com/gin-gonic/gin"
 )
+
+func ToolPublishSelectionPage(c *gin.Context) {
+	if !canPublishTools(c) {
+		forbidden(c)
+		return
+	}
+	c.Header("Cache-Control", "private, no-store")
+	c.HTML(http.StatusOK, "tool_publish_select.html", commonData(c, "shares"))
+}
 
 func ToolPublishPage(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
@@ -22,31 +37,114 @@ func ToolPublishPage(c *gin.Context) {
 		forbidden(c)
 		return
 	}
+	c.Header("Cache-Control", "private, no-store")
 	data := commonData(c, "shares")
 	data["ToolID"] = id
 	c.HTML(200, "tool_publish.html", data)
 }
+
+type toolPublishArticle struct {
+	ID          int64     `json:"id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	Updated     time.Time `json:"updated"`
+	Published   bool      `json:"published"`
+	Version     string    `json:"version"`
+}
+
+func scanToolPublishArticle(row interface{ Scan(...any) error }) (*toolPublishArticle, error) {
+	var article toolPublishArticle
+	err := row.Scan(&article.ID, &article.Title, &article.Description, &article.Updated, &article.Published, &article.Version)
+	return &article, err
+}
+
 func ToolPublishArticles(c *gin.Context) {
-	member := middleware.GetMemberID(c)
-	query := `SELECT blog_id,blog_title FROM md_blogs WHERE editor_type='html' AND blog_type='article' AND COALESCE(password,'')=''`
-	args := []any{}
-	if !isAdmin(c) {
-		query += " AND member_id=?"
-		args = append(args, member)
+	c.Header("Cache-Control", "private, no-store")
+	if !canPublishTools(c) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "publication_forbidden"})
+		return
 	}
-	query += " ORDER BY modify_at DESC LIMIT 300"
-	rows, err := models.DB.Query(query, args...)
+	// Read source metadata only. Never fetch or execute HTML to populate this list.
+	base := ` FROM md_blogs b LEFT JOIN md_tool_releases p ON p.blog_id=b.blog_id
+        LEFT JOIN md_tool_versions v ON v.revision=p.revision AND v.status='published'`
+	eligible := ` WHERE b.editor_type='html' AND COALESCE(b.blog_type,'article')='article' AND COALESCE(b.password,'')=''`
+	ownerArgs := []any{}
+	if !isAdmin(c) {
+		eligible += " AND b.member_id=?"
+		ownerArgs = append(ownerArgs, middleware.GetMemberID(c))
+	}
+	where, args := eligible, append([]any{}, ownerArgs...)
+	keyword := strings.TrimSpace(c.Query("q"))
+	if len(keyword) > 800 {
+		c.JSON(400, gin.H{"error": "invalid_request"})
+		return
+	}
+	if keyword != "" {
+		where += " AND b.blog_title LIKE ?"
+		args = append(args, "%"+keyword+"%")
+	}
+	switch c.Query("status") {
+	case "published":
+		where += " AND v.revision IS NOT NULL"
+	case "unpublished":
+		where += " AND v.revision IS NULL"
+	}
+	order := "b.modify_time DESC,b.blog_id DESC"
+	if c.Query("sort") == "name" {
+		order = "b.blog_title COLLATE NOCASE,b.blog_id"
+	}
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if page < 1 {
+		page = 1
+	}
+	take, _ := strconv.Atoi(c.DefaultQuery("take", "10"))
+	if take != 10 && take != 20 && take != 50 {
+		take = 10
+	}
+	var total int64
+	if err := models.DB.QueryRow("SELECT COUNT(*)"+base+where, args...).Scan(&total); err != nil {
+		toolAPIError(c, err)
+		return
+	}
+	pages := (total + int64(take) - 1) / int64(take)
+	if pages < 1 {
+		pages = 1
+	}
+	if int64(page) > pages {
+		page = int(pages)
+	}
+	columns := "SELECT b.blog_id,b.blog_title,COALESCE(b.blog_desc,''),b.modify_time,v.revision IS NOT NULL,COALESCE(v.version,'')"
+	pageArgs := append(append([]any{}, args...), take, (page-1)*take)
+	rows, err := models.DB.Query(columns+base+where+" ORDER BY "+order+" LIMIT ? OFFSET ?", pageArgs...)
 	if err != nil {
 		toolAPIError(c, err)
 		return
 	}
 	defer rows.Close()
-	items := []gin.H{}
+	articles := []toolPublishArticle{}
 	for rows.Next() {
-		var id int64
-		var title string
-		rows.Scan(&id, &title)
-		items = append(items, gin.H{"id": id, "title": title})
+		article, err := scanToolPublishArticle(rows)
+		if err != nil {
+			toolAPIError(c, err)
+			return
+		}
+		articles = append(articles, *article)
 	}
-	c.JSON(200, gin.H{"articles": items})
+	if err := rows.Err(); err != nil {
+		toolAPIError(c, err)
+		return
+	}
+	rows.Close()
+	var selected *toolPublishArticle
+	if id, err := strconv.ParseInt(c.Query("selected"), 10, 64); err == nil && id > 0 {
+		article, err := scanToolPublishArticle(models.DB.QueryRow(columns+base+eligible+" AND b.blog_id=?", append(append([]any{}, ownerArgs...), id)...))
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			toolAPIError(c, err)
+			return
+		}
+		if err == nil {
+			selected = article
+		}
+	}
+	c.JSON(http.StatusOK, gin.H{"articles": articles, "selected": selected, "total": total, "page": page, "take": take, "total_pages": pages})
 }

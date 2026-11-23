@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="{{.Lang}}"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{call .T "market.choose_article"}} · BookStark</title>
+<link rel="stylesheet" href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}">
+{{template "head-assets" .}}
+<link rel="stylesheet" href="/static/css/tool-market.css?v={{assetVer "/static/css/tool-market.css"}}">
+</head><body class="min-h-screen flex flex-col" data-market-workspace="member-{{.MemberID}}">
+{{template "header" .}}
+<main role="main" class="market-page publish-selection-page" id="toolPublishSelection">
+<nav class="publish-breadcrumb" aria-label="{{call .T "editor.breadcrumb.aria"}}"><a href="/market" data-return-market>{{call .T "market.tools"}}</a><span aria-hidden="true"> / </span><span>{{call .T "market.publish_tool"}}</span></nav>
+<div class="market-heading"><h1 class="page-title">{{call .T "market.choose_article"}}</h1></div>
+<form class="publish-selection-filters" id="publishSourceSearch" role="search">
+<div class="market-search"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><label class="sr-only" for="publishSourceQuery">{{call .T "market.search_articles"}}</label><input class="search-input" id="publishSourceQuery" type="search" maxlength="200" placeholder="{{call .T "market.search_articles"}}"></div>
+<label class="sr-only" for="publishSourceState">{{call .T "market.publication_status"}}</label><select class="dialog-input" id="publishSourceState"><option value="all">{{call .T "market.status_all"}}</option><option value="unpublished">{{call .T "market.status_unpublished"}}</option><option value="published">{{call .T "market.status_published"}}</option></select>
+<label class="sr-only" for="publishSourceSort">{{call .T "market.sort"}}</label><select class="dialog-input" id="publishSourceSort"><option value="updated">{{call .T "market.sort_updated"}}</option><option value="name">{{call .T "market.sort_name"}}</option></select>
+</form>
+<div class="market-results"><span id="publishSourceCount" role="status"></span><label for="publishSourceTake">{{call .T "market.per_page"}} <select class="dialog-input" id="publishSourceTake"><option>10</option><option>20</option><option>50</option></select></label></div>
+<p id="publishSourceStatus" class="market-muted" role="status" aria-live="polite">{{call .T "market.source_loading"}}</p>
+<button type="button" class="bs-btn bs-btn-cancel" id="publishSourceRetry" hidden>{{call .T "tools.retry"}}</button>
+<fieldset class="publish-source-list" id="publishSourceList"><legend class="sr-only">{{call .T "market.choose_article"}}</legend>
+<div class="publish-source-columns" aria-hidden="true"><span>{{call .T "market.article_name"}}</span><span>{{call .T "market.publication_status"}}</span><span>{{call .T "market.updated_at"}}</span></div>
+<div id="publishSourceRows"></div></fieldset>
+<div class="market-empty" id="publishSourceEmpty" hidden><p>{{call .T "market.source_empty"}}</p><a class="bs-btn bs-btn-cancel" href="/notes?tab=articles">{{call .T "market.source_empty_action"}}</a></div>
+<nav class="market-pagination" id="publishSourcePagination" aria-label="{{call .T "market.source_pagination"}}"></nav>
+<div class="publish-selection-actions"><p id="publishSourceSelected" aria-live="polite">{{call .T "market.source_none"}}</p><div class="market-actions"><a class="bs-btn bs-btn-cancel" href="/market" data-return-market>{{call .T "market.back_tools"}}</a><button type="button" class="bs-btn bs-btn-primary" id="publishSourceNext" disabled>{{call .T "market.next_settings"}}</button></div></div>
+</main>
+{{template "footer" .}}
+<script src="/static/js/pagination.js?v={{assetVer "/static/js/pagination.js"}}"></script>
+<script src="/static/js/tool-market-ui.js?v={{assetVer "/static/js/tool-market-ui.js"}}"></script>
+<script src="/static/js/tool-publish-select.js?v={{assetVer "/static/js/tool-publish-select.js"}}"></script>
+</body></html>

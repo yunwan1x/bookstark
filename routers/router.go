@@ -290,6 +290,7 @@ func Setup() *gin.Engine {
 	{
 		auth.POST("/api/tool-sources", controllers.RemoteToolCatalog)
 		auth.GET("/api/tool-market/articles", controllers.ToolPublishArticles)
+		auth.GET("/market/publish", controllers.ToolPublishSelectionPage)
 		auth.GET("/market/publish/:id", controllers.ToolPublishPage)
 		auth.GET("/api/tool-market/client", controllers.MarketClientSettings)
 		auth.PUT("/api/tool-market/client", controllers.MarketClientSettings)

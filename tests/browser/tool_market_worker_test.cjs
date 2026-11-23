@@ -17,14 +17,16 @@ test('market catalog and manifests never fall back to cached publications',()=>{
   assert.equal(intercepted,false,path);
  }
 });
-test('market shell never uses another accounts cached workspace',async()=>{
+test('market and publication pages never use another accounts cached workspace',async()=>{
+ for(const path of ['/market?view=installed','/market/publish?q=PDF','/market/publish/12']){
  for(const offline of [false,true]){
   let result;
   const handler=worker({fetch:async()=>{if(offline)throw Error('offline');return new Response('current workspace');},caches:{match:async path=>{assert.equal(path,'/static/offline.html');return undefined;}}});
-  handler({request:new Request('https://books.test/market?view=installed',{headers:{accept:'text/html'}}),respondWith:value=>{result=value;}});
+  handler({request:new Request('https://books.test'+path,{headers:{accept:'text/html'}}),respondWith:value=>{result=value;}});
   const response=await result;
   assert.equal(response.status,offline?503:200);
   if(!offline)assert.equal(await response.text(),'current workspace');
+ }
  }
 });
 
