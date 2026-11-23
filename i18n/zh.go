@@ -3085,4 +3085,17 @@ var zhMessages = map[string]string{
 	"admin.settings.mail_status.loading":              "正在读取发送状态…",
 	"admin.settings.mail_status.summary":              "待发送 {pending} · 已发送 {sent} · 失败 {failed}",
 	"admin.settings.mail_status.unavailable":          "发送状态暂不可用",
+
+	// Community radio favorites.
+	"public.radio_title":           "Radio 电台",
+	"public.radio_favorites":       "我的收藏",
+	"public.radio_discover_tab":    "发现电台",
+	"public.radio_filters":         "筛选",
+	"public.radio_recommended":     "推荐电台",
+	"public.radio_add_favorite":    "添加收藏",
+	"public.radio_remove_favorite": "取消收藏",
+	"public.radio_empty_favorites": "还没有收藏的电台",
+	"public.radio_empty_hint":      "搜索电台，收藏后可在这里快速播放",
+	"public.radio_local_favorites": "收藏仅保存在当前浏览器",
+	"public.radio_storage_error":   "无法保存本机收藏，请检查浏览器存储设置。",
 }

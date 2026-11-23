@@ -3085,4 +3085,17 @@ var enMessages = map[string]string{
 	"admin.settings.mail_status.loading":              "Loading delivery status…",
 	"admin.settings.mail_status.summary":              "Pending {pending} · Sent {sent} · Failed {failed}",
 	"admin.settings.mail_status.unavailable":          "Delivery status unavailable",
+
+	// Community radio favorites.
+	"public.radio_title":           "Radio",
+	"public.radio_favorites":       "Favorites",
+	"public.radio_discover_tab":    "Discover",
+	"public.radio_filters":         "Filters",
+	"public.radio_recommended":     "Suggested stations",
+	"public.radio_add_favorite":    "Add favorite",
+	"public.radio_remove_favorite": "Remove favorite",
+	"public.radio_empty_favorites": "No favorite stations yet",
+	"public.radio_empty_hint":      "Find stations and save them here for quick playback",
+	"public.radio_local_favorites": "Favorites are saved only in this browser",
+	"public.radio_storage_error":   "Could not save favorites. Check browser storage settings.",
 }

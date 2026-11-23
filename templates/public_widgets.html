@@ -4,23 +4,38 @@
  {{template "local-tool-grid" .}}
  <div class="local-recent-heading"><h3>{{call .T "tools.recent"}}</h3><a href="/tools" target="_blank" rel="noopener">{{call .T "tools.all"}} ›</a></div>
  <div id="publicLocalDrafts" class="local-draft-list"></div><p class="public-widget-caption">{{call .T "tools.auto"}}</p></section>
- <section class="public-radio"><h2><i class="fa-solid fa-headphones" aria-hidden="true"></i>Radio</h2>
- <details class="public-radio-discovery" id="publicRadioDiscovery"><summary><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>{{call .T "public.radio_discover"}}</summary>
+ <section class="public-radio" aria-labelledby="publicRadioHeading">
+ <h2 id="publicRadioHeading"><i class="fa-solid fa-headphones" aria-hidden="true"></i>{{call .T "public.radio_title"}}</h2>
+ <div class="public-radio-player">
+ <button id="publicRadioPlay" type="button" aria-label="{{call .T "public.radio_play"}}" aria-pressed="false"><i class="fa-solid fa-play" aria-hidden="true"></i></button>
+ <div class="public-radio-current"><strong id="publicRadioCurrent">Swiss Classic</strong><span id="publicRadioStatus" role="status" aria-live="polite">{{call .T "public.radio_idle"}}</span></div>
+ <button id="publicRadioFavorite" type="button" class="row-action public-radio-star" aria-label="{{call .T "public.radio_add_favorite"}}" aria-pressed="false"><i class="fa-regular fa-star" aria-hidden="true"></i></button>
+ </div>
+ <label class="public-radio-volume"><i class="fa-solid fa-volume-low" aria-hidden="true"></i><span class="sr-only">{{call .T "public.radio_volume"}}</span><input id="publicRadioVolume" type="range" min="0" max="1" step="0.05" value="0.5"></label>
+ <div class="public-radio-tabs" role="tablist" aria-label="{{call .T "public.radio_title"}}">
+ <button id="publicRadioFavoritesTab" class="bs-btn bs-btn-cancel" type="button" role="tab" aria-selected="true" aria-controls="publicRadioFavoritesPanel">{{call .T "public.radio_favorites"}} <span id="publicRadioFavoriteCount" aria-hidden="true">0</span></button>
+ <button id="publicRadioDiscoverTab" class="bs-btn bs-btn-cancel" type="button" role="tab" aria-selected="false" aria-controls="publicRadioDiscoverPanel" tabindex="-1">{{call .T "public.radio_discover_tab"}}</button>
+ </div>
+ <div id="publicRadioFavoritesPanel" role="tabpanel" aria-labelledby="publicRadioFavoritesTab">
+ <div id="publicRadioFavorites" class="public-radio-results"></div>
+ <div id="publicRadioFavoritesEmpty" class="public-radio-empty"><i class="fa-regular fa-star" aria-hidden="true"></i><p>{{call .T "public.radio_empty_favorites"}}</p><small>{{call .T "public.radio_empty_hint"}}</small><button id="publicRadioFindStations" class="bs-btn bs-btn-cancel" type="button">{{call .T "public.radio_discover_tab"}}</button></div>
+ </div>
+ <div id="publicRadioDiscoverPanel" role="tabpanel" aria-labelledby="publicRadioDiscoverTab" hidden>
  <form id="publicRadioSearch" role="search" aria-label="{{call .T "public.radio_discover"}}">
  <div class="public-radio-query"><input id="publicRadioQuery" type="search" maxlength="100" placeholder="{{call .T "public.radio_search_name"}}" aria-label="{{call .T "public.radio_search_name"}}"><button type="submit" aria-label="{{call .T "public.search_action"}}"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></button></div>
+ <details class="public-radio-discovery" id="publicRadioDiscovery"><summary><i class="fa-solid fa-sliders" aria-hidden="true"></i>{{call .T "public.radio_filters"}}</summary>
  <label class="sr-only" for="publicRadioGenre">{{call .T "public.radio_genre"}}</label>
  <select id="publicRadioGenre"><option value="">{{call .T "public.radio_all_genres"}}</option>
  <option value="classical">{{call .T "public.radio_classical"}}</option><option value="jazz">{{call .T "public.radio_jazz"}}</option><option value="pop">{{call .T "public.radio_pop"}}</option><option value="rock">{{call .T "public.radio_rock"}}</option><option value="electronic">{{call .T "public.radio_electronic"}}</option><option value="ambient">{{call .T "public.radio_ambient"}}</option><option value="news">{{call .T "public.radio_news"}}</option><option value="talk">{{call .T "public.radio_talk"}}</option><option value="folk">{{call .T "public.radio_folk"}}</option><option value="country">{{call .T "public.radio_country"}}</option></select>
  <div id="publicRadioCountry"></div>
+ </details>
  </form>
+ <div id="publicRadioPresets" class="public-radio-results" aria-label="{{call .T "public.radio_recommended"}}"></div>
  <p id="publicRadioSearchStatus" role="status" class="public-widget-caption">{{call .T "public.radio_search_hint"}}</p>
  <div id="publicRadioResults" class="public-radio-results"></div>
  <button id="publicRadioMore" type="button" hidden>{{call .T "public.radio_more"}}</button>
- </details>
- <label class="sr-only" for="publicRadioStation">{{call .T "public.radio_station"}}</label>
- <select id="publicRadioStation"><option value="rsc_de">{{call .T "public.radio_classical"}} · Swiss Classic</option><option value="rsj">{{call .T "public.radio_jazz"}} · Swiss Jazz</option><option value="rsp">{{call .T "public.radio_pop"}} · Swiss Pop</option></select>
- <div class="public-radio-controls"><button id="publicRadioPlay" type="button" aria-label="{{call .T "public.radio_play"}}" aria-pressed="false"><i class="fa-solid fa-play" aria-hidden="true"></i></button><span id="publicRadioStatus" role="status">{{call .T "public.radio_idle"}}</span></div>
- <label class="public-radio-volume"><i class="fa-solid fa-volume-low" aria-hidden="true"></i><span class="sr-only">{{call .T "public.radio_volume"}}</span><input id="publicRadioVolume" type="range" min="0" max="1" step="0.05" value="0.5"></label>
+ </div>
+ <p id="publicRadioCacheNote" class="public-radio-cache-note" role="status">{{call .T "public.radio_local_favorites"}}</p>
  <audio id="publicRadioAudio" preload="none"></audio>
  {{if .RadioURL}}<div class="public-radio-footer"><a href="{{.RadioURL}}" target="_blank" rel="noopener noreferrer">{{call .T "public.radio_full"}} ↗</a></div>{{end}}
  </section>
