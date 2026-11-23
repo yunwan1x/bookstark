@@ -5,11 +5,35 @@
   let draft = null, revision = 0, ready = false, lastContent = '', lastTitle = '', dirty = false;
   let timer, saving = null, failed = false, adapter = null, mind = null, sheet = null;
   const uuid = () => crypto.randomUUID();
+  const statusNode = el('toolsStatus');
+  let currentTitleNode = null, listUnavailable = false, listVersion = 0;
+  function updateDocumentContext() {
+    const compact = !!draft && (sidebarViewport.matches || sidebarCollapsed || listUnavailable);
+    el('toolsHeadingLabel').hidden = compact;
+    el('toolsCurrentTitle').hidden = !compact;
+    el('toolsCompactStatus').hidden = !compact;
+    if (draft) {
+      el('toolsCurrentTitle').textContent = draft.title;
+      el('toolsCurrentTitle').title = draft.title;
+      document.title = draft.title + ' · BookStark';
+      if (currentTitleNode) currentTitleNode.textContent = draft.title;
+    }
+  }
   function state(key) {
-    el('toolsStatus').textContent = t(key) + (key === 'saved' && draft && draft.updated ? ' · ' + new Date(draft.updated).toLocaleTimeString(document.documentElement.lang,{hour:'2-digit',minute:'2-digit'}) : '');
-    el('toolsStatus').dataset.state = key === 'saved' ? 'saved' : ['unsaved','conflict','unavailable'].includes(key) ? 'error' : '';
+    const text = t(key) + (key === 'saved' && draft && draft.updated ? ' · ' + new Date(draft.updated).toLocaleTimeString(document.documentElement.lang,{hour:'2-digit',minute:'2-digit'}) : '');
+    const invalid = ['unsaved','conflict','unavailable'].includes(key);
+    statusNode.textContent = key === 'saved' ? t('saved_short') + (draft?.updated ? ' · ' + new Date(draft.updated).toLocaleTimeString(document.documentElement.lang,{hour:'2-digit',minute:'2-digit'}) : '') : text;
+    statusNode.title = text;
+    statusNode.dataset.state = key === 'saved' ? 'saved' : invalid ? 'error' : '';
+    const indicator = el('toolsCompactStatus');
+    indicator.dataset.state = statusNode.dataset.state;
+    indicator.setAttribute('aria-label',text); indicator.title = text;
+    indicator.querySelector('i').className = key === 'saved' ? 'fa-regular fa-circle-check' : invalid ? 'fa-solid fa-triangle-exclamation' : 'fa-regular fa-clock';
+    el('toolsRecovery').hidden = !invalid;
+    el('toolsRecoveryMessage').textContent = invalid ? text : '';
     el('toolsRetry').hidden = !['unsaved','unavailable'].includes(key);
     el('toolsCopy').hidden = key !== 'conflict';
+    updateDocumentContext();
   }
   function error(e) { BSDialog.toast(e.code === 'conflict' ? t('conflict') : e.message || t('unsaved'), 'error'); }
   window.BookStarkLocalFile = file => new Promise((resolve, reject) => {
@@ -23,7 +47,7 @@
     let value;
     try { value = content(); } catch (_) { dirty=true; failed=true; state('unsaved'); return null; }
     if (value == null) return false;
-    const title = el('toolsTitle').value.trim() || t('untitled');
+    const title = draft.title.trim() || t('untitled');
     if (value === lastContent && title === lastTitle) return dirty;
     draft.content = value; draft.title = title; lastContent = value; lastTitle = title;
     dirty = true; return true;
@@ -52,38 +76,66 @@
     dirty = false; ready = false; location.href = url;
   }
   async function refreshList() {
+    const version = ++listVersion;
     try {
-      const rows = await store.list(); el('toolsDrafts').replaceChildren();
-      if (!rows.length) el('toolsDrafts').textContent = t('empty');
+      const stored = await store.list();
+      if (version !== listVersion) return;
+      listUnavailable = false; currentTitleNode = null;
+      // A new, not-yet-saved document still needs a visible name and rename action.
+      const rows = draft ? [draft, ...stored.filter(d => d.id !== draft.id)] : stored;
+      const content = document.createDocumentFragment();
+      if (!rows.length) content.append(t('empty'));
       rows.forEach(d => {
-        const row = document.createElement('div'); row.className = 'local-draft-row';
+        const current = !!draft && draft.id === d.id;
+        const row = document.createElement('div'); row.className = 'local-draft-row'; row.dataset.draftId = d.id;
         const a = document.createElement('a'); a.href = '/tools?draft=' + encodeURIComponent(d.id);
-        if (draft && draft.id === d.id) a.setAttribute('aria-current','page');
+        if (current) a.setAttribute('aria-current','page');
         const title = document.createElement('strong'); title.textContent = d.title;
-        const info = document.createElement('small'); info.textContent = t(d.type) + ' · ' + new Date(d.updated).toLocaleString(document.documentElement.lang);
-        a.append(title,info); a.onclick = e => { e.preventDefault(); if (!draft || draft.id !== d.id) leave(a.href); else drawer(false); };
-        const rename = document.createElement('button'); rename.className='row-action'; rename.setAttribute('aria-label',t('rename')); rename.innerHTML='<i class="fa-solid fa-pen" aria-hidden="true"></i>';
-        rename.onclick = async () => {
+        const info = document.createElement('small');
+        if (current) {
+          currentTitleNode = title;
+          statusNode.classList.remove('sr-only');
+          info.append(t(d.type) + ' · ',statusNode);
+        } else info.textContent = t(d.type) + ' · ' + new Date(d.updated).toLocaleString(document.documentElement.lang);
+        a.append(title,info); a.onclick = e => { e.preventDefault(); if (!current) leave(a.href); else drawer(false); };
+        const rename = async () => {
           try {
-            const name = await BSDialog.prompt2(t('rename'), d.title); if (!name || !name.trim()) return;
-            if (draft && draft.id === d.id) { el('toolsTitle').value=name.slice(0,120); changed(); await flush(); }
-            else { const old = await store.get(d.id); if (!old) throw new Error(t('missing')); old.title=name.trim().slice(0,120); await store.save(old,d.revision); }
+            BSActionDropdown.closeAll();
+            const name = await BSDialog.prompt2(t('rename'), current ? draft.title : d.title); if (!name || !name.trim()) return;
+            if (current) { draft.title=name.trim().slice(0,120); changed(); await flush(); }
+            else { const old=await store.get(d.id); if(!old)throw new Error(t('missing')); old.title=name.trim().slice(0,120); await store.save(old,d.revision); }
           } catch(e) { error(e); }
         };
-        const del = document.createElement('button'); del.className='row-action del'; del.setAttribute('aria-label',t('delete')); del.innerHTML='<i class="fa-solid fa-trash" aria-hidden="true"></i>';
-        del.onclick = async () => {
+        row.append(a);
+        if (current) {
+          const pencil=document.createElement('button'); pencil.type='button'; pencil.className='row-action'; pencil.dataset.toolsRename=d.id;
+          pencil.setAttribute('aria-label',t('rename')); pencil.title=t('rename'); pencil.innerHTML='<i class="fa-solid fa-pen" aria-hidden="true"></i>'; pencil.onclick=rename; row.append(pencil);
+        }
+        const actions=document.createElement('div'); actions.className='bs-action-dropdown local-draft-actions';
+        const toggle=document.createElement('button'); toggle.type='button'; toggle.className='row-action bs-action-dd-btn';
+        toggle.setAttribute('data-bs-action-dropdown-toggle',''); toggle.setAttribute('aria-label',t('actions')+' · '+d.title); toggle.setAttribute('aria-haspopup','menu'); toggle.setAttribute('aria-expanded','false'); toggle.innerHTML='<i class="fa-solid fa-ellipsis" aria-hidden="true"></i>';
+        const menu=document.createElement('div'); menu.className='bs-action-dd-menu'; menu.setAttribute('role','menu');
+        const renameItem=document.createElement('button'); renameItem.type='button'; renameItem.className='bs-action-menu-item'; renameItem.setAttribute('role','menuitem'); renameItem.textContent=t('rename'); renameItem.onclick=rename;
+        const del=document.createElement('button'); del.type='button'; del.className='bs-action-menu-item local-draft-delete'; del.setAttribute('role','menuitem'); del.textContent=t('delete');
+        del.onclick=async()=>{
+          BSActionDropdown.closeAll();
           if (!(await BSDialog.confirm2(t('confirm_delete')))) return;
           try {
-            const current = draft && draft.id === d.id;
             if (current) { clearTimeout(timer); await flush(); }
-            await store.remove(d.id, current ? revision : d.revision);
+            if (!current || revision > 0) await store.remove(d.id,current ? revision : d.revision);
             if (current) { dirty=false; ready=false; location.href='/tools'; }
           } catch(e) { error(e); }
         };
-        row.append(a,rename,del); el('toolsDrafts').append(row);
+        menu.append(renameItem,del); actions.append(toggle,menu); row.append(actions); content.append(row);
       });
-      el('toolsUsage').textContent = t('usage').replace('{count}',rows.length).replace('{size}',(rows.reduce((n,d)=>n+d.bytes,0)/1048576).toFixed(2));
-    } catch (_) { el('toolsDrafts').textContent = t('unavailable'); }
+      el('toolsDrafts').replaceChildren(content);
+      el('toolsUsage').textContent=t('usage').replace('{count}',stored.length).replace('{size}',(stored.reduce((n,d)=>n+d.bytes,0)/1048576).toFixed(2));
+      updateDocumentContext();
+    } catch (_) {
+      listUnavailable = true; currentTitleNode = null;
+      statusNode.classList.add('sr-only'); el('toolsStatusHost').append(statusNode);
+      el('toolsDrafts').textContent=t('unavailable'); updateDocumentContext();
+    }
   }
   const sidebarViewport = window.matchMedia('(max-width: 640px)');
   let sidebarCollapsed = false;
@@ -96,6 +148,7 @@
     el('toolsDrawer').setAttribute('aria-expanded', String(expanded));
     el('toolsDrawer').setAttribute('aria-label', label);
     el('toolsDrawer').title = label;
+    updateDocumentContext();
   }
   function drawer(open) {
     const wasOpen = el('toolsSidebar').classList.contains('is-open');
@@ -118,9 +171,9 @@
     const url = URL.createObjectURL(value instanceof Blob ? value : new Blob([value],{type:mime||'application/json'}));
     const a=document.createElement('a'); a.href=url; a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(url),30000);
   }
-  function filename() { return (el('toolsTitle').value.trim() || t('untitled')).replace(/[\\/:*?"<>|\x00-\x1f]/g,'_').slice(0,100); }
+  function filename() { return (draft.title.trim() || t('untitled')).replace(/[\\/:*?"<>|\x00-\x1f]/g,'_').slice(0,100); }
   function exportNative() {
-    capture(); download(JSON.stringify({schema:'bookstark-local-draft',version:1,type:draft.type,title:el('toolsTitle').value||t('untitled'),content:content()},null,2),filename()+'.bookstark.json');
+    capture(); download(JSON.stringify({schema:'bookstark-local-draft',version:1,type:draft.type,title:draft.title||t('untitled'),content:content()},null,2),filename()+'.bookstark.json');
   }
   function exportMenu() {
     const menu=el('toolsExportMenu'); menu.replaceChildren();
@@ -158,9 +211,8 @@
   function waitUntil(check) { return new Promise((resolve,reject)=>{let count=0;const poll=setInterval(()=>{if(check()){clearInterval(poll);resolve();}else if(++count>250){clearInterval(poll);reject(new Error(t('load_error')));}},100);}); }
   async function mount() {
     document.body.classList.add('has-local-editor');
-    el('toolsDocument').hidden=false;
     el('toolsWelcome').hidden=true; el('toolsEditor').hidden=false; el('toolsLoading').hidden=false;
-    el('toolsTitle').hidden=false; el('toolsTitle').value=draft.title;
+    updateDocumentContext();
     const host=el('toolsEditor');
     try {
       switch(draft.type) {
@@ -215,7 +267,6 @@
       return Array.isArray(data) || Array.isArray(data.elements);
     }catch(_){return false;}
   }
-  el('toolsTitle').addEventListener('input',changed);
   el('toolsRetry').onclick=()=>{failed=false;flush();};
   el('toolsCopy').onclick=async()=>{if(saving)await saving;draft.id=uuid();revision=0;failed=false;dirty=true;await flush();await refreshList();};
   el('toolsDrawer').onclick=()=>{
@@ -240,7 +291,7 @@
   };
   document.querySelectorAll('[data-tools-back]').forEach(link=>{link.onclick=e=>{e.preventDefault();leave('/shares');};});
   window.addEventListener('local-drafts-changed',refreshList);window.addEventListener('focus',refreshList);
-  document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();flush();}if(e.key==='Escape'){el('toolsExport').open=false;drawer(false);}
+  document.addEventListener('keydown',e=>{if(e.target.closest?.('.bs-dialog-overlay'))return;if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();flush();}if(e.key==='Escape'&&!e.defaultPrevented){el('toolsExport').open=false;drawer(false);}
     if(e.key==='Tab' && sidebarViewport.matches && el('toolsSidebar').classList.contains('is-open')){
       const focusable=Array.from(el('toolsSidebar').querySelectorAll('button,a[href],input')).filter(node=>!node.hidden && node.getClientRects().length);
       const first=focusable[0],last=focusable[focusable.length-1];

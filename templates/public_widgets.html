@@ -17,7 +17,9 @@
  <button id="publicRadioDiscoverTab" class="bs-btn bs-btn-cancel" type="button" role="tab" aria-selected="false" aria-controls="publicRadioDiscoverPanel" tabindex="-1">{{call .T "public.radio_discover_tab"}}</button>
  </div>
  <div id="publicRadioFavoritesPanel" role="tabpanel" aria-labelledby="publicRadioFavoritesTab">
+ <form id="publicRadioFavoriteSearch" class="public-radio-favorite-search" role="search" aria-label="{{call .T "public.radio_search_favorites"}}"><div class="public-radio-query"><input id="publicRadioFavoriteQuery" type="search" maxlength="100" placeholder="{{call .T "public.radio_search_favorites"}}" aria-label="{{call .T "public.radio_search_favorites"}}"><button type="submit" aria-label="{{call .T "public.search_action"}}"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></button></div></form>
  <div id="publicRadioFavorites" class="public-radio-results"></div>
+ <p id="publicRadioFavoritesNoResults" class="public-widget-caption" role="status" hidden>{{call .T "public.radio_no_favorites_match"}}</p>
  <div id="publicRadioFavoritesEmpty" class="public-radio-empty"><i class="fa-regular fa-star" aria-hidden="true"></i><p>{{call .T "public.radio_empty_favorites"}}</p><small>{{call .T "public.radio_empty_hint"}}</small><button id="publicRadioFindStations" class="bs-btn bs-btn-cancel" type="button">{{call .T "public.radio_discover_tab"}}</button></div>
  </div>
  <div id="publicRadioDiscoverPanel" role="tabpanel" aria-labelledby="publicRadioDiscoverTab" hidden>
@@ -35,7 +37,7 @@
  <div id="publicRadioResults" class="public-radio-results"></div>
  <button id="publicRadioMore" type="button" hidden>{{call .T "public.radio_more"}}</button>
  </div>
- <p id="publicRadioCacheNote" class="public-radio-cache-note" role="status">{{call .T "public.radio_local_favorites"}}</p>
+ <p id="publicRadioCacheNote" class="public-radio-cache-note" role="alert" hidden></p>
  <audio id="publicRadioAudio" preload="none"></audio>
  {{if .RadioURL}}<div class="public-radio-footer"><a href="{{.RadioURL}}" target="_blank" rel="noopener noreferrer">{{call .T "public.radio_full"}} ↗</a></div>{{end}}
  </section>

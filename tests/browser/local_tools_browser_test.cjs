@@ -1,3 +1,4 @@
+const {renameDraft}=require('./local-tools-helpers.cjs');
 const REPO_ROOT = require('./repo-root.cjs');
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
@@ -16,26 +17,48 @@ const origin = process.env.BOOKSTARK_TEST_ORIGIN;
   assert.equal(await page.locator('.public-tools-card .local-tool-grid a').count(),6);
   assert.equal(await page.locator('.public-tools-card a[href*="type=html"]').count(),0);
   await page.goto(origin+'/tools?type=markdown');await ready();
+  assert.equal(await page.locator('#toolsTitle,#toolsDocument,.local-document-toolbar').count(),0,'redundant file toolbar must be removed');
+  await page.locator('[data-tools-rename]').waitFor({state:'visible'});
+  assert.equal(await page.locator('#toolsDrafts a[aria-current=page]').count(),1,'unsaved draft must appear in sidebar');
+  const editorTop=await page.locator('#toolsEditor').boundingBox(),header=await page.locator('.local-tools-header').boundingBox();
+  assert.ok(Math.abs(editorTop.y-(header.y+header.height))<2,'editor must start directly below the header');
   // Real keyboard edit, autosave, reload, export and reimport.
   await page.locator('#localMarkdown .cm-content').click();await page.keyboard.type('# Local draft\n\nHello browser');
-  await page.locator('#toolsTitle').fill('Local markdown');await saved();
+  await renameDraft(page,'Local markdown');await saved();
   const id=new URL(page.url()).searchParams.get('draft');assert.ok(id);
+  // Compact headers retain the current name and save state, with usable icon actions.
+  for (const width of [320,390]) {
+   await page.setViewportSize({width,height:844});
+   assert.equal(await page.locator('#toolsCurrentTitle').isVisible(),true);
+   assert.equal(await page.locator('#toolsCurrentTitle').textContent(),'Local markdown');
+   assert.equal(await page.locator('#toolsCompactStatus').getAttribute('data-state'),'saved');
+   for(const action of ['#toolsBack','#toolsExport summary']) {
+    const box=await page.locator(action).boundingBox();assert.ok(box.width>=44&&box.height>=44);
+    assert.equal(await page.locator(action+' span').isVisible(),false);
+   }
+   await page.locator('#toolsExport summary').click();await page.locator('#toolsExportMenu button').first().waitFor({state:'visible'});await page.keyboard.press('Escape');
+   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+   await page.screenshot({path:'/tmp/bookstark-local-editor-mobile-'+width+'.png'});
+  }
+  await page.setViewportSize({width:1440,height:1000});
+  await page.locator('#toolsDrawer').click();assert.equal(await page.locator('#toolsCurrentTitle').isVisible(),true);
+  await page.locator('#toolsDrawer').click();assert.equal(await page.locator('#toolsCurrentTitle').isVisible(),false);
   // The explicit return button must flush an edit before leaving the workspace.
-  await page.locator('#toolsTitle').fill('Saved by back');
+  await renameDraft(page,'Saved by back');
   await page.locator('#toolsBack').click();await page.waitForURL(url=>url.pathname==='/shares');
   await page.goto(origin+'/tools?draft='+id);await ready();
-  assert.equal(await page.locator('#toolsTitle').inputValue(),'Saved by back');
+  assert.equal(await page.locator('#toolsCurrentTitle').textContent(),'Saved by back');
   // Failed saves still offer cancellation through the shared confirmation dialog.
   await page.evaluate(()=>{window.restoreDraftSave=BookStarkLocalDrafts.save;BookStarkLocalDrafts.save=async()=>{throw new Error('storage unavailable');};});
-  await page.locator('#toolsTitle').fill('Keep this unsaved title');
+  await renameDraft(page,'Keep this unsaved title');
   await page.locator('#toolsBack').click();await page.locator('.bs-dialog-overlay.active').waitFor();
   await page.locator('.bs-dialog-overlay.active .bs-btn-cancel').click();
   assert.equal(new URL(page.url()).pathname,'/tools');
-  assert.equal(await page.locator('#toolsTitle').inputValue(),'Keep this unsaved title');
+  assert.equal(await page.locator('#toolsCurrentTitle').textContent(),'Keep this unsaved title');
   await page.evaluate(()=>{BookStarkLocalDrafts.save=window.restoreDraftSave;delete window.restoreDraftSave;});
   await page.locator('#toolsRetry').click();await saved();
-  await page.locator('#toolsTitle').fill('Local markdown');await saved();
-  await page.reload();await ready();assert.equal(await page.locator('#toolsTitle').inputValue(),'Local markdown');
+  await renameDraft(page,'Local markdown');await saved();
+  await page.reload();await ready();assert.equal(await page.locator('#toolsCurrentTitle').textContent(),'Local markdown');
   assert.ok((await page.locator('#localMarkdown').innerText()).includes('Hello browser'));
   await page.locator('#toolsExport summary').click();
   const downloadPromise=page.waitForEvent('download');downloadPromise.catch(()=>{});await page.locator('#toolsExportMenu button').first().click();
@@ -56,9 +79,9 @@ const origin = process.env.BOOKSTARK_TEST_ORIGIN;
     const blob=await new Promise(r=>canvas.toBlob(r));await BookStarkRichDoc.active.insertImageFile(new File([blob],'local.png',{type:'image/png'}));
    });
    if(type==='drawing')await page.evaluate(()=>BookStarkExcalidraw.applySkeleton([{type:'rectangle',x:100,y:100,width:200,height:100}]));
-   await page.locator('#toolsTitle').fill('Local '+type);await saved();
+   await renameDraft(page,'Local '+type);await saved();
    const before=await page.evaluate(async()=>BookStarkLocalDrafts.get(new URL(location.href).searchParams.get('draft')));assert.ok(before.content.length>0,type+' has content');if(type==='richdoc'){assert.ok(await page.evaluate(()=>BookStarkRichDoc.active.getText().includes('Local document text')));assert.ok(before.content.includes('data:image/png'));}if(type==='drawing')assert.equal(JSON.parse(before.content).elements.length,1);if(type==='presentation')assert.equal(JSON.parse(before.content).slides.length,2);if(type==='spreadsheet'){const w=JSON.parse(before.content);assert.equal(String(w.sheets[w.sheetOrder[0]].cellData[0][0].v),'42');}
-   await page.reload();await ready();assert.equal(await page.locator('#toolsTitle').inputValue(),'Local '+type);
+   await page.reload();await ready();assert.equal(await page.locator('#toolsCurrentTitle').textContent(),'Local '+type);
    const after=await page.evaluate(async()=>BookStarkLocalDrafts.get(new URL(location.href).searchParams.get('draft')));assert.equal(after.id,before.id);
    await page.locator('#toolsExport summary').click();const pending=page.waitForEvent('download');await page.locator('#toolsExportMenu button').first().click();
    const dl=await pending;const exported=JSON.parse(fs.readFileSync(await dl.path(),'utf8'));assert.equal(exported.type,type);assert.ok(exported.content.length>0);
@@ -73,18 +96,18 @@ const origin = process.env.BOOKSTARK_TEST_ORIGIN;
    await page.screenshot({path:'/tmp/bookstark-local-'+type+'.png'});
    await page.setInputFiles('#toolsImportFile',{name:'roundtrip.bookstark.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(exported))});
    await page.waitForURL(u=>u.searchParams.get('draft') && u.searchParams.get('draft')!==after.id);await ready();
-   assert.equal(await page.locator('#toolsTitle').inputValue(),'Local '+type);
+   assert.equal(await page.locator('#toolsCurrentTitle').textContent(),'Local '+type);
   }
   // A rejected IndexedDB transaction must stay visibly unsaved, then retry without duplicating.
   await page.goto(origin+'/tools?draft='+id);await ready();
   await page.evaluate(()=>{window.originalLocalSave=BookStarkLocalDrafts.save;BookStarkLocalDrafts.save=()=>Promise.reject(new DOMException('Full','QuotaExceededError'));});
-  await page.locator('#toolsTitle').fill('Retry title');await page.locator('#toolsRetry').waitFor({state:'visible'});
+  await renameDraft(page,'Retry title');await page.locator('#toolsRetry').waitFor({state:'visible'});
   assert.equal(await page.locator('#toolsStatus').getAttribute('data-state'),'error');
   await page.evaluate(()=>BookStarkLocalDrafts.save=window.originalLocalSave);await page.locator('#toolsRetry').click();await saved();
   assert.equal(new URL(page.url()).searchParams.get('draft'),id);
   const second=await context.newPage();await second.goto(page.url());await second.locator('#toolsExport').waitFor({state:'visible'});
-  await second.locator('#toolsTitle').fill('Other tab title');await second.waitForFunction(()=>document.querySelector('#toolsStatus').dataset.state==='saved');
-  await page.locator('#toolsTitle').fill('Keep my copy');await page.locator('#toolsCopy').waitFor({state:'visible'});
+  await renameDraft(second,'Other tab title');await second.waitForFunction(()=>document.querySelector('#toolsStatus').dataset.state==='saved');
+  await renameDraft(page,'Keep my copy');await page.locator('#toolsCopy').waitFor({state:'visible'});
   await page.locator('#toolsCopy').click();await saved();assert.notEqual(new URL(page.url()).searchParams.get('draft'),id);
   assert.equal(await page.evaluate(async id=>(await BookStarkLocalDrafts.get(id)).title,id),'Other tab title');await second.close();
   // Concurrent tabs must not silently overwrite or resurrect a deleted draft.
@@ -104,6 +127,10 @@ const origin = process.env.BOOKSTARK_TEST_ORIGIN;
    assert.equal(await page.locator('#toolsWelcome .local-tool-grid a').count(),6);
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
    await page.locator('#toolsBack').waitFor({state:'visible'});
+   if(width<=640){
+    assert.equal(await page.locator('#toolsBack span').isVisible(),false,'mobile return button must use only its icon');
+    assert.ok((await page.locator('#toolsBack').boundingBox()).width>=44,'mobile return touch target is too small');
+   }else assert.equal(await page.locator('#toolsBack span').isVisible(),true);
    const layout=await page.evaluate(()=>{
     const rect=selector=>{const b=document.querySelector(selector).getBoundingClientRect();return {x:b.x,y:b.y,width:b.width,height:b.height,center:b.y+b.height/2,right:b.right};};
     return {header:rect('.local-tools-header'),title:rect('.local-tools-header h1'),back:rect('#toolsBack'),brand:rect('.local-tools-brand')};

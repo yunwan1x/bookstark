@@ -88,6 +88,9 @@ var enMessages = map[string]string{
 	"tools.initial":        "Autosaves when you edit",
 	"tools.discard":        "Changes are not saved. Leave and discard them?",
 
+	"tools.saved_short":       "Saved",
+	"tools.actions":           "More actions",
+	"tools.export_short":      "Export",
 	"tools.compact_title":     "Tools",
 	"tools.markdown_hint":     "Write and format with focus",
 	"tools.richdoc_hint":      "Bring text and images together",
@@ -3087,15 +3090,21 @@ var enMessages = map[string]string{
 	"admin.settings.mail_status.unavailable":          "Delivery status unavailable",
 
 	// Community radio favorites.
-	"public.radio_title":           "Radio",
-	"public.radio_favorites":       "Favorites",
-	"public.radio_discover_tab":    "Discover",
-	"public.radio_filters":         "Filters",
-	"public.radio_recommended":     "Suggested stations",
-	"public.radio_add_favorite":    "Add favorite",
-	"public.radio_remove_favorite": "Remove favorite",
-	"public.radio_empty_favorites": "No favorite stations yet",
-	"public.radio_empty_hint":      "Find stations and save them here for quick playback",
-	"public.radio_local_favorites": "Favorites are saved only in this browser",
-	"public.radio_storage_error":   "Could not save favorites. Check browser storage settings.",
+	"public.radio_search_favorites":   "Search favorite stations…",
+	"public.radio_no_favorites_match": "No matching favorites. Try another search.",
+	"public.radio_title":              "Radio",
+	"public.radio_favorites":          "Favorites",
+	"public.radio_discover_tab":       "Discover",
+	"public.radio_filters":            "Filters",
+	"public.radio_recommended":        "Suggested stations",
+	"public.radio_add_favorite":       "Add favorite",
+	"public.radio_remove_favorite":    "Remove favorite",
+	"public.radio_empty_favorites":    "No favorite stations yet",
+	"public.radio_empty_hint":         "Find stations and save them here for quick playback",
+	"public.radio_local_favorites":    "Favorites are saved only in this browser",
+	"public.radio_storage_error":      "Could not save favorites. Check browser storage settings.",
+
+	// Login password visibility.
+	"auth.field.password.show": "Show password",
+	"auth.field.password.hide": "Hide password",
 }

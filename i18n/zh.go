@@ -88,6 +88,9 @@ var zhMessages = map[string]string{
 	"tools.initial":        "编辑后自动保存",
 	"tools.discard":        "当前内容尚未保存。离开将丢失修改，是否继续？",
 
+	"tools.saved_short":       "已保存",
+	"tools.actions":           "更多操作",
+	"tools.export_short":      "导出",
 	"tools.compact_title":     "创作工具",
 	"tools.markdown_hint":     "专注文字与排版",
 	"tools.richdoc_hint":      "图文混排，轻松记录",
@@ -3087,15 +3090,21 @@ var zhMessages = map[string]string{
 	"admin.settings.mail_status.unavailable":          "发送状态暂不可用",
 
 	// Community radio favorites.
-	"public.radio_title":           "Radio 电台",
-	"public.radio_favorites":       "我的收藏",
-	"public.radio_discover_tab":    "发现电台",
-	"public.radio_filters":         "筛选",
-	"public.radio_recommended":     "推荐电台",
-	"public.radio_add_favorite":    "添加收藏",
-	"public.radio_remove_favorite": "取消收藏",
-	"public.radio_empty_favorites": "还没有收藏的电台",
-	"public.radio_empty_hint":      "搜索电台，收藏后可在这里快速播放",
-	"public.radio_local_favorites": "收藏仅保存在当前浏览器",
-	"public.radio_storage_error":   "无法保存本机收藏，请检查浏览器存储设置。",
+	"public.radio_search_favorites":   "搜索收藏的电台…",
+	"public.radio_no_favorites_match": "没有匹配的收藏，试试其他关键词。",
+	"public.radio_title":              "Radio 电台",
+	"public.radio_favorites":          "我的收藏",
+	"public.radio_discover_tab":       "发现电台",
+	"public.radio_filters":            "筛选",
+	"public.radio_recommended":        "推荐电台",
+	"public.radio_add_favorite":       "添加收藏",
+	"public.radio_remove_favorite":    "取消收藏",
+	"public.radio_empty_favorites":    "还没有收藏的电台",
+	"public.radio_empty_hint":         "搜索电台，收藏后可在这里快速播放",
+	"public.radio_local_favorites":    "收藏仅保存在当前浏览器",
+	"public.radio_storage_error":      "无法保存本机收藏，请检查浏览器存储设置。",
+
+	// Login password visibility.
+	"auth.field.password.show": "显示密码",
+	"auth.field.password.hide": "隐藏密码",
 }

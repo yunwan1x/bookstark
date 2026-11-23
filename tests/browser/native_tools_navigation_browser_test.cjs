@@ -1,3 +1,4 @@
+const {renameDraft}=require('./local-tools-helpers.cjs');
 const { chromium } = require('playwright');
 const assert = require('node:assert/strict');
 const origin = process.env.BOOKSTARK_TEST_ORIGIN;
@@ -32,22 +33,22 @@ const origin = process.env.BOOKSTARK_TEST_ORIGIN;
       await page.goto(origin + '/shares');
       await page.locator('.public-tools-card a[href="/tools?type=markdown"] i').click();
       try { await page.waitForURL(/\/tools\?/, {waitUntil: 'domcontentloaded', timeout: 10000}); } catch (error) { console.log('NATIVE DEBUG',platform,await page.evaluate(()=>({url:location.href,host:window.BookStarkHost?.available,messages:window.__nativeMessages}))); throw error; }
-      await page.locator('#toolsTitle').waitFor({state: 'visible'});
-      await page.locator('#toolsTitle').fill('Native ' + platform);
+      await page.locator('#toolsExport').waitFor({state: 'visible'});
+      await renameDraft(page,'Native ' + platform);
       await page.waitForFunction(() => document.querySelector('#toolsStatus').dataset.state === 'saved');
       const draftURL = page.url();
       await page.locator('.local-tools-brand').click();
       await page.waitForURL(origin + '/shares');
       await page.locator('#publicLocalDrafts a strong').first().click();
       await page.waitForURL(draftURL, {timeout: 5000});
-      await page.locator('#toolsTitle').waitFor({state: 'visible'});
-      assert.equal(await page.locator('#toolsTitle').inputValue(), 'Native ' + platform);
+      await page.locator('#toolsExport').waitFor({state: 'visible'});
+      assert.equal(await page.locator('#toolsCurrentTitle').textContent(), 'Native ' + platform);
       await page.locator('.local-tools-brand').click();
       await page.locator('.local-recent-heading a').click();
       await page.waitForURL(origin + '/tools', {timeout: 5000});
       // The same grid is also rendered on the tools welcome screen.
       await page.locator('#toolsWelcome a[href="/tools?type=markdown"]').click();
-      await page.locator('#toolsTitle').waitFor({state: 'visible'});
+      await page.locator('#toolsExport').waitFor({state: 'visible'});
       // Real bookmarks: favicon filtering cancels navigation; title uses
       // stopPropagation; the context-menu action calls window.open directly.
       const login = await context.request.post(origin + '/api/login', {data: {account: 'admin', password: process.env.BOOKSTARK_TEST_PASSWORD}});

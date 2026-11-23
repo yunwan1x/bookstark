@@ -14,6 +14,15 @@ class CDP{
  call(method,params={}){return new Promise((resolve,reject)=>{const id=++this.id;this.jobs.set(id,{resolve,reject});this.ws.send(JSON.stringify({id,method,params}))})}
  async eval(expression){const r=await this.call('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true,userGesture:true});if(r.exceptionDetails)throw Error(JSON.stringify(r.exceptionDetails));return r.result.value}
  async goto(url){await this.call('Page.navigate',{url});await until(()=>this.eval(`location.href===${JSON.stringify(url)} && document.readyState==='complete'`),'navigate '+url)}
+ async renameDraft(name){
+  const wasOpen=await this.eval('document.querySelector("#toolsDrawer").getAttribute("aria-expanded")==="true"');
+  if(!wasOpen)await this.eval('document.querySelector("#toolsDrawer").click();true');
+  await until(()=>this.eval('!!document.querySelector("[data-tools-rename]")'),'draft rename action');
+  await this.eval('document.querySelector("[data-tools-rename]").click();true');
+  await until(()=>this.eval('!!document.querySelector("#bs-prompt-input")'),'rename dialog');
+  await this.eval(`document.querySelector('#bs-prompt-input').value=${JSON.stringify(name)};document.querySelector('#bs-prompt-ok').click();true`);
+  if(!wasOpen)await this.eval('(()=>{const close=document.querySelector("#toolsSidebarClose");(close.offsetParent?close:document.querySelector("#toolsDrawer")).click();return true})()');
+ }
  close(){this.ws.close()}
 }
 async function tapWeb(client, selector) {
@@ -48,16 +57,16 @@ const results=[];function pass(name,details){results.push({name,status:'passed',
   const manifest=await client.eval("fetch('/static/asset-hashes.json?qa='+Date.now(),{cache:'no-store'}).then(r=>r.json())");assert.deepEqual(manifest,JSON.parse(fs.readFileSync(path.join(ROOT,'static/asset-hashes.json'),'utf8')));
   pass('Actual APK loads shared native adapter');
   await client.goto(localOrigin+'/tools?type=markdown');
-  await until(()=>client.eval('document.querySelector("#toolsTitle") && !document.querySelector("#toolsTitle").hidden'),'markdown editor');
+  await until(()=>client.eval('document.querySelector("#toolsExport") && !document.querySelector("#toolsExport").hidden'),'markdown editor');
   const marker='Redroid Saved '+Date.now();
-  await client.eval(`document.querySelector('#toolsTitle').value=${JSON.stringify(marker)};document.querySelector('#toolsTitle').dispatchEvent(new Event('input',{bubbles:true}));true`);
+  await client.renameDraft(marker);
   await tapNative(n=>n['resource-id']===PKG+':id/native_back','native Back');
   await until(()=>client.eval('location.pathname==="/shares" && typeof BookStarkLocalDrafts!=="undefined"'),'native Back navigated');
   const stored=await client.eval(`BookStarkLocalDrafts.list().then(rows=>rows.find(row=>row.title===${JSON.stringify(marker)}))`);assert(stored?.id);
   pass('Native Back waits for IndexedDB save',{draft:stored.id});
   await tapNative(n=>n['resource-id']===PKG+':id/native_forward','native Forward');
   await until(()=>client.eval('location.pathname==="/tools"'),'native Forward navigated');
-  await until(()=>client.eval(`document.querySelector('#toolsTitle')?.value===${JSON.stringify(marker)}`),'draft restored');pass('Native Forward restores draft');
+  await until(()=>client.eval(`document.querySelector('#toolsCurrentTitle')?.textContent===${JSON.stringify(marker)}`),'draft restored');pass('Native Forward restores draft');
   const clipboard='Redroid clipboard 中文 '+Date.now();
   await client.eval(`BookStarkCopyText(${JSON.stringify(clipboard)})`);
   await client.eval(`{const ta=document.createElement('textarea');ta.id='nativeClipboardProbe';ta.style.cssText='position:fixed;left:20px;top:20px;width:220px;height:60px;z-index:99999';document.body.append(ta);ta.focus();true}`);
@@ -130,20 +139,21 @@ const results=[];function pass(name,details){results.push({name,status:'passed',
     results.push({name:'Microphone audio capture',status:'hardware-unavailable',details:media.message});
   } else { assert.equal(media.tracks,1);assert.equal(media.state,'live');pass('Website + Android permission grant yields a live audio track',media); }
   results.push({name:'Camera image capture',status:'hardware-unavailable',details:'redroid has zero camera devices; permission path shares the tested audio permission implementation.'});
-  await client.goto(localOrigin+'/tools?type=markdown');await until(()=>client.eval('document.querySelector("#toolsTitle") && !document.querySelector("#toolsTitle").hidden'),'unsaved guard editor');
-  await client.eval(`window.qaRealSave=BookStarkLocalDrafts.save;BookStarkLocalDrafts.save=()=>Promise.reject(new Error('QA write denied'));document.querySelector('#toolsTitle').value='Uncommitted redroid draft';document.querySelector('#toolsTitle').dispatchEvent(new Event('input',{bubbles:true}));true`);
+  await client.goto(localOrigin+'/tools?type=markdown');await until(()=>client.eval('document.querySelector("#toolsExport") && !document.querySelector("#toolsExport").hidden'),'unsaved guard editor');
+  await client.eval(`window.qaRealSave=BookStarkLocalDrafts.save;BookStarkLocalDrafts.save=()=>Promise.reject(new Error('QA write denied'));true`);
+  await client.renameDraft('Uncommitted redroid draft');
   await tapNative(n=>n['resource-id']===PKG+':id/native_back','Back with failed save');
   await until(()=>client.eval('!!document.querySelector("#bs-confirm-cancel")'),'unsaved confirmation');screenshot('04-unsaved-protection');
   await client.eval('document.querySelector("#bs-confirm-cancel").click();true');await pause(300);assert.equal(await client.eval('location.pathname'),'/tools');
-  assert.equal(await client.eval('document.querySelector("#toolsTitle").value'),'Uncommitted redroid draft');
+  assert.equal(await client.eval('document.querySelector("#toolsCurrentTitle").textContent'),'Uncommitted redroid draft');
   await client.eval('BookStarkLocalDrafts.save=qaRealSave;true');await tapNative(n=>n['resource-id']===PKG+':id/native_back','retry Back after restoring save');
   await until(()=>client.eval('location.pathname==="/shares"'),'save retry navigates');pass('Failed save blocks native navigation; cancel retains draft and retry saves');
   // Reset the real WebView history so Android Back takes its Activity-finish path.
-  await client.goto(localOrigin+'/tools?type=markdown');await until(()=>client.eval('document.querySelector("#toolsTitle") && !document.querySelector("#toolsTitle").hidden'),'close test editor');
+  await client.goto(localOrigin+'/tools?type=markdown');await until(()=>client.eval('document.querySelector("#toolsExport") && !document.querySelector("#toolsExport").hidden'),'close test editor');
   if(adb('shell','dumpsys','input_method').includes('mInputShown=true')) { adb('shell','input','keyevent','4');await until(()=>!adb('shell','dumpsys','input_method').includes('mInputShown=true'),'hide keyboard before Activity close test'); }
   const closeMarker='Persisted on native close '+Date.now();
   await client.call('Page.resetNavigationHistory');const history=await client.call('Page.getNavigationHistory');assert.equal(history.entries.length,1);
-  await client.eval(`document.querySelector('#toolsTitle').value=${JSON.stringify(closeMarker)};document.querySelector('#toolsTitle').dispatchEvent(new Event('input',{bubbles:true}));true`);
+  await client.renameDraft(closeMarker);
   adb('shell','input','keyevent','4');await until(()=>!/mResumedActivity.*com.bookstark.wails.qa/.test(adb('shell','dumpsys','activity','activities')),'Android Back closes Activity');
   pass('Android Back at history root closes the Activity after save');client.close();
   adb('shell','am','force-stop',PKG);adb('shell','am','start','-n',PKG+'/com.wails.app.MainActivity');

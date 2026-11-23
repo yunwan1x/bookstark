@@ -14,6 +14,14 @@
     <link rel="stylesheet" href="/static/css/variables.css?v={{assetVer "/static/css/variables.css"}}">
 <link rel="stylesheet" href="/static/css/glass.css?v={{assetVer "/static/css/glass.css"}}">
 <link rel="stylesheet" href="/static/css/hud.css?v={{assetVer "/static/css/hud.css"}}">
+    <link rel="stylesheet" href="/static/css/components.css?v={{assetVer "/static/css/components.css"}}">
+    <style>
+    .auth-password-field { position:relative; }
+    .auth-password-field input { padding-inline-end:calc(2 * var(--spacing-xl)); }
+    .auth-password-toggle { position:absolute; inset-inline-end:var(--spacing-xs); top:50%; transform:translateY(-50%); width:36px; height:36px; justify-content:center; }
+    .auth-password-toggle:focus-visible { outline:2px solid var(--color-focus); outline-offset:2px; }
+    .auth-password-toggle [hidden] { display:none; }
+    </style>
     <script src="/static/js/theme.js?v={{assetVer "/static/js/theme.js"}}"></script>
     </head>
 <body class="bg-slate-50">
@@ -31,7 +39,10 @@
             </div>
             <div class="mb-5">
                 <label for="password" class="block text-sm font-medium mb-1.5">{{call .T "auth.field.password.label"}}</label>
+                <div class="auth-password-field">
                 <input id="password" name="password" autocomplete="current-password" type="password" class="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20" placeholder="{{call .T "auth.field.password.placeholder"}}">
+                    <button id="passwordToggle" class="row-action auth-password-toggle" type="button" aria-controls="password" aria-pressed="false" aria-label="{{call .T "auth.field.password.show"}}" title="{{call .T "auth.field.password.show"}}" data-show-label="{{call .T "auth.field.password.show"}}" data-hide-label="{{call .T "auth.field.password.hide"}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/><path data-password-slash d="m3 3 18 18" hidden/></svg></button>
+                </div>
             </div>
             <div id="remember-client-credentials" hidden class="mb-4 text-sm text-slate-500">
                 <label><input id="client-remember-password" type="checkbox" checked> {{call .T "native.login.remember"}}</label>
@@ -86,6 +97,15 @@
             errEl.classList.remove('hidden');
         }
     }
+    document.getElementById('passwordToggle').addEventListener('click', function() {
+        const password = document.getElementById('password');
+        const visible = password.type === 'password';
+        password.type = visible ? 'text' : 'password';
+        const label = visible ? this.dataset.hideLabel : this.dataset.showLabel;
+        this.setAttribute('aria-pressed', String(visible));
+        this.setAttribute('aria-label', label); this.title = label;
+        this.querySelector('[data-password-slash]').toggleAttribute('hidden', !visible);
+    });
     document.getElementById('password').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
     </script>
 <script src="/static/js/i18n.js?v={{assetVer "/static/js/i18n.js"}}"></script>

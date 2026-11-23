@@ -7,21 +7,16 @@
 <div class="local-tools-navigation">
 <button type="button" class="row-action local-drawer-toggle" id="toolsDrawer" aria-expanded="false" aria-controls="toolsSidebar" aria-label="{{call .T "tools.drafts"}}"><i class="fa-solid fa-bars" aria-hidden="true"></i></button>
 <a class="local-tools-brand" href="/shares" data-tools-back aria-label="BookStark · {{call .T "tools.back"}}"><i class="fa-solid fa-book-open" aria-hidden="true"></i><span>BookStark</span></a>
-<h1 class="page-title"><span class="local-tools-title-full">{{call .T "tools.title"}}</span><span class="local-tools-title-compact">{{call .T "tools.compact_title"}}</span></h1>
+<h1 class="page-title"><span id="toolsHeadingLabel"><span class="local-tools-title-full">{{call .T "tools.title"}}</span><span class="local-tools-title-compact">{{call .T "tools.compact_title"}}</span></span><span id="toolsCurrentTitle" hidden></span></h1>
+<span id="toolsCompactStatus" class="local-save-indicator" role="img" hidden><i class="fa-regular fa-circle" aria-hidden="true"></i></span>
 </div>
-<a id="toolsBack" class="bs-btn bs-btn-cancel local-tools-back" href="/shares" data-tools-back><i class="fa-solid fa-arrow-left" aria-hidden="true"></i><span>{{call .T "tools.back"}}</span></a>
+<div class="local-tools-actions">
+<details class="local-export" id="toolsExport" hidden><summary class="bs-btn bs-btn-cancel" aria-label="{{call .T "tools.export"}}" title="{{call .T "tools.export"}}"><i class="fa-solid fa-download" aria-hidden="true"></i><span>{{call .T "tools.export_short"}}</span><i class="fa-solid fa-chevron-down local-export-chevron" aria-hidden="true"></i></summary><div class="header-dropdown-panel" id="toolsExportMenu"></div></details>
+<a id="toolsBack" class="bs-btn bs-btn-cancel local-tools-back" href="/shares" data-tools-back aria-label="{{call .T "tools.back"}}" title="{{call .T "tools.back"}}"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i><span>{{call .T "tools.back"}}</span></a>
+</div>
+<div class="header-dropdown-panel local-save-recovery" id="toolsRecovery" role="alert" hidden><p id="toolsRecoveryMessage"></p><div class="local-save-recovery-actions"><button id="toolsRetry" class="bs-btn bs-btn-cancel" hidden>{{call .T "tools.retry"}}</button><button id="toolsCopy" class="bs-btn bs-btn-cancel" hidden>{{call .T "tools.copy"}}</button></div></div>
+<span id="toolsStatusHost" class="sr-only"><span id="toolsStatus" class="sr-only" role="status" aria-live="polite"></span></span>
 </header>
-<section class="local-document-toolbar" id="toolsDocument" aria-label="{{call .T "tools.filename"}}" hidden>
-<div class="local-document-name">
-<label class="sr-only" for="toolsTitle">{{call .T "tools.filename"}}</label><input id="toolsTitle" class="dialog-input" maxlength="120" hidden>
-<span id="toolsStatus" role="status" aria-live="polite"></span>
-</div>
-<div class="local-document-actions">
-<button id="toolsRetry" class="bs-btn bs-btn-cancel" hidden>{{call .T "tools.retry"}}</button>
-<button id="toolsCopy" class="bs-btn bs-btn-cancel" hidden>{{call .T "tools.copy"}}</button>
-<details class="local-export" id="toolsExport" hidden><summary class="bs-btn bs-btn-primary"><i class="fa-solid fa-download" aria-hidden="true"></i> {{call .T "tools.export"}}</summary><div class="header-dropdown-panel" id="toolsExportMenu"></div></details>
-</div>
-</section>
 <div class="local-tools-layout">
 <button class="local-drawer-backdrop" id="toolsBackdrop" aria-label="{{call .T "tools.close"}}" hidden></button>
 <aside id="toolsSidebar" class="local-tools-sidebar" aria-labelledby="toolsSidebarTitle">

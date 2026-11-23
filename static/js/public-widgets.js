@@ -58,7 +58,7 @@
   return saved;
  }
  let current=presets[0],favorites=new Map(),active=false,generation=0,timeout;
- function storageError(){cacheNote.textContent=t('radio_storage_error');cacheNote.dataset.state='error';}
+ function storageError(){cacheNote.hidden=false;cacheNote.textContent=t('radio_storage_error');cacheNote.dataset.state='error';}
  audio.volume=0.5;
  try {
   const saved=JSON.parse(localStorage.getItem('bookstark:public-radio')||'null');
@@ -110,7 +110,10 @@
   row.append(button,star);return row;
  }
  function renderFavorites(){
-  favoriteList.replaceChildren(...[...favorites.values()].map(station=>stationRow(station,'favorite')));
+  const needle=document.getElementById('publicRadioFavoriteQuery').value.trim().toLocaleLowerCase(locale);
+  const matches=[...favorites.values()].filter(station=>[station.name,station.tags,station.country].join(' ').toLocaleLowerCase(locale).includes(needle));
+  favoriteList.replaceChildren(...matches.map(station=>stationRow(station,'favorite')));
+  document.getElementById('publicRadioFavoritesNoResults').hidden=!favorites.size||matches.length>0;
   document.getElementById('publicRadioFavoriteCount').textContent=String(favorites.size);
   document.getElementById('publicRadioFavoritesEmpty').hidden=favorites.size>0;renderRows();renderStars();
  }
@@ -118,8 +121,10 @@
   const next=new Map(favorites);if(next.has(station.url))next.delete(station.url);else next.set(station.url,station);
   try{localStorage.setItem(favoritesKey,JSON.stringify({version:1,stations:[...next.values()]}));}
   catch(_){storageError();return;}
-  favorites=next;cacheNote.textContent=t('radio_local_favorites');cacheNote.dataset.state='';renderFavorites();
+  favorites=next;cacheNote.textContent='';cacheNote.hidden=true;cacheNote.dataset.state='';renderFavorites();
  }
+ document.getElementById('publicRadioFavoriteQuery').addEventListener('input',renderFavorites);
+ document.getElementById('publicRadioFavoriteSearch').addEventListener('submit',event=>{event.preventDefault();renderFavorites();});
  const tabs=[document.getElementById('publicRadioFavoritesTab'),document.getElementById('publicRadioDiscoverTab')];
  function setPanel(index){tabs.forEach((tab,i)=>{tab.setAttribute('aria-selected',String(i===index));tab.tabIndex=i===index?0:-1;document.getElementById(tab.getAttribute('aria-controls')).hidden=i!==index;});}
  tabs.forEach((tab,index)=>{
