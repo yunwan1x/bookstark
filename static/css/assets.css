@@ -597,7 +597,8 @@
 .asset-dropdown-portal {
   position: fixed;
   inset: 0;
-  z-index: 90;
+  /* Body-level dropdowns must sit above the shared asset modal backdrop (100). */
+  z-index: 101;
   pointer-events: none;
 }
 

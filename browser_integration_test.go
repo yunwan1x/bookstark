@@ -42,6 +42,10 @@ func TestPWAHomeBrowser(t *testing.T) {
 	runIsolatedBrowser(t, "pwa_production_smoke_test.cjs")
 }
 
+func TestAssetDropdownBrowser(t *testing.T) {
+	runIsolatedBrowser(t, "asset_dropdown_browser_test.cjs")
+}
+
 func runIsolatedBrowser(t *testing.T, script string, setup ...func(*testing.T)) {
 	if os.Getenv("BOOKSTARK_BROWSER_TEST") != "1" {
 		t.Skip("set BOOKSTARK_BROWSER_TEST=1 and make playwright available to Node")
