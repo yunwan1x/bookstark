@@ -70,6 +70,22 @@ def configure_host(root, abi):
 ''', encoding="utf-8")
 
 
+def android_template():
+    module = "github.com/wailsapp/wails/v3"
+    # go list -m can return an empty Dir on a fresh CI runner. Download the
+    # version pinned by go.mod before resolving its bundled Android project.
+    subprocess.run(["go", "mod", "download", module], cwd=ROOT, check=True)
+    directory = subprocess.check_output(
+        ["go", "list", "-m", "-f", "{{.Dir}}", module], cwd=ROOT, text=True,
+    ).strip()
+    if not directory:
+        raise RuntimeError("Wails module directory is missing after download")
+    template = Path(directory) / "internal/commands/build_assets/android"
+    if not (template / "app/build.gradle").is_file():
+        raise RuntimeError(f"Pinned Wails Android template is missing at {template}")
+    return template
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--abi", choices=["arm64-v8a", "x86_64"], default="arm64-v8a")
@@ -91,11 +107,7 @@ def main():
     cc = ndk / "toolchains/llvm/prebuilt" / host / "bin" / compiler
     if not cc.is_file():
         parser.error(f"Android NDK compiler missing at {cc}")
-    version_dir = Path(subprocess.check_output(
-        ["go", "list", "-m", "-f", "{{.Dir}}", "github.com/wailsapp/wails/v3"],
-        cwd=ROOT, text=True,
-    ).strip())
-    template = version_dir / "internal/commands/build_assets/android"
+    template = android_template()
     out = (args.out or ROOT / "artifacts" / f"bookstark-wails-{goarch}.apk").resolve()
     with tempfile.TemporaryDirectory(prefix="bookstark-wails-android-") as scratch:
         project = Path(scratch) / "android"
