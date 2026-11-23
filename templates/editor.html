@@ -100,10 +100,6 @@
                 </nav>
                 <!-- Right actions -->
                 <div class="flex items-center gap-1.5 shrink-0">
-                    {{if eq .EditorType "blog"}}{{if eq .BlogEditorType "html"}}
-                    <button type="button" class="topbar-save-btn" id="publish-tool-btn" aria-label="{{call .T "market.publish"}}" onclick="publishEditorTool()" title="{{call .T "market.publish_help"}}"><i class="fa-solid fa-cube" aria-hidden="true"></i><span class="btn-label">{{call .T "market.publish"}}</span></button>
-                    <button type="button" class="topbar-save-btn" id="unpublish-tool-btn" aria-label="{{call .T "market.unpublish"}}" onclick="unpublishEditorTool()" hidden><i class="fa-solid fa-box-archive" aria-hidden="true"></i><span class="btn-label">{{call .T "market.unpublish"}}</span></button>
-                    {{end}}{{end}}
                     <!-- Save button (hidden in preview mode) -->
                     <button class="topbar-save-btn saved" id="save-btn" onclick="manualSave()" aria-label="{{call .T "editor.topbar.save"}}" style="display:none;"><i class="fa-solid fa-floppy-disk" style="margin-right:4px;font-size:11px;"></i><span class="btn-label">{{call .T "editor.topbar.save"}}</span></button>
                     <!-- Share button -->

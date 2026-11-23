@@ -2,6 +2,8 @@
 function NotesApp(opts) {
     this.csrf = opts.csrfToken || '';
     this.memberID = opts.memberID || 0;
+    this.canPublishTools = !!opts.canPublishTools;
+    this.isAdmin = !!opts.isAdmin;
     this.shareDialogType = '';
     this.shareDialogTargetId = 0;
     this.shareDialogIdentify = '';
@@ -1204,10 +1206,13 @@ NotesApp.prototype.renderArticleCard = function(b) {
         tags += NotesApp._buildTagBadgesHtml(b.blog_id, b.labels);
     }
 
+    var publishTool = this.canPublishTools && b.editor_type === 'html' && !b.has_password && (this.isAdmin || b.member_id === this.memberID)
+        ? '<a class="row-action article-tool-publish" href="/market/publish/' + b.blog_id + '" title="' + window.__('market.publish') + '" aria-label="' + window.__('market.publish') + '"><i class="fa-solid fa-cube" aria-hidden="true"></i></a>' : '';
     var actions = '<div class="article-actions">' +
         '<button class="row-action article-pin-action pin-action' + (b.is_pinned ? ' is-pinned' : '') + '" title="' + (b.is_pinned ? window.__('note.action.unpin') : window.__('note.action.pin')) + '" aria-label="' + (b.is_pinned ? window.__('note.action.unpin') : window.__('note.action.pin')) + '" aria-pressed="' + (b.is_pinned ? 'true' : 'false') + '" onclick="notesApp.toggleArticlePin(' + b.blog_id + ')">' + NotesApp.pinIconHtml(!!b.is_pinned) + '</button>' +
         '<button class="row-action vis-toggle" title="' + (b.visibility === 1 ? window.__('note.action.set_private') : window.__('note.action.set_public')) + '" aria-label="' + window.__('note.action.visibility') + '" onclick="notesApp.toggleArticleVisibility(' + b.blog_id + ')"><i class="fa-solid ' + (b.visibility === 1 ? 'fa-eye' : 'fa-eye-slash') + '"></i></button>' +
         '<button class="row-action" title="' + window.__('note.action.settings') + '" aria-label="' + window.__('note.action.settings') + '" onclick="notesApp.openArticleSettingModal(' + b.blog_id + ')"><i class="fa-solid fa-gear"></i></button>' +
+        publishTool +
         '<button class="row-action del" title="' + window.__('note.action.delete') + '" aria-label="' + window.__('note.action.delete') + '" onclick="notesApp.deleteArticle(' + b.blog_id + ')"><i class="fa-solid fa-trash-can"></i></button>' +
         '</div>';
     var excerpt = b.has_password ? window.__('note.article.encrypted_desc') : (b.content_preview || '');

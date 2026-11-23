@@ -532,6 +532,8 @@
 	window.notesApp = new NotesApp({
 	    csrfToken: '{{.CSRFToken}}',
 	    memberID: {{.MemberID}},
+	    canPublishTools: {{if .CanPublishTools}}true{{else}}false{{end}},
+	    isAdmin: {{if .IsAdmin}}true{{else}}false{{end}},
 	    calYear: {{.CalYear}},
 	    calMonth: {{.CalMonth}},
     dailyCounts: {{json .DailyCounts}},

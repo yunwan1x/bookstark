@@ -40,6 +40,10 @@ func TestToolMarketConfigurationRequiresWorkspaceAdministrator(t *testing.T) {
 			if tc.token == "" {
 				return
 			}
+			articles := adminAssetRequest(router, tc.token, "GET", "/notes?tab=articles", nil)
+			if articles.Code != 200 || strings.Contains(articles.Body.String(), "canPublishTools: true") != tc.publish {
+				t.Fatalf("article publication permission does not match market for %s", tc.name)
+			}
 			response := adminAssetRequest(router, tc.token, "GET", "/api/tool-market/client", nil)
 			var config struct {
 				CanConfigure bool `json:"can_configure"`
@@ -65,5 +69,22 @@ func TestToolMarketConfigurationRequiresWorkspaceAdministrator(t *testing.T) {
 	page := adminAssetRequest(router, token.Token, "GET", "/market", nil)
 	if strings.Contains(page.Body.String(), `id="marketPublish"`) {
 		t.Fatal("publication action exposed after permission revoked")
+	}
+	articles := adminAssetRequest(router, token.Token, "GET", "/notes?tab=articles", nil)
+	if articles.Code != 200 || strings.Contains(articles.Body.String(), "canPublishTools: true") {
+		t.Fatal("article publication action exposed after permission revoked")
+	}
+}
+
+func TestArticleToolPublicationFollowsMarketAvailability(t *testing.T) {
+	router, admin := initAssetControllerTest(t)
+	if err := models.BatchUpdateSettings(map[string]string{"tool_market_enabled": "0"}); err != nil {
+		t.Fatal(err)
+	}
+	for _, path := range []string{"/market", "/notes?tab=articles"} {
+		page := adminAssetRequest(router, admin, "GET", path, nil)
+		if page.Code != 200 || strings.Contains(page.Body.String(), `id="marketPublish"`) || strings.Contains(page.Body.String(), "canPublishTools: true") {
+			t.Fatalf("publication exposed while market disabled on %s", path)
+		}
 	}
 }

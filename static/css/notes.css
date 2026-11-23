@@ -927,10 +927,10 @@
 .article-meta-item { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; color: var(--color-gray-400, #94a3b8); }
 .article-meta-item i { font-size: 11px; }
 .article-meta .tag-badge { font-size: 11px; }
-.article-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+.article-footer { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px; }
 .article-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
 .article-actions { display: flex; gap: 2px; opacity: 0; transition: opacity 0.15s; }
-.article-card:hover .article-actions { opacity: 1; }
+.article-card:hover .article-actions, .article-card:focus-within .article-actions { opacity: 1; }
 
 /* Skeleton: note card */
 .skeleton-note {
@@ -1094,7 +1094,8 @@
     .main-tab { padding: 5px 10px; font-size: 12px; gap: 3px; }
     .main-tab i { font-size: 11px; }
     .notes-page-header { padding: 8px 0 0; }
-    .notes-page-header > div:first-child { margin-bottom: 6px; }
+    .notes-page-header > div:first-child { flex-wrap: wrap; margin-bottom: 6px; }
+    .notes-page-header #totalCount { white-space: nowrap; }
     .tab-search .search-input { padding: 6px 10px; font-size: 12px; }
     .tab-search button { padding: 6px 10px; font-size: 12px; }
     .mobile-filter-btn { display: flex; width: 32px; height: 32px; min-width: 32px; min-height: 32px; padding: 0; }

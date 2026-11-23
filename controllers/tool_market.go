@@ -26,12 +26,17 @@ type marketTool struct {
 	Content      string `json:"content,omitempty"`
 }
 
+func canPublishTools(c *gin.Context) bool {
+	settings := readMarketSettings(c)
+	return middleware.GetMemberID(c) > 0 && settings.Enabled && (isAdmin(c) || settings.MembersPublish)
+}
+
 func ToolMarketPage(c *gin.Context) {
 	c.Header("Cache-Control", "private, no-store")
 	data := commonData(c, "shares")
 	data["Type"] = "tool"
 	data["CanConfigureTools"] = isAdmin(c)
-	data["CanPublishTools"] = middleware.GetMemberID(c) > 0 && readMarketSettings(c).Enabled && (isAdmin(c) || readMarketSettings(c).MembersPublish)
+	data["CanPublishTools"] = canPublishTools(c)
 	c.HTML(http.StatusOK, "tool_market.html", data)
 }
 

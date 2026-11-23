@@ -683,6 +683,7 @@ func NotesPage(c *gin.Context) {
 	articleLabels, _ := models.ListLabelsByMemberForType(memberID, "blog", "article")
 
 	data := commonData(c, "notes")
+	data["CanPublishTools"] = canPublishTools(c)
 	data["ActiveKnowledgeTab"] = c.Query("tab")
 	data["Blogs"] = blogs
 	data["Total"] = total
