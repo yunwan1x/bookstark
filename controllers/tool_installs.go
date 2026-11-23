@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -139,34 +138,24 @@ func InstallMarketTool(router http.Handler) gin.HandlerFunc {
 			toolAPIError(c, models.ErrToolConflict)
 			return
 		}
-		source := pkg.Source
-		base := origin + "/shares/" + url.PathEscape(source)
-		if id < 0 {
-			base = source
-		}
-		if pkg.ResourceBase != "" {
-			base = pkg.ResourceBase
-		}
+		base := pkg.ResourceBase
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Minute)
 		defer cancel()
 		if id > 0 && !mayInstallTool(c, pkg.ToolMetadata) {
 			return
 		}
 		if id > 0 {
-			if err := loadPublishedToolPackage(&pkg); err != nil {
+			if err := loadPublishedToolContent(&pkg); err != nil {
 				c.Status(404)
 				return
 			}
 		}
-		content, resources := pkg.Content, pkg.Resources
-		if !pkg.Frozen {
-			content, resources, err = toolpackage.Build(ctx, pkg.Content, base, fetch)
-		}
+		content, resources, err := toolpackage.Build(ctx, pkg.Content, base, fetch)
 		if err != nil {
 			c.JSON(422, gin.H{"error": "resource_download_failed"})
 			return
 		}
-		t := models.InstalledTool{ToolMetadata: pkg.ToolMetadata, ID: id, Title: pkg.Title, Description: pkg.Description, Author: pkg.Author, Source: source, Revision: pkg.Revision, Content: content, Resources: resources}
+		t := models.InstalledTool{ToolMetadata: pkg.ToolMetadata, ID: id, Title: pkg.Title, Description: pkg.Description, Author: pkg.Author, Source: pkg.Source, Revision: pkg.Revision, Content: content, Resources: resources}
 		if err = models.SaveInstalledTool(member, t, req.Expected, req.Instance); err != nil {
 			toolAPIError(c, err)
 			return

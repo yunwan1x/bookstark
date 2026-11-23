@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"bookstark/internal/toolpackage"
 	"bookstark/models"
 	"bytes"
 	"compress/gzip"
@@ -15,16 +14,14 @@ import (
 
 type marketTool struct {
 	models.ToolMetadata
-	ResourceBase string              `json:"resource_base,omitempty"`
-	Resources    []toolpackage.Asset `json:"resources,omitempty"`
-	Frozen       bool                `json:"frozen"`
-	ID           int64               `json:"id"`
-	Title        string              `json:"title"`
-	Description  string              `json:"description"`
-	Author       string              `json:"author"`
-	Source       string              `json:"source"`
-	Revision     string              `json:"revision"`
-	Content      string              `json:"content,omitempty"`
+	ResourceBase string `json:"resource_base,omitempty"`
+	ID           int64  `json:"id"`
+	Title        string `json:"title"`
+	Description  string `json:"description"`
+	Author       string `json:"author"`
+	Source       string `json:"source"`
+	Revision     string `json:"revision"`
+	Content      string `json:"content,omitempty"`
 }
 
 func ToolMarketPage(c *gin.Context) {
@@ -71,7 +68,7 @@ func ToolMarketCatalog(c *gin.Context) {
 	c.JSON(200, gin.H{"tools": items})
 }
 
-func ToolMarketPackage(c *gin.Context) {
+func ToolMarketItem(c *gin.Context) {
 	c.Header("Cache-Control", "no-store")
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil || id <= 0 {
@@ -87,7 +84,7 @@ func ToolMarketPackage(c *gin.Context) {
 		return
 	}
 	if c.Query("metadata") != "1" {
-		if err := loadPublishedToolPackage(&item); err != nil {
+		if err := loadPublishedToolContent(&item); err != nil {
 			c.Status(404)
 			return
 		}

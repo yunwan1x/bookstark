@@ -5,7 +5,10 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"regexp"
 )
+
+var toolDigest = regexp.MustCompile(`^[a-f0-9]{64}$`)
 
 // The digest binds consent to the HTML, source addresses and runtime policy.
 // Original resource bytes are intentionally excluded: they are downloaded at install time.

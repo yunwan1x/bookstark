@@ -73,7 +73,7 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
   await page.getByRole('button',{name:/^确认安装/}).click();await until(async()=>(await api('/api/tool-installs')).tools.some(x=>x.id===remoteID));await page.locator('dialog[open]').waitFor({state:'hidden'});
   assert.equal((await api('/api/profile')).data.account,'admin');
   const runtime=await api('/api/tool-installs/'+remoteID+'?part=runtime');assert.match(runtime.content,/Remote tool installed/);
-  await page.goto(origin+'/market?open='+remoteID);await page.frameLocator('#marketFrameHost iframe').getByRole('heading',{name:'Remote tool installed'}).waitFor();
+  await page.goto(origin+'/market?open='+remoteID);await page.frameLocator('#marketFrameHost iframe').getByRole('heading',{name:'Remote tool installed'}).waitFor();await until(async()=>await page.frameLocator('#marketFrameHost iframe').locator('body').evaluate(()=>window.remoteReferenceDownloaded===true));
   // An installed tool keeps its original market even after changing the default.
   // Reauthentication must target that original market without changing the default.
   await api('/api/tool-market/client/login','DELETE',{server:remote+'/market'});

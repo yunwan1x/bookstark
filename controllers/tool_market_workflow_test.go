@@ -32,7 +32,7 @@ func TestToolMarketplacePublishingAccessAndReview(t *testing.T) {
 	post := func(id int64, token, version string) *httptest.ResponseRecorder {
 		return req("POST", "/api/blogs/"+strconv.FormatInt(id, 10)+"/tool", token, map[string]any{"version": version, "title": "Published tool title", "category": "document", "permissions": map[string]bool{"read_files": true, "save_files": true}})
 	}
-	source := &models.Blog{BlogTitle: "Private source", BlogIdentify: "private-market-source", BlogType: "article", EditorType: "html", MemberID: 1, Visibility: 0, BlogContent: "<h1>Frozen source</h1>"}
+	source := &models.Blog{BlogTitle: "Private source", BlogIdentify: "private-market-source", BlogType: "article", EditorType: "html", MemberID: 1, Visibility: 0, BlogContent: "<h1>Published HTML</h1>"}
 	if err := source.Insert(); err != nil {
 		t.Fatal(err)
 	}
@@ -74,11 +74,14 @@ func TestToolMarketplacePublishingAccessAndReview(t *testing.T) {
 		Token string `json:"token"`
 	}
 	json.Unmarshal(login.Body.Bytes(), &session)
-	if w := req("GET", path, "Market "+session.Token, nil); w.Code != 200 || !strings.Contains(w.Body.String(), "Frozen source") {
+	if w := req("GET", path, "Market "+session.Token, nil); w.Code != 200 || !strings.Contains(w.Body.String(), "Published HTML") {
 		t.Fatalf("market credential %d %s", w.Code, w.Body.String())
 	}
-	if w := req("GET", "/market/packages/"+result.Revision, "Market "+session.Token, nil); w.Code != 200 || !strings.HasPrefix(w.Header().Get("Content-Type"), "application/json") {
+	if w := req("GET", "/market/versions/"+result.Revision, "Market "+session.Token, nil); w.Code != 200 || !strings.HasPrefix(w.Header().Get("Content-Type"), "application/json") {
 		t.Fatal("reference manifest unavailable")
+	}
+	if w := req("GET", "/market/packages/"+result.Revision, admin, nil); w.Code == 200 {
+		t.Fatal("removed archive download endpoint is still exposed")
 	}
 	if w := post(source.BlogID, admin, "1.0.0"); w.Code != 409 {
 		t.Fatal("immutable version overwritten")

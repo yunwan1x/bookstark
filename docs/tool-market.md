@@ -38,12 +38,12 @@ HLS/DASH 播放清单和运行时 API 等动态服务不会下载为静态副本
 
 单资源上限 64 MiB，全部静态资源上限 256 MiB，最多 256 个资源；安装还受 WebDAV 配额约束。通用依赖下载不携带登录凭据，检查实际连接 IP 及重定向，禁止回环、内网及元数据地址。同服务器的公开上传、公开 WebDAV 资源和 `/static/` 通过本地公开处理器读取。市场地址由用户明确配置，可连接局域网或本机市场。其同源的 `/static/`、`/upload-files/`、`/dav-public/` 公开资源也允许直接下载；其他来源继续使用通用依赖网络限制。禁止链路本地、元数据地址及市场资源重定向，不向资源服务器转发工作区 Cookie 或市场令牌。
 
-跨市场下载会校验 HTML、资源基准地址、版本和权限的清单摘要。原始资源的字节内容不包含在该摘要中，也不会冻结，安装时按实际读取内容保存。旧版本压缩包继续兼容读取，新发布版本的旧 `package` 列为空；升级不会擅自删除既有历史包。工具在没有同源权限的隔离 iframe 中运行，不能读取宿主登录信息；新版本按声明的权限限制网络及文件消息桥。工具资源通过安装专属只读能力地址提供，卸载或更新后旧地址失效，应避免公开转发。
+跨市场下载会校验 HTML、资源基准地址、版本和权限的清单摘要。原始资源的字节内容不包含在该摘要中，也不会冻结，安装时按实际读取内容保存。工具只使用资源引用分发，版本表不包含压缩包字段。工具在没有同源权限的隔离 iframe 中运行，不能读取宿主登录信息；新版本按声明的权限限制网络及文件消息桥。工具资源通过安装专属只读能力地址提供，卸载或更新后旧地址失效，应避免公开转发。
 
 ## 数据位置和清理
 
 - `md_tool_releases`：当前已上架版本的目录记录。
-- `md_tool_versions`：版本元数据、HTML（`content`）、原资源基准地址（`resource_base`）及审核状态。新版本不存资源包；`package` 仅用于兼容旧版本。
+- `md_tool_versions`：版本元数据、HTML（`content`）、原资源基准地址（`resource_base`）及审核状态。不存储资源压缩包。
 - `md_tool_installs`、`md_tool_install_metadata`：当前账号的安装代码、修订、使用数据及权限。
 - `md_tool_market_clients`：当前工作区账号的默认市场与更新偏好。
 - `md_tool_market_credentials`：按市场地址隔离、加密保存的市场会话；设备启动偏好不含市场密码。
@@ -68,7 +68,7 @@ const text = new TextDecoder().decode(bytes);
 
 ## 验证
 
-- `go test ./controllers ./internal/toolpackage -run 'TestTool|TestStaticDependency|TestDependency|TestImportMap|TestMarketPackage'`：发布引用、审核、独立市场认证、访问规则、远端安装、原始资源安装下载、文章删除保护、旧包迁移、资源生命周期和保留数据。
+- `go test ./controllers ./internal/toolpackage -run 'TestTool|TestStaticDependency|TestDependency|TestImportMap|TestMarketPackage'`：发布引用、审核、独立市场认证、访问规则、远端安装、原始资源安装下载、文章删除保护、资源引用存储、资源生命周期和保留数据。
 - `BOOKSTARK_BROWSER_TEST=1 go test . -run '^TestToolMarketBrowser$'`：服务器设置、私有文章发布、安装确认、独立市场登录、切换来源、隔离运行、文件与数据恢复、编辑器入口、多主题双语移动布局。
 - `node --test tests/browser/tool_market_worker_test.cjs`：市场与安装数据的缓存及离线请求隔离。
 - `go test -tags wails,production,gtk3,purego . -run 'TestClientPreferences|TestNativeClientBridge|TestCredentialVault|TestNativeWorkspaces'`：原生客户端偏好持久化及来源隔离。

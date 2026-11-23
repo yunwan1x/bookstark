@@ -54,6 +54,8 @@ func TestToolRemoteReferencesDownloadOriginalResources(t *testing.T) {
 				item.Permissions.Network = true
 			case "downgrade":
 				item.Distribution = ""
+			case "unversioned":
+				item.Distribution, item.Version, item.Hash = "", "", ""
 			case "full-content":
 				if r.URL.Query().Get("metadata") != "1" {
 					item.Content = "<h1>Changed full response</h1>"
@@ -122,11 +124,14 @@ func TestToolRemoteReferencesDownloadOriginalResources(t *testing.T) {
 	if w.Code != 200 || resourceReads != 4 {
 		t.Fatalf("reference install: %d %s, resources=%d", w.Code, w.Body.String(), resourceReads)
 	}
-	for _, value := range []string{"inline-content", "policy", "downgrade", "full-content"} {
+	for _, value := range []string{"inline-content", "policy", "downgrade", "unversioned", "full-content"} {
 		mode = value
 		if _, _, err := remoteTool(context.Background(), 1, id); err == nil {
 			t.Fatalf("accepted tampered %s manifest", value)
 		}
+	}
+	if _, _, err := remoteTool(context.Background(), 2, id); err == nil {
+		t.Fatal("cross-account source access")
 	}
 	remote.Close()
 	raw, _ := models.GetInstalledToolContent(1, id)

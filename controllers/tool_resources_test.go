@@ -48,10 +48,9 @@ func TestToolDownloadedResourcesSurviveSourceRemoval(t *testing.T) {
 		return x["revision"].(string)
 	}
 	revision := publish()
-	var archivedBytes int
 	var referencedHTML, resourceBase string
-	if err := models.DB.QueryRow("SELECT length(package),content,resource_base FROM md_tool_versions WHERE blog_id=?", b.BlogID).Scan(&archivedBytes, &referencedHTML, &resourceBase); err != nil || archivedBytes != 0 || !strings.Contains(referencedHTML, "/dav-public/admin/app.js") || resourceBase == "" {
-		t.Fatalf("publication stored an archive or lost original references: bytes=%d html=%s base=%s err=%v", archivedBytes, referencedHTML, resourceBase, err)
+	if err := models.DB.QueryRow("SELECT content,resource_base FROM md_tool_versions WHERE blog_id=?", b.BlogID).Scan(&referencedHTML, &resourceBase); err != nil || !strings.Contains(referencedHTML, "/dav-public/admin/app.js") || resourceBase == "" {
+		t.Fatalf("publication lost original references: html=%s base=%s err=%v", referencedHTML, resourceBase, err)
 	}
 	// Installation reads the original resource as it exists at installation time.
 	put("app.js", "text/javascript", `window.loadedFromLocal="changed-after-publication";`)

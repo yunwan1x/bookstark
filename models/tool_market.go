@@ -39,7 +39,7 @@ type ToolMetadata struct {
 
 func initToolMarketTables() error {
 	for _, q := range []string{
-		`CREATE TABLE IF NOT EXISTS md_tool_versions(blog_id INTEGER NOT NULL REFERENCES md_blogs(blog_id) ON DELETE CASCADE,version TEXT NOT NULL,revision TEXT NOT NULL UNIQUE,metadata TEXT NOT NULL,package BLOB NOT NULL,status TEXT NOT NULL,created INTEGER NOT NULL,PRIMARY KEY(blog_id,version))`,
+		`CREATE TABLE IF NOT EXISTS md_tool_versions(blog_id INTEGER NOT NULL REFERENCES md_blogs(blog_id) ON DELETE CASCADE,version TEXT NOT NULL,revision TEXT NOT NULL UNIQUE,metadata TEXT NOT NULL,content TEXT NOT NULL,resource_base TEXT NOT NULL,status TEXT NOT NULL,created INTEGER NOT NULL,PRIMARY KEY(blog_id,version))`,
 		`CREATE TABLE IF NOT EXISTS md_tool_retained(member_id INTEGER NOT NULL REFERENCES md_members(member_id) ON DELETE CASCADE,tool_id INTEGER NOT NULL,root TEXT NOT NULL,values_json TEXT NOT NULL,PRIMARY KEY(member_id,tool_id))`,
 		`CREATE TABLE IF NOT EXISTS md_tool_install_metadata(member_id INTEGER NOT NULL,tool_id INTEGER NOT NULL,metadata TEXT NOT NULL,PRIMARY KEY(member_id,tool_id))`,
 		`CREATE TABLE IF NOT EXISTS md_tool_market_clients(member_id INTEGER PRIMARY KEY REFERENCES md_members(member_id) ON DELETE CASCADE,url TEXT NOT NULL DEFAULT '',check_updates INTEGER NOT NULL DEFAULT 1,auto_update INTEGER NOT NULL DEFAULT 0)`,
@@ -50,36 +50,7 @@ func initToolMarketTables() error {
 			return err
 		}
 	}
-	// Existing archives remain readable. New versions store only their HTML and
-	// resource base; no asset bytes are written to the legacy package column.
-	rows, err := DB.Query("PRAGMA table_info(md_tool_versions)")
-	if err != nil {
-		return err
-	}
-	columns := map[string]bool{}
-	for rows.Next() {
-		var cid, notNull, primary int
-		var name, kind string
-		var defaultValue any
-		if err := rows.Scan(&cid, &name, &kind, &notNull, &defaultValue, &primary); err != nil {
-			rows.Close()
-			return err
-		}
-		columns[name] = true
-	}
-	err = rows.Err()
-	rows.Close()
-	if err != nil {
-		return err
-	}
-	for _, name := range []string{"content", "resource_base"} {
-		if !columns[name] {
-			if _, err := DB.Exec("ALTER TABLE md_tool_versions ADD COLUMN " + name + " TEXT NOT NULL DEFAULT ''"); err != nil {
-				return err
-			}
-		}
-	}
-	_, err = DB.Exec(`CREATE TRIGGER IF NOT EXISTS md_tool_source_delete_guard
+	_, err := DB.Exec(`CREATE TRIGGER IF NOT EXISTS md_tool_source_delete_guard
 	BEFORE DELETE ON md_blogs
 	WHEN EXISTS(SELECT 1 FROM md_tool_releases WHERE blog_id=OLD.blog_id)
 	  OR EXISTS(SELECT 1 FROM md_tool_versions WHERE blog_id=OLD.blog_id AND status='pending')

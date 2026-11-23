@@ -47,7 +47,7 @@
       doc.querySelectorAll('base').forEach(el=>el.remove());
       const policy=doc.createElement('meta');policy.httpEquiv='Content-Security-Policy';
       const assetRoot=location.origin+'/api/tool-assets/'+meta.instance+'/';
-      policy.content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' blob: "+assetRoot+"; style-src 'unsafe-inline' "+assetRoot+"; img-src data: blob: "+assetRoot+"; font-src data: "+assetRoot+"; media-src blob: data: "+assetRoot+"; connect-src "+(!meta.version||meta.permissions?.network?"http: https: wss:":assetRoot)+"; form-action 'none'; frame-src 'none'";
+      policy.content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' blob: "+assetRoot+"; style-src 'unsafe-inline' "+assetRoot+"; img-src data: blob: "+assetRoot+"; font-src data: "+assetRoot+"; media-src blob: data: "+assetRoot+"; connect-src "+(meta.permissions?.network?"http: https: wss:":assetRoot)+"; form-action 'none'; frame-src 'none'";
       doc.head.prepend(policy);
 
       const base=doc.createElement('base');base.href=new URL(source(meta),location.origin).href;doc.head.prepend(base);
@@ -71,7 +71,7 @@
         if(event.source!==frame.contentWindow||!message||message.market!==token)return;
         if(message.file===true){
           if(!['GET','PUT'].includes(message.method)||typeof message.name!=='string'||message.name.length>2048||(message.method==='PUT'&&!(message.content instanceof ArrayBuffer)))return;
-          if(meta.version && ((message.method==='GET'&&!meta.permissions?.read_files)||(message.method==='PUT'&&!meta.permissions?.save_files))){frame.contentWindow?.postMessage({market:token,fileReply:true,request:message.request,error:t('failed')},'*');return;}
+          if(((message.method==='GET'&&!meta.permissions?.read_files)||(message.method==='PUT'&&!meta.permissions?.save_files))){frame.contentWindow?.postMessage({market:token,fileReply:true,request:message.request,error:t('failed')},'*');return;}
           store.file(id,meta.revision,meta.instance,message.method,message.name,message.content).then(content=>frame.contentWindow?.postMessage({market:token,fileReply:true,request:message.request,content},'*')).catch(()=>frame.contentWindow?.postMessage({market:token,fileReply:true,request:message.request,error:t('failed')},'*'));
           return;
         }

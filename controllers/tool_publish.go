@@ -4,14 +4,11 @@ import (
 	"bookstark/models"
 
 	"bookstark/internal/toolpackage"
-	"bytes"
-	"compress/gzip"
 	"context"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"io"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -27,27 +24,7 @@ type toolPublication struct {
 	Description    string   `json:"description"`
 	models.ToolMetadata
 }
-type toolBundle struct {
-	Version     string                 `json:"version"`
-	Permissions models.ToolPermissions `json:"permissions"`
-	Access      string                 `json:"access"`
-	Members     []int64                `json:"members,omitempty"`
-	Title       string                 `json:"title"`
-	Description string                 `json:"description"`
-	Content     string                 `json:"content"`
-	Assets      []toolpackage.Asset    `json:"assets"`
-}
 
-func decodeToolBundle(data []byte) (toolBundle, error) {
-	var b toolBundle
-	r, err := gzip.NewReader(bytes.NewReader(data))
-	if err != nil {
-		return b, err
-	}
-	defer r.Close()
-	err = json.NewDecoder(io.LimitReader(r, 400<<20)).Decode(&b)
-	return b, err
-}
 func latestToolMetadata(id int64) models.ToolMetadata {
 	var raw string
 	var m models.ToolMetadata
@@ -233,7 +210,7 @@ func PublishMarketTool(router http.Handler) gin.HandlerFunc {
 			return
 		}
 		defer tx.Rollback()
-		_, err = tx.Exec("INSERT INTO md_tool_versions(blog_id,version,revision,metadata,package,status,created,content,resource_base) VALUES(?,?,?,?,?,?,?,?,?)", id, req.Version, revision, string(metadata), []byte{}, req.Status, time.Now().UnixMilli(), content, resourceBase)
+		_, err = tx.Exec("INSERT INTO md_tool_versions(blog_id,version,revision,metadata,status,created,content,resource_base) VALUES(?,?,?,?,?,?,?,?)", id, req.Version, revision, string(metadata), req.Status, time.Now().UnixMilli(), content, resourceBase)
 		if err == nil && req.Status == "published" {
 			_, err = tx.Exec(`INSERT INTO md_tool_releases(blog_id,title,description,content,revision) VALUES(?,?,?,?,?) ON CONFLICT(blog_id) DO UPDATE SET title=excluded.title,description=excluded.description,content=excluded.content,revision=excluded.revision`, id, req.Title, req.Description, content, revision)
 		}
@@ -283,8 +260,8 @@ func ToolMarketReviews(c *gin.Context) {
 	}
 	var id int64
 	var raw string
-	var content, resourceBase string
-	err := models.DB.QueryRow("SELECT blog_id,metadata,content,resource_base FROM md_tool_versions WHERE revision=? AND status='pending'", req.Revision).Scan(&id, &raw, &content, &resourceBase)
+	var content string
+	err := models.DB.QueryRow("SELECT blog_id,metadata,content FROM md_tool_versions WHERE revision=? AND status='pending'", req.Revision).Scan(&id, &raw, &content)
 	if err != nil {
 		c.Status(404)
 		return
@@ -314,21 +291,7 @@ func ToolMarketReviews(c *gin.Context) {
 	}
 
 	if err == nil && req.Approve {
-		if resourceBase == "" {
-			// Compatibility for submissions made before reference-based publishing.
-			var archive []byte
-			if err = tx.QueryRow("SELECT package FROM md_tool_versions WHERE revision=?", req.Revision).Scan(&archive); err != nil {
-				toolAPIError(c, err)
-				return
-			}
-			bundle, e := decodeToolBundle(archive)
-			if e != nil {
-				toolAPIError(c, e)
-				return
-			}
-			content, _ = models.EncodeHTMLContent(bundle.Content)
-			m.Title, m.Description = bundle.Title, bundle.Description
-		}
+
 		_, err = tx.Exec(`INSERT INTO md_tool_releases(blog_id,title,description,content,revision) VALUES(?,?,?,?,?) ON CONFLICT(blog_id) DO UPDATE SET title=excluded.title,description=excluded.description,content=excluded.content,revision=excluded.revision`, id, m.Title, m.Description, content, req.Revision)
 	}
 	if err == nil {
@@ -341,7 +304,7 @@ func ToolMarketReviews(c *gin.Context) {
 	c.JSON(200, gin.H{"ok": true})
 }
 
-func ToolVersionPackage(c *gin.Context) {
+func ToolVersionManifest(c *gin.Context) {
 	revision := c.Param("revision")
 	if !regexp.MustCompile(`^[a-f0-9]{64}$`).MatchString(revision) {
 		c.Status(404)
@@ -370,29 +333,13 @@ func ToolVersionPackage(c *gin.Context) {
 	if !mayInstallTool(c, metadata) {
 		return
 	}
-	var resourceBase string
-	if models.DB.QueryRow("SELECT resource_base FROM md_tool_versions WHERE revision=?", revision).Scan(&resourceBase) != nil {
-		c.Status(404)
-		return
-	}
-	if resourceBase != "" {
-		var content string
-		if models.DB.QueryRow("SELECT content FROM md_tool_versions WHERE revision=? AND status='published'", revision).Scan(&content) != nil {
-			c.Status(404)
-			return
-		}
-		c.Header("Cache-Control", "private, no-store")
-		c.JSON(200, marketTool{ToolMetadata: metadata, ID: id, Title: metadata.Title, Description: metadata.Description, Revision: revision, Content: content, ResourceBase: resourceBase})
-		return
-	}
-	var data []byte
-	if models.DB.QueryRow("SELECT package FROM md_tool_versions WHERE revision=? AND status='published'", revision).Scan(&data) != nil {
+	var resourceBase, content string
+	if models.DB.QueryRow("SELECT content,resource_base FROM md_tool_versions WHERE revision=? AND status='published'", revision).Scan(&content, &resourceBase) != nil {
 		c.Status(404)
 		return
 	}
 	c.Header("Cache-Control", "private, no-store")
-	c.Header("Content-Disposition", `attachment; filename="tool-`+revision+`.gz"`)
-	c.Data(200, "application/gzip", data)
+	c.JSON(200, marketTool{ToolMetadata: metadata, ID: id, Title: metadata.Title, Description: metadata.Description, Revision: revision, Content: content, ResourceBase: resourceBase})
 }
 
 func ToolReleaseHistory(c *gin.Context) {

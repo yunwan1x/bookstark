@@ -1,54 +1,40 @@
 package models
 
 import (
-	"bytes"
 	"strings"
 	"testing"
 )
 
-func TestToolReferenceSchemaMigrationRetainsLegacyArchives(t *testing.T) {
+func TestToolReferenceSchemaStoresOnlyHTMLAndResourceAddresses(t *testing.T) {
 	initAssetTestDB(t)
-	b := &Blog{BlogTitle: "Legacy tool", BlogIdentify: "legacy-guard-source", BlogType: "article", EditorType: "html", MemberID: 1, BlogContent: "<h1>Legacy</h1>"}
-	if err := b.Insert(); err != nil {
-		t.Fatal(err)
-	}
-	for _, query := range []string{
-		"DROP TRIGGER md_tool_source_delete_guard",
-		"DROP TABLE md_tool_versions",
-		`CREATE TABLE md_tool_versions(blog_id INTEGER NOT NULL REFERENCES md_blogs(blog_id) ON DELETE CASCADE,version TEXT NOT NULL,revision TEXT NOT NULL UNIQUE,metadata TEXT NOT NULL,package BLOB NOT NULL,status TEXT NOT NULL,created INTEGER NOT NULL,PRIMARY KEY(blog_id,version))`,
-	} {
-		if _, err := DB.Exec(query); err != nil {
+	for i := 0; i < 2; i++ {
+		if err := initToolMarketTables(); err != nil {
 			t.Fatal(err)
 		}
 	}
-	archive := []byte{31, 139, 8, 0, 1, 2, 3}
-	if _, err := DB.Exec("INSERT INTO md_tool_versions(blog_id,version,revision,metadata,package,status,created) VALUES(?,?,?,?,?,?,?)", b.BlogID, "1.0.0", "old-revision", "{}", archive, "published", 1); err != nil {
+	rows, err := DB.Query("PRAGMA table_info(md_tool_versions)")
+	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := DB.Exec("INSERT INTO md_tool_releases(blog_id,title,description,content,revision) VALUES(?,?,?,?,?)", b.BlogID, b.BlogTitle, "", b.BlogContent, "old-revision"); err != nil {
-		t.Fatal(err)
-	}
-	for i := 0; i < 2; i++ {
-		if err := initToolMarketTables(); err != nil {
-			t.Fatalf("migration run %d: %v", i, err)
+	defer rows.Close()
+	columns := map[string]bool{}
+	for rows.Next() {
+		var cid, required, primary int
+		var name, kind string
+		var value any
+		if err := rows.Scan(&cid, &name, &kind, &required, &value, &primary); err != nil {
+			t.Fatal(err)
 		}
+		if kind == "BLOB" {
+			t.Fatalf("tool version has a binary payload column: %s", name)
+		}
+		columns[name] = true
 	}
-	var got []byte
-	var content, base string
-	if err := DB.QueryRow("SELECT package,content,resource_base FROM md_tool_versions WHERE blog_id=?", b.BlogID).Scan(&got, &content, &base); err != nil {
+	if err := rows.Err(); err != nil {
 		t.Fatal(err)
 	}
-	if !bytes.Equal(got, archive) || content != "" || base != "" {
-		t.Fatalf("legacy archive changed during migration: %v %q %q", got, content, base)
-	}
-	if _, err := DB.Exec("DELETE FROM md_blogs WHERE blog_id=?", b.BlogID); err == nil {
-		t.Fatal("migration did not install source deletion guard")
-	}
-	if _, err := DB.Exec("DELETE FROM md_tool_releases WHERE blog_id=?", b.BlogID); err != nil {
-		t.Fatal(err)
-	}
-	if err := DeleteBlog(b.BlogID); err != nil {
-		t.Fatal(err)
+	if columns["package"] || !columns["content"] || !columns["resource_base"] {
+		t.Fatalf("unexpected version schema: %#v", columns)
 	}
 }
 
@@ -60,7 +46,7 @@ func TestToolSourceBulkDeletionPreservesAssociations(t *testing.T) {
 			if err := b.Insert(); err != nil {
 				t.Fatal(err)
 			}
-			if _, err := DB.Exec("INSERT INTO md_tool_versions(blog_id,version,revision,metadata,package,status,created) VALUES(?,?,?,?,?,?,?)", b.BlogID, "1.0.0", "bulk-"+status, "{}", []byte{}, status, 1); err != nil {
+			if _, err := DB.Exec("INSERT INTO md_tool_versions(blog_id,version,revision,metadata,content,resource_base,status,created) VALUES(?,?,?,?,?,?,?,?)", b.BlogID, "1.0.0", "bulk-"+status, "{}", b.BlogContent, "https://market.example/shares/"+b.BlogIdentify, status, 1); err != nil {
 				t.Fatal(err)
 			}
 			if status == "published" {

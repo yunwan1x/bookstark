@@ -6,8 +6,6 @@ import (
 	"bookstark/routers"
 	"bookstark/services"
 	"bookstark/services/worldtv"
-	"bytes"
-	"compress/gzip"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
@@ -200,12 +198,9 @@ func TestWorldTVBrowser(t *testing.T) {
 func TestToolMarketBrowser(t *testing.T) {
 	runIsolatedBrowser(t, "tool_market_browser_test.cjs", func(t *testing.T) {
 		// A separate marketplace authenticates independently of the local workspace.
-		var packageBytes bytes.Buffer
-		zipped := gzip.NewWriter(&packageBytes)
-		_ = json.NewEncoder(zipped).Encode(map[string]any{"version": "1.0.0", "permissions": map[string]bool{}, "access": "login", "title": "远端工具", "description": "市场账号独立验证", "content": "<h1>Remote tool installed</h1>", "assets": []any{}})
-		_ = zipped.Close()
 		revision := strings.Repeat("a", 64)
-		tool := map[string]any{"id": 777, "title": "远端工具", "description": "市场账号独立验证", "author": "Remote author", "revision": revision, "version": "1.0.0", "category": "document", "size": packageBytes.Len(), "hash": fmt.Sprintf("%x", sha256.Sum256(packageBytes.Bytes())), "offline": true, "access": "login", "frozen": true, "source": "remote-fixture", "permissions": map[string]bool{}}
+		content := `<h1>Remote tool installed</h1><script src="/static/remote-reference.js"></script>`
+		var tool map[string]any
 		remote := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			switch r.URL.Path {
@@ -231,18 +226,39 @@ func TestToolMarketBrowser(t *testing.T) {
 					json.NewEncoder(w).Encode(map[string]string{"error": "market_login_required"})
 					return
 				}
-				json.NewEncoder(w).Encode(tool)
-			case "/market/packages/" + revision:
-				if r.Header.Get("Authorization") != "Market fixture-remote-market-session" {
-					w.WriteHeader(401)
-					return
+				item := make(map[string]any, len(tool))
+				for key, value := range tool {
+					item[key] = value
 				}
-				w.Header().Set("Content-Type", "application/gzip")
-				w.Write(packageBytes.Bytes())
+				if r.URL.Query().Get("metadata") != "1" {
+					item["content"] = content
+				}
+				json.NewEncoder(w).Encode(item)
+			case "/static/remote-reference.js":
+				if r.Header.Get("Authorization") != "" || r.Header.Get("Cookie") != "" {
+					t.Error("market credentials forwarded to an original resource")
+				}
+				w.Header().Set("Content-Type", "text/javascript")
+				w.Write([]byte("window.remoteReferenceDownloaded=true;"))
 			default:
 				w.WriteHeader(404)
 			}
 		}))
+		manifest := struct {
+			Version     string                 `json:"version"`
+			Title       string                 `json:"title"`
+			Description string                 `json:"description"`
+			Permissions models.ToolPermissions `json:"permissions"`
+			Access      string                 `json:"access"`
+			Members     []int64                `json:"members,omitempty"`
+			Content     string                 `json:"content"`
+			Base        string                 `json:"resource_base"`
+		}{"1.0.0", "远端工具", "市场账号独立验证", models.ToolPermissions{}, "login", nil, content, remote.URL + "/shares/remote-fixture"}
+		manifestBytes, err := json.Marshal(manifest)
+		if err != nil {
+			t.Fatal(err)
+		}
+		tool = map[string]any{"id": 777, "title": manifest.Title, "description": manifest.Description, "author": "Remote author", "revision": revision, "version": manifest.Version, "category": "document", "size": len(content) + len("window.remoteReferenceDownloaded=true;"), "asset_count": 1, "hash": fmt.Sprintf("%x", sha256.Sum256(manifestBytes)), "offline": true, "access": "login", "distribution": "references", "source": "remote-fixture", "resource_base": manifest.Base, "permissions": models.ToolPermissions{}}
 		t.Cleanup(remote.Close)
 		t.Setenv("BOOKSTARK_MARKET_REMOTE_URL", remote.URL)
 		if err := models.InitWebDAVDB(filepath.Join(t.TempDir(), "tool-files.db")); err != nil {
