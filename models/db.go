@@ -46,6 +46,10 @@ func InitDB(dbPath string) error {
 		return fmt.Errorf("create tables: %w", err)
 	}
 
+	if err := initToolTables(); err != nil {
+		return fmt.Errorf("tool schema: %w", err)
+	}
+
 	if err := InitNewsTables(); err != nil {
 		return fmt.Errorf("news schema: %w", err)
 	}

@@ -11,8 +11,9 @@
 <link rel="stylesheet" href="/static/css/public-feed.css?v={{assetVer "/static/css/public-feed.css"}}">
 <link rel="stylesheet" href="/static/css/share-note-reader.css?v={{assetVer "/static/css/share-note-reader.css"}}">
 <link rel="stylesheet" href="/static/css/local-tools.css?v={{assetVer "/static/css/local-tools.css"}}">
+<link rel="stylesheet" href="/static/css/tool-market.css?v={{assetVer "/static/css/tool-market.css"}}">
 </head>
-<body class="public-feed-body" data-public-account="{{.Account}}">
+<body class="public-feed-body" data-public-account="{{.Account}}" data-market-workspace="{{if .MemberID}}member-{{.MemberID}}{{else}}guest{{end}}">
 {{if .Account}}{{template "header" .}}{{else}}
 <header class="public-header"><div class="public-header-inner">
  <a class="public-brand" href="/shares"><i class="fa-solid fa-book-open" aria-hidden="true"></i> BookStark</a>
@@ -35,6 +36,8 @@
 <script src="/static/js/public-widgets.js?v={{assetVer "/static/js/public-widgets.js"}}"></script>
 <script src="/static/js/public-news.js?v={{assetVer "/static/js/public-news.js"}}"></script>
 <script src="/static/js/public-feed.js?v={{assetVer "/static/js/public-feed.js"}}"></script>
+<script src="/static/js/tool-market-store.js?v={{assetVer "/static/js/tool-market-store.js"}}"></script>
+<script src="/static/js/tool-market.js?v={{assetVer "/static/js/tool-market.js"}}"></script>
 </body></html>
 
 {{define "public-feed-content"}}
@@ -47,6 +50,7 @@
   <a href="{{index .TypeURLs "note"}}" {{if eq .Type "note"}}aria-current="page"{{end}}><i class="fa-solid fa-note-sticky" aria-hidden="true"></i> {{call .T "public.notes"}}</a>
   <a href="{{index .TypeURLs "book"}}" {{if eq .Type "book"}}aria-current="page"{{end}}><i class="fa-solid fa-book" aria-hidden="true"></i> {{call .T "public.books"}}</a>
   <a href="{{index .TypeURLs "bookmark"}}" {{if eq .Type "bookmark"}}aria-current="page"{{end}}><i class="fa-solid fa-bookmark" aria-hidden="true"></i> {{call .T "public.bookmarks"}}</a>
+  <a href="/market"><i class="fa-solid fa-shapes" aria-hidden="true"></i> {{call .T "market.title"}}</a>
  </nav>
   <div class="public-toolbar">
   <form id="publicSearch" class="public-search" action="/shares" role="search">
@@ -99,6 +103,7 @@
    {{if .HasPassword}}<p class="public-excerpt">{{call $.T "public.locked"}}</p>{{else}}
    {{if eq .ShareType "book"}}<p class="public-excerpt">{{.Description}}</p>{{else if eq .BlogType "note"}}<div class="public-note sh-note-text" data-note-content>{{.Content}}</div>{{else}}<p class="public-excerpt">{{.Content}}</p>{{end}}{{end}}
    <div class="public-meta">{{if ne .BlogType "note"}}<span>{{.Author}}</span><time datetime="{{.ShareTime.Format "2006-01-02"}}">{{.ShareTime.Format "2006-01-02"}}</time>{{end}}{{if not .HasPassword}}{{range .Labels}}<span class="tag-badge">{{.}}</span>{{end}}{{end}}</div>
+   {{if and (eq .DocType "html") (not .HasPassword) (ne .BlogType "note") (eq .ShareType "blog")}}<div class="market-actions" data-market-card="{{.TargetID}}"></div>{{end}}
    {{if eq .ShareType "book"}}<a class="public-read-link" href="/shares/{{.ShareIdentify}}">{{call $.T "public.read_book"}} <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>{{end}}
    {{if .HasPassword}}<a class="public-read-link" href="/shares/{{.ShareIdentify}}"{{if and (ne .ShareType "book") (ne .BlogType "note")}} target="_blank" rel="noopener noreferrer"{{end}}>{{call $.T "public.unlock"}}</a>{{end}}
    {{if and (eq .BlogType "note") (not .HasPassword) $.ShareCommentsEnabled}}<section class="share-comments sh-note-comments" data-share-identify="{{.ShareIdentify}}" data-comments-lazy="1" hidden aria-label="{{call $.T "share_comments.title"}}"></section>{{end}}

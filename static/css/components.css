@@ -1398,3 +1398,5 @@ body.tag-input-sheet-open {
 @media (prefers-reduced-motion: reduce) {
     .ai-dlg-box, .ai-dlg-overlay { animation: none !important; }
 }
+
+.bs-dialog-description { margin:var(--spacing-md) 0; color:var(--color-text-secondary); font-size:14px; white-space:pre-line; }

@@ -221,6 +221,10 @@ func Setup() *gin.Engine {
 	r.GET("/bookmarks", middleware.OptionalAuth(), middleware.CSRFMiddleware(), middleware.VisitLog(), controllers.BookmarksPage)
 	// Browser-local creation tools (no server persistence).
 	r.GET("/tools", middleware.OptionalAuth(), middleware.CSRFMiddleware(), controllers.LocalToolsPage)
+	r.GET("/market", middleware.OptionalAuth(), middleware.CSRFMiddleware(), controllers.ToolMarketPage)
+	r.GET("/api/tool-market", controllers.ToolMarketCatalog)
+	r.GET("/api/tool-market/:id", controllers.ToolMarketPackage)
+	r.GET("/api/tool-assets/:instance/:epoch/*filepath", controllers.ServeToolAsset)
 	// Public shares pages
 	r.GET("/shares", middleware.OptionalAuth(), middleware.CSRFMiddleware(), middleware.VisitLog(), controllers.SharesPage)
 	r.GET("/shares/:identify", middleware.OptionalAuth(), middleware.CSRFMiddleware(), middleware.VisitLog(), controllers.ShareViewPage)
@@ -279,6 +283,19 @@ func Setup() *gin.Engine {
 	auth.Use(middleware.CSRFMiddleware("/api/logout"))
 	auth.Use(middleware.VisitLog())
 	{
+		auth.POST("/api/tool-sources", controllers.RemoteToolCatalog)
+		auth.GET("/api/tool-sources/:id", controllers.RemoteToolPackage)
+		auth.GET("/api/tool-installs", controllers.ListToolInstalls)
+		auth.GET("/api/tool-installs/:id", controllers.GetToolInstall)
+		auth.PUT("/api/tool-installs/:id", controllers.InstallMarketTool(r))
+		auth.POST("/api/blogs/:id/tool", controllers.PublishMarketTool)
+		auth.GET("/api/blogs/:id/tool", controllers.PublishMarketTool)
+		auth.DELETE("/api/blogs/:id/tool", controllers.PublishMarketTool)
+		auth.DELETE("/api/tool-installs/:id", controllers.DeleteToolInstall)
+		auth.PATCH("/api/tool-installs/:id", controllers.PatchToolInstall)
+		auth.POST("/api/tool-installs/:id/data", controllers.WriteToolInstallData)
+		auth.GET("/api/tool-installs/:id/files/*filepath", controllers.ToolInstallFile)
+		auth.PUT("/api/tool-installs/:id/files/*filepath", controllers.ToolInstallFile)
 		// Pages
 		auth.GET("/home", controllers.PersonalHomePage)
 		auth.GET("/api/home", controllers.HomeSummary)

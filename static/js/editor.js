@@ -2188,6 +2188,31 @@
     });
   }
   window.manualSave = manualSave;
+  async function refreshToolPublication() {
+    const button=document.getElementById('publish-tool-btn');if(!button)return;
+    const response=await fetch('/api/blogs/'+blogId+'/tool',{cache:'no-store'});if(!response.ok)return;
+    const result=await response.json();button.querySelector('.btn-label').textContent=__(result.published?'market.republish':'market.publish');button.setAttribute('aria-label',button.querySelector('.btn-label').textContent);document.getElementById('unpublish-tool-btn').hidden=!result.published;
+  }
+  window.publishEditorTool=async function(){
+    const button=document.getElementById('publish-tool-btn');if(!button||button.disabled)return;
+    if(!await BSDialog.confirm2(__('market.publish_help')))return;
+    button.disabled=true;
+    try {
+      if(htmlEditor)currentMarkdown=htmlEditor.getMarkdown();
+      if(!saveMgr)throw Error('failed');await saveMgr.manualSave();
+      const response=await fetchWithCurrentCSRF('/api/blogs/'+blogId+'/tool',{method:'POST'});
+      if(!response.ok){const data=await response.json().catch(()=>({}));throw Error(data.error||'failed');}
+      await refreshToolPublication();BookStarkEditor.toast(__('market.published'),'success');
+    }catch(error){BookStarkEditor.toast(__(error.message==='publish_requires_public_html'?'market.publish_requires_public_html':'market.failed'),'error');}
+    finally{button.disabled=false;}
+  };
+  window.unpublishEditorTool=async function(){
+    if(!await BSDialog.confirm2(__('market.unpublish')))return;
+    const response=await fetchWithCurrentCSRF('/api/blogs/'+blogId+'/tool',{method:'DELETE'});
+    BookStarkEditor.toast(__(response.ok?'market.unpublished':'market.failed'),response.ok?'success':'error');await refreshToolPublication();
+  };
+  refreshToolPublication().catch(()=>{});
+
 
   function setupEditorBackConfirm() {
     var backBtn = document.getElementById('editorBackBtn');

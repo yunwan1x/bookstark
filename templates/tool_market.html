@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="{{.Lang}}"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{call .T "market.title"}} · BookStark</title>
+<link rel="stylesheet" href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}">
+{{template "head-assets" .}}
+<link rel="stylesheet" href="/static/css/public-feed.css?v={{assetVer "/static/css/public-feed.css"}}">
+<link rel="stylesheet" href="/static/css/tool-market.css?v={{assetVer "/static/css/tool-market.css"}}">
+</head><body class="public-feed-body" data-market-workspace="{{if .MemberID}}member-{{.MemberID}}{{else}}guest{{end}}">
+{{template "header" .}}
+<main class="public-layout market-layout" role="main" id="marketMain">
+<section class="public-content">
+<nav class="public-nav" aria-label="{{call .T "public.navigation"}}"><a href="/shares">{{call .T "public.title"}}</a><a href="/market" id="marketCatalogTab">{{call .T "market.title"}}</a><a href="/market?view=installed" id="marketInstalledTab">{{call .T "market.mine"}}</a></nav>
+<section class="public-feed market-content">
+<div class="market-heading"><h1 class="page-title" id="marketHeading">{{call .T "market.title"}}</h1><span class="tag-badge">{{call .T "market.local"}}</span><button type="button" class="row-action" title="{{call .T "market.workspace_help"}}" aria-label="{{call .T "market.workspace_help"}}"><i class="fa-regular fa-circle-question" aria-hidden="true"></i></button></div>
+<div class="market-toolbar"><form id="marketSearch" role="search" class="public-search"><input id="marketQuery" type="search" aria-label="{{call .T "market.search"}}" placeholder="{{call .T "market.search"}}"><button type="submit" aria-label="{{call .T "public.search_action"}}"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></button></form><button type="button" id="marketCheck" class="bs-btn bs-btn-cancel"><i class="fa-solid fa-rotate" aria-hidden="true"></i> {{call .T "market.check"}}</button></div>
+<form id="marketSource" class="market-toolbar"><label for="marketServer">{{call .T "market.server"}}</label><input id="marketServer" type="url" class="border border-slate-300 rounded-md text-sm p-2" placeholder="https://…" aria-label="{{call .T "market.server"}}"><button type="submit" class="bs-btn bs-btn-cancel">{{call .T "market.connect"}}</button><button type="button" id="marketLocal" class="bs-btn bs-btn-cancel">{{call .T "market.current"}}</button></form>
+<div id="marketFilters" class="market-filters"><button type="button" class="bs-btn bs-btn-cancel" data-market-filter="all" aria-pressed="true">{{call .T "market.all"}}</button><button type="button" class="bs-btn bs-btn-cancel" data-market-filter="updates" aria-pressed="false">{{call .T "market.updates"}} <span id="marketUpdateCount">0</span></button></div>
+<p id="marketStatus" role="status" aria-live="polite" hidden></p>
+<div id="marketItems" aria-live="polite"></div>
+<div class="market-paging"><button class="bs-btn bs-btn-cancel" id="marketMore" type="button" hidden>{{call .T "market.more"}}</button></div>
+</section></section>
+<aside class="public-info"><section class="public-tools-card" id="marketDetail"></section></aside>
+</main>
+<section id="marketRunner" class="market-runner" hidden><div class="market-heading"><a href="/market?view=installed" class="bs-btn bs-btn-cancel">← {{call .T "market.mine"}}</a><h1 id="marketRunnerTitle" class="page-title"></h1><span id="marketSaveStatus" role="status"></span><button type="button" class="bs-btn bs-btn-cancel" id="marketRetry" hidden>{{call .T "tools.retry"}}</button><button type="button" class="bs-btn bs-btn-cancel" id="marketRunExport">{{call .T "market.export"}}</button></div><div id="marketFrameHost"></div></section>
+{{template "footer" .}}
+<script src="/static/js/tool-market-store.js?v={{assetVer "/static/js/tool-market-store.js"}}"></script>
+<script src="/static/js/tool-market.js?v={{assetVer "/static/js/tool-market.js"}}"></script>
+</body></html>

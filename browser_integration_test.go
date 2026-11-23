@@ -193,3 +193,42 @@ func TestWorldTVBrowser(t *testing.T) {
 		}
 	})
 }
+
+func TestToolMarketBrowser(t *testing.T) {
+	runIsolatedBrowser(t, "tool_market_browser_test.cjs", func(t *testing.T) {
+		if err := models.InitWebDAVDB(filepath.Join(t.TempDir(), "tool-files.db")); err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { models.WebDAVDB.Close(); models.WebDAVDB = nil })
+		if _, err := models.EnsureDAVRoot(1); err != nil {
+			t.Fatal(err)
+		}
+		for name, content := range map[string]string{"market-fixture.js": "window.marketStaticLoaded=true;", "market-fixture.css": "body { --market-local-style: ready; }", "market-module.js": "import {value} from './market-dep.js'; window.marketModule=value;", "market-dep.js": "export const value=42;"} {
+			mime := "text/javascript"
+			if strings.HasSuffix(name, ".css") {
+				mime = "text/css"
+			}
+			node, _, err := models.PutDAVFile(1, "/"+name, mime, strings.NewReader(content), 20<<20, 100<<20)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err = models.CreateOrUpdateDAVPublicAsset(1, node.NodeID, "/"+name); err != nil {
+				t.Fatal(err)
+			}
+		}
+		for i, title := range []string{"投资驾驶学校", "Craft 白板", "世界电视", "街机游戏厅"} {
+			content := `<!doctype html><html><head><meta charset="utf-8"><script src="/dav-public/admin/market-fixture.js"></script><script type="module" src="/dav-public/admin/market-module.js"></script><link rel="stylesheet" href="/dav-public/admin/market-fixture.css"></head><body><h1>Tool v1</h1><label for="value">Value</label><input id="value"><button id="save">Save</button><output id="result"></output><script>document.getElementById('value').value=localStorage.getItem('value')||'';document.getElementById('save').onclick=()=>{localStorage.setItem('value',document.getElementById('value').value);document.getElementById('result').textContent='saved';};</script></body></html>`
+			raw, err := models.EncodeHTMLContent(content)
+			if err != nil {
+				t.Fatal(err)
+			}
+			b := &models.Blog{BlogTitle: title, BlogIdentify: fmt.Sprintf("market-browser-%d", i), MemberID: 1, BlogType: "article", EditorType: "html", Visibility: 1, BlogContent: raw, BlogDesc: "HTML 工具"}
+			if err := b.Insert(); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := models.DB.Exec("INSERT INTO md_tool_releases(blog_id,title,description,content,revision) VALUES(?,?,?,?,?)", b.BlogID, b.BlogTitle, b.BlogDesc, b.BlogContent, fmt.Sprintf("fixture-%d", i)); err != nil {
+				t.Fatal(err)
+			}
+		}
+	})
+}

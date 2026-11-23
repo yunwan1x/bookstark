@@ -62,10 +62,14 @@ var BSDialog = (function() {
 	  function isSmallScreen() {
 	    return window.matchMedia && window.matchMedia('(max-width: 640px)').matches;
 	  }
-	  function confirm2(msg) {
+	  function confirm2(msg, options) {
+      options = options || {};
 	    return new Promise(function(resolve) {
 	      showBox('<div class="bs-dialog-title">'+escHtml(msg)+'</div><div class="bs-dialog-actions"><button class="bs-btn bs-btn-cancel" id="bs-confirm-cancel">'+escHtml(t('dialog.cancel', 'Cancel'))+'</button><button class="bs-btn bs-btn-primary" id="bs-confirm-ok">'+escHtml(t('dialog.confirm', 'OK'))+'</button></div>');
-	      var overlay = document.getElementById('bs-dialog-overlay');
+	      var box = document.getElementById('bs-dialog-box');
+      if (options.description) { var description = document.createElement('p'); description.className = 'bs-dialog-description'; description.textContent = options.description; box.insertBefore(description, box.querySelector('.bs-dialog-actions')); }
+      if (options.confirmLabel) document.getElementById('bs-confirm-ok').textContent = options.confirmLabel;
+      var overlay = document.getElementById('bs-dialog-overlay');
 	      var done = false;
 	      function finish(value) {
 	        if (done) return;

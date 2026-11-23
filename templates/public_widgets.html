@@ -1,5 +1,6 @@
 {{define "public-widgets"}}
 <aside class="public-info">
+ <section class="public-tools-card"><div class="market-heading"><h2>{{call .T "market.mine"}}</h2><a href="/market?view=installed">{{call .T "market.manage"}} ›</a></div><div id="marketShortcuts"></div></section>
  <section class="public-tools-card"><h2><i class="fa-solid fa-shapes" aria-hidden="true"></i>{{call .T "tools.title"}}</h2><p class="public-widget-caption">{{call .T "tools.subtitle"}}</p>
  {{template "local-tool-grid" .}}
  <div class="local-recent-heading"><h3>{{call .T "tools.recent"}}</h3><a href="/tools" target="_blank" rel="noopener">{{call .T "tools.all"}} ›</a></div>
