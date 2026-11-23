@@ -5,8 +5,31 @@
 - **远程服务器**输入现有 BookStark 的 HTTPS 地址。局域网还可以使用 HTTP 内网 IP 或 .local 地址。应用记住最近的服务器地址，账户和数据仍由该服务器管理。
 - **本地工作区**在应用中启动 BookStark 的 Go 和 SQLite 后端，首次创建时自行设置并确认本地 `admin` 密码，至少 8 个字符、最多 72 UTF-8 字节。创建完成后的密码旁提供复制按钮；已有工作区保留原密码，不会重新初始化。进入账户安全后可以修改密码。数据库、附件和编辑器资源可在本地使用。需要第三方服务的功能仍会使用网络。
 - 桌面端从 **工作区 → 切换工作区** 返回，Android 使用窗口顶部的 **切换工作区**。两种模式的数据彼此独立。
+- 链接打开规则：站内新标签页链接在客户端当前窗口打开；书签、导航、资讯等外部 HTTP/HTTPS 链接交给系统默认浏览器，客户端保留原页面。覆盖普通链接、`window.open(url)` 和先开空白窗口再设置地址的编辑器链接。需要更新客户端及其使用的服务端页面资源，旧客户端没有外部链接桥。
+- Android 保持关闭通用 Wails JS 桥。`BookStarkNative` 仅提供链接打开，以及经过白名单、大小限制和系统交互约束的复制、保存、打印能力；不会提供任意文件路径读写或命令执行。
 
 本地数据放在系统的用户配置目录 `BookStark/local` 下。Android 使用应用私有存储中的 `bookstark/local`。原有服务器入口由普通 Go 构建保留，Wails 入口用 `wails` 构建标签启用。
+
+## GUI 适配与验证
+
+- 复制文字优先使用已确认可用的客户端接口；普通浏览器和旧客户端保留浏览器剪贴板及选区复制回退，成功回执后才提示成功。
+- 下载、Blob 导出使用系统保存对话框，传输分块并限制为 100 MB；取消不会误报成功。站内 HTTP 下载保留当前登录会话和服务端文件名。
+- 打印会把编辑器页面（包括画布和同源 iframe）交给系统打印框架，可另存 PDF。
+- 原生返回、前进、切换工作区及关闭窗口先等待保存；失败时使用现有确认弹窗，取消会保留当前编辑内容。权限申请按网站和 Android 运行时授权处理，拒绝不会被绕过。
+- macOS 包含摄像头、麦克风用途声明。桌面端提供双语返回/前进菜单和快捷键；Windows Wails 构建使用 GUI 子系统。
+
+redroid 回归使用独立包名，不覆盖正式应用：
+
+```sh
+python3 native/build_android.py --abi x86_64 --debug --out artifacts/bookstark-wails-gui-qa-x86_64.apk
+adb -s 127.0.0.1:15555 install -r artifacts/bookstark-wails-gui-qa-x86_64.apk
+adb -s 127.0.0.1:15555 shell am start -n com.bookstark.wails.qa/com.wails.app.MainActivity
+node tests/browser/redroid_native_gui_test.cjs
+```
+
+测试需要 Node 可解析 `ws`，adb、Docker（读取 redroid 网桥地址）、`pdftotext`。输出位于忽略版本控制的 `artifacts/native-gui-redroid/`，包含原生界面截图、导出文件、PDF 和逐项结果。默认仅操作 `com.bookstark.wails.qa` 的测试数据。
+
+当前 redroid 没有摄像头，虚拟音频输入无法启动；可验证授权与拒绝，但不能据此声称真实音视频采集通过。Linux GUI 需要 WebKitGTK 4.1 运行时；Ubuntu 20.04 默认的 4.0 不能替代。Windows/macOS 的编译与包声明检查不等同于这些系统上的实机验证。
 
 ## 构建
 

@@ -211,7 +211,9 @@
   window.addEventListener('local-drafts-changed',refreshList);window.addEventListener('focus',refreshList);
   document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();flush();}if(e.key==='Escape'){el('toolsExport').open=false;drawer(false);}});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)flush();});
-  window.addEventListener('beforeunload',e=>{capture();if(dirty||saving){flush();e.preventDefault();e.returnValue='';}});
+  if (window.BookStarkNativeGuards) BookStarkNativeGuards.add(flush);
+  window.addEventListener('bookstark:background', () => { flush(); });
+  window.addEventListener('beforeunload',e=>{if(window.BookStarkHost?.isLeaving)return;capture();if(dirty||saving){flush();e.preventDefault();e.returnValue='';}});
   async function init() {
     const params=new URLSearchParams(location.search),id=params.get('draft'),type=params.get('type');
     try {

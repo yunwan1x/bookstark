@@ -22,8 +22,13 @@ func nativeDataDir() (string, error) {
 	return filepath.Join(dir, "bookstark"), nil
 }
 
-func configureNativeWindow(app *application.App, _ *launcher) {
+func configureNativeWindow(app *application.App, _ *launcher, _ *nativeCapabilities) {
 	app.Window.NewWithOptions(application.WebviewWindowOptions{Title: "BookStark"})
 }
 
 func nativeAssetHandler(l *launcher) http.Handler { return http.HandlerFunc(l.webviewBootstrap) }
+
+func openNativeExternalURL(_ *application.App, address string) error {
+	application.Android.OpenURL(address)
+	return nil
+}

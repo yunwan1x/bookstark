@@ -113,6 +113,7 @@
     window.addEventListener('admin-tab',e=>{if(e.detail!=='tv'){stop();clearInterval(timer)}else{if(active==='world')load();poll()}});
     function poll(){clearInterval(timer);timer=setInterval(()=>{if(active==='world'&&!document.hidden&&!busy&&!loading&&!dirty()&&!frame)load()},15000)}
     window.addEventListener('pagehide',()=>{stop();clearInterval(timer)});
-    window.addEventListener('beforeunload',e=>{if(dirty()){e.preventDefault();e.returnValue=''}});
+    if (window.BookStarkNativeGuards) BookStarkNativeGuards.add(() => !dirty());
+    window.addEventListener('beforeunload',e=>{if(!window.BookStarkHost?.isLeaving&&dirty()){e.preventDefault();e.returnValue=''}});
     switchTab(active,false);if(!document.getElementById('panel-tv').classList.contains('hidden'))poll();
 })();

@@ -7,6 +7,7 @@ import re
 import hashlib
 import shutil
 import tempfile
+import sys
 
 
 def file_md5(filepath):
@@ -154,7 +155,7 @@ def patch_swjs(sw_path, static_hash, assets):
     return len(assets)
 
 
-def main(build_only=False, extra_args=None, output=None, goos=None, goarch=None, pack=False):
+def main(build_only=False, extra_args=None, output=None, goos=None, goarch=None, pack=False, run_output=False):
     # Version info
     built = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=8))).strftime('%Y%m%d%H%M%S')
     commit = os.environ.get('COMMIT', '').strip()
@@ -224,6 +225,8 @@ def main(build_only=False, extra_args=None, output=None, goos=None, goarch=None,
     # Go build
     # -s -w 去掉符号表与 DWARF 调试信息，二进制可瘦身约 25%
     ldflags = f'-s -w -X main.buildTime={built} -X main.gitCommit={commit} -X main.goVersion={go_ver} -X main.assetHash={static_hash}'
+    if (target_goos == 'windows' or (not target_goos and os.name == 'nt')) and any('wails' in str(arg).split(',') for arg in (extra_args or [])):
+        ldflags += ' -H windowsgui'
     build_cmd = ['go', 'build', '-trimpath', '-ldflags', ldflags] + (extra_args or [])
 
     print(f'  cmd: {" ".join(build_cmd)} -o {output} .')
@@ -257,6 +260,12 @@ def main(build_only=False, extra_args=None, output=None, goos=None, goarch=None,
         size_str = f'{size / 1024:.0f}K'
     print(f'Done: {size_str}')
 
+    if run_output:
+        executable = os.path.abspath(output)
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os.execv(executable, [executable])
+
     # Kill old process and start (skip when --build / --output / --goos / --goarch 指定)
     if not build_only and not (output != 'bookstark' or target_goos or target_goarch):
         subprocess.run(['pkill', '-f', 'bookstark'], capture_output=True)
@@ -266,6 +275,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Build BookStark')
     parser.add_argument('--build', action='store_true', dest='build_only',
                         help='Only build, do not kill/restart the process')
+    parser.add_argument('--run', action='store_true', dest='run_output',
+                        help='Run the selected output without stopping other processes')
     parser.add_argument('--tags', dest='go_tags', default='',
                         help='Go build tags (e.g. timetzdata)')
     parser.add_argument('--goos', dest='goos', default='',
@@ -276,6 +287,8 @@ if __name__ == '__main__':
                         help='Output binary path. Default: bookstark or bookstark-<goos>-<goarch>[.exe]')
     parser.add_argument('--upx', action='store_true', help='Compress the Linux executable using UPX/LZMA')
     args = parser.parse_args()
+    if args.run_output and (args.build_only or args.goos or args.goarch):
+        parser.error('--run requires a host build and cannot be combined with --build')
     extra = []
     if args.go_tags:
         extra = ['-tags', args.go_tags]
@@ -284,4 +297,5 @@ if __name__ == '__main__':
          output=args.output or None,
          goos=args.goos or None,
          goarch=args.goarch or None,
-         pack=args.upx)
+         pack=args.upx,
+         run_output=args.run_output)

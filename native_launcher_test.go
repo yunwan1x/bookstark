@@ -18,6 +18,26 @@ import (
 	"bookstark/models"
 )
 
+func TestNativeExternalURL(t *testing.T) {
+	for _, address := range []string{"https://example.com/path?q=中文#section", "http://127.0.0.1:8080/page"} {
+		if got, ok := nativeExternalURL("bookstark:open-external:" + address); !ok || got == "" {
+			t.Errorf("web URL rejected: %q", address)
+		}
+	}
+	for _, message := range []string{
+		"https://example.com", "bookstark:other:https://example.com",
+		"bookstark:open-external:javascript:alert(1)", "bookstark:open-external:file:///etc/passwd",
+		"bookstark:open-external:data:text/html,hello", "bookstark:open-external:cmd:calc",
+		"bookstark:open-external:/relative", "bookstark:open-external:https://",
+		"bookstark:open-external:https://user:pass@example.com", "bookstark:open-external:https://example.com/\n",
+		"bookstark:open-external:https://example.com/" + strings.Repeat("a", 16384),
+	} {
+		if got, ok := nativeExternalURL(message); ok {
+			t.Errorf("unsafe/unknown message accepted: %q -> %q", message, got)
+		}
+	}
+}
+
 func TestNativeWorkspaces(t *testing.T) {
 	cwd, err := os.Getwd()
 	if err != nil {

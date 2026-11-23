@@ -954,8 +954,16 @@ const BookStarkEditor = (function() {
   }
 
   // Unload warning
-  function setupUnloadWarning(isUnsavedFn) {
+  function setupUnloadWarning(isUnsavedFn, saveFn) {
+    if (window.BookStarkNativeGuards) BookStarkNativeGuards.add(async function() {
+      if (!isUnsavedFn()) return true;
+      if (!saveFn) return false;
+      try { await saveFn(); } catch (_) { return false; }
+      return !isUnsavedFn();
+    });
+    window.addEventListener("bookstark:background", function() { if (isUnsavedFn() && saveFn) Promise.resolve(saveFn()).catch(function() {}); });
     window.addEventListener('beforeunload', function(e) {
+      if (window.BookStarkHost?.isLeaving) return;
       if (isUnsavedFn()) {
         e.preventDefault();
         e.returnValue = '';

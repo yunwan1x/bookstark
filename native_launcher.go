@@ -31,6 +31,20 @@ import (
 	"bookstark/routers"
 )
 
+// Only web URLs may leave the WebView through the external-link bridge.
+// In particular, never pass file, script or OS command schemes to the opener.
+func nativeExternalURL(message string) (string, bool) {
+	address, ok := strings.CutPrefix(message, "bookstark:open-external:")
+	if !ok || len(address) > 16384 {
+		return "", false
+	}
+	u, err := url.Parse(address)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Hostname() == "" || u.User != nil {
+		return "", false
+	}
+	return u.String(), true
+}
+
 //go:embed native/launcher.html
 var launcherHTML string
 

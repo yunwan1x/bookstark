@@ -2250,7 +2250,16 @@
         if (el) el.textContent = window.__('share.edit.last_modified') + timeStr;
     }
 
+    if (window.BookStarkNativeGuards) BookStarkNativeGuards.add(async function() {
+        if (!shareAutoSaver) return true;
+        var status = shareAutoSaver.getSaveStatus();
+        if (status !== 'unsaved' && status !== 'saving') return true;
+        await shareAutoSaver.manualSave();
+        return shareAutoSaver.getSaveStatus() === 'saved';
+    });
+
     window.addEventListener('beforeunload', function(event) {
+        if (window.BookStarkHost?.isLeaving) return;
         if (!shareAutoSaver) return;
         var status = shareAutoSaver.getSaveStatus();
         if (status !== 'unsaved' && status !== 'saving') return;

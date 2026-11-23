@@ -51,6 +51,8 @@ def package_bundle(bundle, arch):
         "LSMinimumSystemVersion": "12.0",
         "NSHighResolutionCapable": True,
         "NSLocalNetworkUsageDescription": "连接局域网中的 BookStark 服务器。",
+        "NSCameraUsageDescription": "在你允许后，为 BookStark 网页会议提供摄像头。 / Allow camera access for web meetings.",
+        "NSMicrophoneUsageDescription": "在你允许后，为 BookStark 网页会议提供麦克风。 / Allow microphone access for web meetings.",
         "NSAppTransportSecurity": {"NSAllowsArbitraryLoadsInWebContent": True},
     }))
     info.chmod(0o644)

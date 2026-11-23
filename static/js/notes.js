@@ -3777,9 +3777,9 @@ window.resetEditToken = function() {
 
 window.copyShareUrl = function(inputId) {
     var input = document.getElementById(inputId);
-    navigator.clipboard.writeText(input.value).then(function() {
+    BookStarkCopyText(input.value).then(function() {
         BSDialog.toast(window.__('share.toast.link_copied'), 'success');
-    });
+    }).catch(function() { BSDialog.toast(window.__('note.toast.copy_failed'), 'error'); });
 };
 
 window.closeShareDialog = function() {

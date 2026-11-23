@@ -5303,7 +5303,7 @@
   // ======== Shared: Setup ========
   setupEditorBackConfirm();
   BookStarkEditor.setupKeyboardShortcuts(function() { manualSave(); });
-  BookStarkEditor.setupUnloadWarning(function() { return saveMgr && (saveMgr.getSaveStatus() === 'unsaved' || saveMgr.getSaveStatus() === 'saving'); });
+  BookStarkEditor.setupUnloadWarning(function() { return saveMgr && (saveMgr.getSaveStatus() === 'unsaved' || saveMgr.getSaveStatus() === 'saving'); }, manualSave);
   setupPagerSwipe();
 
   // ======== Share Dialog ========
@@ -5457,9 +5457,9 @@
 
   window.copyShareUrl = function(inputId) {
     var input = document.getElementById(inputId);
-    navigator.clipboard.writeText(input.value).then(function() {
+    BookStarkCopyText(input.value).then(function() {
       BSDialog.toast(window.__('share.toast.link_copied'), 'success');
-    });
+    }).catch(function() { BSDialog.toast(window.__('note.toast.copy_failed'), 'error'); });
   };
 
   window.closeShareDialog = function() {

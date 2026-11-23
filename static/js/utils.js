@@ -1,5 +1,88 @@
 /* ===== BookStark Shared Utilities ===== */
 
+// WebViews cannot create browser tabs. Keep workspace links in the client and
+// ask the native host to open external websites in the system browser.
+(function() {
+  function bridge() {
+    if (window !== window.top) return null;
+    if (typeof window.BookStarkNative?.openExternal === 'function') {
+      return function(message) { window.BookStarkNative.openExternal(message.slice('bookstark:open-external:'.length)); };
+    }
+    var handler = window.chrome?.webview || window.webkit?.messageHandlers?.external;
+    if (typeof handler?.postMessage === 'function') return handler.postMessage.bind(handler);
+    if (typeof window.wails?.invoke === 'function') return window.wails.invoke.bind(window.wails);
+    return null;
+  }
+  function openNative(value) {
+    var send = bridge();
+    if (!send || !value) return false;
+    var url;
+    try { url = new URL(String(value), location.href); } catch (_) { return false; }
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return false;
+    if (url.origin === location.origin) {
+      if (window.BookStarkHost?.available) BookStarkHost.navigate(() => location.assign(url.href));
+      else location.assign(url.href);
+    }
+    else send('bookstark:open-external:' + url.href);
+    return true;
+  }
+  window.BookStarkOpenNativeURL = openNative;
+  function linkClick(event) {
+    if (event.defaultPrevented || (event.type === 'click' ? event.button !== 0 : event.button !== 1)) return;
+    var link = event.currentTarget;
+    if (link.hasAttribute('download')) return;
+    var url;
+    try { url = new URL(link.href, location.href); } catch (_) { return; }
+    var target = link.target.toLowerCase();
+    var newTab = event.type === 'auxclick' || event.ctrlKey || event.metaKey || event.shiftKey;
+    if (!newTab && url.origin === location.origin && (!target || ['_self', '_top', '_parent'].includes(target))) return;
+    if (openNative(url.href)) event.preventDefault();
+  }
+  // Attach on capture, then run on the link after its own inline handler.
+  // This respects favicon/filter controls that prevent navigation while also
+  // covering bookmark titles whose inline handler stops event propagation.
+  var boundLinks = new WeakSet();
+  function bindLink(event) {
+    if (!bridge()) return;
+    var link = event.target.closest?.('a[href]');
+    if (!link || boundLinks.has(link)) return;
+    boundLinks.add(link);
+    link.addEventListener('click', linkClick);
+    link.addEventListener('auxclick', linkClick);
+  }
+  document.addEventListener('click', bindLink, true);
+  document.addEventListener('auxclick', bindLink, true);
+  // Some editors open an empty window first, then assign its location or print.
+  // A bounded same-origin document supplies those two flows without a popup.
+  function blankWindow() {
+    var frame = null, closed = false;
+    function documentForPrint() {
+      if (!frame) { frame = document.createElement('iframe'); frame.hidden = true; document.body.appendChild(frame); }
+      return frame.contentDocument;
+    }
+    function close() { closed = true; if (frame) frame.remove(); frame = null; }
+    var locationProxy = {assign: openNative, replace: openNative, toString: function() { return 'about:blank'; }};
+    Object.defineProperty(locationProxy, 'href', {get: function() { return 'about:blank'; }, set: function(url) { openNative(url); close(); }});
+    var result = {opener: null, close: close, focus: function() {}, print: function() {
+      if (window.BookStarkHost?.available) BookStarkHost.printDocument(documentForPrint()).catch(function(error) { if (window.BSDialog) BSDialog.toast(error.message, 'error'); }).finally(close);
+      else close();
+    }};
+    Object.defineProperties(result, {
+      closed: {get: function() { return closed; }},
+      document: {get: documentForPrint},
+      location: {get: function() { return locationProxy; }, set: function(url) { openNative(url); close(); }}
+    });
+    return result;
+  }
+  window.BookStarkNativeBlankWindow = blankWindow;
+  var browserOpen = window.open;
+  window.open = function(url, target, features) {
+    if ((!url || url === 'about:blank') && bridge() && !['_self', '_top', '_parent'].includes(String(target || '').toLowerCase())) return blankWindow();
+    if (!['_self', '_top', '_parent'].includes(String(target || '').toLowerCase()) && openNative(url)) return null;
+    return browserOpen.apply(window, arguments);
+  };
+})();
+
 // Return plain text; the dialog renderer is responsible for HTML escaping.
 // Untitled content uses a short excerpt plus its ID to disambiguate matches.
 function formatDeleteConfirmation(message, name, id, excerpt) {

@@ -72,3 +72,6 @@ tools/dev-proxy/mihomo/config.yaml
 
 # Wails desktop and Android build outputs
 /artifacts/bookstark-wails-*
+
+# Isolated native GUI validation evidence
+/artifacts/native-gui-redroid/

@@ -74,8 +74,21 @@ func runIsolatedBrowser(t *testing.T, script string, setup ...func(*testing.T)) 
 	}
 }
 
+func TestNativeCompatibilityBrowser(t *testing.T) {
+	runIsolatedBrowser(t, "native_compat_browser_test.cjs")
+}
+
 func TestLocalToolsBrowser(t *testing.T) {
 	runIsolatedBrowser(t, "local_tools_browser_test.cjs")
+}
+
+func TestNativeToolsNavigationBrowser(t *testing.T) {
+	runIsolatedBrowser(t, "native_tools_navigation_browser_test.cjs", func(t *testing.T) {
+		bookmark := &models.Bookmark{Title: "Native external bookmark", URL: "https://example.com/native-link?q=bookstark", MemberID: 1, IsPublic: true, NavVisible: true}
+		if err := bookmark.Insert(); err != nil {
+			t.Fatal(err)
+		}
+	})
 }
 
 type newsBrowserTransport struct{}

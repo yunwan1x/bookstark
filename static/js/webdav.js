@@ -312,7 +312,7 @@
   function handleAction(action, file) {
     var filePath = joinPath(state.path, file.name);
     if (action === 'open') return loadFiles(filePath);
-    if (action === 'download') { window.location.href = '/api/webdav/files/download?path=' + encodeURIComponent(filePath); return; }
+    if (action === 'download') { var downloadURL = '/api/webdav/files/download?path=' + encodeURIComponent(filePath); if (window.BookStarkHost?.available) BookStarkHost.downloadURL(downloadURL, file.name); else window.location.href = downloadURL; return; }
     if (action === 'preview') {
       var source = '/api/webdav/files/preview?path=' + encodeURIComponent(filePath);
       var preview = /^image\//.test(file.mime_type || '') ? '<img src="' + source + '" alt="' + escapeHTML(file.name) + '" style="display:block;max-width:100%;max-height:70dvh;margin:auto">' :
@@ -402,7 +402,7 @@
       return;
     }
     if (action === 'revoke-password') task = request('/api/webdav/app-password', { method: 'DELETE' }).then(function () { toast(t('webdav.toast.password_revoked', '应用密码已撤销')); return loadProfile(); });
-    if (action === 'copy-public') { navigator.clipboard && navigator.clipboard.writeText(modal.dataset.publicUrl || ''); toast(t('webdav.toast.public_copied', '公开地址已复制')); return; }
+    if (action === 'copy-public') { BookStarkCopyText(modal.dataset.publicUrl || '').then(function() { toast(t('webdav.toast.public_copied', '公开地址已复制')); }).catch(function(error) { toast(error.message); }); return; }
     if (!task) return;
     setModalBusy(true);
     Promise.resolve(task).then(function () {
@@ -492,8 +492,7 @@
     var row = event.target.closest('.dav-file-row'); if (!row) return;
     var file = currentFile(row); if (!file) return;
     if (event.target.closest('[data-copy-public]')) {
-      navigator.clipboard && navigator.clipboard.writeText(publicURL(file.public_path));
-      toast(t('webdav.toast.public_copied', '公开地址已复制'));
+      BookStarkCopyText(publicURL(file.public_path)).then(function() { toast(t('webdav.toast.public_copied', '公开地址已复制')); }).catch(function(error) { toast(error.message); });
       return;
     }
     if (event.target.closest('[data-open]')) {
