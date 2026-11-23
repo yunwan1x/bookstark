@@ -22,7 +22,11 @@ func nativeDataDir() (string, error) {
 	return filepath.Join(dir, "bookstark"), nil
 }
 
-func configureNativeWindow(app *application.App, _ *launcher, _ *nativeCapabilities) {
+func nativeLauncherBeforeApp() bool { return true }
+
+func configureNativeApplication(_ *application.Options, _ string, _ *nativeWindowRestorer) {}
+
+func configureNativeWindow(app *application.App, _ *launcher, _ *nativeCapabilities, _ *nativeWindowRestorer) {
 	app.Window.NewWithOptions(application.WebviewWindowOptions{Title: "BookStark"})
 }
 

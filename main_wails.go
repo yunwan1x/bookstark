@@ -18,26 +18,47 @@ func main() {
 	}
 }
 
-func runNative() error {
+func runNative() error { return runNativeWithOptions(nil) }
+
+// The optional override lets integration tests exercise macOS-style lifetime on Linux.
+func runNativeWithOptions(override func(*application.Options)) error {
 	dir, err := nativeDataDir()
 	if err != nil {
 		return err
 	}
-	launcher, listener, err := newLauncher(dir)
-	if err != nil {
-		return err
+	var launcher *launcher
+	var server *http.Server
+	startLauncher := func() error {
+		l, listener, listenerErr := newLauncher(dir)
+		if listenerErr != nil {
+			return listenerErr
+		}
+		launcher = l
+		server = newLauncherServer(launcher)
+		go func() {
+			if err := server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
+				log.Printf("BookStark launcher: %v", err)
+			}
+		}()
+		return nil
 	}
-	server := newLauncherServer(launcher)
-	defer server.Close()
-	go func() {
-		if err := server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Printf("BookStark launcher: %v", err)
+	// Android needs its bootstrap handler before application.New. Desktop must
+	// arbitrate single-instance ownership before binding the persisted workspace port.
+	if nativeLauncherBeforeApp() {
+		if err := startLauncher(); err != nil {
+			return err
+		}
+	}
+	defer func() {
+		if server != nil {
+			_ = server.Close()
 		}
 	}()
 
 	capabilities := newNativeCapabilities()
 	var app *application.App
-	app = application.New(application.Options{
+	restorer := &nativeWindowRestorer{}
+	options := application.Options{
 		Name:        "BookStark",
 		Description: "BookStark local and remote workspaces",
 		Assets:      application.AssetOptions{Handler: nativeAssetHandler(launcher)},
@@ -54,10 +75,22 @@ func runNative() error {
 			capabilities.close()
 			ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 			defer cancel()
-			_ = server.Shutdown(ctx)
+			if server != nil {
+				_ = server.Shutdown(ctx)
+			}
 		},
-	})
+	}
+	configureNativeApplication(&options, dir, restorer)
+	if override != nil {
+		override(&options)
+	}
+	app = application.New(options)
+	if launcher == nil {
+		if err := startLauncher(); err != nil {
+			return err
+		}
+	}
 	capabilities.app = app
-	configureNativeWindow(app, launcher, capabilities)
+	configureNativeWindow(app, launcher, capabilities, restorer)
 	return app.Run()
 }

@@ -59,3 +59,33 @@
   - SHA256: 2d9141502912b0a81f46c30170516d9c872f64855c6bbeb1141a8be18f53a5f0
 - bookstark-wails-windows-amd64.exe（92.0 MiB）
   - SHA256: 2e7c6c4ece23a8dc541e2ad8a8d8e31877c4f8ed09f0d8ddac23b1968d4b2f47
+
+## 桌面关窗与再次启动回归（2026-11-23）
+
+基线 `d425383` 在 Ubuntu 24.04 / GTK3 / WebKit2GTK 4.1、独立 D-Bus 会话、Xvfb + Openbox 中实际打开窗口，复现：
+
+- 重复启动先绑定已保存的本地端口，报 `address already in use`；原实现没有显式 GUI 单实例唤醒。
+- 工作区选择页未加载完整 Wails 前端运行时，缺少 ready 通知，导致 `ExecJS` 排队、关窗确认脚本不执行，Alt+F4 无法关闭。
+- macOS 默认最后一个窗口关闭后保留进程；原代码未处理 Dock reopen 事件。此项由当前 Wails 平台实现及应用事件接线确认，未作 macOS 真机复现。
+
+本次修复：桌面在监听端口之前取得单实例所有权；第二次启动激活具名主窗口，最小化时恢复，窗口已销毁时重建；macOS Dock reopen 使用相同恢复逻辑。通过窗口加载脚本发送最小 ready 通知，使受限 BookStark 桥的回执及关闭前保存脚本可以执行。Android 保持先创建 bootstrap 服务的顺序，不启用桌面单实例锁。
+
+实际 GUI 回归通过：
+
+- 重复启动退出码 0，保留同一个主窗口。
+- 主窗口最小化后再次启动，恢复同一窗口。
+- Linux 正常关闭窗口后进程退出，退出码 0。
+- 关闭后重新启动可打开新窗口。
+- Linux 测试宿主开启 `DisableQuitOnLastWindowClosed` 模拟 macOS 的进程生命周期，连续 3 次关闭并重新启动，原进程保持不变、每次重建一个新窗口。
+
+定向 Go 回归覆盖窗口并发激活、启动通知、不同配置目录的实例隔离，以及既有工作区、外链、导出边界和书签扩展；窗口恢复测试另通过 race 检查。macOS `darwin/arm64`、`darwin/amd64` 均通过 `wails,production,purego` 交叉编译。macOS Dock、菜单退出和真实系统焦点行为仍需要 Mac 真机验证，Linux 模拟不替代这些验证。
+
+自动回归入口（需要 Go、GTK3/WebKit2GTK 4.1、D-Bus、Xvfb、Openbox、xdotool、xwd）：
+
+```sh
+dbus-run-session -- python3 tests/native/desktop_lifecycle_linux.py --out /tmp/bookstark-lifecycle
+GOMAXPROCS=2 go test -p=1 -tags wails,production,gtk3,purego . -run 'TestNative(WindowActivation|DesktopSingleInstance|ExportOwnershipAndLimits|ExternalURL|Workspaces|BookmarkExtensionBoundary)$|TestValidate(ServerURL|LocalPassword)$' -count=1
+GOMAXPROCS=2 go test -race -p=1 -tags wails,production,gtk3,purego native_window_lifecycle.go native_window_lifecycle_test.go -count=1
+```
+
+GUI 脚本通过 `build.py --run` 启动正式程序；只在测试宿主中模拟 macOS 保留进程，不引入生产环境开关。所有测试配置、日志、结果 JSON 和窗口截图写入 `--out`，不使用日常应用配置。验证源码为基线加本次窗口生命周期修复的独立快照；同一工作区同时存在的客户端偏好设置改动未混入本次测试和提交。
