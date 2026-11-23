@@ -1200,6 +1200,7 @@ NotesApp.prototype.renderArticleCard = function(b) {
         pinned: !!b.is_pinned,
         visibilityText: b.visibility === 1 ? window.__('note.badge.public') : window.__('note.badge.private'),
         hasPassword: !!b.has_password,
+        isTool: !!b.is_tool,
         editorTypeLabel: b.editor_type ? ({markdown:'Markdown',richdoc:window.__('note.article.type.richdoc.label'),spreadsheet:window.__('note.article.type.spreadsheet.label'),presentation:window.__('note.article.type.presentation.label'),drawing:window.__('note.article.type.drawing.label'),html:'HTML',mindmap:window.__('note.article.type.mindmap.label')}[b.editor_type] || b.editor_type) : ''
     });
     if (b.labels && b.labels.length) {
@@ -1231,7 +1232,8 @@ NotesApp._buildArticleStatusBadgesHtml = function(opts) {
     opts = opts || {};
     return '<span class="vis-badge vis-state article-state-badge">' + escHtml(opts.visibilityText || window.__('note.badge.private')) + '</span>' +
         (opts.hasPassword ? '<span class="vis-badge article-state-badge"><i class="fa-solid fa-lock" style="font-size:10px;"></i> ' + window.__('note.badge.encrypted') + '</span>' : '') +
-        (opts.editorTypeLabel ? '<span class="vis-badge editor-type-chip article-state-badge">' + escHtml(opts.editorTypeLabel) + '</span>' : '');
+        (opts.editorTypeLabel ? '<span class="vis-badge editor-type-chip article-state-badge">' + escHtml(opts.editorTypeLabel) + '</span>' : '') +
+        (opts.isTool ? '<span class="vis-badge article-state-badge article-tool-badge"><i class="fa-solid fa-cube" aria-hidden="true"></i> ' + escHtml(window.__('note.badge.tool')) + '</span>' : '');
 };
 
 NotesApp._ensureArticleTagsRow = function(card) {
@@ -2470,6 +2472,7 @@ NotesApp.prototype._updateArticleCard = function(blogId, title, desc, labels, ha
     var pinned = !!card.querySelector('.topic-card-pin-badge, .pin-badge');
     var visBadge = card.querySelector('.vis-state');
     var editorTypeChip = card.querySelector('.editor-type-chip');
+    var isTool = !!card.querySelector('.article-tool-badge');
     var oldTags = card.querySelector('.article-tags');
     if (oldTags) oldTags.remove();
     var tagsContainer = document.createElement('div');
@@ -2478,6 +2481,7 @@ NotesApp.prototype._updateArticleCard = function(blogId, title, desc, labels, ha
         pinned: pinned,
         visibilityText: visBadge ? visBadge.textContent.trim() : window.__('note.badge.private'),
         hasPassword: !!hasPassword,
+        isTool: isTool,
         editorTypeLabel: editorTypeChip ? editorTypeChip.textContent.trim() : ''
     }) + (labels && labels.length ? NotesApp._buildTagBadgesHtml(blogId, labels) : '');
     card.appendChild(tagsContainer);

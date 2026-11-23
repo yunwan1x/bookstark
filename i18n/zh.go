@@ -1390,6 +1390,7 @@ var zhMessages = map[string]string{
 	"note.type.mindmap":                    "脑图",
 	"note.badge.public":                    "🌐 公开",
 	"note.badge.private":                   "🔒 私有",
+	"note.badge.tool":                      "工具",
 	"note.badge.pinned":                    "置顶",
 	"note.badge.encrypted":                 "加密",
 	"note.action.edit":                     "编辑",

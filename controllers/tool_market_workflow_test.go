@@ -29,6 +29,25 @@ func TestToolMarketplacePublishingAccessAndReview(t *testing.T) {
 		return w
 	}
 	admin := "Token " + adminToken
+	assertArticleTool := func(id int64, token string, want bool) {
+		t.Helper()
+		response := req("GET", "/api/blogs?type=article", token, nil)
+		var list struct {
+			Data []models.BlogWithLabels `json:"data"`
+		}
+		if response.Code != 200 || json.Unmarshal(response.Body.Bytes(), &list) != nil {
+			t.Fatalf("article list: %d %s", response.Code, response.Body.String())
+		}
+		for _, article := range list.Data {
+			if article.BlogID == id {
+				if article.IsTool != want {
+					t.Fatalf("article %d tool status = %t, want %t", id, article.IsTool, want)
+				}
+				return
+			}
+		}
+		t.Fatalf("article %d missing from list", id)
+	}
 	post := func(id int64, token, version string) *httptest.ResponseRecorder {
 		return req("POST", "/api/blogs/"+strconv.FormatInt(id, 10)+"/tool", token, map[string]any{"version": version, "title": "Published tool title", "category": "document", "permissions": map[string]bool{"read_files": true, "save_files": true}})
 	}
@@ -36,6 +55,7 @@ func TestToolMarketplacePublishingAccessAndReview(t *testing.T) {
 	if err := source.Insert(); err != nil {
 		t.Fatal(err)
 	}
+	assertArticleTool(source.BlogID, admin, false)
 	preview := req("POST", "/api/blogs/"+strconv.FormatInt(source.BlogID, 10)+"/tool?preview=1", admin, map[string]any{"version": "1.0.0", "category": "document"})
 	if preview.Code != 200 || !strings.Contains(preview.Body.String(), "metadata") {
 		t.Fatalf("preview %d %s", preview.Code, preview.Body.String())
@@ -44,10 +64,12 @@ func TestToolMarketplacePublishingAccessAndReview(t *testing.T) {
 	if err := models.DB.QueryRow("SELECT COUNT(*) FROM md_tool_versions WHERE blog_id=?", source.BlogID).Scan(&previewVersions); err != nil || previewVersions != 0 {
 		t.Fatalf("package preview published a version: %d %v", previewVersions, err)
 	}
+	assertArticleTool(source.BlogID, admin, false)
 	p := post(source.BlogID, admin, "1.0.0")
 	if p.Code != 200 {
 		t.Fatalf("publish %d %s", p.Code, p.Body.String())
 	}
+	assertArticleTool(source.BlogID, admin, true)
 	var result struct {
 		Revision string `json:"revision"`
 	}
@@ -102,6 +124,7 @@ func TestToolMarketplacePublishingAccessAndReview(t *testing.T) {
 	if pending.Code != 200 || !strings.Contains(pending.Body.String(), "pending") {
 		t.Fatalf("member publication %d %s", pending.Code, pending.Body.String())
 	}
+	assertArticleTool(own.BlogID, "Token "+token.Token, false)
 	var pendingResult struct {
 		Revision string `json:"revision"`
 	}
@@ -118,6 +141,7 @@ func TestToolMarketplacePublishingAccessAndReview(t *testing.T) {
 	if w := req("POST", "/api/tool-market/reviews", admin, map[string]any{"revision": pendingResult.Revision, "approve": true}); w.Code != 200 {
 		t.Fatal(w.Body.String())
 	}
+	assertArticleTool(own.BlogID, "Token "+token.Token, true)
 	if w := req("GET", "/api/tool-market/"+strconv.FormatInt(own.BlogID, 10), admin, nil); w.Code != 200 || !strings.Contains(w.Body.String(), "Published tool title") || strings.Contains(w.Body.String(), "Edited after submission") {
 		t.Fatal("review did not publish the submitted snapshot")
 	}
@@ -133,6 +157,10 @@ func TestToolMarketplacePublishingAccessAndReview(t *testing.T) {
 	if w := req("GET", path, "", nil); w.Code != 200 {
 		t.Fatal("public package policy ignored")
 	}
+	if w := req("DELETE", "/api/blogs/"+strconv.FormatInt(source.BlogID, 10)+"/tool", admin, nil); w.Code != 200 {
+		t.Fatal(w.Body.String())
+	}
+	assertArticleTool(source.BlogID, admin, false)
 	if err := models.BatchUpdateSettings(map[string]string{"tool_market_enabled": "0"}); err != nil {
 		t.Fatal(err)
 	}

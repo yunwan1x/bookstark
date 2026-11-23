@@ -1390,6 +1390,7 @@ var enMessages = map[string]string{
 	"note.type.mindmap":                    "Mind Map",
 	"note.badge.public":                    "🌐 Public",
 	"note.badge.private":                   "🔒 Private",
+	"note.badge.tool":                      "Tool",
 	"note.badge.pinned":                    "Pinned",
 	"note.badge.encrypted":                 "Encrypted",
 	"note.action.edit":                     "Edit",

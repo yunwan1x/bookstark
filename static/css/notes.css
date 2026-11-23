@@ -251,7 +251,7 @@
 .article-title-line .topic-card-pin-badge { margin-right: 6px; transform: translateY(-1px); }
 .vis-badge { font-size: 10px; color: var(--color-gray-500, #64748b); background: var(--color-gray-100, #f1f5f9); padding: 1px 5px; border-radius: 3px; }
 .note-header .note-state-pin-badge { color: var(--color-primary, #2563eb); background: var(--color-primary-light, #eff6ff); font-weight: 600; }
-.editor-type-chip { color: var(--color-primary, #2563eb); background: var(--color-primary-light, #eff6ff); font-weight: 600; }
+.editor-type-chip, .article-tool-badge { color: var(--color-primary, #2563eb); background: var(--color-primary-light, #eff6ff); font-weight: 600; }
 .note-content { font-size: 14px; color: var(--color-gray-800, #1e293b); line-height: 1.7; word-break: break-word; }
 .note-content p { margin: 0 0 8px; }
 .note-content p:last-child { margin-bottom: 0; }
