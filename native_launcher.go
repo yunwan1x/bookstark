@@ -111,7 +111,7 @@ func (l *launcher) startURL() string {
 func (l *launcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Host != l.addr {
 		_, port, _ := net.SplitHostPort(l.addr)
-		if controllers.IsLocalToolSandboxHost(r.Host, port) && r.URL.Path == "/tools/frame" && r.Method == http.MethodGet {
+		if controllers.IsLocalToolSandboxHost(r.Host, port) && (r.Method == http.MethodGet || r.Method == http.MethodHead) && !strings.HasPrefix(r.URL.Path, "/__bookstark/") && (!strings.HasPrefix(r.URL.Path, "/api/") || strings.HasPrefix(r.URL.Path, "/api/tool-assets/")) {
 			l.mu.Lock()
 			backend := l.backend
 			l.mu.Unlock()

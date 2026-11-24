@@ -8,14 +8,14 @@
 <link rel="stylesheet" href="/static/css/tool-market.css?v={{assetVer "/static/css/tool-market.css"}}">
 </head><body class="market-body" data-market-workspace="member-{{.MemberID}}">
 {{template "header" .}}
-<main role="main" class="market-page publish-selection-page" id="toolPublishPage" data-tool-id="{{.ToolID}}" data-admin="{{if .IsAdmin}}1{{end}}">
+<main role="main" class="market-page publish-selection-page" id="toolPublishPage" data-tool-id="{{.ToolID}}" data-package="{{if .IsPackage}}1{{end}}" data-admin="{{if .IsAdmin}}1{{end}}">
 <nav class="publish-breadcrumb" aria-label="{{call .T "editor.breadcrumb.aria"}}"><a href="/market" id="toolPublishMarketBack">{{call .T "market.tools"}}</a><span aria-hidden="true"> / </span><span>{{call .T "market.publish_tool"}}</span></nav>
 <div class="market-heading"><h1 class="page-title">{{call .T "market.publish_settings"}}</h1></div>
 <p id="toolPublishLoading" class="sr-only" role="status">{{call .T "public.loading"}}</p>
 <section class="market-panel">
 <form class="market-form" id="toolPublishForm" aria-busy="true">
 <fieldset id="toolPublishFields" class="market-form publish-fields" disabled><legend class="sr-only">{{call .T "market.publish_settings"}}</legend>
-<div class="market-info">{{call .T "market.form_source"}}{{.PublishForm.Source}} · {{call .T "market.form_snapshot"}}</div>
+{{if .IsPackage}}<div class="market-info publish-package-source"><div><strong>{{.Package.Name}}</strong><p class="market-muted">{{.PackageEntry}} · {{len .Package.Files}} {{if eq .Lang "en"}}files{{else}}项资源{{end}}</p></div><a class="bs-btn bs-btn-cancel" href="/market/publish?source=package&amp;tool={{.ToolID}}" id="publishPackageChange">{{if eq .Lang "en"}}Replace package{{else}}更换工具包{{end}}</a></div>{{else}}<div class="market-info">{{call .T "market.form_source"}}{{.PublishForm.Source}} · {{call .T "market.form_snapshot"}}</div>{{end}}
 <div class="market-form-row">
 <label for="publishTitle">{{call .T "market.form_name"}}<input class="dialog-input" id="publishTitle" name="title" type="text" value="{{.PublishForm.Title}}" required></label>
 <label for="publishVersion">{{call .T "market.form_version"}}<input class="dialog-input" id="publishVersion" name="version" type="text" value="{{.PublishForm.Version}}" required></label>
@@ -34,7 +34,7 @@
 <label for="publishDescription">{{call .T "market.form_description"}}<input class="dialog-input" id="publishDescription" name="description" type="text" value="{{.PublishForm.Description}}" required></label>
 <fieldset class="market-appearance" id="toolAppearancePlaceholder" aria-busy="true"><legend>{{call .T "market.form_appearance"}}</legend><div class="market-admin-placeholder skeleton-card" aria-hidden="true"><div class="market-admin-skeleton"><div class="skeleton skeleton-card-title"></div><div class="skeleton market-skeleton-field"></div></div><div class="market-icon-picker publish-appearance-loading">{{range .IconSlots}}<span class="skeleton"></span>{{end}}</div></div></fieldset>
 <h2>{{call .T "market.form_resources"}}</h2>
-<div class="market-info">{{call .T "market.form_resource_help"}}</div>
+<div class="market-info">{{if .IsPackage}}{{if eq .Lang "en"}}All package files are included, including dynamically loaded WASM and Workers.{{else}}完整包含包内文件，包括动态加载的 WASM 和 Worker。{{end}}{{else}}{{call .T "market.form_resource_help"}}{{end}}</div>
 <label for="publishAccess">{{call .T "market.form_access"}}<select class="dialog-input" id="publishAccess" name="access">
 <option value="inherit" {{if eq .PublishForm.Access "inherit"}}selected{{end}}>{{call .T "market.access_inherit"}}</option>
 <option value="login" {{if eq .PublishForm.Access "login"}}selected{{end}}>{{call .T "market.access_login"}}</option>
@@ -43,6 +43,7 @@
 </select></label>
 <label id="publishMembers" for="publishMembersInput" {{if ne .PublishForm.Access "members"}}hidden{{end}}>{{call .T "market.form_members"}}<input class="dialog-input" id="publishMembersInput" name="members" placeholder="alice, bob" value="{{.PublishForm.Members}}"></label>
 <h2>{{call .T "market.form_permissions"}}</h2>
+{{if .PermissionsChanged}}<p class="market-info">{{if eq .Lang "en"}}This package declares different permissions from the previous version. Review them before publishing.{{else}}此工具包的权限声明与上一版本不同，请确认后发布。{{end}}</p>{{end}}
 <p class="market-muted">{{if eq .Lang "en"}}Declare only capabilities this tool uses. New capabilities are off by default. Device access still requires browser consent; availability depends on the browser and runtime environment.{{else}}仅声明工具实际使用的能力，新增权限默认关闭。设备访问仍需浏览器授权，支持情况取决于浏览器与运行环境。{{end}}</p>
 <div class="tool-permission-groups">
 {{range .PermissionGroups}}

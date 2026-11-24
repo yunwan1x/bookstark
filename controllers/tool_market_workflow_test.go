@@ -61,7 +61,7 @@ func TestToolMarketplacePublishingAccessAndReview(t *testing.T) {
 		t.Fatalf("preview %d %s", preview.Code, preview.Body.String())
 	}
 	var previewVersions int
-	if err := models.DB.QueryRow("SELECT COUNT(*) FROM md_tool_versions WHERE blog_id=?", source.BlogID).Scan(&previewVersions); err != nil || previewVersions != 0 {
+	if err := models.DB.QueryRow("SELECT COUNT(*) FROM md_tool_versions WHERE tool_id=?", source.BlogID).Scan(&previewVersions); err != nil || previewVersions != 0 {
 		t.Fatalf("package preview published a version: %d %v", previewVersions, err)
 	}
 	assertArticleTool(source.BlogID, admin, false)

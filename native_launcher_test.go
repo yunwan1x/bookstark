@@ -292,6 +292,9 @@ func TestNativeToolSandboxEntryDoesNotExposeLauncher(t *testing.T) {
 	}{
 		{"GET", sandbox + "/tools/frame?ticket=delegated", 200},
 		{"GET", sandbox + "/api/profile", 403},
+		{"GET", sandbox + "/index.html?ticket=delegated", 200},
+		{"GET", sandbox + "/assets/worker.js", 200},
+		{"HEAD", sandbox + "/assets/answer.wasm", 200},
 		{"GET", sandbox + "/__bookstark/open/private-launcher-token", 403},
 		{"POST", sandbox + "/tools/frame", 403},
 		{"GET", "http://tool-" + strings.Repeat("a", 32) + ".localhost:45679/tools/frame", 403},
@@ -307,7 +310,7 @@ func TestNativeToolSandboxEntryDoesNotExposeLauncher(t *testing.T) {
 			t.Fatal(tc, w.Code, w.Body.String())
 		}
 	}
-	if calls != 2 {
+	if calls != 5 {
 		t.Fatal("unexpected routes forwarded", calls)
 	}
 }

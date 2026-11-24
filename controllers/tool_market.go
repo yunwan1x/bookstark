@@ -1,10 +1,12 @@
 package controllers
 
 import (
+	"bookstark/internal/toolpackage"
 	"bookstark/middleware"
 	"bookstark/models"
 	"bytes"
 	"compress/gzip"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -17,14 +19,18 @@ import (
 
 type marketTool struct {
 	models.ToolMetadata
-	ResourceBase string `json:"resource_base,omitempty"`
-	ID           int64  `json:"id"`
-	Title        string `json:"title"`
-	Description  string `json:"description"`
-	Author       string `json:"author"`
-	Source       string `json:"source"`
-	Revision     string `json:"revision"`
-	Content      string `json:"content,omitempty"`
+	PublishURL   string             `json:"publish_url,omitempty"`
+	Owner        int64              `json:"-"`
+	ArticleID    sql.NullInt64      `json:"-"`
+	Files        []toolpackage.File `json:"files,omitempty"`
+	ResourceBase string             `json:"resource_base,omitempty"`
+	ID           int64              `json:"id"`
+	Title        string             `json:"title"`
+	Description  string             `json:"description"`
+	Author       string             `json:"author"`
+	Source       string             `json:"source"`
+	Revision     string             `json:"revision"`
+	Content      string             `json:"content,omitempty"`
 }
 
 func canPublishTools(c *gin.Context) bool {
@@ -67,11 +73,7 @@ func ToolMarketCatalog(c *gin.Context) {
 		c.JSON(503, gin.H{"error": "market_disabled"})
 		return
 	}
-	rows, err := models.DB.Query(`SELECT b.blog_id,p.title,p.description,COALESCE(m.account,''),
- COALESCE((SELECT s.share_identify FROM md_shares s WHERE s.share_type='blog' AND s.target_id=b.blog_id LIMIT 1),b.blog_identify),p.revision,v.metadata,v.created
- FROM md_tool_releases p JOIN md_blogs b ON b.blog_id=p.blog_id JOIN md_tool_versions v ON v.revision=p.revision AND v.status='published' LEFT JOIN md_members m ON m.member_id=b.member_id
- WHERE b.editor_type='html' AND COALESCE(b.blog_type,'article')='article'
- ORDER BY v.created DESC,b.blog_id DESC`)
+	rows, err := models.DB.Query(publishedToolSelect + " ORDER BY v.created DESC,ts.tool_id DESC")
 	if err != nil {
 		c.JSON(500, gin.H{"error": "catalog_unavailable"})
 		return
@@ -82,7 +84,7 @@ func ToolMarketCatalog(c *gin.Context) {
 		var item marketTool
 		var raw string
 		var updated int64
-		if err := rows.Scan(&item.ID, &item.Title, &item.Description, &item.Author, &item.Source, &item.Revision, &raw, &updated); err != nil {
+		if err := rows.Scan(&item.Owner, &item.ArticleID, &item.ID, &item.Title, &item.Description, &item.Author, &item.Source, &item.Revision, &raw, &item.ResourceBase, &updated); err != nil {
 			c.JSON(500, gin.H{"error": "catalog_unavailable"})
 			return
 		}
@@ -91,6 +93,15 @@ func ToolMarketCatalog(c *gin.Context) {
 			return
 		}
 		item.Updated = updated
+		item.Package = ""
+		item.ResourceBase = ""
+		if canPublishTools(c) && checkOwnership(c, item.Owner) {
+			if item.SourceKind == "package" {
+				item.PublishURL = "/market/packages/" + strconv.FormatInt(item.ID, 10)
+			} else {
+				item.PublishURL = "/market/publish/" + strconv.FormatInt(item.ArticleID.Int64, 10)
+			}
+		}
 		items = append(items, item)
 	}
 	if rows.Err() != nil {

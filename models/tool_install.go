@@ -39,13 +39,16 @@ type InstalledTool struct {
 	Installed   int64               `json:"installed"`
 	Content     string              `json:"content,omitempty"`
 	Values      map[string]string   `json:"values,omitempty"`
+	AssetBase   string              `json:"asset_base,omitempty"`
 	Assets      string              `json:"-"`
 	Resources   []toolpackage.Asset `json:"-"`
 }
 
 func initToolTables() error {
+	if err := initToolSourceTables(); err != nil {
+		return err
+	}
 	for _, s := range []string{
-		`CREATE TABLE IF NOT EXISTS md_tool_releases(blog_id INTEGER PRIMARY KEY REFERENCES md_blogs(blog_id) ON DELETE CASCADE,title TEXT NOT NULL,description TEXT NOT NULL,content TEXT NOT NULL,revision TEXT NOT NULL)`,
 		`CREATE TABLE IF NOT EXISTS md_tool_remote_sources(id INTEGER PRIMARY KEY AUTOINCREMENT,member_id INTEGER NOT NULL,origin TEXT NOT NULL,remote_id INTEGER NOT NULL,UNIQUE(member_id,origin,remote_id))`,
 		`CREATE TABLE IF NOT EXISTS md_tool_installs(member_id INTEGER NOT NULL REFERENCES md_members(member_id) ON DELETE CASCADE,tool_id INTEGER NOT NULL,title TEXT NOT NULL,description TEXT NOT NULL,author TEXT NOT NULL,source TEXT NOT NULL,revision TEXT NOT NULL,instance TEXT NOT NULL,content TEXT NOT NULL,values_json TEXT NOT NULL DEFAULT '{}',assets TEXT NOT NULL,pinned INTEGER NOT NULL DEFAULT 1,used INTEGER NOT NULL DEFAULT 0,installed INTEGER NOT NULL,PRIMARY KEY(member_id,tool_id))`,
 		`CREATE TABLE IF NOT EXISTS md_tool_cleanup(member_id INTEGER NOT NULL REFERENCES md_members(member_id) ON DELETE CASCADE,tool_id INTEGER NOT NULL,path TEXT NOT NULL,PRIMARY KEY(member_id,path))`,
@@ -89,6 +92,7 @@ func GetInstalledTool(member, id int64) (*InstalledTool, error) {
 	t, err := scanInstalledTool(DB.QueryRow("SELECT "+installedToolColumns+" FROM md_tool_installs WHERE member_id=? AND tool_id=?", member, id))
 	if err == nil {
 		t.ToolMetadata = ReadToolMetadata(member, id)
+		t.AssetBase = "/api/tool-assets/" + t.Instance + "/" + path.Base(t.Assets) + "/"
 	}
 	return t, err
 }
@@ -163,14 +167,29 @@ func SaveInstalledTool(member int64, t InstalledTool, expected, instance string)
 		}
 	}()
 	prefix := "/api/tool-assets/" + t.Instance + "/" + epoch + "/"
+	names := map[string]bool{}
+	for _, resource := range t.Resources {
+		names[resource.Name] = true
+	}
 	for _, asset := range t.Resources {
 		data := asset.Data
 		if strings.Contains(asset.MIME, "text/") || strings.Contains(asset.MIME, "javascript") || strings.HasSuffix(asset.Name, ".js") || strings.HasSuffix(asset.Name, ".css") || strings.HasSuffix(asset.Name, ".mjs") {
-			data = []byte(strings.ReplaceAll(string(data), toolpackage.Prefix, prefix))
+			text := string(data)
+			if t.Distribution == "files" {
+				text = toolpackage.RewriteArchiveRoots(text, names)
+			}
+			data = []byte(strings.ReplaceAll(text, toolpackage.Prefix, prefix))
 		}
 		if err = putToolResourceAt(member, t.Assets+"/"+asset.Name, asset.MIME, bytes.NewReader(data)); err != nil {
 			return err
 		}
+	}
+	if t.Distribution == "files" {
+		t.Content, err = toolpackage.StripArchiveIntegrity(t.Content, t.Entry, names)
+		if err != nil {
+			return err
+		}
+		t.Content = toolpackage.RewriteArchiveRoots(t.Content, names)
 	}
 	encoded, err := EncodeHTMLContent(strings.ReplaceAll(t.Content, toolpackage.Prefix, prefix))
 	if err != nil {
@@ -465,6 +484,7 @@ func GetInstalledToolRuntime(member, id int64) (*InstalledTool, error) {
 		return nil, err
 	}
 	t.ToolMetadata = ReadToolMetadata(member, id)
+	t.AssetBase = "/api/tool-assets/" + t.Instance + "/" + path.Base(t.Assets) + "/"
 	err = json.Unmarshal([]byte(values), &t.Values)
 	return &t, err
 }

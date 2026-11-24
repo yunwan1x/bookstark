@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"bookstark/internal/toolpackage"
 	"bookstark/models"
 	"crypto/sha256"
 	"encoding/json"
@@ -14,6 +15,8 @@ var toolDigest = regexp.MustCompile(`^[a-f0-9]{64}$`)
 // Original resource bytes are intentionally excluded: they are downloaded at install time.
 func referenceDigest(t marketTool) (string, error) {
 	manifest := struct {
+		Entry       string                 `json:"entry,omitempty"`
+		Files       []toolpackage.File     `json:"files,omitempty"`
 		Version     string                 `json:"version"`
 		Title       string                 `json:"title"`
 		Description string                 `json:"description"`
@@ -22,7 +25,7 @@ func referenceDigest(t marketTool) (string, error) {
 		Members     []int64                `json:"members,omitempty"`
 		Content     string                 `json:"content"`
 		Base        string                 `json:"resource_base"`
-	}{t.Version, t.Title, t.Description, t.Permissions, t.Access, t.Members, t.Content, t.ResourceBase}
+	}{t.Entry, t.Files, t.Version, t.Title, t.Description, t.Permissions, t.Access, t.Members, t.Content, t.ResourceBase}
 	data, err := json.Marshal(manifest)
 	if err != nil {
 		return "", err
