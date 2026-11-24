@@ -13,18 +13,20 @@
 <h1 class="page-title sr-only">{{call .T "market.tools"}}</h1>
 <div class="market-plaza-bar">
  {{template "public-plaza-nav" .}}
- {{if or .CanPublishTools .CanConfigureTools}}
+ {{if .CanPublishTools}}
  <div id="marketActions" class="bs-action-dropdown">
   <button type="button" id="marketMore" class="bs-action-dd-btn row-action" data-bs-action-dropdown-toggle aria-label="{{call .T "tools.actions"}}" aria-haspopup="menu" aria-expanded="false" aria-controls="marketActionsMenu"><i class="fa-solid fa-ellipsis" aria-hidden="true"></i></button>
   <div id="marketActionsMenu" class="bs-action-dd-menu" role="menu" aria-labelledby="marketMore">
    {{if .CanPublishTools}}<a href="/market/publish" class="bs-action-menu-item" id="marketPublish" role="menuitem"><i class="fa-solid fa-plus" aria-hidden="true"></i> {{call .T "market.publish_tool"}}</a>{{end}}
-   {{if .CanConfigureTools}}<button type="button" id="marketSettings" class="bs-action-menu-item" role="menuitem"><i class="fa-solid fa-gear" aria-hidden="true"></i> {{call .T "market.settings"}}</button>{{end}}
   </div>
  </div>
  {{end}}
 </div>
 <div class="market-toolbar">
- <form id="marketSearch" role="search" class="market-search"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><label class="sr-only" for="marketQuery">{{call .T "market.search"}}</label><input class="search-input" id="marketQuery" type="search" placeholder="{{call .T "market.search"}}"></form>
+ <div class="market-search-row">
+  <form id="marketSearch" role="search" class="market-search"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><label class="sr-only" for="marketQuery">{{call .T "market.search"}}</label><input class="search-input" id="marketQuery" type="search" placeholder="{{call .T "market.search"}}"></form>
+  {{if .CanConfigureTools}}<button type="button" id="marketSettings" class="row-action market-search-settings" aria-label="{{call .T "market.settings"}}" title="{{call .T "market.settings"}}"><i class="fa-solid fa-gear" aria-hidden="true"></i></button>{{end}}
+ </div>
  <label class="sr-only" for="marketCategory">{{call .T "market.category"}}</label><select id="marketCategory" class="dialog-input" aria-label="{{call .T "market.category"}}"></select>
  <label class="sr-only" for="marketState">{{call .T "market.install_status"}}</label><select id="marketState" class="dialog-input" aria-label="{{call .T "market.install_status"}}"></select>
  <label class="sr-only" for="marketSort">{{call .T "market.sort"}}</label><select id="marketSort" class="dialog-input" aria-label="{{call .T "market.sort"}}"></select>

@@ -32,7 +32,7 @@ func TestToolMarketConfigurationRequiresWorkspaceAdministrator(t *testing.T) {
 			if strings.Contains(body, `id="marketSettings"`) != tc.configure || strings.Contains(body, `id="marketPublish"`) != tc.publish {
 				t.Fatalf("wrong actions for %s", tc.name)
 			}
-			if strings.Contains(body, `id="marketMore"`) != (tc.configure || tc.publish) {
+			if strings.Contains(body, `id="marketMore"`) != tc.publish {
 				t.Fatalf("wrong management menu visibility for %s", tc.name)
 			}
 			for _, obsolete := range []string{`id="marketIntro"`, `id="marketHeading"`, `id="marketCatalogTab"`, `id="marketInstalledTab"`, `id="marketAdmin"`, `class="market-switch"`} {
@@ -88,6 +88,9 @@ func TestArticleToolPublicationFollowsMarketAvailability(t *testing.T) {
 		page := adminAssetRequest(router, admin, "GET", path, nil)
 		if page.Code != 200 || strings.Contains(page.Body.String(), `id="marketPublish"`) || strings.Contains(page.Body.String(), "canPublishTools: true") {
 			t.Fatalf("publication exposed while market disabled on %s", path)
+		}
+		if path == "/market" && (strings.Contains(page.Body.String(), `id="marketMore"`) || !strings.Contains(page.Body.String(), `id="marketSettings"`)) {
+			t.Fatal("disabled publishing must hide its menu while keeping administrator settings")
 		}
 	}
 }

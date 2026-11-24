@@ -5,7 +5,7 @@
 #marketActions{flex-shrink:0;z-index:30}
 #marketMore{width:36px;height:36px;justify-content:center}
 #marketMore i{font-size:14px}
-#marketMore:focus-visible,#marketActionsMenu .bs-action-menu-item:focus-visible,.market-actions-sheet .bs-form-dialog-head button:focus-visible{outline:2px solid var(--color-focus);outline-offset:-2px}
+#marketMore:focus-visible,#marketSettings:focus-visible,#marketActionsMenu .bs-action-menu-item:focus-visible,.market-actions-sheet .bs-form-dialog-head button:focus-visible{outline:2px solid var(--color-focus);outline-offset:-2px}
 #marketActionsMenu{min-width:180px}
 #marketActionsMenu a{text-decoration:none}
 .market-actions-sheet::before{content:"";display:block;width:40px;height:4px;border-radius:var(--radius-md);background:var(--color-border);position:absolute;top:12px;left:calc(50% - 20px)}
@@ -22,6 +22,10 @@
 .market-heading h1{margin:0 0 8px}
 .market-heading p,.market-muted{font-size:13px;color:var(--color-text-secondary)}
 .market-toolbar{display:grid;grid-template-columns:minmax(220px,1fr) 160px 160px 220px;gap:12px;align-items:center;margin-bottom:16px}
+.market-search-row{display:flex;align-items:center;gap:8px;min-width:0}
+.market-search-row>.market-search{flex:1}
+.market-search-settings{width:36px;height:36px;justify-content:center;flex-shrink:0;font-size:14px}
+@media(max-width:1024px){.market-search-row{grid-column:1/-1}}
 .market-search{position:relative;min-width:0}
 .market-search>i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--color-text-secondary)}
 .market-search .search-input{width:100%;padding-left:36px;background:var(--color-bg-card);color:var(--color-text)}
