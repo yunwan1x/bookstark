@@ -117,40 +117,25 @@ func renderToolPublishPage(c *gin.Context, publication gin.H, source string) {
 	if m.Version == "" {
 		flags = map[string]bool{"read_files": true, "save_files": true}
 	}
-	groups := []gin.H{}
-	labels := map[string][2]string{"files": {"文件与网络", "Files and network"}, "devices": {"设备与隐私", "Devices and privacy"}, "interaction": {"浏览器交互", "Browser interaction"}, "advanced": {"高级设备与接口", "Advanced devices and APIs"}}
-	for _, key := range []string{"files", "devices", "interaction", "advanced"} {
-		items := []gin.H{}
-		for _, spec := range models.ToolPermissionCatalog {
-			if spec.Group != key {
-				continue
-			}
-			label, description := spec.Zh, spec.DescriptionZh
-			if middleware.GetLang(c) == "en" {
-				label, description = spec.En, spec.DescriptionEn
-			}
-			name := spec.Key
-			id := "publishPermission_" + spec.Key
-			if spec.Key == "read_files" {
-				name = "read"
-				id = "publishRead"
-			}
-			if spec.Key == "save_files" {
-				name = "save"
-				id = "publishSave"
-			}
-			if spec.Key == "network" {
-				id = "publishNetwork"
-			}
-			items = append(items, gin.H{"Key": spec.Key, "Name": name, "ID": id, "Label": label, "Description": description, "Checked": flags[spec.Key]})
+	items := []gin.H{}
+	for _, spec := range models.ToolPermissionCatalog {
+		if !spec.Managed {
+			continue
 		}
-		label := labels[key][0]
+		label, description := spec.Zh, spec.DescriptionZh
 		if middleware.GetLang(c) == "en" {
-			label = labels[key][1]
+			label, description = spec.En, spec.DescriptionEn
 		}
-		groups = append(groups, gin.H{"Key": key, "Label": label, "Items": items, "Advanced": key == "advanced"})
+		name, id := spec.Key, "publishPermission_"+spec.Key
+		if spec.Key == "read_files" {
+			name, id = "read", "publishRead"
+		}
+		if spec.Key == "save_files" {
+			name, id = "save", "publishSave"
+		}
+		items = append(items, gin.H{"Key": spec.Key, "Name": name, "ID": id, "Label": label, "Description": description, "Checked": flags[spec.Key]})
 	}
-	data["PermissionGroups"] = groups
+	data["ManagedPermissions"] = items
 
 	data["IconSlots"] = make([]struct{}, 24)
 	c.HTML(200, "tool_publish.html", data)

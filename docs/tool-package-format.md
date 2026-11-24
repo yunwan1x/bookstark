@@ -40,7 +40,7 @@ my-tool.zip
     "schema": 1,
     "read_files": true,
     "save_files": true,
-    "network": false
+    "socket_tcp": false
   },
   "notes": "首次发布"
 }
@@ -54,7 +54,7 @@ my-tool.zip
 | `entry` | 包内 HTML / HTM 入口的相对路径，必须存在 |
 | `category` | `document`、`image`、`media`、`development`、`productivity` 或 `other` |
 | `access` | `public`、`login`、`members` 或 `inherit`，仍受市场设置约束；指定成员在发布表单中选择 |
-| `permissions` | 权限对象，使用 `schema: 1` 和实际需要的能力；完整字段见 [权限目录](plugin-development.md#43-完整权限目录) |
+| `permissions` | 仅需声明 `schema: 1` 与 `read_files`、`save_files`、`socket_tcp` 三项平台权限；浏览器能力默认允许，见 [权限说明](plugin-development.md#43-平台权限与浏览器默认能力) |
 | `notes` | 本版本更新说明 |
 
 不提供 `tool.json` 也可以发布：上传后选择入口，再手动填写发布设置。提供配置时，格式错误或指定不存在的入口会让检查失败。权限配置只声明工具需要的能力，不能绕过浏览器授权或服务器 TCP 代理开关。

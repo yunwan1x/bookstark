@@ -2,7 +2,7 @@
 
 本文面向希望为 BookStark 开发工具插件的开发者。从一个可以安装的 HTML 工具开始，介绍文章和 ZIP 两种发布方式、资源组织、权限声明、数据保存、文件管理、TCP 连接和市场发布。
 
-> **适用版本（2026-11-24）**：本文对应集成 42 项能力声明、完整文件管理与 TCP Socket 桥接的插件运行时。服务器网页端由本次上线提供；本地原生客户端需要安装包含这些能力的客户端版本，服务器部署不会自动更新已安装客户端。远端设备权限仍需配置独立运行来源，TCP 代理默认关闭，具体能力还取决于浏览器与设备。
+> **适用版本（2026-11-24）**：本文对应当前源码中的完整文件管理与 TCP Socket 桥接。发布设置只选择三项 BookStark 平台权限，浏览器能力默认允许；本地原生客户端需要安装包含此改动的版本，服务器部署不会自动更新已安装客户端。远端设备权限仍需配置独立运行来源，TCP 代理默认关闭，具体能力还取决于浏览器与设备。
 
 ## 1. 插件是什么
 
@@ -143,7 +143,8 @@ bind('listFiles', async () => {
 | 图标 | 选择适合工具的图标和颜色 |
 | 读取工具文件 | 开启 |
 | 保存工具文件 | 开启 |
-| 网页网络、TCP、摄像头等其他权限 | 此示例不需要，保持关闭 |
+| TCP 后端代理 | 此示例不需要，保持关闭 |
+| 浏览器能力 | 默认允许，无需勾选；设备访问仍由浏览器授权 |
 
 先点击「检查资源」。这个示例将脚本和样式都放在 HTML 中，没有额外静态依赖。检查通过后发布；普通成员是否需要审核，由发布市场的设置决定。
 
@@ -154,7 +155,7 @@ bind('listFiles', async () => {
   "schema": 1,
   "read_files": true,
   "save_files": true,
-  "network": false
+  "socket_tcp": false
 }
 ```
 
@@ -242,7 +243,7 @@ async function loadDictionary() {
 
 ### 4.1 声明入口
 
-权限在工具发布设置中选择，随版本安装。只选择实际使用的能力。新增能力默认关闭；旧工具的部分历史行为按兼容规则保留，重新发布时请检查每个选项。
+发布设置只保留三个 BookStark 权限勾选项：`read_files`（读取工具文件）、`save_files`（保存工具文件）、`socket_tcp`（TCP 后端代理）。它们随版本安装并由后端校验；未勾选时不会开放对应桥接。摄像头、麦克风、剪贴板、网页联网、全屏、下载、弹窗等浏览器能力默认允许，不再单独声明或勾选。
 
 权限声明不会静默替用户授权设备，也不能让浏览器获得它不支持的 API。工具没有运行时动态提升权限的接口；新增权限需要发布新版本并由用户确认更新。
 
@@ -250,14 +251,14 @@ async function loadDictionary() {
 
 | 类型 | 执行方式 | 示例 |
 | --- | --- | --- |
-| 浏览器能力 | iframe `allow` 加服务端 Permissions-Policy | `camera`、`clipboard_read`、`fullscreen` |
-| 沙箱行为 | iframe `sandbox` | `downloads`、`forms`、`popups` |
-| 网页外部请求 | Content Security Policy，即 CSP | `network` |
+| 浏览器能力（默认允许） | iframe `allow` 加服务端 Permissions-Policy | `camera`、`clipboard_read`、`fullscreen` |
+| 沙箱行为（默认允许已支持项） | iframe `sandbox` | `downloads`、`forms`、`popups` |
+| 网页外部请求（默认允许） | Content Security Policy，即 CSP | `network` |
 | 平台桥接 | 消息来源校验、账号/实例/版本及后端权限校验 | `read_files`、`save_files`、`socket_tcp` |
 
 浏览器原生 API 直接在工具 iframe 中使用，例如 `navigator.clipboard`、`navigator.mediaDevices.getUserMedia()`。文件与 TCP 则调用 `BookStark` 对象。
 
-### 4.3 完整权限目录
+### 4.3 平台权限与浏览器默认能力
 
 | 权限 | 声明字段 | 执行位置 |
 | --- | --- | --- |
@@ -304,7 +305,7 @@ async function loadDictionary() {
 | 使用通行密钥 | `publickey_credentials_get` | iframe `allow="publickey-credentials-get …"` + Permissions-Policy |
 | 创建通行密钥 | `publickey_credentials_create` | iframe `allow="publickey-credentials-create …"` + Permissions-Policy |
 
-设备和高级接口以浏览器实际支持为准。声明 USB、串口或蓝牙权限不代表每一种客户端 WebView 都实现了对应接口。MIDI 的系统专有消息、支付确认、通行密钥操作等还可能有浏览器自己的附加要求。
+表中除文件读写和 TCP 外的浏览器字段保留用于兼容旧包及生成运行时策略，旧包中的 `false` 不再用于关闭浏览器能力；历史版本的清单和摘要不改写。设备和高级接口以浏览器实际支持为准，默认允许不代表每一种客户端 WebView 都实现了对应接口。MIDI 的系统专有消息、支付确认、通行密钥操作等还可能有浏览器自己的附加要求。
 
 ### 4.4 本地和远端的区别
 
@@ -630,7 +631,7 @@ ZIP 来源的已安装工具可在运行页「更多 → 导出工具包」下�
 | `directory_not_empty` | 非空目录需要显式递归删除 |
 | `quota_exceeded` | 检查工作区单文件限制和总配额；localStorage 也有独立的 5 MiB 上限 |
 | 摄像头或剪贴板不可用 | 检查权限声明、安装版本、独立运行来源、HTTPS/本地安全上下文和浏览器支持 |
-| 能联网但外部接口失败 | network 不会绕过 CORS，确认目标接口允许浏览器跨域 |
+| 能联网但外部接口失败 | 网页联网默认允许，但不会绕过 CORS，确认目标接口允许浏览器跨域 |
 | TCP 被拒绝 | 检查 socket_tcp、服务器代理开关，以及目标从后端网络是否可达 |
 | TCP 数据乱码或不完整 | 确认协议、二进制解码和分包；不能假设每次回调就是一整条消息 |
 | 开发机正常，安装后 JS/CSS/WASM 丢失 | 查看资源清单；文章检查动态加载地址与显式资源声明，多文件构建可改用 ZIP，并确认包内文件完整 |

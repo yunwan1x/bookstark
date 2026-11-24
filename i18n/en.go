@@ -40,7 +40,7 @@ var enMessages = map[string]string{
 	"market.access_public":         "Public download when allowed by marketplace",
 	"market.access_members":        "Selected members",
 	"market.form_members":          "Allowed marketplace accounts, separated by commas",
-	"market.form_permissions":      "Runtime permissions",
+	"market.form_permissions":      "BookStark permissions",
 	"market.form_read":             "Read files selected by the user",
 	"market.form_save":             "Save exported files",
 	"market.form_network":          "Network access (for online tools)",

@@ -44,13 +44,11 @@
 <label id="publishMembers" for="publishMembersInput" {{if ne .PublishForm.Access "members"}}hidden{{end}}>{{call .T "market.form_members"}}<input class="dialog-input" id="publishMembersInput" name="members" placeholder="alice, bob" value="{{.PublishForm.Members}}"></label>
 <h2>{{call .T "market.form_permissions"}}</h2>
 {{if .PermissionsChanged}}<p class="market-info">{{if eq .Lang "en"}}This package declares different permissions from the previous version. Review them before publishing.{{else}}此工具包的权限声明与上一版本不同，请确认后发布。{{end}}</p>{{end}}
-<p class="market-muted">{{if eq .Lang "en"}}Declare only capabilities this tool uses. New capabilities are off by default. Device access still requires browser consent; availability depends on the browser and runtime environment.{{else}}仅声明工具实际使用的能力，新增权限默认关闭。设备访问仍需浏览器授权，支持情况取决于浏览器与运行环境。{{end}}</p>
+<p class="market-muted">{{if eq .Lang "en"}}Select the BookStark capabilities this tool needs. Browser capabilities are allowed by default; device access still requires browser consent.{{else}}仅勾选工具需要的 BookStark 权限。浏览器能力默认允许，设备访问仍需浏览器授权。{{end}}</p>
 <div class="tool-permission-groups">
-{{range .PermissionGroups}}
-{{if .Advanced}}<details class="tool-permission-group"><summary>{{.Label}} <span class="market-muted">({{len .Items}})</span></summary>{{else}}<fieldset class="tool-permission-group"><legend>{{.Label}}</legend>{{end}}
-<div class="tool-permission-grid">{{range .Items}}<label class="tool-permission-option" for="{{.ID}}"><input type="checkbox" id="{{.ID}}" name="{{.Name}}" data-tool-permission="{{.Key}}" {{if .Checked}}checked{{end}}><span><strong>{{.Label}}</strong><span class="market-muted">{{.Description}}</span></span></label>{{end}}</div>
-{{if .Advanced}}</details>{{else}}</fieldset>{{end}}
-{{end}}
+<div class="tool-permission-group">
+<div class="tool-permission-grid">{{range .ManagedPermissions}}<label class="tool-permission-option" for="{{.ID}}"><input type="checkbox" id="{{.ID}}" name="{{.Name}}" data-tool-permission="{{.Key}}" {{if .Checked}}checked{{end}}><span><strong>{{.Label}}</strong><span class="market-muted">{{.Description}}</span></span></label>{{end}}</div>
+</div>
 </div>
 <label for="publishNotes">{{call .T "market.form_notes"}}<textarea class="dialog-input" id="publishNotes" name="notes" rows="3">{{.PublishForm.Notes}}</textarea></label>
 <p role="status" id="publishStatus"></p>

@@ -474,7 +474,7 @@ func TestToolPackageWorkflowReplacementHydratesNewManifestVersionAndPermissions(
 	if page.Code != 200 {
 		t.Fatalf("replacement settings page: %d %s", page.Code, page.Body.String())
 	}
-	for _, expected := range []string{`id="publishVersion" name="version" type="text" value="2.0.0"`, `data-tool-permission="socket_tcp" checked`, `data-tool-permission="camera" checked`} {
+	for _, expected := range []string{`id="publishVersion" name="version" type="text" value="2.0.0"`, `data-tool-permission="socket_tcp" checked`} {
 		if !strings.Contains(page.Body.String(), expected) {
 			t.Fatalf("new manifest setting not visible %q: %s", expected, page.Body.String())
 		}

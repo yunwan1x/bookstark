@@ -129,6 +129,7 @@ func publishToolSource(c *gin.Context, router http.Handler, source models.ToolSo
 			return
 		}
 	}
+	req.Permissions = req.Permissions.Effective()
 	req.Title = strings.TrimSpace(req.Title)
 	if !models.ValidToolAppearance(req.Icon, req.IconStyle, req.IconColor) {
 		c.JSON(400, gin.H{"error": "invalid_tool_appearance"})

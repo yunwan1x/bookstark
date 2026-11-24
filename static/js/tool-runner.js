@@ -178,7 +178,7 @@
    const token=crypto.randomUUID(),targetOrigin=isolated?runtime.origin:'*',json=value=>JSON.stringify(value).replace(/</g,'\\u003c'),assetPrefix='/api/tool-assets/'+meta.instance+'/';
    const doc=new DOMParser().parseFromString(meta.content.split(assetPrefix).join((meta.distribution==='files'&&isolated?runtime.origin:location.origin)+assetPrefix),'text/html');doc.querySelectorAll('base').forEach(el=>el.remove());
    const packageTool=meta.distribution==='files',assetRoot=packageTool&&isolated?runtime.origin+'/':location.origin+assetPrefix,policy=doc.createElement('meta');policy.httpEquiv='Content-Security-Policy';
-   const network=meta.permissions?.network?' http: https: wss:':'',formAction=meta.permissions?.network&&permissionsUI.effective(meta.permissions).forms?'http: https:':"'none'";
+   const network=permissionsUI.effective(meta.permissions).network?' http: https: ws: wss:':'',formAction=permissionsUI.effective(meta.permissions).network&&permissionsUI.effective(meta.permissions).forms?'http: https:':"'none'";
    policy.content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' blob: "+assetRoot+network+"; style-src 'unsafe-inline' "+assetRoot+network+"; img-src data: blob: "+assetRoot+network+"; font-src data: "+assetRoot+network+"; media-src blob: data: "+assetRoot+network+"; connect-src "+assetRoot+network+"; form-action "+formAction+"; frame-src 'none'; object-src 'none'";
    doc.head.prepend(policy);
    if(!isolated){const base=doc.createElement('base');base.href=new URL(/^https?:\/\//.test(meta.source)?meta.source:'/market',location.origin).href;doc.head.prepend(base);}
@@ -238,8 +238,7 @@
    });
    frame.addEventListener('error',()=>showState('run_resource_failed'),{once:true});
    if(isolated)frame.src=runtime.url;else frame.srcdoc='<!doctype html>'+doc.documentElement.outerHTML;host.append(frame);
-   const unavailable=permissionsUI.selected(meta.permissions).some(spec=>spec.policy&&!['fullscreen','autoplay','picture-in-picture'].includes(spec.policy));
-   const notices=[];if(!isolated&&unavailable)notices.push(ToolMarketUI.text('此环境未配置独立运行来源，设备与剪贴板等能力不可用。','Device and clipboard capabilities are unavailable until an isolated runtime origin is configured.'));if(meta.permissions?.socket_tcp&&!runtime.socket_proxy)notices.push(ToolMarketUI.text('此服务器未开启工具 TCP 代理。','The tool TCP proxy is disabled on this server.'));if(notices.length){const note=document.getElementById('toolRuntimeCapabilities');note.textContent=notices.join(' ');note.hidden=false;}
+   const notices=[];if(meta.permissions?.socket_tcp&&!runtime.socket_proxy)notices.push(ToolMarketUI.text('此服务器未开启工具 TCP 代理。','The tool TCP proxy is disabled on this server.'));if(notices.length){const note=document.getElementById('toolRuntimeCapabilities');note.textContent=notices.join(' ');note.hidden=false;}
    const check=async()=>{if(stale)return;try{const current=await store.get('tools',id);if(!current||current.revision!==meta.revision||current.instance!==meta.instance){stale=true;closeSockets();frame.remove();showState('stale');}}catch(_){}};
    window.addEventListener('tool-market-changed',check);const timer=setInterval(()=>{if(!document.hidden)check();},15000);window.addEventListener('pagehide',()=>clearInterval(timer),{once:true});
    store.patch(id,{used:Date.now()}).catch(()=>{});

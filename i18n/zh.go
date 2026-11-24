@@ -40,7 +40,7 @@ var zhMessages = map[string]string{
 	"market.access_public":         "公开下载（市场允许免登录时）",
 	"market.access_members":        "指定成员",
 	"market.form_members":          "允许安装的市场账号，用逗号分隔",
-	"market.form_permissions":      "运行权限",
+	"market.form_permissions":      "BookStark 权限",
 	"market.form_read":             "读取用户主动选择的文件",
 	"market.form_save":             "保存导出结果",
 	"market.form_network":          "访问网络（需要联网的工具）",
