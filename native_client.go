@@ -3,6 +3,7 @@
 package main
 
 import (
+	"bookstark/models"
 	"crypto/rand"
 	"encoding/json"
 	"errors"
@@ -52,10 +53,11 @@ func (l *launcher) clientAction(request clientRequest) (any, error) {
 			check = *p.ToolCheckUpdates
 		}
 		address := p.ToolMarketURL
-		if address == "" && p.Remote != "" {
-			address = strings.TrimRight(p.Remote, "/") + "/market"
+		configured := strings.TrimSpace(address) != ""
+		if !configured {
+			address = models.DefaultToolMarketURL
 		}
-		return map[string]any{"url": address, "check_updates": check, "auto_update": p.ToolAutoUpdate}, err
+		return map[string]any{"url": address, "configured": configured, "check_updates": check, "auto_update": p.ToolAutoUpdate}, err
 	case "market-settings-save":
 		u, err := url.Parse(request.MarketURL)
 		if err != nil || u.Host == "" || u.User != nil || (u.Scheme != "https" && u.Scheme != "http") || u.Path != "/market" || u.RawQuery != "" || u.Fragment != "" {

@@ -29,9 +29,9 @@
  </div>
 </div>
 <p id="marketStatus" role="status" aria-live="polite" hidden></p>
-<div class="market-layout"><section id="marketItems" class="market-grid" aria-label="{{call .T "market.tools"}}"></section><aside id="marketDetail" class="market-detail" hidden></aside></div>
+<div class="market-layout"><section id="marketItems" class="market-grid" aria-label="{{call .T "market.tools"}}" aria-busy="true">{{template "market-card-skeleton" .}}{{template "market-card-skeleton" .}}{{template "market-card-skeleton" .}}{{template "market-card-skeleton" .}}{{template "market-card-skeleton" .}}{{template "market-card-skeleton" .}}</section><aside id="marketDetail" class="market-detail" hidden></aside></div>
 <div class="market-results">
- <span id="marketResultCount" role="status"></span>
+ <span id="marketResultCount" role="status">{{call .T "public.loading"}}</span>
  <div class="market-actions">
   <div class="market-view-actions"><button type="button" id="marketGridView" class="row-action" aria-label="{{call .T "market.grid_view"}}" aria-pressed="true"><i class="fa-solid fa-table-cells-large" aria-hidden="true"></i></button><button type="button" id="marketListView" class="row-action" aria-label="{{call .T "market.list_view"}}" aria-pressed="false"><i class="fa-solid fa-list" aria-hidden="true"></i></button><button type="button" id="marketCheck" class="row-action" aria-label="{{call .T "market.check"}}"><i class="fa-solid fa-rotate" aria-hidden="true"></i></button></div>
   <nav id="marketPagination" class="market-pagination" aria-label="{{call .T "market.pagination"}}"></nav>
@@ -48,3 +48,5 @@
 <script src="/static/js/tool-market.js?v={{assetVer "/static/js/tool-market.js"}}"></script>
 <script src="/static/js/tool-runner.js?v={{assetVer "/static/js/tool-runner.js"}}"></script>
 </body></html>
+
+{{define "market-card-skeleton"}}<article class="market-card-placeholder skeleton-card" aria-hidden="true"><div class="market-card-top"><div class="skeleton market-skeleton-icon"></div><div class="market-card-body"><div class="skeleton skeleton-card-title"></div><div class="skeleton skeleton-card-desc"></div><div class="skeleton skeleton-card-desc2"></div></div></div><div class="market-card-footer"><div class="skeleton skeleton-card-tag"></div><div class="skeleton market-skeleton-action"></div></div></article>{{end}}

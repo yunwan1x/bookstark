@@ -94,3 +94,42 @@ func TestArticleToolPublicationFollowsMarketAvailability(t *testing.T) {
 		}
 	}
 }
+
+func TestToolMarketClientDefaultPreservesSavedSource(t *testing.T) {
+	router, admin := initAssetControllerTest(t)
+	read := func() map[string]any {
+		t.Helper()
+		response := adminAssetRequest(router, admin, "GET", "/api/tool-market/client", nil)
+		var value map[string]any
+		if response.Code != 200 || json.Unmarshal(response.Body.Bytes(), &value) != nil {
+			t.Fatal(response.Body.String())
+		}
+		return value
+	}
+	if p := read(); p["url"] != models.DefaultToolMarketURL || p["configured"] != false {
+		t.Fatalf("wrong initial marketplace: %+v", p)
+	}
+	if _, err := models.DB.Exec("INSERT INTO md_tool_market_clients(member_id,url,check_updates,auto_update) VALUES(1,'https://custom.example/market',0,1)"); err != nil {
+		t.Fatal(err)
+	}
+	if p := read(); p["url"] != "https://custom.example/market" || p["configured"] != true || p["check_updates"] != false || p["auto_update"] != true {
+		t.Fatalf("saved marketplace was overridden: %+v", p)
+	}
+}
+
+func TestToolMarketAdminHasSingleTabAndInitialSkeleton(t *testing.T) {
+	router, admin := initAssetControllerTest(t)
+	response := adminAssetRequest(router, admin, "GET", "/admin/tool-market", nil)
+	if response.Code != 200 {
+		t.Fatal(response.Body.String())
+	}
+	body := response.Body.String()
+	for _, required := range []string{`class="market-body"`, `id="marketAdminTab"`, `role="tabpanel"`, `id="marketAdminLoading"`, `aria-busy="true"`, `market-admin-placeholder skeleton-card`} {
+		if !strings.Contains(body, required) {
+			t.Fatalf("admin loading layout missing %s", required)
+		}
+	}
+	if strings.Contains(body, `class="market-nav"`) || strings.Count(body, `role="tab"`) != 1 {
+		t.Fatal("marketplace administration must expose a single tab")
+	}
+}

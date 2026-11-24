@@ -281,7 +281,11 @@ func TestAdminSystemTabsAreHorizontallyScrollable(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReadFile(admin_system.html) error = %v", err)
 	}
-	text := string(tpl)
+	components, err := os.ReadFile("static/css/components.css")
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(tpl) + string(components)
 	for _, required := range []string{
 		`.admin-tabs { overflow-x: auto;`,
 		`.admin-tabs .tab-btn { flex: 1 0 max-content;`,

@@ -28,3 +28,19 @@ test('market scroll restoration is scoped to workspace and exact list state',()=
  context.location=new URL('https://book.test/market?status=installed&page=2');ui.restoreMarketPosition();assert.deepEqual(scrolls,[[0,420]]);
  ui.restoreMarketPosition();assert.equal(scrolls.length,1,'restoration is consumed after returning');
 });
+
+test('native defaults do not override an explicitly saved workspace marketplace',async()=>{
+ const official='https://books.vs2010wy.top/market';
+ for(const [saved,native,expected]of [
+  [{url:'https://custom.test/market',configured:true},{url:official,configured:false},'https://custom.test/market'],
+  [{url:official,configured:false},{url:official,configured:false},official],
+  [{url:'https://custom.test/market',configured:true},{url:'https://native.test/market',configured:true},'https://native.test/market'],
+  [{url:official,configured:false},{url:'https://legacy.test/market'},'https://legacy.test/market']
+ ]){
+  const {context,ui}=fixture();
+  context.fetchWithCurrentCSRF=async path=>({ok:true,json:async()=>path.includes('?server=')?{account:'native-account'}:{...saved,check_updates:false,auto_update:true,account:'workspace-account'}});
+  context.BookStarkClient=context.window.BookStarkClient={ready:Promise.resolve(true),marketSettings:async()=>({...native,check_updates:true,auto_update:false})};
+  const result=await ui.config();assert.equal(result.url,expected);
+  if(native.configured===false&&saved.configured){assert.equal(result.check_updates,false);assert.equal(result.auto_update,true);assert.equal(result.account,'workspace-account');}
+ }
+});

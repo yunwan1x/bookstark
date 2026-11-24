@@ -1,1 +1,41 @@
-<!doctype html><html lang="{{.Lang}}"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{call .T "market.title"}} · BookStark</title><link rel="stylesheet" href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}">{{template "head-assets" .}}<link rel="stylesheet" href="/static/css/tool-market.css?v={{assetVer "/static/css/tool-market.css"}}"></head><body>{{template "header" .}}<main class="market-page" id="marketAdminPage"><nav class="market-nav"><a href="/admin/system">{{call .T "user.menu.system"}}</a><a href="/market">{{call .T "market.title"}}</a></nav><div class="market-heading"><h1 class="page-title">{{call .T "market.title"}}</h1></div><div class="market-admin-layout"><section class="market-panel"><form class="market-form" id="marketAdminForm"></form></section><aside><section class="market-panel" id="marketSharing"></section><section class="market-panel" id="marketReviewQueue"></section></aside></div></main>{{template "footer" .}}<script src="/static/js/tool-market-ui.js?v={{assetVer "/static/js/tool-market-ui.js"}}"></script><script src="/static/js/tool-market-admin.js?v={{assetVer "/static/js/tool-market-admin.js"}}"></script></body></html>
+<!doctype html>
+<html lang="{{.Lang}}"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{call .T "market.title"}} · BookStark</title>
+<link rel="stylesheet" href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}">
+{{template "head-assets" .}}
+<link rel="stylesheet" href="/static/css/tool-market.css?v={{assetVer "/static/css/tool-market.css"}}">
+</head><body class="market-body">
+{{template "header" .}}
+<main role="main" class="market-page" id="marketAdminPage">
+<h1 class="page-title sr-only">{{call .T "market.title"}}</h1>
+<div role="tablist" class="admin-tabs flex bg-slate-100 rounded-t-lg p-1 gap-1 market-admin-tabs" aria-label="{{call .T "market.title"}}">
+<button type="button" role="tab" aria-selected="true" aria-controls="marketAdminPanel" id="marketAdminTab" class="tab-btn active flex-1"><i class="fa-solid fa-store" aria-hidden="true"></i> {{call .T "market.title"}}</button>
+</div>
+<p id="marketAdminLoading" class="sr-only" role="status">{{call .T "public.loading"}}</p>
+<div class="market-admin-layout" role="tabpanel" id="marketAdminPanel" aria-labelledby="marketAdminTab">
+<section class="market-panel">
+<form class="market-form" id="marketAdminForm" aria-busy="true">
+<div class="market-admin-placeholder skeleton-card" aria-hidden="true"><div class="market-admin-skeleton">
+<div class="skeleton skeleton-card-title"></div><div class="skeleton skeleton-card-desc"></div>
+{{template "market-admin-field-skeleton" .}}{{template "market-admin-field-skeleton" .}}{{template "market-admin-field-skeleton" .}}
+<div class="skeleton market-skeleton-field"></div><div class="skeleton skeleton-card-title"></div>
+<div class="skeleton skeleton-card-desc"></div><div class="skeleton skeleton-card-desc"></div>
+<div class="skeleton skeleton-card-title"></div><div class="skeleton skeleton-card-desc"></div><div class="skeleton skeleton-card-desc"></div>
+<div class="skeleton market-skeleton-field"></div><div class="skeleton market-skeleton-field"></div>
+</div></div>
+</form>
+<button type="button" class="bs-btn bs-btn-cancel mt-4" id="marketAdminRetry" hidden>{{call .T "tools.retry"}}</button>
+</section>
+<aside>
+<section class="market-panel" id="marketSharing" aria-busy="true">{{template "market-admin-side-skeleton" .}}</section>
+<section class="market-panel" id="marketReviewQueue" aria-busy="true">{{template "market-admin-side-skeleton" .}}</section>
+</aside>
+</div>
+</main>
+{{template "footer" .}}
+<script src="/static/js/tool-market-ui.js?v={{assetVer "/static/js/tool-market-ui.js"}}"></script>
+<script src="/static/js/tool-market-admin.js?v={{assetVer "/static/js/tool-market-admin.js"}}"></script>
+</body></html>
+{{define "market-admin-field-skeleton"}}<div><div class="skeleton market-skeleton-label"></div><div class="skeleton market-skeleton-field"></div></div>{{end}}
+{{define "market-admin-side-skeleton"}}<div class="market-admin-placeholder skeleton-card" aria-hidden="true"><div class="market-admin-skeleton"><div class="skeleton skeleton-card-title"></div><div class="skeleton skeleton-card-desc"></div><div class="skeleton skeleton-card-desc"></div><div class="skeleton market-skeleton-field"></div></div></div>{{end}}

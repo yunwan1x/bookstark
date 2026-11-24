@@ -6,7 +6,7 @@
   running=true;
   try{
    const config=await request('/api/tool-market/client');
-   if(window.BookStarkClient&&await BookStarkClient.ready){const local=await BookStarkClient.marketSettings();if(local.url)Object.assign(config,local);}
+   if(window.BookStarkClient&&await BookStarkClient.ready){const local=await BookStarkClient.marketSettings();if(local.url&&(local.configured!==false||!config.configured))Object.assign(config,local);}
    if(!config.check_updates)return;
    const key='bookstark-tool-update-check:'+config.url;
    const last=Number(sessionStorage.getItem(key)||0);if(Date.now()-last<15*60*1000)return;

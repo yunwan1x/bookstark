@@ -3,6 +3,7 @@
 package main
 
 import (
+	"bookstark/models"
 	"bytes"
 	"encoding/json"
 	"net/http"
@@ -137,6 +138,10 @@ func TestNativeMarketPreferencesRetainedAcrossWorkspaceChanges(t *testing.T) {
 		t.Fatal(err)
 	}
 	token := info.(map[string]any)["bridgeToken"].(string)
+	defaults, err := l.clientAction(clientRequest{Origin: origin, BridgeToken: token, Operation: "market-settings"})
+	if err != nil || defaults.(map[string]any)["url"] != models.DefaultToolMarketURL || defaults.(map[string]any)["configured"] != false {
+		t.Fatalf("workspace address must not replace default marketplace: %+v %v", defaults, err)
+	}
 	if _, err := l.clientAction(clientRequest{Origin: origin, BridgeToken: token, Operation: "market-settings-save", MarketURL: "https://tools.example/market", CheckUpdates: false, AutoUpdate: true}); err != nil {
 		t.Fatal(err)
 	}

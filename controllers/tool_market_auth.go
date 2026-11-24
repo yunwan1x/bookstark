@@ -167,8 +167,9 @@ func MarketClientSettings(c *gin.Context) {
 	var address, account string
 	check, auto := true, false
 	err := models.DB.QueryRow("SELECT url,check_updates,auto_update FROM md_tool_market_clients WHERE member_id=?", member).Scan(&address, &check, &auto)
-	if err != nil {
-		address = readMarketSettings(c).PublicURL
+	configured := err == nil && strings.TrimSpace(address) != ""
+	if !configured {
+		address = models.DefaultToolMarketURL
 	}
 	accountURL := address
 	if server := c.Query("server"); server != "" {
@@ -181,7 +182,7 @@ func MarketClientSettings(c *gin.Context) {
 	}
 	_ = models.DB.QueryRow("SELECT account FROM md_tool_market_credentials WHERE member_id=? AND url=?", member, accountURL).Scan(&account)
 	c.Header("Cache-Control", "private, no-store")
-	c.JSON(200, gin.H{"url": address, "account": account, "check_updates": check, "auto_update": auto, "can_configure": isAdmin(c), "workspace_account": middleware.GetAccount(c)})
+	c.JSON(200, gin.H{"url": address, "configured": configured, "account": account, "check_updates": check, "auto_update": auto, "can_configure": isAdmin(c), "workspace_account": middleware.GetAccount(c)})
 }
 func MarketClientLogin(c *gin.Context) {
 	var p struct {

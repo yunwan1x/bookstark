@@ -6,6 +6,9 @@ import (
 	"errors"
 )
 
+// DefaultToolMarketURL is used until a workspace chooses its marketplace source.
+const DefaultToolMarketURL = "https://books.vs2010wy.top/market"
+
 var ErrBlogUsedByTool = errors.New("blog_in_tool_market")
 
 func toolSourceInUse(tx *sql.Tx, id int64) (bool, error) {

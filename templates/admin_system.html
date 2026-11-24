@@ -10,12 +10,6 @@
     <title>{{call .T "page.admin.title"}} - BookStark</title>
     <link href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}" rel="stylesheet">
     <style>
-    .tab-btn { position: relative; padding: 8px 16px; font-size: 13px; font-weight: 500; border-radius: 8px 8px 0 0; cursor: pointer; transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease; }
-    .tab-btn.active { background: var(--color-bg-card); color: var(--color-primary); box-shadow: 0 -1px 3px rgba(0,0,0,0.06); }
-    .tab-btn:not(.active) { background: transparent; color: var(--color-gray-400); }
-    .tab-btn:not(.active):hover { color: var(--color-gray-500); background: var(--color-gray-100); }
-    .admin-tabs { overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; scroll-snap-type: x proximity; }
-    .admin-tabs .tab-btn { flex: 1 0 max-content; min-width: max-content; white-space: nowrap; scroll-snap-align: start; }
     .admin-system-page { position: relative; }
     .admin-system-content { position: relative; z-index: 1; }
     /* AI 配置子 tab */
@@ -236,7 +230,6 @@
             <div class="mx-auto" style="width:100%;max-width:var(--admin-content-width,960px);">
 
                 <!-- Tabs -->
-                <a href="/admin/tool-market" class="bs-btn bs-btn-cancel" style="margin-bottom:12px">{{call .T "market.title"}}</a>
 <div role="tablist" class="admin-tabs flex bg-slate-100 rounded-t-lg p-1 gap-1">
                     <button role="tab" aria-selected="true" aria-controls="panel-members" id="tab-members" onclick="switchTab('members')" class="tab-btn active flex-1">
                         <i class="fa-solid fa-users-gear" style="margin-right:4px"></i>{{call .T "admin.tab.members"}}
