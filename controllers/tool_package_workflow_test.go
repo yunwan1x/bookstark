@@ -8,7 +8,9 @@ import (
 	"bookstark/models"
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/json"
+	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -16,6 +18,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -493,6 +496,101 @@ func TestToolPackageWorkflowFailedIdentitySaveDiscardsUploadedFiles(t *testing.T
 	}
 	if err := models.WebDAVDB.QueryRow(`SELECT COUNT(*) FROM dav_nodes WHERE is_dir=0`).Scan(&count); err != nil || count != 0 {
 		t.Fatalf("identity failure leaked package files: %d %v", count, err)
+	}
+}
+
+func TestToolPackageWorkflowInstallsRemotePackageWithCompleteVerifiedTree(t *testing.T) {
+	router, token := initPackageWorkflow(t)
+	var mu sync.Mutex
+	downloads := map[string]int{}
+	var revision string
+	market := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/api/tool-package-assets/") {
+			mu.Lock()
+			downloads[r.URL.Path]++
+			mu.Unlock()
+			if r.URL.Query().Get("revision") != revision {
+				t.Errorf("remote resource was not bound to consented revision: %s", r.URL.String())
+			}
+			if r.Header.Get("Cookie") != "" {
+				t.Error("workspace cookie leaked to remote resource server")
+			}
+		}
+		router.ServeHTTP(w, r)
+	}))
+	t.Cleanup(market.Close)
+	if err := models.BatchUpdateSettings(map[string]string{"tool_market_public_url": market.URL, "tool_market_login_required": "0"}); err != nil {
+		t.Fatal(err)
+	}
+	files := packageWorkflowFiles("index.html", "1.0.0")
+	upload := packageWorkflowUploadOK(t, router, token, files, 0)
+	publication := packageWorkflowPublish(t, router, token, upload, "1.0.0", "public")
+	revision = publication.Revision
+	w := adminAssetRequest(router, token, "POST", "/api/tool-sources", map[string]any{"server": market.URL + "/market"})
+	var catalog struct {
+		Tools []struct {
+			ID int64 `json:"id"`
+		} `json:"tools"`
+	}
+	if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &catalog) != nil || len(catalog.Tools) != 1 || catalog.Tools[0].ID >= 0 {
+		t.Fatalf("remote catalog ID mapping: %d %s", w.Code, w.Body.String())
+	}
+	remoteID := catalog.Tools[0].ID
+	w = packageWorkflowGet(router, token, "/api/tool-sources/"+strconv.FormatInt(remoteID, 10))
+	var manifest struct {
+		models.ToolMetadata
+		ID       int64              `json:"id"`
+		Revision string             `json:"revision"`
+		Files    []toolpackage.File `json:"files"`
+	}
+	if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &manifest) != nil || manifest.ID != remoteID || manifest.Distribution != "files" || manifest.Revision != revision || len(manifest.Files) != len(files) {
+		t.Fatalf("remote file manifest: %d %s", w.Code, w.Body.String())
+	}
+	for _, file := range manifest.Files {
+		original, ok := files[file.Name]
+		if !ok || file.Size != int64(len(original)) || file.Hash != fmt.Sprintf("%x", sha256.Sum256(original)) {
+			t.Fatalf("remote file digest differs from published bytes: %+v", file)
+		}
+	}
+	mu.Lock()
+	readBeforeInstall := len(downloads)
+	mu.Unlock()
+	if readBeforeInstall != 0 {
+		t.Fatal("remote catalog or manifest request eagerly downloaded resources")
+	}
+	base := "/api/tool-installs/" + strconv.FormatInt(remoteID, 10)
+	w = adminAssetRequest(router, token, "PUT", base, map[string]any{"revision": manifest.Revision, "hash": manifest.Hash})
+	if w.Code != 200 {
+		t.Fatalf("remote package installation: %d %s", w.Code, w.Body.String())
+	}
+	installed, err := models.GetInstalledTool(1, remoteID)
+	if err != nil || installed.ID != remoteID || installed.Distribution != "files" || installed.Revision != revision {
+		t.Fatalf("remote installation metadata changed: %+v %v", installed, err)
+	}
+	for name, original := range files {
+		_, _, reader, err := models.ReadDAVFileContext(context.Background(), 1, installed.Assets+"/"+name)
+		if err != nil {
+			t.Fatalf("remote installed file missing %s: %v", name, err)
+		}
+		actual, readErr := io.ReadAll(reader)
+		reader.Close()
+		if readErr != nil || !bytes.Equal(actual, original) {
+			t.Fatalf("remote installed bytes changed %s: %v", name, readErr)
+		}
+		mu.Lock()
+		reads := downloads["/api/tool-package-assets/"+upload.Package.Token+"/"+name]
+		mu.Unlock()
+		if reads != 1 {
+			t.Fatalf("remote file %s downloaded %d times, want once", name, reads)
+		}
+	}
+	w = adminAssetRequest(router, token, "POST", base+"/data", map[string]any{"revision": installed.Revision, "instance": installed.Instance, "op": "set", "key": "remote-save", "value": "preserved"})
+	if w.Code != 200 {
+		t.Fatalf("remote installed storage bridge: %d %s", w.Code, w.Body.String())
+	}
+	values, err := models.GetInstalledToolValues(1, remoteID)
+	if err != nil || values["remote-save"] != "preserved" {
+		t.Fatalf("remote stored value missing: %v %v", values, err)
 	}
 }
 

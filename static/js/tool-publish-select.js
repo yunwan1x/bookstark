@@ -12,7 +12,7 @@
  state.value=['all','published','unpublished'].includes(params.get('status'))?params.get('status'):'all';
  sort.value=params.get('sort')==='name'?'name':'updated';
  function updateURL(){
-  const url=new URL('/market/publish',location.origin);url.searchParams.set('return',returnTo);
+  const current=new URL(location.href),url=new URL('/market/publish',location.origin);url.searchParams.set('return',returnTo);for(const key of ['source','tool'])if(current.searchParams.has(key))url.searchParams.set(key,current.searchParams.get(key));
   for(const [key,value,fallback]of [['q',query.value,''],['status',state.value,'all'],['sort',sort.value,'updated'],['page',String(page),'1'],['take',take,'10'],['selected',String(selectedID),'0']])if(value!==fallback)url.searchParams.set(key,value);
   history.replaceState(null,'',url.pathname+url.search);
  }
