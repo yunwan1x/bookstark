@@ -281,3 +281,33 @@ func TestNativeLauncherBrowser(t *testing.T) {
 		t.Log(string(output))
 	}
 }
+
+func TestNativeToolSandboxEntryDoesNotExposeLauncher(t *testing.T) {
+	calls := 0
+	l := &launcher{addr: "127.0.0.1:45678", token: "private-launcher-token", backend: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { calls++; w.WriteHeader(200) })}
+	sandbox := "http://tool-" + strings.Repeat("a", 32) + ".localhost:45678"
+	for _, tc := range []struct {
+		method, url string
+		status      int
+	}{
+		{"GET", sandbox + "/tools/frame?ticket=delegated", 200},
+		{"GET", sandbox + "/api/profile", 403},
+		{"GET", sandbox + "/__bookstark/open/private-launcher-token", 403},
+		{"POST", sandbox + "/tools/frame", 403},
+		{"GET", "http://tool-" + strings.Repeat("a", 32) + ".localhost:45679/tools/frame", 403},
+		{"GET", "http://127.0.0.1:45678/api/tool-assets/unguessable/epoch/file.js", 200},
+		{"POST", "http://127.0.0.1:45678/api/tool-assets/unguessable/epoch/file.js", 403},
+	} {
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(tc.method, tc.url, nil)
+		r.Header.Set("Origin", sandbox)
+		r.Header.Set("Sec-Fetch-Site", "cross-site")
+		l.ServeHTTP(w, r)
+		if w.Code != tc.status {
+			t.Fatal(tc, w.Code, w.Body.String())
+		}
+	}
+	if calls != 2 {
+		t.Fatal("unexpected routes forwarded", calls)
+	}
+}

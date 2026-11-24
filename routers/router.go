@@ -113,6 +113,7 @@ func Setup() *gin.Engine {
 	r.RedirectTrailingSlash = false
 	r.MaxMultipartMemory = 8 << 20 // 8MB
 
+	r.Use(controllers.ToolSandboxMiddleware())
 	r.Use(middleware.LangMiddleware())
 
 	// 安全响应头中间件
@@ -309,6 +310,8 @@ func Setup() *gin.Engine {
 		auth.DELETE("/api/tool-installs/:id", controllers.DeleteToolInstall)
 		auth.PATCH("/api/tool-installs/:id", controllers.PatchToolInstall)
 		auth.POST("/api/tool-installs/:id/data", controllers.WriteToolInstallData)
+		auth.GET("/api/tool-installs/:id/socket", controllers.ToolInstallSocket)
+		auth.POST("/api/tool-installs/:id/files", controllers.ToolInstallFileOperation)
 		auth.GET("/api/tool-installs/:id/files/*filepath", controllers.ToolInstallFile)
 		auth.PUT("/api/tool-installs/:id/files/*filepath", controllers.ToolInstallFile)
 		// Pages

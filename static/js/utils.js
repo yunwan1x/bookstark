@@ -5,11 +5,14 @@
 (function() {
   function bridge() {
     if (window !== window.top) return null;
+    if (typeof window.BookStarkNative?.postMessage === 'function') {
+      return function(message) { window.BookStarkNative.postMessage(JSON.stringify({id:'external-'+Date.now(),action:'open-external',args:{url:message.slice('bookstark:open-external:'.length)}})); };
+    }
     if (typeof window.BookStarkNative?.openExternal === 'function') {
       return function(message) { window.BookStarkNative.openExternal(message.slice('bookstark:open-external:'.length)); };
     }
     var handler = window.chrome?.webview || window.webkit?.messageHandlers?.external;
-    if (typeof handler?.postMessage === 'function') return handler.postMessage.bind(handler);
+    if (typeof handler?.postMessage === 'function') return function(message){handler.postMessage((window.__BookStarkFrameToken?'bookstark:frame:'+window.__BookStarkFrameToken+':':'')+message);};
     if (typeof window.wails?.invoke === 'function') return window.wails.invoke.bind(window.wails);
     return null;
   }

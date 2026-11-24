@@ -18,9 +18,49 @@ func toolSourceInUse(tx *sql.Tx, id int64) (bool, error) {
 }
 
 type ToolPermissions struct {
-	ReadFiles bool `json:"read_files"`
-	SaveFiles bool `json:"save_files"`
-	Network   bool `json:"network"`
+	SocketTCP        bool `json:"socket_tcp,omitempty"`
+	Modals           bool `json:"modals,omitempty"`
+	Gamepad          bool `json:"gamepad,omitempty"`
+	Schema           int  `json:"schema,omitempty"`
+	ReadFiles        bool `json:"read_files"`
+	SaveFiles        bool `json:"save_files"`
+	Network          bool `json:"network"`
+	ClipboardRead    bool `json:"clipboard_read,omitempty"`
+	ClipboardWrite   bool `json:"clipboard_write,omitempty"`
+	Camera           bool `json:"camera,omitempty"`
+	Microphone       bool `json:"microphone,omitempty"`
+	DisplayCapture   bool `json:"display_capture,omitempty"`
+	Geolocation      bool `json:"geolocation,omitempty"`
+	Fullscreen       bool `json:"fullscreen,omitempty"`
+	Autoplay         bool `json:"autoplay,omitempty"`
+	PictureInPicture bool `json:"picture_in_picture,omitempty"`
+	Downloads        bool `json:"downloads,omitempty"`
+	Popups           bool `json:"popups,omitempty"`
+	Forms            bool `json:"forms,omitempty"`
+	PointerLock      bool `json:"pointer_lock,omitempty"`
+	OrientationLock  bool `json:"orientation_lock,omitempty"`
+	WakeLock         bool `json:"screen_wake_lock,omitempty"`
+	WebShare         bool `json:"web_share,omitempty"`
+	Presentation     bool `json:"presentation,omitempty"`
+	SpeakerSelection bool `json:"speaker_selection,omitempty"`
+	Bluetooth        bool `json:"bluetooth,omitempty"`
+	USB              bool `json:"usb,omitempty"`
+	Serial           bool `json:"serial,omitempty"`
+	HID              bool `json:"hid,omitempty"`
+	MIDI             bool `json:"midi,omitempty"`
+	XR               bool `json:"xr_spatial_tracking,omitempty"`
+	EncryptedMedia   bool `json:"encrypted_media,omitempty"`
+	Accelerometer    bool `json:"accelerometer,omitempty"`
+	Gyroscope        bool `json:"gyroscope,omitempty"`
+	Magnetometer     bool `json:"magnetometer,omitempty"`
+	AmbientLight     bool `json:"ambient_light_sensor,omitempty"`
+	LocalFonts       bool `json:"local_fonts,omitempty"`
+	WindowManagement bool `json:"window_management,omitempty"`
+	IdleDetection    bool `json:"idle_detection,omitempty"`
+	KeyboardMap      bool `json:"keyboard_map,omitempty"`
+	Payment          bool `json:"payment,omitempty"`
+	PublicKeyGet     bool `json:"publickey_credentials_get,omitempty"`
+	PublicKeyCreate  bool `json:"publickey_credentials_create,omitempty"`
 }
 type ToolMetadata struct {
 	Updated      int64           `json:"updated"`

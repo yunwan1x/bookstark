@@ -28,10 +28,22 @@ func installIdentity(c *gin.Context) (int64, int64, bool) {
 func toolAPIError(c *gin.Context, err error) {
 	code, status := "storage_failed", 500
 	switch {
+	case errors.Is(err, models.ErrToolPermission):
+		code, status = "permission_denied", 403
 	case errors.Is(err, models.ErrToolConflict):
 		code, status = "conflict", 409
 	case errors.Is(err, sql.ErrNoRows) || errors.Is(err, models.ErrDAVNotFound):
 		code, status = "not_found", 404
+	case errors.Is(err, models.ErrDAVAlreadyExists):
+		code, status = "already_exists", 409
+	case errors.Is(err, models.ErrToolDirectoryNotEmpty):
+		code, status = "directory_not_empty", 409
+	case errors.Is(err, models.ErrDAVNotDirectory):
+		code, status = "not_directory", 400
+	case errors.Is(err, models.ErrDAVIsDirectory):
+		code, status = "is_directory", 400
+	case errors.Is(err, models.ErrDAVQuotaExceeded) || errors.Is(err, models.ErrDAVFileTooLarge):
+		code, status = "quota_exceeded", 413
 	case errors.Is(err, models.ErrDAVInvalidPath):
 		code, status = "invalid_path", 400
 	case errors.Is(err, models.ErrToolCleanupPending):
@@ -257,6 +269,10 @@ func ToolInstallFile(c *gin.Context) {
 		toolAPIError(c, models.ErrToolConflict)
 		return
 	}
+	if !t.Permissions.ReadFiles {
+		toolAPIError(c, models.ErrToolPermission)
+		return
+	}
 	p, err := models.ToolResourcePath(t, "data", c.Param("filepath"))
 	if err != nil {
 		toolAPIError(c, err)
@@ -271,4 +287,26 @@ func ToolInstallFile(c *gin.Context) {
 	c.Header("Content-Disposition", "attachment")
 	c.Header("X-Content-Type-Options", "nosniff")
 	c.DataFromReader(200, blob.OriginalSize, node.MIMEType, reader, nil)
+}
+
+// Metadata and tree operations are JSON to preserve names and to avoid WebDAV
+// headers or paths ever exposing the rest of the account's file system.
+func ToolInstallFileOperation(c *gin.Context) {
+	c.Header("Cache-Control", "private, no-store")
+	member, id, ok := installIdentity(c)
+	if !ok {
+		return
+	}
+	var request models.ToolFileOperation
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 8192)
+	if c.ShouldBindJSON(&request) != nil {
+		c.Status(400)
+		return
+	}
+	result, err := models.ExecuteToolFileOperation(member, id, c.GetHeader("X-Tool-Revision"), c.GetHeader("X-Tool-Instance"), request)
+	if err != nil {
+		toolAPIError(c, err)
+		return
+	}
+	c.JSON(200, gin.H{"result": result})
 }

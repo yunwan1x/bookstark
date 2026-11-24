@@ -54,6 +54,23 @@ const path=require('path');
   assert.equal(await p.evaluate(()=>isSecureContext),false);await p.click('#copy');await p.waitForFunction(()=>document.querySelector('#state').textContent==='copied');
   await p.evaluate(()=>document.execCommand=()=>false);await p.click('#copy');await p.waitForFunction(()=>document.querySelector('#state').textContent==='failed');
   await fallback.close();
+  // WebKitGTK supplies no frame identity. Host requests made before its
+  // load-time proof arrives must be retried with that main-document proof.
+  const proved=await browser.newContext();await proved.addInitScript(()=>{
+   window.proofRequests=[];window.chrome=window.chrome||{};window.chrome.webview={postMessage:message=>{
+    proofRequests.push(message);const prefix='bookstark:frame:test-main-window-proof:bookstark:request:';
+    if(!message.startsWith(prefix))return;const request=JSON.parse(message.slice(prefix.length));
+    setTimeout(()=>BookStarkHostReply(request.id,request.action==='capabilities'?{version:1}:true,null),0);
+   }};
+  });
+  const proofPage=await proved.newPage();await proofPage.goto(process.env.BOOKSTARK_TEST_ORIGIN+'/shares');
+  await proofPage.evaluate(()=>{Object.defineProperty(window,'__BookStarkFrameToken',{value:'test-main-window-proof'});dispatchEvent(new Event('bookstark:frame-ready'));});
+  assert.equal(await proofPage.evaluate(()=>BookStarkHost.ready),true);await proofPage.evaluate(()=>BookStarkCopyText('proved clipboard'));
+  const requests=await proofPage.evaluate(()=>proofRequests);assert.ok(requests.some(message=>message.startsWith('bookstark:frame:test-main-window-proof:')&&message.includes('clipboard-write')));
+  await proved.close();
+  const modernAndroid=await browser.newContext();await modernAndroid.addInitScript(()=>{window.modernAndroidRequests=[];window.BookStarkNative={postMessage:payload=>{const request=JSON.parse(payload);modernAndroidRequests.push(request.action);setTimeout(()=>BookStarkHostReply(request.id,true,null),0);}}});
+  const androidPage=await modernAndroid.newPage();await androidPage.goto(process.env.BOOKSTARK_TEST_ORIGIN+'/shares');await androidPage.evaluate(()=>BookStarkCopyText('frame-aware Android host'));
+  assert.deepEqual(await androidPage.evaluate(()=>modernAndroidRequests),['client','clipboard-write']);await modernAndroid.close();
   const legacy=await browser.newContext({permissions:['clipboard-read','clipboard-write']});
   await legacy.addInitScript(()=>{window.legacyNativeMessages=[];window.chrome=window.chrome||{};window.chrome.webview={postMessage:message=>legacyNativeMessages.push(message)}});
   const oldPage=await legacy.newPage();await oldPage.goto(process.env.BOOKSTARK_TEST_ORIGIN+'/shares');await oldPage.waitForTimeout(1700);

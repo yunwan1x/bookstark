@@ -27,6 +27,7 @@ func ToolRuntimePage(c *gin.Context) {
 	// Read only the installed tool summary, without embedding its HTML or values.
 	if tool, err := models.GetInstalledTool(middleware.GetMemberID(c), id); err == nil {
 		data["RuntimeName"] = tool.Title
+		data["RuntimeFrame"] = toolFrameConfiguration(c, tool)
 		icon, style, color := models.ResolveToolAppearance(tool.ToolMetadata)
 		data["RuntimeAppearance"] = gin.H{"Class": "fa-" + style + " fa-" + icon, "Color": color, "Background": color + "18"}
 	}

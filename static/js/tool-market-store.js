@@ -26,7 +26,11 @@
     const url='/api/tool-installs/'+id+'/files/'+name.split('/').map(encodeURIComponent).join('/');
     const options={method,cache:'no-store',headers:{'X-Tool-Revision':revision,'X-Tool-Instance':instance}};
     if(method==='PUT'){options.headers['Content-Type']='application/octet-stream';options.body=content;}
-    const response=await fetchWithCurrentCSRF(url,options);if(!response.ok)throw Error('storage');return method==='GET'?response.arrayBuffer():undefined;
+    const response=await fetchWithCurrentCSRF(url,options);if(!response.ok){const body=await response.json().catch(()=>({}));throw Error(body.error||'storage');}return method==='GET'?response.arrayBuffer():undefined;
   }
-  window.BookStarkMarketStore={authenticated,list,get,install,remove,patch,writeData,file,snapshot:id=>request('/'+id+'?part=runtime')};
+  async function fileOperation(id,revision,instance,operation){
+    const response=await fetchWithCurrentCSRF('/api/tool-installs/'+id+'/files',{method:'POST',cache:'no-store',headers:{'Content-Type':'application/json','X-Tool-Revision':revision,'X-Tool-Instance':instance},body:JSON.stringify(operation)});
+    const data=await response.json().catch(()=>({}));if(!response.ok)throw Error(data.error||'storage');return data.result;
+  }
+  window.BookStarkMarketStore={authenticated,list,get,install,remove,patch,writeData,file,fileOperation,snapshot:id=>request('/'+id+'?part=runtime')};
 })();

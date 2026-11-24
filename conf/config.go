@@ -29,21 +29,22 @@ type config struct {
 var App Conf
 
 type Conf struct {
-	Port          string
-	Mode          string
-	DBPath        string
-	JWTSecret     string
-	JWTExpire     string
-	AdminAccount  string
-	AdminPassword string
-	Timezone      string
-	AssetVersion  string
-	BuildTime     string
-	GitCommit     string
-	TLSCertFile   string
-	TLSKeyFile    string
-	AssetSecret   string
-	WebDAVDBPath  string
+	ToolLocalClient bool // Set only by the native local workspace, never by a request.
+	Port            string
+	Mode            string
+	DBPath          string
+	JWTSecret       string
+	JWTExpire       string
+	AdminAccount    string
+	AdminPassword   string
+	Timezone        string
+	AssetVersion    string
+	BuildTime       string
+	GitCommit       string
+	TLSCertFile     string
+	TLSKeyFile      string
+	AssetSecret     string
+	WebDAVDBPath    string
 }
 
 var (

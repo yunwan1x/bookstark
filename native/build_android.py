@@ -37,7 +37,7 @@ def configure_host(root, abi, debug=False):
     replace_once(java,
                  '        webView.addJavascriptInterface(new WailsJSBridge(bridge, webView), "wails");',
                  '''        bookstarkHost = new BookStarkLinkBridge(this, webView);
-        webView.addJavascriptInterface(bookstarkHost, "BookStarkNative");
+        bookstarkHost.installBridge();
         webView.setDownloadListener(bookstarkHost::download);''')
     shutil.copyfile(ROOT / 'native/BookStarkLinkBridge.java', java.parent / 'BookStarkLinkBridge.java')
     start = ("                // Handle wails.localhost requests\n"

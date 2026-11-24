@@ -35,13 +35,14 @@ type nativeCapabilities struct {
 	workspace    *launcher
 	mu           sync.Mutex
 	transfers    map[string]*nativeTransfer
+	frameTokens  map[uint]string
 	closeTokens  map[uint]string
 	closeAllowed map[uint]bool
 	printWindows map[uint]bool
 }
 
 func newNativeCapabilities() *nativeCapabilities {
-	return &nativeCapabilities{transfers: map[string]*nativeTransfer{}, closeTokens: map[uint]string{}, closeAllowed: map[uint]bool{}, printWindows: map[uint]bool{}}
+	return &nativeCapabilities{transfers: map[string]*nativeTransfer{}, frameTokens: map[uint]string{}, closeTokens: map[uint]string{}, closeAllowed: map[uint]bool{}, printWindows: map[uint]bool{}}
 }
 func (h *nativeCapabilities) reply(window application.Window, id string, value any, err error) {
 	payload, _ := json.Marshal([]any{id, value, nil})

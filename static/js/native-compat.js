@@ -2,10 +2,11 @@
 (function () {
   'use strict';
   const android = window.BookStarkNative;
+  const androidSend=typeof android?.postMessage==='function'?payload=>android.postMessage(payload):typeof android?.request==='function'?payload=>android.request(payload):null;
   const raw = window.chrome?.webview || window.webkit?.messageHandlers?.external;
-  const native = window === window.top && (!!android?.request || typeof raw?.postMessage === 'function');
+  const native = window === window.top && (!!androidSend || typeof raw?.postMessage === 'function');
   const pending = new Map(), guards = new Set(), activeExports = new Set();
-  let serial = 0, leaving = null, leaveApproved = false, enabled = !!android?.request;
+  let serial = 0, leaving = null, leaveApproved = false, enabled = !!androidSend;
   const label = (zh, en) => document.documentElement.lang.startsWith('zh') ? zh : en;
   const fail = error => { if (window.BSDialog) BSDialog.toast(error.message || String(error), 'error'); else console.error(error); };
   function request(action, args, timeout = 10 * 60 * 1000) {
@@ -13,18 +14,22 @@
     const id = Date.now().toString(36) + '_' + Math.random().toString(36).slice(2) + '_' + (++serial);
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => { pending.delete(id); reject(new Error(label('客户端操作超时，请重试', 'Native operation timed out. Please retry.'))); }, timeout);
-      pending.set(id, {resolve, reject, timer});
       const payload = JSON.stringify({id, action, args: args || {}});
-      try { if (android?.request) android.request(payload); else raw.postMessage('bookstark:request:' + payload); }
+      pending.set(id, {resolve, reject, timer, payload, proved:!!window.__BookStarkFrameToken});
+      try { if (androidSend) androidSend(payload); else raw.postMessage((window.__BookStarkFrameToken?'bookstark:frame:'+window.__BookStarkFrameToken+':':'')+'bookstark:request:' + payload); }
       catch (error) { clearTimeout(timer); pending.delete(id); reject(error); }
     });
   }
+  window.addEventListener('bookstark:frame-ready',()=>{
+    if(androidSend||!raw||!window.__BookStarkFrameToken)return;
+    for(const job of pending.values())if(!job.proved){job.proved=true;raw.postMessage('bookstark:frame:'+window.__BookStarkFrameToken+':bookstark:request:'+job.payload);}
+  });
   window.BookStarkHostReply = (id, result, error) => {
     const job = pending.get(id); if (!job) return;
     pending.delete(id); clearTimeout(job.timer);
     if (error) job.reject(new Error(error)); else job.resolve(result);
   };
-  const ready = android?.request ? Promise.resolve(true) : native ? request('capabilities', {}, 1500).then(value => value?.version === 1, () => false) : Promise.resolve(false);
+  const ready = androidSend ? Promise.resolve(true) : native ? request('capabilities', {}, 10000).then(value => value?.version === 1, () => false) : Promise.resolve(false);
   ready.then(value => { enabled = value; });
   async function confirmLeave() {
     const message = window.__ ? __('tools.discard') : label('内容尚未保存。确定丢弃并离开吗？', 'Changes are not saved. Discard them and leave?');

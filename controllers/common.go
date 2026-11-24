@@ -48,18 +48,19 @@ func commonData(c *gin.Context, nav string) gin.H {
 	}
 
 	return gin.H{
-		"Account":      account,
-		"DefaultTheme": defaultThemeForVisitor(c),
-		"Background":   background,
-		"MemberID":     memberID,
-		"IsAdmin":      isAdmin,
-		"Nav":          nav,
-		"FriendLinks":  friendLinks,
-		"CSRFToken":    csrfToken,
-		"Lang":         lang,
-		"T":            t,
-		"JSBundle":     template.JS(bundleJSON),
-		"AIEnabled":    models.GetSettingWithDefault("ai_enabled", "0") == "1",
+		"Account":           account,
+		"DefaultTheme":      defaultThemeForVisitor(c),
+		"Background":        background,
+		"MemberID":          memberID,
+		"IsAdmin":           isAdmin,
+		"Nav":               nav,
+		"FriendLinks":       friendLinks,
+		"CSRFToken":         csrfToken,
+		"Lang":              lang,
+		"T":                 t,
+		"JSBundle":          template.JS(bundleJSON),
+		"PermissionCatalog": models.ToolPermissionCatalog,
+		"AIEnabled":         models.GetSettingWithDefault("ai_enabled", "0") == "1",
 	}
 }
 

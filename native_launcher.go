@@ -23,6 +23,7 @@ import (
 	"unicode/utf8"
 
 	"bookstark/conf"
+	"bookstark/controllers"
 	"bookstark/i18n"
 	"bookstark/routers"
 )
@@ -109,6 +110,16 @@ func (l *launcher) startURL() string {
 
 func (l *launcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Host != l.addr {
+		_, port, _ := net.SplitHostPort(l.addr)
+		if controllers.IsLocalToolSandboxHost(r.Host, port) && r.URL.Path == "/tools/frame" && r.Method == http.MethodGet {
+			l.mu.Lock()
+			backend := l.backend
+			l.mu.Unlock()
+			if backend != nil {
+				backend.ServeHTTP(w, r)
+				return
+			}
+		}
 		http.Error(w, "Invalid host", http.StatusForbidden)
 		return
 	}
@@ -121,6 +132,17 @@ func (l *launcher) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// reaches this page from its separate Wails asset origin.
 		l.render(w, r, http.StatusOK, launcherPageData{AutoStart: r.URL.Query().Get("choose") != "1", Tools: r.URL.Query().Get("tools") == "1"})
 		return
+	}
+	// Installed assets are read-only capabilities. A separate tool origin has
+	// neither launcher nor login cookies and must not gain access to other routes.
+	if strings.HasPrefix(r.URL.Path, "/api/tool-assets/") && (r.Method == http.MethodGet || r.Method == http.MethodHead || r.Method == http.MethodOptions) {
+		l.mu.Lock()
+		backend := l.backend
+		l.mu.Unlock()
+		if backend != nil {
+			backend.ServeHTTP(w, r)
+			return
+		}
 	}
 	// Extensions do not share the WebView cookie. Only the Linkding API may
 	// enter with an API token; launcher controls and other routes stay private.
@@ -380,6 +402,7 @@ func (l *launcher) openLocal(password string) error {
 	if err := initDatabases(); err != nil {
 		return err
 	}
+	conf.App.ToolLocalClient = true
 	router := routers.Setup()
 	if err := router.SetTrustedProxies(nil); err != nil {
 		return err

@@ -78,3 +78,22 @@ func TestNativeExportOwnershipAndLimits(t *testing.T) {
 		t.Fatal("unknown native command accepted")
 	}
 }
+
+func TestNativeFrameProofCannotBeReusedAcrossWindows(t *testing.T) {
+	h := newNativeCapabilities()
+	owner := &capabilityWindow{number: 1}
+	other := &capabilityWindow{number: 2}
+	h.frameTokens[owner.ID()] = "private-main-document-proof"
+	message := "bookstark:request:" + `{"id":"test","action":"clipboard-write","args":{"text":"allowed"}}`
+	if got, ok := h.unwrapFrameMessage(owner, "bookstark:frame:private-main-document-proof:"+message); !ok || got != message {
+		t.Fatal("main proof rejected")
+	}
+	for _, attempt := range []string{message, "bookstark:frame:wrong:" + message, "bookstark:frame::" + message} {
+		if _, ok := h.unwrapFrameMessage(owner, attempt); ok {
+			t.Fatal("untrusted frame accepted", attempt)
+		}
+	}
+	if _, ok := h.unwrapFrameMessage(other, "bookstark:frame:private-main-document-proof:"+message); ok {
+		t.Fatal("proof escaped its window")
+	}
+}

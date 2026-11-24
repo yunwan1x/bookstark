@@ -16,6 +16,8 @@ type marketSettings struct {
 	LoginRequired  bool   `json:"login_required"`
 	MembersPublish bool   `json:"members_publish"`
 	ReviewRequired bool   `json:"review_required"`
+	RuntimeOrigin  string `json:"runtime_origin"`
+	SocketProxy    bool   `json:"socket_proxy"`
 }
 
 func readMarketSettings(c *gin.Context) marketSettings {
@@ -23,7 +25,7 @@ func readMarketSettings(c *gin.Context) marketSettings {
 	if base == "" {
 		base = requestToolOrigin(c)
 	}
-	return marketSettings{models.GetSettingWithDefault("tool_market_enabled", "1") == "1", models.GetSettingWithDefault("tool_market_name", "BookStark 工具市场"), strings.TrimRight(base, "/") + "/market", models.GetSettingWithDefault("tool_market_login_required", "1") == "1", models.GetSettingWithDefault("tool_market_members_publish", "1") == "1", models.GetSettingWithDefault("tool_market_review_required", "1") == "1"}
+	return marketSettings{models.GetSettingWithDefault("tool_market_enabled", "1") == "1", models.GetSettingWithDefault("tool_market_name", "BookStark 工具市场"), strings.TrimRight(base, "/") + "/market", models.GetSettingWithDefault("tool_market_login_required", "1") == "1", models.GetSettingWithDefault("tool_market_members_publish", "1") == "1", models.GetSettingWithDefault("tool_market_review_required", "1") == "1", models.GetSetting("tool_runtime_origin"), models.GetSettingWithDefault("tool_socket_proxy", "0") == "1"}
 }
 func ToolMarketSettingsPage(c *gin.Context) {
 	c.HTML(200, "tool_market_settings.html", commonData(c, "admin"))
@@ -44,8 +46,13 @@ func ToolMarketSettings(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "invalid_market_url"})
 		return
 	}
-	values := map[string]string{"tool_market_name": p.Name, "tool_market_public_url": base}
-	for k, v := range map[string]bool{"tool_market_enabled": p.Enabled, "tool_market_login_required": p.LoginRequired, "tool_market_members_publish": p.MembersPublish, "tool_market_review_required": p.ReviewRequired} {
+	p.RuntimeOrigin = strings.ToLower(strings.TrimSpace(p.RuntimeOrigin))
+	if !validToolOriginTemplate(p.RuntimeOrigin, base) {
+		c.JSON(400, gin.H{"error": "invalid_runtime_origin"})
+		return
+	}
+	values := map[string]string{"tool_runtime_origin": p.RuntimeOrigin, "tool_market_name": p.Name, "tool_market_public_url": base}
+	for k, v := range map[string]bool{"tool_socket_proxy": p.SocketProxy, "tool_market_enabled": p.Enabled, "tool_market_login_required": p.LoginRequired, "tool_market_members_publish": p.MembersPublish, "tool_market_review_required": p.ReviewRequired} {
 		if v {
 			values[k] = "1"
 		} else {

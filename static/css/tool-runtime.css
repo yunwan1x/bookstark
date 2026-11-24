@@ -31,7 +31,8 @@
 .tool-runtime-info{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:var(--spacing-md);font-size:13px}
 .tool-runtime-info dd{margin:0;overflow-wrap:anywhere}
 .tool-runtime-info dt{color:var(--color-text-secondary)}
-.tool-runtime-info ul{padding-left:var(--spacing-md);list-style:disc}
 .tool-runtime-body [hidden]{display:none!important}
 .tool-runtime-body :is(a,button):focus-visible{outline:2px solid var(--color-focus);outline-offset:2px}
 @media(max-width:640px){.tool-runtime-back>span,.tool-runtime-bar>.tool-runtime-refresh{display:none}.tool-runtime-more-refresh{display:flex}.tool-runtime-title{padding-left:var(--spacing-sm)}.tool-runtime-title h1{font-size:13px}.tool-runtime-bar .row-action,.tool-runtime-more>.bs-action-dd-btn{width:32px;min-width:32px;height:36px}}
+
+.tool-runtime-capability-note{flex-shrink:0;padding:var(--spacing-sm) var(--spacing-md);font-size:13px;border-bottom:1px solid var(--color-border);background:var(--color-warning-light);color:var(--color-text)}

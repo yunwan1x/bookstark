@@ -43,9 +43,14 @@
 </select></label>
 <label id="publishMembers" for="publishMembersInput" {{if ne .PublishForm.Access "members"}}hidden{{end}}>{{call .T "market.form_members"}}<input class="dialog-input" id="publishMembersInput" name="members" placeholder="alice, bob" value="{{.PublishForm.Members}}"></label>
 <h2>{{call .T "market.form_permissions"}}</h2>
-<label for="publishRead"><input id="publishRead" name="read" type="checkbox" {{if .PublishForm.ReadFiles}}checked{{end}}>{{call .T "market.form_read"}}</label>
-<label for="publishSave"><input id="publishSave" name="save" type="checkbox" {{if .PublishForm.SaveFiles}}checked{{end}}>{{call .T "market.form_save"}}</label>
-<label for="publishNetwork"><input id="publishNetwork" name="network" type="checkbox" {{if .PublishForm.Network}}checked{{end}}>{{call .T "market.form_network"}}</label>
+<p class="market-muted">{{if eq .Lang "en"}}Declare only capabilities this tool uses. New capabilities are off by default. Device access still requires browser consent; availability depends on the browser and runtime environment.{{else}}仅声明工具实际使用的能力，新增权限默认关闭。设备访问仍需浏览器授权，支持情况取决于浏览器与运行环境。{{end}}</p>
+<div class="tool-permission-groups">
+{{range .PermissionGroups}}
+{{if .Advanced}}<details class="tool-permission-group"><summary>{{.Label}} <span class="market-muted">({{len .Items}})</span></summary>{{else}}<fieldset class="tool-permission-group"><legend>{{.Label}}</legend>{{end}}
+<div class="tool-permission-grid">{{range .Items}}<label class="tool-permission-option" for="{{.ID}}"><input type="checkbox" id="{{.ID}}" name="{{.Name}}" data-tool-permission="{{.Key}}" {{if .Checked}}checked{{end}}><span><strong>{{.Label}}</strong><span class="market-muted">{{.Description}}</span></span></label>{{end}}</div>
+{{if .Advanced}}</details>{{else}}</fieldset>{{end}}
+{{end}}
+</div>
 <label for="publishNotes">{{call .T "market.form_notes"}}<textarea class="dialog-input" id="publishNotes" name="notes" rows="3">{{.PublishForm.Notes}}</textarea></label>
 <p role="status" id="publishStatus"></p>
 <div class="market-actions"><a class="bs-btn bs-btn-cancel" href="/market/publish?selected={{.ToolID}}" id="toolPublishBack">{{call .T "market.back_selection"}}</a><button class="bs-btn bs-btn-cancel" id="toolPublishDraft" type="button">{{call .T "market.form_draft"}}</button><button class="bs-btn bs-btn-cancel" id="toolPublishPreview" type="button">{{call .T "market.form_check"}}</button><button class="bs-btn bs-btn-primary" type="submit">{{if .IsAdmin}}{{call .T "market.form_publish"}}{{else}}{{call .T "market.form_review"}}{{end}}</button></div>
@@ -58,5 +63,6 @@
 <script src="/static/js/pagination.js?v={{assetVer "/static/js/pagination.js"}}"></script>
 <script src="/static/js/tool-appearance.js?v={{assetVer "/static/js/tool-appearance.js"}}"></script>
 <script src="/static/js/tool-market-ui.js?v={{assetVer "/static/js/tool-market-ui.js"}}"></script>
+{{template "tool-permissions" .}}
 <script src="/static/js/tool-publish.js?v={{assetVer "/static/js/tool-publish.js"}}"></script>
 </body></html>

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -63,6 +64,17 @@ func runNativeWithOptions(override func(*application.Options)) error {
 		Description: "BookStark local and remote workspaces",
 		Assets:      application.AssetOptions{Handler: nativeAssetHandler(launcher)},
 		RawMessageHandler: func(window application.Window, message string, origin *application.OriginInfo) {
+			// Linux WebKit does not identify the posting frame. A per-window
+			// proof injected only into the main document protects every platform.
+			if strings.HasPrefix(message, "bookstark:frame:") {
+				var trusted bool
+				message, trusted = capabilities.unwrapFrameMessage(window, message)
+				if !trusted {
+					return
+				}
+			} else if strings.HasPrefix(message, "bookstark:request:") || strings.HasPrefix(message, "bookstark:open-external:") {
+				return
+			}
 			if capabilities.handleClient(window, message, origin) {
 				return
 			}

@@ -3,7 +3,9 @@
 package main
 
 import (
+	"crypto/rand"
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -70,11 +72,13 @@ func configureNativeWindow(app *application.App, launcher *launcher, capabilitie
 		window, _ := app.Window.GetByName(nativeMainWindowName)
 		return window
 	}, func() application.Window {
+		token := rand.Text()
+		proof, _ := json.Marshal(token)
 		window := app.Window.NewWithOptions(application.WebviewWindowOptions{
 			Name:  nativeMainWindowName,
 			Title: "BookStark", Width: 1280, Height: 850, MinWidth: 390, MinHeight: 560,
 			URL:     launcher.startURL(),
-			JS:      nativeDesktopReadyJS,
+			JS:      nativeDesktopReadyJS + ";if(window===top){if(!window.__BookStarkFrameToken)Object.defineProperty(window,'__BookStarkFrameToken',{value:" + string(proof) + "});window.dispatchEvent(new Event('bookstark:frame-ready'));}",
 			Windows: application.WindowsWindow{Menu: menu},
 			KeyBindings: map[string]func(application.Window){
 				"Alt+Left": func(w application.Window) {
@@ -88,6 +92,9 @@ func configureNativeWindow(app *application.App, launcher *launcher, capabilitie
 				},
 			},
 		})
+		capabilities.mu.Lock()
+		capabilities.frameTokens[window.ID()] = token
+		capabilities.mu.Unlock()
 		capabilities.guardClose(window)
 		return window
 	})

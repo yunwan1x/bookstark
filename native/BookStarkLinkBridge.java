@@ -16,7 +16,8 @@ import android.print.PrintManager;
 import android.util.Base64;
 import android.util.Log;
 import android.webkit.CookieManager;
-import android.webkit.JavascriptInterface;
+import androidx.webkit.WebViewCompat;
+import androidx.webkit.WebViewFeature;
 import android.webkit.JsResult;
 import android.webkit.PermissionRequest;
 import android.webkit.URLUtil;
@@ -67,6 +68,16 @@ public final class BookStarkLinkBridge {
     public BookStarkLinkBridge(Activity activity, WebView webView) {
         this.activity = activity;
         this.webView = webView;
+    }
+    // Unlike addJavascriptInterface, the listener carries an authenticated
+    // frame identity. Subframes cannot forge a host/native capability request.
+    public void installBridge() {
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) return;
+        WebViewCompat.addWebMessageListener(webView,"BookStarkNative",java.util.Collections.singleton("*"),
+            (view,message,sourceOrigin,isMainFrame,replyProxy) -> {
+                if (!isMainFrame || !sameOrigin(sourceOrigin.toString())) return;
+                request(message.getData());
+            });
     }
     public void trackWorkspace(String address) {
         try {
@@ -123,7 +134,7 @@ public final class BookStarkLinkBridge {
                 && uri.getHost() != null && uri.getUserInfo() == null;
         } catch (URISyntaxException error) { return false; }
     }
-    @JavascriptInterface public void openExternal(String address) {
+    private void openExternal(String address) {
         if (!isWebAddress(address)) return;
         activity.runOnUiThread(() -> {
             try { activity.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(address))); }
@@ -135,7 +146,7 @@ public final class BookStarkLinkBridge {
             (value == null || value == JSONObject.NULL ? "null" : value instanceof String ? JSONObject.quote((String) value) : String.valueOf(value)) + "," + (error == null ? "null" : JSONObject.quote(error)) + ")";
         activity.runOnUiThread(() -> webView.evaluateJavascript(script, null));
     }
-    @JavascriptInterface public void request(String json) {
+    private void request(String json) {
         if (json == null || json.length() > 300000) return;
         activity.runOnUiThread(() -> {
             String id = "";
@@ -148,6 +159,8 @@ public final class BookStarkLinkBridge {
                 if (args == null) args = new JSONObject();
                 switch (action) {
                     case "client": clientRequest(id,args); break;
+                    case "open-external": openExternal(args.getString("url")); break;
+                    case "finish-navigation": finishNavigation(args.getString("token"),args.optBoolean("allowed")); break;
                     case "clipboard-write":
                         ((ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE))
                             .setPrimaryClip(ClipData.newPlainText("BookStark", args.getString("text")));
@@ -245,9 +258,18 @@ public final class BookStarkLinkBridge {
                  == (current.getPort() < 0 ? ("https".equals(current.getScheme()) ? 443 : 80) : current.getPort());
         } catch (Exception ignored) { return false; }
     }
+    private boolean allowedMediaOrigin(String address) {
+        if (sameOrigin(address)) return true;
+        try {
+            URI requested=new URI(address),current=new URI(webView.getUrl());
+            return "http".equals(current.getScheme()) && "127.0.0.1".equals(current.getHost())
+                && "http".equals(requested.getScheme()) && requested.getHost().matches("tool-[a-f0-9]{32}\\.localhost")
+                && requested.getPort()==current.getPort() && current.getPath().startsWith("/tools/run/");
+        } catch(Exception ignored) { return false; }
+    }
     public void media(PermissionRequest request) {
         activity.runOnUiThread(() -> {
-            if (!sameOrigin(request.getOrigin().toString()) || mediaRequest != null) { request.deny(); return; }
+            if (!allowedMediaOrigin(request.getOrigin().toString()) || mediaRequest != null) { request.deny(); return; }
             for (String resource : request.getResources())
                 if (!resource.equals(PermissionRequest.RESOURCE_VIDEO_CAPTURE) && !resource.equals(PermissionRequest.RESOURCE_AUDIO_CAPTURE)) { request.deny(); return; }
             mediaRequest = request;
@@ -273,7 +295,7 @@ public final class BookStarkLinkBridge {
     private void grantMedia() {
         if (mediaRequest == null) return;
         PermissionRequest request = mediaRequest; mediaRequest = null;
-        if (!sameOrigin(request.getOrigin().toString())) { request.deny(); return; }
+        if (!allowedMediaOrigin(request.getOrigin().toString())) { request.deny(); return; }
         ArrayList<String> granted = new ArrayList<>();
         for (String resource : request.getResources()) {
             String permission = resource.equals(PermissionRequest.RESOURCE_VIDEO_CAPTURE) ? Manifest.permission.CAMERA : Manifest.permission.RECORD_AUDIO;
@@ -286,9 +308,9 @@ public final class BookStarkLinkBridge {
         if (navigation != null) return;
         navigation = action; navigationToken = UUID.randomUUID().toString();
         String token = navigationToken;
-        webView.evaluateJavascript("(async function(){let ok=false;try{ok=typeof window.BookStarkBeforeLeave==='function'?await window.BookStarkBeforeLeave():true;}catch(e){} BookStarkNative.finishNavigation(" + JSONObject.quote(token) + ",!!ok)})()", null);
+        webView.evaluateJavascript("(async function(){let ok=false;try{ok=typeof window.BookStarkBeforeLeave==='function'?await window.BookStarkBeforeLeave():true;}catch(e){} BookStarkNative.postMessage(JSON.stringify({id:'navigation',action:'finish-navigation',args:{token:" + JSONObject.quote(token) + ",allowed:!!ok}}))})()", null);
     }
-    @JavascriptInterface public void finishNavigation(String token, boolean allowed) {
+    private void finishNavigation(String token, boolean allowed) {
         activity.runOnUiThread(() -> {
             if (navigationToken == null || !navigationToken.equals(token)) return;
             Runnable action = navigation; navigation = null; navigationToken = null;

@@ -16,6 +16,7 @@ import (
 	"time"
 )
 
+var ErrToolPermission = errors.New("tool permission denied")
 var ErrToolConflict = errors.New("tool installation changed")
 var ErrToolCleanupPending = errors.New("resource cleanup pending")
 var toolLocks [64]sync.Mutex
@@ -419,6 +420,9 @@ func PutToolResource(member, id int64, revision, instance, area, name, mime stri
 	}
 	if t.Revision != revision || t.Instance != instance {
 		return ErrToolConflict
+	}
+	if area == "data" && !t.Permissions.SaveFiles {
+		return ErrToolPermission
 	}
 	p, err := ToolResourcePath(t, area, name)
 	if err != nil {

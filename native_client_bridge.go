@@ -3,6 +3,7 @@
 package main
 
 import (
+	"crypto/subtle"
 	"encoding/json"
 	"errors"
 	"strings"
@@ -45,4 +46,22 @@ func (h *nativeCapabilities) handleClient(window application.Window, message str
 		window.ExecJS("if(location.origin===" + string(expected) + "){window.BookStarkHostReply&&window.BookStarkHostReply.apply(null," + string(reply) + ")}")
 	}()
 	return true
+}
+
+func (h *nativeCapabilities) unwrapFrameMessage(window application.Window, message string) (string, bool) {
+	payload, ok := strings.CutPrefix(message, "bookstark:frame:")
+	if !ok {
+		return "", false
+	}
+	token, body, ok := strings.Cut(payload, ":")
+	if !ok {
+		return "", false
+	}
+	h.mu.Lock()
+	expected := h.frameTokens[window.ID()]
+	h.mu.Unlock()
+	if expected == "" || len(token) != len(expected) || subtle.ConstantTimeCompare([]byte(token), []byte(expected)) != 1 {
+		return "", false
+	}
+	return body, true
 }

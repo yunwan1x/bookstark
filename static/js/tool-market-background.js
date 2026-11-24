@@ -20,7 +20,7 @@
    for(const old of updates){
     const pkg=await request(old.id<0?'/api/tool-sources/'+old.id+'?metadata=1':'/api/tool-market/'+old.id+'?metadata=1');
     // New permissions require an explicit review, even with automatic updates on.
-    if(['read_files','save_files','network'].some(k=>pkg.permissions?.[k]&&!old.permissions?.[k]))continue;
+    if(Object.keys(pkg.permissions||{}).some(k=>k!=='schema'&&pkg.permissions[k]===true&&!(old.permissions?.[k]===true||!old.permissions?.schema&&['downloads','forms'].includes(k))))continue;
     await request('/api/tool-installs/'+old.id,'PUT',{revision:pkg.revision,hash:pkg.hash||'',expected:old.revision,instance:old.instance});
     window.dispatchEvent(new Event('tool-market-changed'));
    }

@@ -183,3 +183,20 @@
  .publish-selection-actions .market-actions>a{flex-shrink:0}
  .publish-selection-actions .market-actions>button{flex:1;min-width:0;white-space:normal}
 }
+
+/* Tool capability declarations use the existing form controls and panels. */
+.tool-permission-groups{display:grid;gap:var(--spacing-md)}
+.tool-permission-group{border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--spacing-md);min-width:0}
+.tool-permission-group legend,.tool-permission-group summary{font-weight:600;font-size:14px}
+.tool-permission-group summary{cursor:pointer}
+.tool-permission-group[open] summary{margin-bottom:var(--spacing-md)}
+.tool-permission-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--spacing-md)}
+.market-form .tool-permission-option{display:flex;align-items:flex-start;gap:var(--spacing-sm);min-width:0;margin:0}
+.tool-permission-option input{flex:0 0 auto;margin-top:var(--spacing-xs)}
+.tool-permission-option strong,.tool-permission-option span.market-muted{display:block}
+.tool-permission-option span.market-muted{font-size:12px;line-height:1.6;margin-top:var(--spacing-xs)}
+.tool-permission-list{list-style:none;padding:0;margin:0;display:grid;gap:var(--spacing-md)}
+.tool-permission-list li{padding-bottom:var(--spacing-md);border-bottom:1px solid var(--color-border)}
+.tool-permission-list li strong,.tool-permission-list li span{display:block}
+.tool-permission-list li span{font-size:12px;margin-top:var(--spacing-xs)}
+@media(max-width:640px){.tool-permission-grid{grid-template-columns:minmax(0,1fr)}}

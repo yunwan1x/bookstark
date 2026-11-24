@@ -11,11 +11,13 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -80,6 +82,9 @@ func runIsolatedBrowser(t *testing.T, script string, setup ...func(*testing.T)) 
 	server := httptest.NewServer(routers.Setup())
 	defer server.Close()
 	cmd := exec.Command("node", filepath.Join(repo, "tests", "browser", script))
+	if strings.HasSuffix(script, ".py") {
+		cmd = exec.Command("xvfb-run", "-a", "/usr/bin/python3", filepath.Join(repo, "tests", "browser", script))
+	}
 	cmd.Env = append(os.Environ(), "BOOKSTARK_TEST_ORIGIN="+server.URL, "BOOKSTARK_TEST_PASSWORD="+conf.App.AdminPassword)
 	cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
 	if err := cmd.Run(); err != nil {
@@ -300,6 +305,58 @@ func TestToolMarketBrowser(t *testing.T) {
 				t.Fatal(err)
 			}
 
+		}
+	})
+}
+
+func TestToolPermissionsBrowser(t *testing.T) {
+	runIsolatedBrowser(t, "tool_permissions_browser_test.cjs", func(t *testing.T) {
+		conf.App.ToolLocalClient = true
+		echo, err := net.Listen("tcp", "127.0.0.1:0")
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { echo.Close() })
+		go func() {
+			for {
+				conn, err := echo.Accept()
+				if err != nil {
+					return
+				}
+				go func() { defer conn.Close(); io.Copy(conn, conn) }()
+			}
+		}()
+		t.Setenv("BOOKSTARK_SOCKET_TEST_PORT", strconv.Itoa(echo.Addr().(*net.TCPAddr).Port))
+
+		if err := models.InitWebDAVDB(filepath.Join(t.TempDir(), "permission-files.db")); err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { models.WebDAVDB.Close(); models.WebDAVDB = nil })
+		for _, id := range []int64{9001, 9002} {
+			permissions := models.ToolPermissions{Schema: 1}
+			if id == 9001 {
+				permissions = models.ToolPermissions{Schema: 1, SocketTCP: true, ReadFiles: true, SaveFiles: true, ClipboardRead: true, ClipboardWrite: true, Camera: true, Microphone: true, DisplayCapture: true, Geolocation: true, Fullscreen: true, Downloads: true}
+			}
+			content := `<!doctype html><html><head><meta charset="utf-8"></head><body><h1 id="ready">设备与文件工具</h1><button id="camera">测试摄像头和麦克风</button><button id="copy">复制内容</button><button id="fullscreen">全屏</button><output id="result"></output><script>camera.onclick=async()=>{try{const stream=await navigator.mediaDevices.getUserMedia({video:true,audio:true});result.textContent=stream.getTracks().map(track=>track.kind).sort().join(',');stream.getTracks().forEach(track=>track.stop());}catch(error){result.textContent=error.name}};copy.onclick=async()=>{try{await navigator.clipboard.writeText('BookStark clipboard fixture');result.textContent='copied';}catch(error){result.textContent=error.name}};fullscreen.onclick=()=>document.documentElement.requestFullscreen();</script></body></html>`
+			if err := models.SaveInstalledTool(1, models.InstalledTool{ID: id, Title: "设备与文件工具", Revision: fmt.Sprint("permission-fixture-", id), Content: content, ToolMetadata: models.ToolMetadata{Version: "1.0.0", Category: "development", Permissions: permissions}}, "", ""); err != nil {
+				t.Fatal(err)
+			}
+		}
+	})
+}
+
+func TestToolPermissionsWebKitBrowser(t *testing.T) {
+	if os.Getenv("BOOKSTARK_WEBKIT_TEST") != "1" {
+		t.Skip("set BOOKSTARK_WEBKIT_TEST=1 for the installed WebKitGTK runtime")
+	}
+	runIsolatedBrowser(t, "tool_permissions_webkit_test.py", func(t *testing.T) {
+		if err := models.InitWebDAVDB(filepath.Join(t.TempDir(), "webkit-files.db")); err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { models.WebDAVDB.Close(); models.WebDAVDB = nil })
+		html := `<!doctype html><html><head><meta charset="utf-8"></head><body><h1>WebKit tool</h1><script>(async()=>{let data={origin:location.origin,secure:isSecureContext};try{try{void parent.document.body;data.isolated=false}catch(_){data.isolated=true}await BookStark.files.write('webkit/test.txt','WebKit file bridge');data.content=new TextDecoder().decode(await BookStark.files.read('webkit/test.txt'));}catch(error){data.error=error.message}window.webkit.messageHandlers.toolTestProbe.postMessage(JSON.stringify(data))})()</script></body></html>`
+		if err := models.SaveInstalledTool(1, models.InstalledTool{ID: 9200, Title: "WebKit", Revision: "webkit-v1", Content: html, ToolMetadata: models.ToolMetadata{Permissions: models.ToolPermissions{Schema: 1, ReadFiles: true, SaveFiles: true, Camera: true}}}, "", ""); err != nil {
+			t.Fatal(err)
 		}
 	})
 }

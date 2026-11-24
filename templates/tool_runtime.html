@@ -25,6 +25,7 @@
 </div></div>
 </div>
 <div class="tool-runtime-save-error" id="toolRuntimeSaveError" role="alert" hidden><span>{{call .T "market.run_save_error"}}</span><button class="bs-btn bs-btn-cancel" id="toolRuntimeRetrySave" type="button">{{call .T "tools.retry"}}</button><button class="bs-btn bs-btn-cancel" id="toolRuntimeExportError" type="button">{{call .T "market.export"}}</button></div>
+<div id="toolRuntimeCapabilities" class="tool-runtime-capability-note" role="status" hidden></div>
 <main role="main" id="toolRuntime" class="tool-runtime-main" data-tool-id="{{.ToolID}}">
 <div id="marketFrameHost" class="html-frame-host" aria-busy="true"></div>
 <div id="toolRuntimeState" class="tool-runtime-state" data-phase="loading">
@@ -35,12 +36,13 @@
 </div></div>
 </main>
 <button type="button" class="row-action tool-runtime-exit" id="toolRuntimeExit" aria-label="{{call .T "market.run_exit_fullscreen"}}" title="{{call .T "market.run_exit_fullscreen"}}" hidden><i class="fa-solid fa-compress" aria-hidden="true"></i></button>
-<script>window.__I18N_MESSAGES = {{.JSBundle}};window.__currentLang = "{{.Lang}}";</script>
+<script>window.BookStarkToolRuntime={{json .RuntimeFrame}};window.__I18N_MESSAGES = {{.JSBundle}};window.__currentLang = "{{.Lang}}";</script>
 <script src="/static/js/i18n.js?v={{assetVer "/static/js/i18n.js"}}"></script>
 <script src="/static/js/bs-dialog.js?v={{assetVer "/static/js/bs-dialog.js"}}"></script>
 <script src="/static/js/tool-appearance.js?v={{assetVer "/static/js/tool-appearance.js"}}"></script>
 <script src="/static/js/tool-market-store.js?v={{assetVer "/static/js/tool-market-store.js"}}"></script>
 <script src="/static/js/tool-market-ui.js?v={{assetVer "/static/js/tool-market-ui.js"}}"></script>
+{{template "tool-permissions" .}}
 <script src="/static/js/tool-runner.js?v={{assetVer "/static/js/tool-runner.js"}}"></script>
 </body></html>
 {{define "tool-runtime-icon"}}<span class="market-icon" style="--tool-icon-color:{{.Color}};--tool-icon-bg:{{.Background}}"><i class="{{.Class}}" aria-hidden="true"></i></span>{{end}}
