@@ -32,10 +32,10 @@ func TestToolMarketConfigurationRequiresWorkspaceAdministrator(t *testing.T) {
 			if strings.Contains(body, `id="marketSettings"`) != tc.configure || strings.Contains(body, `id="marketPublish"`) != tc.publish {
 				t.Fatalf("wrong actions for %s", tc.name)
 			}
-			if strings.Contains(body, `id="marketMore"`) != tc.publish {
-				t.Fatalf("wrong management menu visibility for %s", tc.name)
+			if strings.Contains(body, `id="marketActions"`) != (tc.configure || tc.publish) {
+				t.Fatalf("wrong action group visibility for %s", tc.name)
 			}
-			for _, obsolete := range []string{`id="marketIntro"`, `id="marketHeading"`, `id="marketCatalogTab"`, `id="marketInstalledTab"`, `id="marketAdmin"`, `class="market-switch"`} {
+			for _, obsolete := range []string{`id="marketMore"`, `id="marketActionsMenu"`, `id="marketIntro"`, `id="marketHeading"`, `id="marketCatalogTab"`, `id="marketInstalledTab"`, `id="marketAdmin"`, `class="market-switch"`} {
 				if strings.Contains(body, obsolete) {
 					t.Fatalf("obsolete nested UI: %s", obsolete)
 				}

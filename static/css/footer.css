@@ -14,7 +14,9 @@
 .site-footer-social-description { margin-top: var(--spacing-md) !important; font-size: 13px !important; line-height: 1.65; color: var(--color-text-secondary); overflow-wrap: anywhere; }
 .site-footer-group p { margin: var(--spacing-xs) 0 0; font-size: 12px; }
 .site-footer-bottom { max-width: 1440px; margin: auto; padding-top: var(--spacing-md); border-top: 1px solid var(--color-border); text-align: center; font-size: 11px; }
-.site-footer-groups:empty { display: none; }
+.site-footer-groups:not(:has(.site-footer-group)),.site-footer-simple:not(:has(a)) { display: none; }
+.site-footer:not(:has(.site-footer-group,.site-footer-simple a)) { padding-top: var(--spacing-md); }
+.site-footer:not(:has(.site-footer-group,.site-footer-simple a)) .site-footer-bottom { padding-top: 0; border-top: 0; }
 @media (max-width: 640px) {
   .home-body > .site-footer { display: block; padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
   .site-footer { padding: var(--spacing-lg) var(--spacing-md); }

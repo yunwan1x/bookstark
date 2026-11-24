@@ -40,41 +40,10 @@
  document.getElementById('marketPageSize').value=String(take);document.getElementById('marketPageSize').onchange=event=>{take=Number(event.target.value);page=1;render();};
  const search=document.getElementById('marketQuery');search.value=query;search.placeholder=t('搜索工具','Search tools');search.oninput=event=>{query=event.target.value;page=1;render();};document.getElementById('marketSearch').onsubmit=event=>event.preventDefault();
  for(const [id,value]of [['marketGridView','grid'],['marketListView','list']])document.getElementById(id).onclick=()=>{layout=value;render();};document.getElementById('marketCheck').onclick=load;
- // Keep the scrollable plaza tabs separate from the dropdown, so it cannot be clipped.
+ // Keep the active tool tab visible in the horizontally scrolling plaza navigation.
  const plazaNav=main.querySelector('.market-plaza-bar .public-nav');
  function revealActiveTab(){const active=plazaNav?.querySelector('[aria-current]');if(!active)return;const nav=plazaNav.getBoundingClientRect(),tab=active.getBoundingClientRect();if(tab.right>nav.right)plazaNav.scrollLeft+=tab.right-nav.right;else if(tab.left<nav.left)plazaNav.scrollLeft-=nav.left-tab.left;}
  revealActiveTab();window.addEventListener('resize',revealActiveTab);
- const closeActions=prepareActions();
- function prepareActions(){
-  const actions=document.getElementById('marketActions'),more=document.getElementById('marketMore'),menu=document.getElementById('marketActionsMenu');
-  if(!actions)return ()=>{};
-  const mobile=matchMedia('(max-width: 640px)');let sheet=null;
-  function restore(){
-   if(!sheet)return;sheet=null;actions.append(menu);BSActionDropdown.close(actions);
-   more.setAttribute('aria-controls',menu.id);BookStarkScrollLock.unlock('market-actions');
-  }
-  function close(){if(sheet){sheet.close();restore();}else BSActionDropdown.close(actions);}
-  function openSheet(last=false){
-   if(sheet)return;
-   BSActionDropdown.closeAll();
-   sheet=createBSDialog(t('工具操作','Tool actions'),'',t('关闭','Close'));
-   sheet.id='marketActionsSheet';sheet.classList.add('market-actions-sheet');sheet.querySelector('h2').classList.add('sr-only');
-   sheet.append(menu);menu.style.display='block';more.setAttribute('aria-expanded','true');more.setAttribute('aria-controls',sheet.id);
-   BookStarkScrollLock.lock('market-actions');
-   const openedSheet=sheet;sheet.addEventListener('close',()=>{if(sheet===openedSheet)restore();},{once:true});
-   sheet.addEventListener('click',event=>{if(event.target!==sheet)return;const box=sheet.getBoundingClientRect();if(event.clientX<box.left||event.clientX>box.right||event.clientY<box.top||event.clientY>box.bottom)close();});
-   const items=menu.querySelectorAll('[role="menuitem"]');items[last?items.length-1:0]?.focus({preventScroll:true});
-  }
-  function mode(){close();more.setAttribute('aria-haspopup',mobile.matches?'dialog':'menu');}
-  more.addEventListener('click',event=>{if(!mobile.matches)return;event.preventDefault();event.stopPropagation();openSheet();});
-  more.addEventListener('keydown',event=>{if(mobile.matches&&['ArrowDown','ArrowUp'].includes(event.key)){event.preventDefault();event.stopPropagation();openSheet(event.key==='ArrowUp');}});
-  menu.addEventListener('keydown',event=>{
-   if(!sheet||!['ArrowDown','ArrowUp','Home','End'].includes(event.key))return;
-   event.preventDefault();const items=[...menu.querySelectorAll('[role="menuitem"]')],index=items.indexOf(document.activeElement);
-   items[event.key==='Home'?0:event.key==='End'?items.length-1:(index+(event.key==='ArrowUp'?-1:1)+items.length)%items.length]?.focus();
-  });
-  mobile.addEventListener('change',mode);window.addEventListener('pagehide',close);mode();return close;
- }
- document.getElementById('marketSettings')?.addEventListener('click',()=>{closeActions();U.settings().catch(err=>status(errorText(err)));});const publish=document.getElementById('marketPublish');if(publish){publish.href=U.publicationChoiceURL();publish.addEventListener('click',()=>{closeActions();publish.href=U.publicationChoiceURL();U.rememberMarketPosition();});}
+ document.getElementById('marketSettings')?.addEventListener('click',()=>U.settings().catch(err=>status(errorText(err))));const publish=document.getElementById('marketPublish');if(publish){publish.href=U.publicationChoiceURL();publish.addEventListener('click',()=>{publish.href=U.publicationChoiceURL();U.rememberMarketPosition();});}
  window.addEventListener('pageshow',event=>{if(event.persisted)load();});window.addEventListener('tool-market-source-changed',load);window.addEventListener('tool-market-changed',load);load();
 })();

@@ -6,13 +6,37 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
  await context.addCookies([{name:'lang',value:'zh',url:origin}]);const page=await context.newPage(),errors=[];page.on('pageerror',err=>errors.push(err.message));
  const api=async(path,method='GET',data)=>{const csrf=(await(await context.request.get(origin+'/api/csrf-token')).json()).csrf_token;const response=await context.request.fetch(origin+path,{method,headers:{'X-CSRF-Token':csrf},data});assert.equal(response.ok(),true,await response.text());return response.json();};
  async function until(fn){const deadline=Date.now()+20000;while(!await fn()){if(Date.now()>deadline)throw Error('Timed out waiting for persisted tool state');await new Promise(resolve=>setTimeout(resolve,80));}}
- async function manage(selector){if(selector==='#marketPublish')await page.locator('#marketMore').click();await page.locator(selector).click();}
+ async function manage(selector){await page.locator(selector).click();}
+ async function toolbarLayout(target=page){
+  const layout=await target.evaluate(()=>{
+   const ids=['marketSearch','marketCategory','marketState','marketSort','marketSettings','marketPublish'];
+   const rects=Object.fromEntries(ids.map(id=>[id,document.getElementById(id)]).filter(([,el])=>el).map(([id,el])=>{const r=el.getBoundingClientRect();return[id,{left:r.left,right:r.right,cy:r.top+r.height/2}];}));
+   return {width:innerWidth,rects,rows:new Set(Object.values(rects).map(r=>Math.round(r.cy))).size,overflow:document.documentElement.scrollWidth>innerWidth+1};
+  });
+  assert.equal(layout.overflow,false,'toolbar fits '+layout.width);
+  assert.equal(layout.rows,layout.width<=1024?2:1,'toolbar occupies the approved number of rows: '+JSON.stringify(layout));
+  const r=layout.rects;
+  assert.ok(Math.abs(r.marketSearch.cy-r.marketCategory.cy)<2,'search and category share a row');
+  assert.ok(Math.abs(r.marketState.cy-r.marketSort.cy)<2,'state and sorting share a row');
+  if(layout.width<=1024)assert.ok(r.marketSort.cy>r.marketSearch.cy,'sorting is on the second row');
+  const actions=[r.marketSettings,r.marketPublish].filter(Boolean);
+  if(actions.length){assert.ok(actions[0].left>=r.marketSort.right&&actions[0].left-r.marketSort.right<=12,'action group directly follows sorting');for(const a of actions)assert.ok(Math.abs(a.cy-r.marketSort.cy)<2,'actions remain on the sorting row');}
+ }
+ async function footerAtBottom(target=page){
+  const box=await target.evaluate(()=>{const footer=document.querySelector('.site-footer').getBoundingClientRect(),main=document.getElementById('marketMain').getBoundingClientRect();return {bottom:footer.bottom,top:footer.top,mainBottom:main.bottom,height:innerHeight,width:innerWidth,theme:document.documentElement.dataset.themeStyle};});
+  assert.ok(Math.abs(box.bottom-box.height)<2,'empty and short lists push footer to viewport bottom: '+JSON.stringify(box));
+  assert.ok(box.top>=box.mainBottom-1,'footer never overlaps tools');
+  assert.equal(await target.locator('.site-footer-bottom').evaluate(el=>getComputedStyle(el).borderTopWidth),'0px','empty friend links do not leave an inner separator');
+ }
  const act=(a,id)=>page.locator(`[data-market-action="${a}"][data-id="${id}"]:visible`).first();
  try{
   await page.goto(origin+'/market');await page.locator('.market-empty').waitFor();
   assert.equal(await page.locator('#marketSource').count(),0,'obsolete source form removed');
   assert.equal(await page.locator('#marketMore,#marketPublish,#marketSettings,#marketCatalogTab,#marketInstalledTab,.market-switch').count(),0,'guest and nested controls must be absent');
   assert.equal(await page.locator('#marketIntro,#marketHeading').count(),0,'redundant heading and market attribution are removed');
+  await toolbarLayout();await footerAtBottom();
+  for(const [width,lang]of [[320,'en'],[390,'zh'],[768,'en']]){await context.addCookies([{name:'lang',value:lang,url:origin}]);await page.setViewportSize({width,height:950});await page.reload();await page.locator('.market-empty').waitFor();await toolbarLayout();await footerAtBottom();}
+  await context.addCookies([{name:'lang',value:'zh',url:origin}]);await page.setViewportSize({width:1440,height:1050});await page.reload();await page.locator('.market-empty').waitFor();
   assert.equal(await page.locator('#marketMain>.market-plaza-bar>.public-nav').count(),1);assert.equal(await page.locator('#marketMain>.market-plaza-bar>.public-nav a[aria-current]').textContent().then(x=>x.trim()),'工具');
   const signedIn=await context.request.post(origin+'/api/login',{data:{account:'admin',password:process.env.BOOKSTARK_TEST_PASSWORD}});assert.equal(signedIn.status(),200);
   await page.goto(origin+'/admin/tool-market');await page.locator('#marketAdminForm input[name="name"]').waitFor();
@@ -84,13 +108,13 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
   await page.locator('#marketPagination [data-page="2"]').first().click();assert.equal(await page.locator('.market-card').count(),8);
   await page.locator('#marketListView').click();assert.equal(await page.locator('#marketItems').evaluate(el=>el.classList.contains('is-list')),true);await page.reload();await until(async()=>await page.locator('.market-card').count()===8);assert.equal(await page.locator('#marketState').inputValue(),'uninstalled');
   await page.locator('#marketPageSize').selectOption('24');assert.equal(await page.locator('.market-card').count(),20);
-  await page.screenshot({path:out+'/07-flat-list-view.png',fullPage:true});
+  assert.equal(await page.evaluate(()=>{const footer=document.querySelector('.site-footer').getBoundingClientRect(),main=document.getElementById('marketMain').getBoundingClientRect();return document.documentElement.scrollHeight>innerHeight&&footer.top>=main.bottom-1;}),true,'long lists grow naturally and push the footer below content');await page.screenshot({path:out+'/07-flat-list-view.png',fullPage:true});
   await page.locator('#marketGridView').click();await page.locator('#marketPageSize').selectOption('12');await page.locator('#marketState').selectOption('all');await page.locator('#marketSort').selectOption('updated');await page.screenshot({path:out+'/08-flat-tools-grid.png',fullPage:true});
   await page.evaluate(()=>scrollTo(0,200));const marketPosition=await page.evaluate(()=>scrollY),marketReturnURL=page.url();await page.locator('#marketPublish').evaluate(link=>link.click());await page.locator('#toolPublishSelection').waitFor();await page.locator('[data-return-market]').first().click();await page.waitForURL(marketReturnURL);await page.locator('.market-card').first().waitFor();await until(async()=>Math.abs((await page.evaluate(()=>scrollY))-marketPosition)<3);
   await page.unroute(origin+'/api/tool-market');
   const viewer=await browser.newContext();await viewer.addCookies([{name:'lang',value:'zh',url:origin}]);assert.equal((await viewer.request.post(origin+'/api/login',{data:{account:'tools-viewer',password:'viewer-password-2026'}})).status(),200);
   const viewerPage=await viewer.newPage();await viewerPage.goto(origin+'/market');await viewerPage.locator('.market-card').waitFor();assert.equal(await viewerPage.locator('#marketSettings').count(),0,'ordinary members must not see configuration');
-  await viewerPage.locator('#marketMore').click();assert.equal(await viewerPage.locator('#marketActionsMenu [role=menuitem]:visible').count(),1,'publishers only see their permitted action');await viewerPage.locator('#marketPublish').waitFor();
+  assert.equal(await viewerPage.locator('#marketActions>.row-action:visible').count(),1,'publishers only see their permitted action');await viewerPage.locator('#marketPublish').waitFor();await toolbarLayout(viewerPage);
   const publicationSettings=await api('/api/tool-market/settings');await api('/api/tool-market/settings','PUT',{...publicationSettings,members_publish:false});await viewerPage.reload();await viewerPage.locator('.market-card').waitFor();assert.equal(await viewerPage.locator('#marketMore,#marketSettings,#marketPublish').count(),0,'no empty management menu after publication permissions are revoked');await api('/api/tool-market/settings','PUT',publicationSettings);
   const viewerConfig=await(await viewer.request.get(origin+'/api/tool-market/client')).json();assert.equal(viewerConfig.can_configure,false);
   const viewerCSRF=(await(await viewer.request.get(origin+'/api/csrf-token')).json()).csrf_token;for(const [path,method]of [['/api/tool-market/client','PUT'],['/api/tool-market/client/test','POST']]){const denied=await viewer.request.fetch(origin+path,{method,headers:{'X-CSRF-Token':viewerCSRF},data:{url:origin+'/market'}});assert.equal(denied.status(),403);}
@@ -115,26 +139,16 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
   await page.goto(origin+'/market?selected='+id);await act('install',id).click();await page.getByRole('button',{name:/^确认安装/}).click();await until(async()=>(await api('/api/tool-installs')).tools.length===1);
   await page.goto(origin+'/market?open='+id);await frame.locator('#value').waitFor();assert.equal(await frame.locator('#value').inputValue(),'keep this');assert.equal(await frame.locator('body').evaluate(async()=>new TextDecoder().decode(await BookStark.files.read('notes/saved.txt'))),'saved file');
   await page.goto(origin+'/market');await manage('#marketSettings');await page.locator('dialog input[name="url"]').waitFor();assert.equal(await page.locator('dialog input[name="url"]').inputValue(),origin+'/market');await page.getByRole('button',{name:'测试连接',exact:true}).click();await page.getByText('✓ 连接成功 · 我的工具市场',{exact:true}).waitFor();await page.screenshot({path:out+'/04-client-market-settings.png',fullPage:true});await page.getByRole('button',{name:'保存设置',exact:true}).click();
-  for(const [width,lang,theme]of [[1440,'zh','light'],[390,'zh','hud-light'],[320,'en','glass'],[1440,'en','hud']]){
-   await context.addCookies([{name:'lang',value:lang,url:origin}]);await page.evaluate(theme=>localStorage.setItem('bookstark-theme',theme),theme);await page.setViewportSize({width,height:950});await page.reload();await page.locator('.market-card').first().waitFor();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,`${width}/${lang}/${theme}`);await page.screenshot({path:out+`/05-${width}-${lang}-${theme}.png`,fullPage:true});
-   assert.equal(await page.locator('#marketActionsMenu').isVisible(),false);assert.equal(await page.locator('#marketIntro,#marketHeading').count(),0);
-   assert.equal(await page.locator('#marketSettings').textContent().then(text=>text.trim()),'','settings uses an icon without a visible label');assert.equal(await page.evaluate(()=>{const input=document.getElementById('marketQuery').getBoundingClientRect(),button=document.getElementById('marketSettings').getBoundingClientRect();return button.left>=input.right&&button.left-input.right<=12&&Math.abs((input.top+input.height/2)-(button.top+button.height/2))<2;}),true,'settings stays immediately beside search at every viewport');
-   assert.equal(await page.evaluate(()=>{const nav=document.querySelector('.market-plaza-bar').getBoundingClientRect(),more=document.getElementById('marketMore').getBoundingClientRect(),tab=document.querySelector('.public-nav [aria-current]').getBoundingClientRect();return more.left>=tab.right-1&&more.top>=nav.top&&more.bottom<=nav.bottom;}),true,'active tool tab and more share one row without clipping');
+  for(const [width,lang,theme]of [[1440,'zh','light'],[390,'zh','light'],[320,'zh','light'],[320,'en','glass'],[768,'en','light'],[1024,'zh','hud-light'],[1440,'en','hud']]){
+   await context.addCookies([{name:'lang',value:lang,url:origin}]);await page.evaluate(theme=>localStorage.setItem('bookstark-theme',theme),theme);await page.setViewportSize({width,height:950});await page.reload();await page.locator('.market-card').first().waitFor();
+   await toolbarLayout();await footerAtBottom();
+   assert.equal(await page.locator('#marketIntro,#marketHeading,#marketMore,#marketActionsMenu,#marketActionsSheet').count(),0,'old toolbar menus and sheets are deleted');
+   assert.equal(await page.locator('#marketActions>.row-action:visible').count(),2);
+   for(const id of ['marketSettings','marketPublish']){assert.equal((await page.locator('#'+id).textContent()).trim(),'','management actions are icons only');assert.ok(await page.locator('#'+id).getAttribute('aria-label'));assert.equal(await page.locator('#'+id).evaluate(el=>{const r=el.getBoundingClientRect();return el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));}),true,'direct action receives pointer input');}
    assert.equal(await page.evaluate(()=>document.querySelector('.market-results').getBoundingClientRect().top>=document.querySelector('.market-layout').getBoundingClientRect().bottom),true,'counts and pagination sit below results');
-   await page.locator('#marketMore').click();await page.locator('#marketActionsMenu').waitFor();assert.equal(await page.locator('#marketActionsMenu [role=menuitem]:visible').count(),1);
-   assert.equal(await page.locator('#marketPublish').evaluate(el=>{const r=el.getBoundingClientRect();return el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));}),true,'management menu receives pointer input above cards and filters');
-   if(width<=640){
-    await page.locator('#marketActionsSheet[open]').waitFor();assert.equal(await page.locator('#marketActionsSheet').evaluate(el=>Math.abs(el.getBoundingClientRect().bottom-innerHeight)<2),true,'mobile menu is a bottom sheet');
-    assert.equal(await page.locator('#marketMore').getAttribute('aria-haspopup'),'dialog');
-    for(let i=0;i<4;i++){await page.keyboard.press('Tab');assert.equal(await page.locator('#marketActionsSheet').evaluate(el=>document.activeElement===document.body||el.contains(document.activeElement)),true,'tab must not reach background controls');}
-    assert.equal(await page.evaluate(()=>{const search=document.getElementById('marketQuery');search.focus();return document.activeElement!==search;}),true,'native modal keeps background controls inert');
-   }else{assert.equal(await page.locator('dialog[open]').count(),0,'desktop menu is a popover without a modal backdrop');}
-   await page.screenshot({path:out+`/compact-menu-${width}-${lang}-${theme}.png`,animations:'disabled'});
-   if(width>640)await page.locator('#marketPublish').focus();await page.keyboard.press('Escape');await until(async()=>await page.locator('#marketMore').getAttribute('aria-expanded')==='false');assert.equal(await page.locator('#marketMore').evaluate(el=>el===document.activeElement),true,'dismissal restores the menu trigger');
-   await page.locator('#marketMore').focus();await page.keyboard.press('ArrowDown');await until(async()=>await page.locator('#marketPublish').evaluate(el=>el===document.activeElement));await page.keyboard.press('End');assert.equal(await page.locator('#marketPublish').evaluate(el=>el===document.activeElement),true);await page.keyboard.press('Escape');await until(async()=>await page.locator('#marketMore').getAttribute('aria-expanded')==='false');
-   await page.locator('#marketSettings').click();await page.locator('dialog input[name=url]').waitFor();assert.equal(await page.locator('#marketActionsSheet').count(),0,'sheet closes before settings open');await page.getByRole('button',{name:lang==='zh'?'取消':'Cancel',exact:true}).click();assert.equal(await page.locator('#marketActionsMenu').evaluate(el=>el.parentElement.id),'marketActions','actions return to the toolbar after closing a sheet');assert.equal(await page.evaluate(()=>document.body.style.position==='fixed'),false,'sheet scroll lock is released');
-   await page.locator('#marketMore').click();if(width<=640)await page.mouse.click(5,100);else await page.locator('#marketQuery').click();await until(async()=>await page.locator('#marketMore').getAttribute('aria-expanded')==='false');
-   if(width<=640){await manage('#marketPublish');await page.locator('#toolPublishSelection').waitFor();assert.equal(await page.locator('dialog[open]').count(),0);await page.locator('[data-return-market]').first().click();await page.locator('.market-card').first().waitFor();}
+   await page.screenshot({path:out+`/two-row-${width}-${lang}-${theme}.png`,animations:'disabled'});
+   await page.locator('#marketSettings').focus();await page.keyboard.press('Enter');await page.locator('dialog input[name=url]').waitFor();await page.getByRole('button',{name:lang==='zh'?'取消':'Cancel',exact:true}).click();await until(async()=>await page.locator('#marketSettings').evaluate(el=>el===document.activeElement));
+   await page.locator('#marketPublish').focus();await page.keyboard.press('Enter');await page.locator('#toolPublishSelection').waitFor();assert.equal(await page.locator('dialog[open]').count(),0,'publishing remains a standalone page');await page.locator('[data-return-market]').first().click();await page.locator('.market-card').first().waitFor();await toolbarLayout();await footerAtBottom();
   }
   await context.addCookies([{name:'lang',value:'zh',url:origin}]);await page.setViewportSize({width:1440,height:1000});await page.evaluate(()=>localStorage.setItem('bookstark-theme','light'));
   await page.goto(origin+'/blogs/market-browser-1/edit');await page.locator('#editorBackBtn').waitFor();assert.equal(await page.locator('#publish-tool-btn,#unpublish-tool-btn').count(),0,'editor must have no tool publishing controls');

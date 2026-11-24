@@ -35,7 +35,7 @@ const assert=require('node:assert/strict');
    assert.equal(await page.locator('.site-footer-qr-list img').count(),2);
    const imageBox=await page.locator('.site-footer-qr-list img').first().boundingBox();assert(imageBox.width>80);
    assert.equal(await page.locator('.footer-editor-group').nth(1).locator('.footer-editor-group-meta input').count(),2);
-   await page.locator('input[type="file"]').setInputFiles({name:'qr.png',mimeType:'image/png',buffer:Buffer.from('test upload')});
+   await page.locator('input[type="file"]').first().setInputFiles({name:'qr.png',mimeType:'image/png',buffer:Buffer.from('test upload')});
    await page.waitForFunction(()=>document.querySelector('.footer-editor-media img').src.endsWith('/new.png'));
    await page.locator('#footer-save').click();await page.waitForFunction(()=>!document.querySelector('#footer-save').disabled);
    assert.equal(uploads,1);assert.equal(saved.items[1].qr_code,'/upload-files/editor/new.png');assert.equal(saved.items[1].link_name,'Follow our channels');assert.equal(saved.items[2].description,'Scan this code');assert.equal(saved.items[0].group_name,'Resources');
@@ -49,16 +49,24 @@ const assert=require('node:assert/strict');
    assert.equal(await page.locator('.footer-editor-item:not(.is-qr) input').count(),2);
    fail=false;
    await page.locator('#footer-simple').check();
-   assert.equal(await page.locator('.is-qr').isVisible(),false);
+   assert.equal(await page.locator('.is-qr').first().isVisible(),false);
    assert.equal(await page.locator('#footer-add-group').isVisible(),false);
    await page.locator('#footer-save').click();await page.waitForFunction(()=>!document.querySelector('#footer-save').disabled);
    assert.equal(saved.simple_mode,true);assert.equal(saved.items.length,3);assert.equal(saved.items[1].qr_code,'/upload-files/editor/new.png');
-   await page.locator('#footer-simple').uncheck();assert(await page.locator('.is-qr').isVisible());
+   await page.locator('#footer-simple').uncheck();assert(await page.locator('.is-qr').first().isVisible());
    await page.locator('.footer-editor-group-head .footer-editor-moves button').first().click();
    await page.locator('.footer-editor-group').last().locator('.footer-editor-group-head .footer-editor-moves button').first().click();
    await page.locator('#footer-save').click();await page.waitForFunction(()=>!document.querySelector('#footer-save').disabled);
    assert.equal(saved.simple_mode,false);assert.equal(saved.items[0].group_name,'Follow us');assert.equal(saved.items[0].group_order,0);
    await page.screenshot({path:'/tmp/bookstark-footer-'+width+'.png',fullPage:true});
+   const fullFooter=await page.locator('.site-footer').innerHTML();
+   for(const empty of ['', '<div class="site-footer-groups">\n </div>', '<div class="site-footer-simple">\n </div>']){
+    await page.locator('.site-footer').evaluate((el,content)=>{el.innerHTML=content+'<div class="site-footer-bottom">BookStark</div>';},empty);
+    const compact=await page.locator('.site-footer').evaluate(el=>({height:el.getBoundingClientRect().height,border:getComputedStyle(el.querySelector('.site-footer-bottom')).borderTopWidth}));
+    assert.ok(compact.height<52,'no blank link strip when empty: '+JSON.stringify(compact));assert.equal(compact.border,'0px');
+   }
+   if(width<=640){await page.locator('body').evaluate(el=>el.classList.add('home-body'));assert.ok(await page.locator('.site-footer').evaluate(el=>parseFloat(getComputedStyle(el).paddingBottom)>=88),'home navigation keeps its safe bottom space');await page.locator('body').evaluate(el=>el.classList.remove('home-body'));}
+   await page.locator('.site-footer').evaluate((el,html)=>{el.innerHTML=html;},fullFooter);assert.equal(await page.locator('.site-footer-bottom').evaluate(el=>getComputedStyle(el).borderTopWidth),'1px','populated link groups retain their divider');
    assert.deepEqual(errors,[]);console.log('PASS footer editor '+width+'px '+lang+' '+theme+': QR upload, save, failed-save preservation, group operations, responsive layout');await page.close();
   }
  }finally{await browser.close();}

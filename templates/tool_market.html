@@ -7,29 +7,26 @@
 <link rel="stylesheet" href="/static/css/public-feed.css?v={{assetVer "/static/css/public-feed.css"}}">
 <link rel="stylesheet" href="/static/css/font-awesome-brands.min.css?v={{assetVer "/static/css/font-awesome-brands.min.css"}}">
 <link rel="stylesheet" href="/static/css/tool-market.css?v={{assetVer "/static/css/tool-market.css"}}">
-</head><body data-market-workspace="{{if .MemberID}}member-{{.MemberID}}{{else}}guest{{end}}" data-market-admin="{{if .IsAdmin}}1{{end}}">
+</head><body class="market-body" data-market-workspace="{{if .MemberID}}member-{{.MemberID}}{{else}}guest{{end}}" data-market-admin="{{if .IsAdmin}}1{{end}}">
 {{template "header" .}}
 <main class="market-page" id="marketMain">
 <h1 class="page-title sr-only">{{call .T "market.tools"}}</h1>
 <div class="market-plaza-bar">
  {{template "public-plaza-nav" .}}
- {{if .CanPublishTools}}
- <div id="marketActions" class="bs-action-dropdown">
-  <button type="button" id="marketMore" class="bs-action-dd-btn row-action" data-bs-action-dropdown-toggle aria-label="{{call .T "tools.actions"}}" aria-haspopup="menu" aria-expanded="false" aria-controls="marketActionsMenu"><i class="fa-solid fa-ellipsis" aria-hidden="true"></i></button>
-  <div id="marketActionsMenu" class="bs-action-dd-menu" role="menu" aria-labelledby="marketMore">
-   {{if .CanPublishTools}}<a href="/market/publish" class="bs-action-menu-item" id="marketPublish" role="menuitem"><i class="fa-solid fa-plus" aria-hidden="true"></i> {{call .T "market.publish_tool"}}</a>{{end}}
-  </div>
- </div>
- {{end}}
 </div>
 <div class="market-toolbar">
- <div class="market-search-row">
-  <form id="marketSearch" role="search" class="market-search"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><label class="sr-only" for="marketQuery">{{call .T "market.search"}}</label><input class="search-input" id="marketQuery" type="search" placeholder="{{call .T "market.search"}}"></form>
-  {{if .CanConfigureTools}}<button type="button" id="marketSettings" class="row-action market-search-settings" aria-label="{{call .T "market.settings"}}" title="{{call .T "market.settings"}}"><i class="fa-solid fa-gear" aria-hidden="true"></i></button>{{end}}
- </div>
+ <form id="marketSearch" role="search" class="market-search"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><label class="sr-only" for="marketQuery">{{call .T "market.search"}}</label><input class="search-input" id="marketQuery" type="search" placeholder="{{call .T "market.search"}}"></form>
  <label class="sr-only" for="marketCategory">{{call .T "market.category"}}</label><select id="marketCategory" class="dialog-input" aria-label="{{call .T "market.category"}}"></select>
  <label class="sr-only" for="marketState">{{call .T "market.install_status"}}</label><select id="marketState" class="dialog-input" aria-label="{{call .T "market.install_status"}}"></select>
- <label class="sr-only" for="marketSort">{{call .T "market.sort"}}</label><select id="marketSort" class="dialog-input" aria-label="{{call .T "market.sort"}}"></select>
+ <div class="market-sort-actions">
+  <label class="sr-only" for="marketSort">{{call .T "market.sort"}}</label><select id="marketSort" class="dialog-input" aria-label="{{call .T "market.sort"}}"></select>
+  {{if or .CanConfigureTools .CanPublishTools}}
+  <div id="marketActions" class="market-action-group" role="group" aria-label="{{call .T "tools.actions"}}">
+   {{if .CanConfigureTools}}<button type="button" id="marketSettings" class="row-action" aria-label="{{call .T "market.settings"}}" title="{{call .T "market.settings"}}"><i class="fa-solid fa-gear" aria-hidden="true"></i></button>{{end}}
+   {{if .CanPublishTools}}<a href="/market/publish" id="marketPublish" class="row-action" aria-label="{{call .T "market.publish_tool"}}" title="{{call .T "market.publish_tool"}}"><i class="fa-solid fa-plus" aria-hidden="true"></i></a>{{end}}
+  </div>
+  {{end}}
+ </div>
 </div>
 <p id="marketStatus" role="status" aria-live="polite" hidden></p>
 <div class="market-layout"><section id="marketItems" class="market-grid" aria-label="{{call .T "market.tools"}}"></section><aside id="marketDetail" class="market-detail" hidden></aside></div>
