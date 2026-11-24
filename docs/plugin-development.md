@@ -591,7 +591,7 @@ SSH 工具自身仍需完成主机密钥验证、密码或私钥认证、PTY 分
 
 仓库提供可构建的 [SSH 终端工具](../tools/ssh-terminal/README.md)：复用 xterm、FitAddon 和公共对话框，将 Go `golang.org/x/crypto/ssh` 编译为 WASM，在专用 Worker 中处理 SSH；工具页面通过消息转发 `BookStark.sockets` 的 TCP 字节。它不调用管理后台的 SSH 凭据或终端接口，也没有新增 `BookStark.ssh` 公共 API。
 
-从仓库根目录运行 `python3 tools/ssh-terminal/build.py`，会在仓库父目录的 `artifacts/ssh-terminal/` 生成完整 ZIP，随后按工具包流程上传、发布和安装。示例支持可折叠连接面板、多会话、密码或私钥认证、主机密钥确认、PTY 尺寸同步和断线重连；可使用账号默认 Shell，或选择 sh、bash、zsh、fish 及自定义绝对路径，在远端 PTY 中启动，不接受自定义命令参数。Shell 选择随连接配置保存，密码、私钥或口令不保存。构建环境、许可证和隔离测试步骤见该工具的 README。
+从仓库根目录运行 `python3 tools/ssh-terminal/build.py`，会在仓库父目录的 `artifacts/ssh-terminal/` 生成完整 ZIP，随后按工具包流程上传、发布和安装。示例支持可折叠连接面板、多会话、密码或私钥认证、主机密钥确认、PTY 尺寸同步和断线重连；可使用账号默认 Shell，或选择 sh、bash、zsh、fish 及自定义绝对路径，在远端 PTY 中启动，不接受自定义命令参数。Shell 选择随连接配置保存；勾选“记住登录凭据”时，密码、私钥和口令通过 `BookStark.secrets` 加密保存并在下次选择连接时自动填充，不写入 localStorage 或程序包。构建环境、许可证和隔离测试步骤见该工具的 README。
 
 ## 8. 浏览器原生能力
 
