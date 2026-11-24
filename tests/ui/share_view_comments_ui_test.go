@@ -11,7 +11,11 @@ func TestShareViewCommentsJumpUsesContentScrollerAndKeepsMobilePadding(t *testin
 	if err != nil {
 		t.Fatalf("ReadFile(share_view.html) error = %v", err)
 	}
-	text := string(tpl)
+	shared, err := os.ReadFile("static/css/html-frame.css")
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(tpl) + string(shared)
 
 	for _, required := range []string{
 		`function scrollToShareComments()`,

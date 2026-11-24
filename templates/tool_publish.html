@@ -1,4 +1,62 @@
-<!doctype html><html lang="{{.Lang}}"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{call .T "market.publish"}} · BookStark</title><link rel="stylesheet" href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}">{{template "head-assets" .}}<link rel="stylesheet" href="/static/css/font-awesome-brands.min.css?v={{assetVer "/static/css/font-awesome-brands.min.css"}}">
-<link rel="stylesheet" href="/static/css/tool-market.css?v={{assetVer "/static/css/tool-market.css"}}"></head><body data-market-workspace="member-{{.MemberID}}">{{template "header" .}}<main role="main" class="market-page" style="max-width:1100px" id="toolPublishPage" data-tool-id="{{.ToolID}}" data-admin="{{if .IsAdmin}}1{{end}}"><nav class="publish-breadcrumb" aria-label="{{call .T "editor.breadcrumb.aria"}}"><a href="/market" id="toolPublishMarketBack">{{call .T "market.tools"}}</a><span aria-hidden="true"> / </span><span>{{call .T "market.publish_tool"}}</span></nav><div class="market-heading"><h1 class="page-title">{{call .T "market.publish_settings"}}</h1></div><section class="market-panel"><form class="market-form" id="toolPublishForm"></form><a class="bs-btn bs-btn-cancel" href="/market/publish" id="toolPublishBack">{{call .T "market.back_selection"}}</a></section></main>{{template "footer" .}}<script src="/static/js/pagination.js?v={{assetVer "/static/js/pagination.js"}}"></script>
+<!doctype html>
+<html lang="{{.Lang}}"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{call .T "market.publish"}} · BookStark</title>
+<link rel="stylesheet" href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}">
+{{template "head-assets" .}}
+<link rel="stylesheet" href="/static/css/font-awesome-brands.min.css?v={{assetVer "/static/css/font-awesome-brands.min.css"}}">
+<link rel="stylesheet" href="/static/css/tool-market.css?v={{assetVer "/static/css/tool-market.css"}}">
+</head><body class="market-body" data-market-workspace="member-{{.MemberID}}">
+{{template "header" .}}
+<main role="main" class="market-page publish-selection-page" id="toolPublishPage" data-tool-id="{{.ToolID}}" data-admin="{{if .IsAdmin}}1{{end}}">
+<nav class="publish-breadcrumb" aria-label="{{call .T "editor.breadcrumb.aria"}}"><a href="/market" id="toolPublishMarketBack">{{call .T "market.tools"}}</a><span aria-hidden="true"> / </span><span>{{call .T "market.publish_tool"}}</span></nav>
+<div class="market-heading"><h1 class="page-title">{{call .T "market.publish_settings"}}</h1></div>
+<p id="toolPublishLoading" class="sr-only" role="status">{{call .T "public.loading"}}</p>
+<section class="market-panel">
+<form class="market-form" id="toolPublishForm" aria-busy="true">
+<fieldset id="toolPublishFields" class="market-form publish-fields" disabled><legend class="sr-only">{{call .T "market.publish_settings"}}</legend>
+<div class="market-info">{{call .T "market.form_source"}}{{.PublishForm.Source}} · {{call .T "market.form_snapshot"}}</div>
+<div class="market-form-row">
+<label for="publishTitle">{{call .T "market.form_name"}}<input class="dialog-input" id="publishTitle" name="title" type="text" value="{{.PublishForm.Title}}" required></label>
+<label for="publishVersion">{{call .T "market.form_version"}}<input class="dialog-input" id="publishVersion" name="version" type="text" value="{{.PublishForm.Version}}" required></label>
+</div>
+<div class="market-form-row">
+<label for="publishCategory">{{call .T "market.category"}}<select class="dialog-input" id="publishCategory" name="category">
+<option value="document" {{if eq .PublishForm.Category "document"}}selected{{end}}>{{call .T "market.category_document"}}</option>
+<option value="image" {{if eq .PublishForm.Category "image"}}selected{{end}}>{{call .T "market.category_image"}}</option>
+<option value="media" {{if eq .PublishForm.Category "media"}}selected{{end}}>{{call .T "market.category_media"}}</option>
+<option value="development" {{if eq .PublishForm.Category "development"}}selected{{end}}>{{call .T "market.category_development"}}</option>
+<option value="productivity" {{if eq .PublishForm.Category "productivity"}}selected{{end}}>{{call .T "market.category_productivity"}}</option>
+<option value="other" {{if eq .PublishForm.Category "other"}}selected{{end}}>{{call .T "market.category_other"}}</option>
+</select></label>
+<label for="publishDestination">{{call .T "market.form_destination"}}<input class="dialog-input" id="publishDestination" readonly value="{{.PublishForm.Market}}"></label>
+</div>
+<label for="publishDescription">{{call .T "market.form_description"}}<input class="dialog-input" id="publishDescription" name="description" type="text" value="{{.PublishForm.Description}}" required></label>
+<fieldset class="market-appearance" id="toolAppearancePlaceholder" aria-busy="true"><legend>{{call .T "market.form_appearance"}}</legend><div class="market-admin-placeholder skeleton-card" aria-hidden="true"><div class="market-admin-skeleton"><div class="skeleton skeleton-card-title"></div><div class="skeleton market-skeleton-field"></div></div><div class="market-icon-picker publish-appearance-loading">{{range .IconSlots}}<span class="skeleton"></span>{{end}}</div></div></fieldset>
+<h2>{{call .T "market.form_resources"}}</h2>
+<div class="market-info">{{call .T "market.form_resource_help"}}</div>
+<label for="publishAccess">{{call .T "market.form_access"}}<select class="dialog-input" id="publishAccess" name="access">
+<option value="inherit" {{if eq .PublishForm.Access "inherit"}}selected{{end}}>{{call .T "market.access_inherit"}}</option>
+<option value="login" {{if eq .PublishForm.Access "login"}}selected{{end}}>{{call .T "market.access_login"}}</option>
+<option value="public" {{if eq .PublishForm.Access "public"}}selected{{end}}>{{call .T "market.access_public"}}</option>
+<option value="members" {{if eq .PublishForm.Access "members"}}selected{{end}}>{{call .T "market.access_members"}}</option>
+</select></label>
+<label id="publishMembers" for="publishMembersInput" {{if ne .PublishForm.Access "members"}}hidden{{end}}>{{call .T "market.form_members"}}<input class="dialog-input" id="publishMembersInput" name="members" placeholder="alice, bob" value="{{.PublishForm.Members}}"></label>
+<h2>{{call .T "market.form_permissions"}}</h2>
+<label for="publishRead"><input id="publishRead" name="read" type="checkbox" {{if .PublishForm.ReadFiles}}checked{{end}}>{{call .T "market.form_read"}}</label>
+<label for="publishSave"><input id="publishSave" name="save" type="checkbox" {{if .PublishForm.SaveFiles}}checked{{end}}>{{call .T "market.form_save"}}</label>
+<label for="publishNetwork"><input id="publishNetwork" name="network" type="checkbox" {{if .PublishForm.Network}}checked{{end}}>{{call .T "market.form_network"}}</label>
+<label for="publishNotes">{{call .T "market.form_notes"}}<textarea class="dialog-input" id="publishNotes" name="notes" rows="3">{{.PublishForm.Notes}}</textarea></label>
+<p role="status" id="publishStatus"></p>
+<div class="market-actions"><a class="bs-btn bs-btn-cancel" href="/market/publish?selected={{.ToolID}}" id="toolPublishBack">{{call .T "market.back_selection"}}</a><button class="bs-btn bs-btn-cancel" id="toolPublishDraft" type="button">{{call .T "market.form_draft"}}</button><button class="bs-btn bs-btn-cancel" id="toolPublishPreview" type="button">{{call .T "market.form_check"}}</button><button class="bs-btn bs-btn-primary" type="submit">{{if .IsAdmin}}{{call .T "market.form_publish"}}{{else}}{{call .T "market.form_review"}}{{end}}</button></div>
+</fieldset>
+</form>
+<button id="toolPublishRetry" class="bs-btn bs-btn-cancel mt-4" type="button" hidden>{{call .T "tools.retry"}}</button>
+</section></main>
+{{template "footer" .}}
+<script type="application/json" id="toolPublishState">{{.PublicationJSON}}</script>
+<script src="/static/js/pagination.js?v={{assetVer "/static/js/pagination.js"}}"></script>
 <script src="/static/js/tool-appearance.js?v={{assetVer "/static/js/tool-appearance.js"}}"></script>
-<script src="/static/js/tool-market-ui.js?v={{assetVer "/static/js/tool-market-ui.js"}}"></script><script src="/static/js/tool-publish.js?v={{assetVer "/static/js/tool-publish.js"}}"></script></body></html>
+<script src="/static/js/tool-market-ui.js?v={{assetVer "/static/js/tool-market-ui.js"}}"></script>
+<script src="/static/js/tool-publish.js?v={{assetVer "/static/js/tool-publish.js"}}"></script>
+</body></html>

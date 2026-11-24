@@ -41,7 +41,7 @@
 </div>
 {{template "public-widgets" .}}
 </main>
-<section id="marketRunner" class="market-runner" hidden><div class="market-heading"><a href="/market?status=installed" class="bs-btn bs-btn-cancel">← {{call .T "market.tools"}}</a><h1 id="marketRunnerTitle" class="page-title"></h1><span id="marketSaveStatus" role="status"></span><button type="button" class="bs-btn bs-btn-cancel" id="marketRetry" hidden>{{call .T "tools.retry"}}</button><button type="button" class="bs-btn bs-btn-cancel" id="marketRunExport">{{call .T "market.export"}}</button></div><div id="marketFrameHost"></div></section>
+
 {{template "footer" .}}
 <script src="/static/js/selection-controls.js?v={{assetVer "/static/js/selection-controls.js"}}"></script>
 <script src="/static/js/local-drafts.js?v={{assetVer "/static/js/local-drafts.js"}}"></script>
@@ -52,7 +52,6 @@
 <script src="/static/js/tool-market-store.js?v={{assetVer "/static/js/tool-market-store.js"}}"></script>
 <script src="/static/js/tool-market-ui.js?v={{assetVer "/static/js/tool-market-ui.js"}}"></script>
 <script src="/static/js/tool-market.js?v={{assetVer "/static/js/tool-market.js"}}"></script>
-<script src="/static/js/tool-runner.js?v={{assetVer "/static/js/tool-runner.js"}}"></script>
 </body></html>
 
 {{define "market-card-skeleton"}}<article class="market-card-placeholder skeleton-card" aria-hidden="true"><div class="market-card-top"><div class="skeleton market-skeleton-icon"></div><div class="market-card-body"><div class="skeleton skeleton-card-title"></div><div class="skeleton skeleton-card-desc"></div><div class="skeleton skeleton-card-desc2"></div></div></div><div class="market-card-footer"><div class="skeleton skeleton-card-tag"></div><div class="skeleton market-skeleton-action"></div></div></article>{{end}}

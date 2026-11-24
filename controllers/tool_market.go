@@ -33,6 +33,23 @@ func canPublishTools(c *gin.Context) bool {
 }
 
 func ToolMarketPage(c *gin.Context) {
+	if raw, exists := c.GetQuery("open"); exists {
+		id, err := strconv.ParseInt(raw, 10, 64)
+		if err != nil || id == 0 {
+			c.Status(http.StatusNotFound)
+			return
+		}
+		query := c.Request.URL.Query()
+		query.Del("open")
+		query.Del("return")
+		back := "/market"
+		if query.Encode() != "" {
+			back += "?" + query.Encode()
+		}
+		c.Header("Cache-Control", "private, no-store")
+		c.Redirect(http.StatusFound, "/tools/run/"+strconv.FormatInt(id, 10)+"?return="+url.QueryEscape(back))
+		return
+	}
 	c.Header("Cache-Control", "private, no-store")
 	data := commonData(c, "shares")
 	data["Type"] = "tool"

@@ -131,13 +131,17 @@ func TestShareViewHTMLPreviewFillsAvailableHeight(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReadFile(share_view.html) error = %v", err)
 	}
-	text := string(tpl)
+	shared, err := os.ReadFile("static/css/html-frame.css")
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(tpl) + string(shared)
 
 	for _, required := range []string{
 		`#content-scroll.html-mode { overflow: hidden !important; }`,
 		`#content-scroll.html-mode #preview-wrap,`,
 		`#content-scroll.html-mode #preview-area,`,
-		`#content-scroll.html-mode #html-preview-container,`,
+		`#content-scroll.html-mode #html-preview-container {`,
 		`#content-scroll.html-mode .html-preview-iframe`,
 		`height: 100% !important;`,
 		`min-height: 0 !important;`,

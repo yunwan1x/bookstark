@@ -44,3 +44,5 @@ test('native defaults do not override an explicitly saved workspace marketplace'
   if(native.configured===false&&saved.configured){assert.equal(result.check_updates,false);assert.equal(result.auto_update,true);assert.equal(result.account,'workspace-account');}
  }
 });
+
+test('installed tool URLs use a standalone page and safe market return',()=>{const {ui}=fixture();const url=new URL(ui.toolURL(-27),'https://book.test');assert.equal(url.pathname,'/tools/run/-27');assert.equal(url.searchParams.get('return'),'/market?status=installed&page=2');for(const back of ['https://evil.test/market','//evil.test/market','/market?open=7','/tools/run/9'])assert.equal(new URL(ui.toolURL(7,back),'https://book.test').searchParams.get('return'),'/market');});

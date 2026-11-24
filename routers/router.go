@@ -222,6 +222,7 @@ func Setup() *gin.Engine {
 	// Browser-local creation tools (no server persistence).
 	r.GET("/tools", middleware.OptionalAuth(), middleware.CSRFMiddleware(), controllers.LocalToolsPage)
 	r.GET("/market", middleware.OptionalAuth(), middleware.CSRFMiddleware(), controllers.ToolMarketPage)
+	r.GET("/tools/run/:id", middleware.OptionalAuth(), middleware.CSRFMiddleware(), controllers.ToolRuntimePage)
 	r.GET("/api/tool-market", middleware.OptionalAuth(), controllers.ToolMarketCatalog)
 	r.GET("/market/index.json", middleware.OptionalAuth(), controllers.ToolMarketInfo)
 	r.POST("/market/login", controllers.MarketLogin)

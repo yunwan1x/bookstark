@@ -28,10 +28,11 @@
   d.addEventListener('close',()=>resolve(success),{once:true});
  });}
  function marketReturn(value){try{const url=new URL(value||'/market',location.origin);if(url.origin===location.origin&&url.pathname==='/market'&&!url.searchParams.has('open'))return url.pathname+url.search;}catch(_){}return '/market';}
+ function toolURL(id,back){return '/tools/run/'+encodeURIComponent(id)+'?return='+encodeURIComponent(marketReturn(back||location.pathname+location.search));}
  function publicationChoiceURL(value){return '/market/publish?return='+encodeURIComponent(marketReturn(value||location.pathname+location.search));}
  function selectionReturn(value,id){let url;try{url=new URL(value||'/market/publish',location.origin);if(url.origin!==location.origin||url.pathname!=='/market/publish')throw Error('invalid');}catch(_){url=new URL('/market/publish',location.origin);}url.hash='';url.searchParams.set('return',marketReturn(url.searchParams.get('return')));if(Number(id)>0)url.searchParams.set('selected',String(id));return url.pathname+url.search;}
  function workspace(){return document.body.dataset.marketWorkspace||'guest';}
  function rememberMarketPosition(){try{sessionStorage.setItem('bookstark:market-return:'+workspace(),JSON.stringify({url:location.pathname+location.search,y:scrollY}));}catch(_){} }
  function restoreMarketPosition(){try{const key='bookstark:market-return:'+workspace(),state=JSON.parse(sessionStorage.getItem(key));if(state&&state.url===location.pathname+location.search){sessionStorage.removeItem(key);requestAnimationFrame(()=>requestAnimationFrame(()=>scrollTo(0,Math.max(0,Number(state.y)||0))));}}catch(_){} }
- window.ToolMarketUI={config,text,esc,api,modal,button,field,check,size,errorText,settings,marketLogin,prepareForm,marketReturn,publicationChoiceURL,selectionReturn,workspace,rememberMarketPosition,restoreMarketPosition};
+ window.ToolMarketUI={config,text,esc,api,modal,button,field,check,size,errorText,settings,marketLogin,prepareForm,marketReturn,toolURL,publicationChoiceURL,selectionReturn,workspace,rememberMarketPosition,restoreMarketPosition};
 })();

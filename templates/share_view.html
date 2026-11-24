@@ -2,6 +2,7 @@
 <html lang="{{.Lang}}">
 <head>
     {{template "editor_head" .}}
+    <link rel="stylesheet" href="/static/css/html-frame.css?v={{assetVer "/static/css/html-frame.css"}}">
     <title>{{.Share.Title}} - BookStark</title>
     <script defer src="/static/js/glass-tools.js?v={{assetVer "/static/js/glass-tools.js"}}"></script>
     <script src="/static/js/tab-url.js?v={{assetVer "/static/js/tab-url.js"}}"></script>
@@ -472,14 +473,9 @@
         }
         #content-scroll.html-mode #preview-wrap,
         #content-scroll.html-mode #preview-area,
-        #content-scroll.html-mode #html-preview-container,
-        #content-scroll.html-mode .html-preview-iframe {
+        #content-scroll.html-mode #html-preview-container {
             height: 100% !important;
             min-height: 0 !important;
-        }
-        #content-scroll.html-mode .html-preview-iframe {
-            display: block !important;
-            width: 100% !important;
         }
         @media (max-width: 768px), (max-width: 960px) and (max-height: 520px) {
             #content-scroll.html-mode + #share-footer {
@@ -716,7 +712,7 @@
         <!-- Main area -->
         <div class="flex-1 flex flex-col overflow-hidden share-main">
             <!-- Topbar -->
-            <div class="share-topbar h-10 bg-white border-b border-slate-200 flex items-center px-3 shrink-0 gap-2">
+            <div class="share-topbar html-tool-topbar h-10 bg-white border-b border-slate-200 flex items-center px-3 shrink-0 gap-2">
                 <!-- Mobile hamburger -->
                 <button class="hamburger-btn tb-btn tb-btn-slate" title="{{call .T "share_view.topbar.open"}}" aria-label="{{call .T "share_view.topbar.open"}}" onclick="openMobileDrawer()">
                     <i class="fa-solid fa-bars"></i>

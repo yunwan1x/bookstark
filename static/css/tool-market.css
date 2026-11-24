@@ -93,6 +93,8 @@
 .market-detail .market-install{width:100%;margin-top:20px;margin-bottom:12px}
 .market-panel h2{font-size:18px;font-weight:600;margin-bottom:16px}
 .market-form{display:flex;flex-direction:column;gap:16px}
+.publish-fields{border:0;padding:0;min-width:0}
+.publish-appearance-loading .skeleton{height:56px}
 .market-form label{font-size:13px;font-weight:500;display:block}
 .market-form .dialog-input{display:block;margin-top:8px;min-width:0;background:var(--color-bg-card)}
 .market-form input:read-only{background:var(--color-primary-light)}
@@ -128,9 +130,6 @@
 .market-resource-url{display:block;color:var(--color-primary);font-size:12px;overflow-wrap:anywhere;margin-top:8px}
 .market-checks i{color:var(--color-success);margin-right:8px}
 .market-danger{color:var(--color-danger)}
-.market-runner{padding:16px;flex:1}
-#marketFrameHost iframe{width:100%;height:calc(100dvh - 150px);border:1px solid var(--color-border);background:var(--color-white)}
-#marketSaveStatus{font-size:13px}
 .market-review{padding:12px 0;border-bottom:1px solid var(--color-border)}
 [hidden]{display:none!important}
 @media(max-width:1024px){.market-toolbar{grid-template-columns:repeat(6,minmax(0,1fr));grid-template-areas:"search search search search search search" "state state sort sort sort sort"}.market-grid{grid-template-columns:1fr}}

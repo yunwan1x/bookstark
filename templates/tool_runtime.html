@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="{{.Lang}}"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>{{call .T "market.tools"}} · BookStark</title>
+<link rel="stylesheet" href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}">
+{{template "head-assets" .}}
+<link rel="stylesheet" href="/static/css/font-awesome-brands.min.css?v={{assetVer "/static/css/font-awesome-brands.min.css"}}">
+<link rel="stylesheet" href="/static/css/tool-market.css?v={{assetVer "/static/css/tool-market.css"}}">
+<link rel="stylesheet" href="/static/css/html-frame.css?v={{assetVer "/static/css/html-frame.css"}}">
+<link rel="stylesheet" href="/static/css/tool-runtime.css?v={{assetVer "/static/css/tool-runtime.css"}}">
+</head><body class="tool-runtime-body" data-market-workspace="member-{{.MemberID}}">
+<div class="html-tool-topbar tool-runtime-bar" role="toolbar" aria-label="{{call .T "market.run_toolbar"}}">
+<a class="tool-runtime-back" id="toolRuntimeBack" href="/market?status=installed" aria-label="{{call .T "market.back_tools"}}"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i><span>{{call .T "market.tools"}}</span></a>
+<div class="tool-runtime-title"><span id="toolRuntimeIcon" aria-hidden="true"></span><h1 class="page-title" id="toolRuntimeTitle">{{call .T "market.tools"}}</h1></div>
+<button type="button" class="row-action tool-runtime-refresh" id="toolRuntimeRefresh" aria-label="{{call .T "market.run_refresh"}}" title="{{call .T "market.run_refresh"}}"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i></button>
+<button type="button" class="row-action" id="toolRuntimeFullscreen" aria-label="{{call .T "market.run_fullscreen"}}" title="{{call .T "market.run_fullscreen"}}" aria-pressed="false"><i class="fa-solid fa-expand" aria-hidden="true"></i></button>
+<div class="bs-action-dropdown tool-runtime-more" id="toolRuntimeMore">
+<button type="button" class="bs-action-dd-btn" data-bs-action-dropdown-toggle aria-label="{{call .T "market.run_more"}}" aria-expanded="false" aria-controls="toolRuntimeMenu" aria-haspopup="menu"><i class="fa-solid fa-ellipsis" aria-hidden="true"></i></button>
+<div class="bs-action-dd-menu" id="toolRuntimeMenu" role="menu">
+<button type="button" class="bs-action-menu-item tool-runtime-more-refresh" data-runtime="refresh" role="menuitem"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i>{{call .T "market.run_refresh"}}</button>
+<button type="button" class="bs-action-menu-item" id="toolRuntimeInfo" role="menuitem" disabled><i class="fa-solid fa-circle-info" aria-hidden="true"></i>{{call .T "market.run_info"}}</button>
+<button type="button" class="bs-action-menu-item" id="toolRuntimeExport" role="menuitem" disabled><i class="fa-solid fa-download" aria-hidden="true"></i>{{call .T "market.export"}}</button>
+<a class="bs-action-menu-item" id="toolRuntimeNewTab" role="menuitem" href="/tools/run/{{.ToolID}}" target="_blank" rel="noopener noreferrer" hidden><i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>{{call .T "market.run_new_tab"}}</a>
+</div></div>
+</div>
+<div class="tool-runtime-save-error" id="toolRuntimeSaveError" role="alert" hidden><span>{{call .T "market.run_save_error"}}</span><button class="bs-btn bs-btn-cancel" id="toolRuntimeRetrySave" type="button">{{call .T "tools.retry"}}</button><button class="bs-btn bs-btn-cancel" id="toolRuntimeExportError" type="button">{{call .T "market.export"}}</button></div>
+<main role="main" id="toolRuntime" class="tool-runtime-main" data-tool-id="{{.ToolID}}">
+<div id="marketFrameHost" class="html-frame-host" aria-busy="true"></div>
+<div id="toolRuntimeState" class="tool-runtime-state" role="status"><div id="toolRuntimeSkeleton" class="skeleton-card" aria-hidden="true"><div class="skeleton skeleton-card-title"></div><div class="skeleton skeleton-card-desc"></div><div class="skeleton skeleton-card-desc2"></div></div><p id="toolRuntimeMessage">{{call .T "market.run_loading"}}</p><button type="button" class="bs-btn bs-btn-cancel" id="toolRuntimeRetry" hidden>{{call .T "tools.retry"}}</button></div>
+</main>
+<button type="button" class="row-action tool-runtime-exit" id="toolRuntimeExit" aria-label="{{call .T "market.run_exit_fullscreen"}}" title="{{call .T "market.run_exit_fullscreen"}}" hidden><i class="fa-solid fa-compress" aria-hidden="true"></i></button>
+<script>window.__I18N_MESSAGES = {{.JSBundle}};window.__currentLang = "{{.Lang}}";</script>
+<script src="/static/js/i18n.js?v={{assetVer "/static/js/i18n.js"}}"></script>
+<script src="/static/js/bs-dialog.js?v={{assetVer "/static/js/bs-dialog.js"}}"></script>
+<script src="/static/js/tool-appearance.js?v={{assetVer "/static/js/tool-appearance.js"}}"></script>
+<script src="/static/js/tool-market-store.js?v={{assetVer "/static/js/tool-market-store.js"}}"></script>
+<script src="/static/js/tool-market-ui.js?v={{assetVer "/static/js/tool-market-ui.js"}}"></script>
+<script src="/static/js/tool-runner.js?v={{assetVer "/static/js/tool-runner.js"}}"></script>
+</body></html>

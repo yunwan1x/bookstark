@@ -4,7 +4,9 @@ import (
 	"bookstark/middleware"
 	"bookstark/models"
 	"database/sql"
+	"encoding/json"
 	"errors"
+	"html/template"
 	"net/http"
 	"strconv"
 	"strings"
@@ -40,6 +42,42 @@ func ToolPublishPage(c *gin.Context) {
 	c.Header("Cache-Control", "private, no-store")
 	data := commonData(c, "shares")
 	data["ToolID"] = id
+	publication, err := toolPublicationData(c, b)
+	if err != nil {
+		toolAPIError(c, err)
+		return
+	}
+	initial, err := json.Marshal(publication)
+	if err != nil {
+		toolAPIError(c, err)
+		return
+	}
+	data["PublicationJSON"] = template.JS(initial)
+	m := publication["metadata"].(models.ToolMetadata)
+	title, description := m.Title, m.Description
+	if title == "" {
+		title = b.BlogTitle
+	}
+	if description == "" {
+		description = b.BlogDesc
+	}
+	category, access := m.Category, m.Access
+	if category == "" {
+		category = "document"
+	}
+	if access == "" {
+		access = "inherit"
+	}
+	version := "1.0.0"
+	if versions := publication["versions"].([]gin.H); len(versions) > 0 {
+		parts := strings.SplitN(versions[0]["version"].(string), ".", 3)
+		if len(parts) == 3 {
+			patch, _ := strconv.Atoi(strings.SplitN(parts[2], "-", 2)[0])
+			version = parts[0] + "." + parts[1] + "." + strconv.Itoa(patch+1)
+		}
+	}
+	data["PublishForm"] = gin.H{"Source": b.BlogTitle, "Title": title, "Description": description, "Version": version, "Category": category, "Access": access, "Market": publication["market"].(marketSettings).Name, "Members": strings.Join(publication["member_accounts"].([]string), ", "), "Notes": m.Notes, "ReadFiles": m.Version == "" || m.Permissions.ReadFiles, "SaveFiles": m.Version == "" || m.Permissions.SaveFiles, "Network": m.Permissions.Network}
+	data["IconSlots"] = make([]struct{}, 24)
 	c.HTML(200, "tool_publish.html", data)
 }
 

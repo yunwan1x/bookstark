@@ -18,7 +18,7 @@ test('market catalog and manifests never fall back to cached publications',()=>{
  }
 });
 test('market and publication pages never use another accounts cached workspace',async()=>{
- for(const path of ['/market?view=installed','/market/publish?q=PDF','/market/publish/12']){
+ for(const path of ['/market?view=installed','/tools/run/12','/tools/run/-7','/market/publish?q=PDF','/market/publish/12']){
  for(const offline of [false,true]){
   let result;
   const handler=worker({fetch:async()=>{if(offline)throw Error('offline');return new Response('current workspace');},caches:{match:async path=>{assert.equal(path,'/static/offline.html');return undefined;}}});

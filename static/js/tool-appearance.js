@@ -44,7 +44,8 @@
             <label>${t('自定义颜色','Custom color')}<input type="color" name="icon_color" value="${values({...metadata,category:form.elements.category.value}).color}"></label>
             <button class="bs-btn bs-btn-cancel" type="button" data-tool-reset>${t('恢复默认','Reset to default')}</button></div>
             <p class="market-muted">${t('图标和颜色会同步到市场卡片、工具详情和安装后的快捷入口。','The icon and color are used in marketplace cards, tool details and installed shortcuts.')}</p>`;
-        form.elements.description.closest('label').after(panel);
+        const placeholder=form.querySelector('#toolAppearancePlaceholder');
+        if(placeholder)placeholder.replaceWith(panel);else form.elements.description.closest('label').after(panel);
         let customColor = !!metadata.icon_color, page = 1;
         const query = panel.querySelector('#toolIconQuery'), styleSelect = panel.querySelector('#toolIconStyle'), pageSize = panel.querySelector('#toolIconPageSize');
         pageSize.value = matchMedia('(max-width: 640px)').matches ? '24' : '48';

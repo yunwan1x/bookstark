@@ -74,6 +74,48 @@ func latestToolMetadata(id int64) models.ToolMetadata {
 	}
 	return m
 }
+
+// toolPublicationData is shared by the settings HTML and the metadata API.
+func toolPublicationData(c *gin.Context, blog *models.Blog) (gin.H, error) {
+	var current string
+	_ = models.DB.QueryRow("SELECT revision FROM md_tool_releases WHERE blog_id=?", blog.BlogID).Scan(&current)
+	m := latestToolMetadata(blog.BlogID)
+	if current == "" {
+		var pending string
+		if err := models.DB.QueryRow("SELECT metadata FROM md_tool_versions WHERE blog_id=? AND status='pending' ORDER BY created DESC,rowid DESC LIMIT 1", blog.BlogID).Scan(&pending); err == nil {
+			if err := json.Unmarshal([]byte(pending), &m); err != nil {
+				return nil, err
+			}
+		}
+	}
+	rows, err := models.DB.Query("SELECT version,revision,status,created FROM md_tool_versions WHERE blog_id=? ORDER BY created DESC,rowid DESC", blog.BlogID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	versions := []gin.H{}
+	for rows.Next() {
+		var version, revision, status string
+		var created int64
+		if err := rows.Scan(&version, &revision, &status, &created); err != nil {
+			return nil, err
+		}
+		versions = append(versions, gin.H{"version": version, "revision": revision, "status": status, "created": created})
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	rows.Close()
+	accounts := []string{}
+	for _, memberID := range m.Members {
+		var account string
+		if err := models.DB.QueryRow("SELECT account FROM md_members WHERE member_id=?", memberID).Scan(&account); err == nil {
+			accounts = append(accounts, account)
+		}
+	}
+	return gin.H{"published": current != "", "revision": current, "title": blog.BlogTitle, "description": blog.BlogDesc, "metadata": m, "member_accounts": accounts, "versions": versions, "market": readMarketSettings(c), "icons": models.ToolIconOptions}, nil
+}
+
 func PublishMarketTool(router http.Handler) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Header("Cache-Control", "private, no-store")
@@ -91,48 +133,13 @@ func PublishMarketTool(router http.Handler) gin.HandlerFunc {
 			forbidden(c)
 			return
 		}
-		var current string
-		_ = models.DB.QueryRow("SELECT revision FROM md_tool_releases WHERE blog_id=?", id).Scan(&current)
 		if c.Request.Method == "GET" {
-			m := latestToolMetadata(id)
-			if current == "" {
-				var pending string
-				if err := models.DB.QueryRow("SELECT metadata FROM md_tool_versions WHERE blog_id=? AND status='pending' ORDER BY created DESC,rowid DESC LIMIT 1", id).Scan(&pending); err == nil {
-					if err := json.Unmarshal([]byte(pending), &m); err != nil {
-						toolAPIError(c, err)
-						return
-					}
-				}
-			}
-			rows, err := models.DB.Query("SELECT version,revision,status,created FROM md_tool_versions WHERE blog_id=? ORDER BY created DESC,rowid DESC", id)
+			data, err := toolPublicationData(c, blog)
 			if err != nil {
 				toolAPIError(c, err)
 				return
 			}
-			defer rows.Close()
-			versions := []gin.H{}
-			for rows.Next() {
-				var version, revision, status string
-				var created int64
-				if err := rows.Scan(&version, &revision, &status, &created); err != nil {
-					toolAPIError(c, err)
-					return
-				}
-				versions = append(versions, gin.H{"version": version, "revision": revision, "status": status, "created": created})
-			}
-			if err := rows.Err(); err != nil {
-				toolAPIError(c, err)
-				return
-			}
-			rows.Close()
-			accounts := []string{}
-			for _, memberID := range m.Members {
-				var account string
-				if err := models.DB.QueryRow("SELECT account FROM md_members WHERE member_id=?", memberID).Scan(&account); err == nil {
-					accounts = append(accounts, account)
-				}
-			}
-			c.JSON(200, gin.H{"published": current != "", "revision": current, "title": blog.BlogTitle, "description": blog.BlogDesc, "metadata": m, "member_accounts": accounts, "versions": versions, "market": readMarketSettings(c), "icons": models.ToolIconOptions})
+			c.JSON(http.StatusOK, data)
 			return
 		}
 		if c.Request.Method == "DELETE" {

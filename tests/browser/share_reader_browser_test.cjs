@@ -50,7 +50,7 @@ for(const kind of ['markdown','html','richdoc','spreadsheet','presentation','dra
   page.on('pageerror',e=>errors.push(e.message));
   await page.route('http://reader.test/**',r=>r.fulfill({body:'<!doctype html><html><body></body></html>'}));
   await page.goto('http://reader.test/');
-  await page.setContent(`<style>${template.match(/<style>([\s\S]*?)<\/style>/)[1]}</style>
+  await page.setContent(`<style>${template.match(/<style>([\s\S]*?)<\/style>/)[1]}${fs.readFileSync('static/css/html-frame.css','utf8')}</style>
    <button id="share-reader-exit-btn" class="share-reader-exit-btn" onclick="exitShareReaderFullscreen()">Exit</button>
    <div class="share-view-shell"><div id="drawerOverlay" class="drawer-overlay"></div><div id="sidebar">
    <button id="share-tab-meta" class="active">Info</button><button id="share-tab-tree">Chapters</button><button id="share-tab-outline" hidden>Outline</button>
