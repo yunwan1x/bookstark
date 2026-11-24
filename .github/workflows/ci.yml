@@ -45,3 +45,11 @@ jobs:
       - name: SSH shell selection validation
         working-directory: tools/ssh-terminal
         run: go test ./internal/...
+
+      - name: Setup Node for sandbox utility regression
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Sandboxed shared utility regression
+        run: node --test tests/browser/sandbox_utils_test.cjs

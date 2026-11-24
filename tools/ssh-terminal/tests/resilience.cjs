@@ -162,6 +162,7 @@ const { chromium } = require("playwright"),
     } finally {
       await api("/api/tool-market/settings", "PUT", settings);
     }
+    await f.locator("body").evaluate(()=>localStorage.setItem("ssh.language","en"));await page.waitForTimeout(250);
     await page.route("**/ssh.wasm", (route) => route.abort());
     f = await load();
     await fill(f);
@@ -169,7 +170,7 @@ const { chromium } = require("playwright"),
     await f.locator("#reconnect").waitFor({ timeout: 30000 });
     assert.match(
       await f.locator("#connectionMessage").textContent(),
-      /模块加载失败|module failed/,
+      /SSH module failed to load/,
     );
     await page.unroute("**/ssh.wasm");
     console.log("MODULE LOAD FAILURE VERIFIED");

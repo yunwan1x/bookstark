@@ -573,8 +573,8 @@
     }
     if (m.type === "fatal") {
       clearTimeout(engineTimer);
-      rejectEngine(Error(m.reason));
-      for (const s of sessions.values()) finish(s, m.reason);
+      rejectEngine(Error(t("moduleFailed")));
+      for (const s of sessions.values()) finish(s, t("moduleFailed"));
       return;
     }
     const s = [...sessions.values()].find((item) => item.run === m.id);
