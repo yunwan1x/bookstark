@@ -40,6 +40,13 @@
   catch(_){BSDialog.toast(t('failed'),'error');}
   BSActionDropdown.close(more);
  }
+ document.getElementById('toolRuntimeExportPackage').onclick=async()=>{
+  if(!meta||meta.distribution!=='files')return;
+  const button=document.getElementById('toolRuntimeExportPackage');button.disabled=true;BSActionDropdown.close(more);
+  try{const query=new URLSearchParams({revision:meta.revision,instance:meta.instance}),response=await fetch('/api/tool-installs/'+id+'/export?'+query);
+   if(!response.ok)throw Error('export_failed');const blob=await response.blob(),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='bookstark-tool-'+id+'.zip';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),10000);
+  }catch(_){BSDialog.toast(t('failed'),'error');}finally{button.disabled=false;}
+ };
  exportButton.onclick=exportData;document.getElementById('toolRuntimeExportError').onclick=exportData;
  info.onclick=()=>{
   if(!meta)return;BSActionDropdown.close(more);
@@ -162,7 +169,7 @@
   try{
    meta=await store.snapshot(id);
    updateIdentity(meta);
-   values=Object.assign(Object.create(null),meta.values||{});info.disabled=false;exportButton.disabled=false;
+   values=Object.assign(Object.create(null),meta.values||{});info.disabled=false;exportButton.disabled=false;document.getElementById("toolRuntimeExportPackage").hidden=meta.distribution!=="files";
    newTab.hidden=!!window.BookStarkHost?.available;if(window.BookStarkClient)Promise.resolve(BookStarkClient.ready).then(ready=>{if(ready)newTab.hidden=true;}).catch(()=>{});
    frame=document.createElement('iframe');frame.title=meta.title;const isolated=!!runtime.url&&runtime.instance===meta.instance&&runtime.revision===meta.revision;
    if(runtime.url&&!isolated)throw Error('conflict');

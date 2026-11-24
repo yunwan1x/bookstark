@@ -312,6 +312,7 @@ func Setup() *gin.Engine {
 		auth.GET("/api/tool-sources/:id", controllers.RemoteToolItem)
 		auth.GET("/api/tool-installs", controllers.ListToolInstalls)
 		auth.GET("/api/tool-installs/:id", controllers.GetToolInstall)
+		auth.GET("/api/tool-installs/:id/export", controllers.ExportToolInstall)
 		auth.PUT("/api/tool-installs/:id", controllers.InstallMarketTool(r))
 		auth.POST("/api/blogs/:id/tool", controllers.PublishMarketTool(r))
 		auth.GET("/api/blogs/:id/tool", controllers.PublishMarketTool(r))

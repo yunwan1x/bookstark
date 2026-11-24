@@ -1,0 +1,19 @@
+{
+  "title": "SSH 终端",
+  "description": "多会话 SSH 终端，支持密码与私钥认证、主机密钥核对和可折叠连接面板。",
+  "version": "1.0.0",
+  "category": "development",
+  "icon": "terminal",
+  "icon_style": "solid",
+  "icon_color": "#2563eb",
+  "entry": "index.html",
+  "access": "login",
+  "permissions": {
+    "socket_tcp": true,
+    "network": false,
+    "forms": true,
+    "clipboard_read": true,
+    "clipboard_write": true,
+    "schema": 1
+  }
+}
