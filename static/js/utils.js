@@ -911,9 +911,11 @@ window.BookStarkScrollLock = (function() {
         if (menu) menu.style.display = '';
         var btn = buttonOf(dropdown);
         if (btn) btn.setAttribute('aria-expanded', 'true');
-        if (typeof focusIndex === 'number') {
-            setTimeout(function() { focusMenuItem(dropdown, focusIndex); }, 0);
-        }
+        setTimeout(function() {
+            if (dropdown.classList.contains('open')) {
+                focusMenuItem(dropdown, typeof focusIndex === 'number' ? focusIndex : 0);
+            }
+        }, 0);
     }
 
     function closeDropdown(dropdown) {
@@ -998,6 +1000,19 @@ window.BookStarkScrollLock = (function() {
         }
     });
 
+    document.addEventListener('focusout', function(event) {
+        var dropdown = event.target.closest('.bs-action-dropdown.open, .bm-batch-dropdown.open');
+        if (!dropdown) return;
+        // Focus may still be moving to another item in this menu. In particular,
+        // sandboxed frames have no relatedTarget accessible to the parent page.
+        setTimeout(function() {
+            if (!dropdown.contains(document.activeElement)) closeDropdown(dropdown);
+        }, 0);
+    });
+
+    // Clicks in a tool iframe do not bubble to the parent document.
+    window.addEventListener('blur', function() { closeAll(); });
+
     document.addEventListener('keydown', function(event) {
         var trigger = event.target.closest('.bs-action-dd-btn, .bm-batch-dd-btn');
         if (trigger) {
@@ -1046,8 +1061,6 @@ window.BookStarkScrollLock = (function() {
             closeDropdown(dropdown);
             var btn = buttonOf(dropdown);
             if (btn) btn.focus();
-        } else if (event.key === 'Tab') {
-            closeDropdown(dropdown);
         }
     });
 
