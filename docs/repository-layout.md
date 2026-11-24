@@ -34,8 +34,9 @@ bookstark/
 │   ├── mockups/                静态设计稿与原型归档
 │   └── ...                     部署、功能、设计与测试文档
 ├── scripts/                    数据迁移、图标及客户端构建辅助脚本
-├── tools/                      前端组件构建与开发辅助工具
-│   └── dev-proxy/              可选的本机代理配置示例与脚本
+├── tools/                      前端组件构建、独立工具与开发辅助工具
+│   ├── dev-proxy/              可选的本机代理配置示例与脚本
+│   └── ssh-terminal/           独立 Go/WASM SSH 工具、ZIP 构建及浏览器测试
 ├── integrations/               外部工具接入代码
 └── android/                    Android 客户端工程
 ```

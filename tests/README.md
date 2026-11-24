@@ -6,6 +6,7 @@
 - `browser/`：JavaScript 单元测试与 Playwright 浏览器回归。`repo-root.cjs` 统一定位资源路径，支持从仓库根目录或其他目录调用。
 - 根目录的 `browser_integration_test.go`：使用主程序 `EmbedFS` 的端到端测试入口，继续与 `main` 包同目录，保证测试的仍是生产嵌入资源。
 - `models/`、`controllers/`、`middleware/` 等包中的 Go 测试继续与对应代码放在一起。
+- `tools/ssh-terminal/` 是独立的 Go 模块，带有 WASM 构建、一次性本地 SSH 夹具和 `tests/*.cjs` 浏览器验证。根目录的 `go test ./...` 不跨入该模块；构建、测试顺序与可选真实服务器验证见 [SSH 工具说明](../tools/ssh-terminal/README.md#验证)。常规 CI 另行构建该工具，并执行安装 ZIP 导出回归。
 
 ## Go 测试
 
@@ -37,4 +38,4 @@ node tests/browser/hud_theme_browser_test.cjs
 HUD_VARIANT=hud-light node tests/browser/hud_theme_browser_test.cjs
 ```
 
-只运行根目录的 `go test .` 不再包含 UI 约束测试；完整回归应运行 `go test ./...`。
+只运行根目录的 `go test .` 不再包含 UI 约束测试；主程序的 Go 回归应运行 `go test ./...`，独立 SSH 工具还需按上述说明单独验证。
