@@ -658,3 +658,6 @@ legend {
     transition: width 0.15s ease;
   }
 }
+
+.remember-credentials{display:flex;align-items:center;gap:var(--space-2);margin-top:var(--space-4);font-size:13px;cursor:pointer}
+.remember-credentials input{width:auto;flex:none}

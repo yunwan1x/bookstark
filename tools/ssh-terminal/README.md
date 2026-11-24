@@ -10,7 +10,7 @@
 python3 tools/ssh-terminal/build.py
 ```
 
-产物在项目父目录 `artifacts/ssh-terminal/`，包括完整 `package/` 与 `bookstark-ssh-terminal-1.0.1.zip`。无需外部 CDN；许可证随包保留。
+产物在项目父目录 `artifacts/ssh-terminal/`，包括完整 `package/` 与 `bookstark-ssh-terminal-1.0.2.zip`。无需外部 CDN；许可证随包保留。
 
 在广场的工具发布页选择上传 ZIP，检查入口 `index.html` 后发布。登录的用户可安装。客户端本地提供 TCP 桥接；远端服务器还需在工具市场设置启用工具 TCP 代理。连接地址从 **TCP 代理所在服务器** 解析及访问，并非浏览器自己的内网地址。
 
@@ -18,11 +18,12 @@ python3 tools/ssh-terminal/build.py
 
 - 桌面左侧列表可收缩为窄栏；手机从菜单展开，再点遮罩或菜单收起。
 - 可选择账户默认 Shell、sh、bash、zsh、fish，或填写自定义绝对路径。指定程序在远端 PTY 中以登录 Shell 启动，路径支持空格及 Unicode，不把输入当作命令参数；程序必须已安装在目标服务器。
-- 保存连接只写入名称、主机、端口、用户名、认证方式与 Shell。密码、私钥、私钥口令不写入 localStorage、工具使用数据或 ZIP。
+- 连接配置保存名称、主机、端口、用户名、认证方式、Shell 与是否记住凭据。勾选“记住登录凭据”后，密码、私钥和私钥口令通过 `BookStark.secrets` 加密保存，下次选择连接时自动填充；不勾选则只保留在本次会话内存中。取消勾选或删除连接会清除对应凭据。修改主机、端口、用户名或认证方式会清空自动填充的凭据，避免误用。
+- 凭据按账号及工具数据目录隔离，使用 AES-256-GCM 加密存放在工具数据区 `.credentials/`；不进入 localStorage 或程序 ZIP。读写分别需要工具的“读取文件”“保存文件”权限。工作区密钥位于主数据库路径后追加 `.tool-secrets.key` 的文件中，文件权限为 0600；备份及迁移工作区时，应将此文件与主库、WebDAV 库一起保留，缺失或损坏会导致已有凭据无法解密。
 - PEM/OpenSSH 私钥支持加密口令。首次主机密钥显示完整算法及 SHA256 指纹，需核对后选择仅此一次或保存信任；密钥变化会再次确认，取消不能建立 Shell。
 - 支持最多 8 个同时连接的会话、真实 PTY、窗口尺寸同步、终端选区复制、手动粘贴回退、搜索、字号调节和手机辅助按键。
 - 输入严格按序并确认写入；输出等待 xterm 消费，避免持续输出无限积压。每次重连使用独立运行 ID，旧连接的异步结果不会覆盖新连接。
-- 断线保留输出；重新连接需重新输入凭据。刷新不会恢复原来的远端进程，也不会重放命令。
+- 断线保留输出；已记住的凭据可自动填充后重新连接。刷新不会恢复原来的远端进程，也不会重放命令。
 - 浏览器剪贴板仍受运行来源和浏览器授权限制；无法自动读取时弹出手动粘贴框。工具不提供 SFTP、文件上传、端口转发或 SSH agent。
 
 ## 导出与重新安装
@@ -47,6 +48,7 @@ go run ./testserver ../../../artifacts/ssh-terminal
 ```sh
 # 从仓库根目录执行，NODE_PATH 仅在 Playwright 未安装到本项目时需要设置。
 node tools/ssh-terminal/tests/browser-test.cjs
+node tools/ssh-terminal/tests/remember-browser.cjs
 node tools/ssh-terminal/tests/resilience.cjs
 node tools/ssh-terminal/tests/edge-test.cjs
 # 设置下述真实SSH环境变量后，验证选择的程序和自定义路径。

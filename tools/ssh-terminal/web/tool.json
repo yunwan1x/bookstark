@@ -1,7 +1,7 @@
 {
   "title": "SSH 终端",
-  "description": "多会话 SSH 终端，支持密码与私钥认证、主机密钥核对和可折叠连接面板。",
-  "version": "1.0.1",
+  "description": "多会话 SSH 终端，支持密码与私钥认证、加密保存凭据、主机密钥核对和可折叠连接面板。",
+  "version": "1.0.2",
   "category": "development",
   "icon": "terminal",
   "icon_style": "solid",
@@ -9,11 +9,9 @@
   "entry": "index.html",
   "access": "login",
   "permissions": {
+    "read_files": true,
+    "save_files": true,
     "socket_tcp": true,
-    "network": false,
-    "forms": true,
-    "clipboard_read": true,
-    "clipboard_write": true,
     "schema": 1
   }
 }

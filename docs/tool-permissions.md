@@ -104,6 +104,21 @@ await files.remove('notes/backup', {recursive: true});
 
 常见 `error.code`：`permission_denied`、`not_found`、`already_exists`、`directory_not_empty`、`not_directory`、`invalid_path`、`conflict`、`quota_exceeded`。SDK 最多同时等待 32 个文件请求，单次超时 30 秒。
 
+## 加密凭据 API
+
+`BookStark.secrets.get(name)`、`set(name, value)`、`remove(name)` 均返回 Promise。`get` 需要读取文件权限，返回保存的字符串，不存在时返回 `null`；`set` 和 `remove` 需要保存文件权限。名称只能包含英文字母、数字、下划线和短横线，长度 1–128；值是最大 1 MiB（UTF-8）的字符串，结构化凭据可自行 JSON 编解码。删除不存在的名称成功。
+
+服务端以 AES-256-GCM 加密存入当前工具数据目录 `.credentials/`，密文绑定账号、工具、数据目录与名称。读取使用独立的工作区密钥解密，不会回退为明文；该文件目录受普通文件 API 相同配额和安装锁约束。工具本身获得授权后可以读取自己的明文凭据，因此只应授权可信工具。升级及“保留数据”重装保留凭据；完整卸载删除凭据；程序 ZIP 和运行页“导出数据”（仅 localStorage 使用状态）均不包含凭据。
+
+工作区密钥文件名为 `DB_PATH` 加 `.tool-secrets.key`，首次保存自动生成，权限 0600。迁移或备份时必须与主数据库、WebDAV 数据库一起保留；缺失或损坏时已有凭据不可解密，不会在读取时生成替代密钥。
+
+```js
+await BookStark.secrets.set('connection-1', JSON.stringify({password: 'example'}));
+const raw = await BookStark.secrets.get('connection-1');
+const credentials = raw === null ? null : JSON.parse(raw);
+await BookStark.secrets.remove('connection-1');
+```
+
 ## TCP Socket API
 
 工具必须声明 `socket_tcp`。本地原生客户端自动启用代理；远端默认关闭，管理员需显式打开「允许此服务器代理工具 TCP 连接」。连接从安装工作区的后端发出：客户端本地模式是本机，远端模式是服务器；`127.0.0.1` 也指该后端，不指访问者的浏览器。

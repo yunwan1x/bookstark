@@ -297,7 +297,7 @@ func ToolInstallFileOperation(c *gin.Context) {
 		return
 	}
 	var request models.ToolFileOperation
-	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 8192)
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 2<<20)
 	if c.ShouldBindJSON(&request) != nil {
 		c.Status(400)
 		return

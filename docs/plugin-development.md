@@ -345,7 +345,20 @@ localStorage.removeItem('settings');
 
 较大的内容、图片、二进制结果或需要 `await` 写入结果的数据，使用文件 API。输入自动保存建议在工具中适度防抖，减少频繁写入。
 
-### 5.2 sessionStorage
+### 5.2 加密凭据
+
+密码、私钥和口令需要长期保存时，使用 `BookStark.secrets`，不要写进 localStorage 或发布包。`get(name)` 返回字符串或 `null`，需要读取文件权限；`set(name, value)` 和 `remove(name)` 需要保存文件权限，均为可等待的 Promise。名称为 1–128 位英文字母、数字、下划线或短横线；值最大 1 MiB UTF-8，可自行 JSON 编解码。
+
+```js
+await BookStark.secrets.set('connection-1', JSON.stringify({password: 'example'}));
+const raw = await BookStark.secrets.get('connection-1');
+const credentials = raw === null ? null : JSON.parse(raw);
+await BookStark.secrets.remove('connection-1');
+```
+
+宿主以 AES-256-GCM 加密存入当前工具数据目录 `.credentials/`，按账号、工具、数据目录和名称隔离；工具授权后可读自己的明文凭据。升级及保留数据重装可继续读取，完整卸载清除。程序 ZIP 与运行页导出使用数据不会包含凭据。工作区备份须同时保留主库、WebDAV 库以及 `DB_PATH` 加 `.tool-secrets.key` 的密钥文件（0600），否则已有密文无法恢复。详细边界见 [工具权限说明](tool-permissions.md#加密凭据-api)。
+
+### 5.3 sessionStorage
 
 工具的 sessionStorage 是运行时内存实现。适合临时界面状态，刷新或关闭后清空，不同步后端。不要用它保存需要长期保留的数据。
 

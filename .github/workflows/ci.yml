@@ -42,6 +42,9 @@ jobs:
       - name: Installed tool ZIP export regression
         run: go test ./controllers -run '^TestInstalledToolZIPExport' -count=1
 
+      - name: Tool credential encryption and isolation
+        run: go test ./internal/toolsecrets ./controllers -run 'TestCipher|TestConcurrentFirstWrite|TestToolSecrets|TestToolFileAPI' -count=1
+
       - name: SSH shell selection validation
         working-directory: tools/ssh-terminal
         run: go test ./internal/...
