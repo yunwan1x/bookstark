@@ -289,7 +289,9 @@
             overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px;
         }
         @media (max-width: 640px) { .share-topbar-title { display: none; } }
-        .share-reader-fullscreen-btn { width: 28px; height: 28px; padding: 0; }
+        .share-topbar { --share-control-size: 28px; --share-control-icon-size: 13px; }
+        .share-topbar-icon-btn { width: var(--share-control-size); min-width: var(--share-control-size); height: var(--share-control-size); padding: 0; justify-content: center; flex-shrink: 0; font-size: var(--share-control-icon-size); line-height: 1; }
+        .share-topbar-icon-btn > i { display: inline-flex; align-items: center; justify-content: center; width: 1em; line-height: 1; font-size: inherit; }
         .share-view-shell [hidden], #share-reader-exit-btn[hidden] { display: none !important; }
         .share-reader-exit-btn {
             position: fixed;
@@ -750,16 +752,16 @@
                     <i class="fa-solid fa-floppy-disk"></i> <span class="btn-text">{{call .T "share.edit.save_btn"}}</span>
                 </button>
                 {{if .ShareCommentsEnabled}}
-                <button type="button" class="tb-btn tb-btn-slate" id="share-comments-jump-btn" data-share-comments-trigger aria-expanded="false" aria-label="{{call .T "share_comments.title"}}" title="{{call .T "share_comments.title"}}" onclick="scrollToShareComments()">
+                <button type="button" class="tb-btn tb-btn-slate share-topbar-icon-btn" id="share-comments-jump-btn" data-share-comments-trigger aria-expanded="false" aria-label="{{call .T "share_comments.title"}}" title="{{call .T "share_comments.title"}}" onclick="scrollToShareComments()">
                     <i class="fa-regular fa-comments"></i>
                 </button>
                 {{end}}
                 <!-- Fullscreen reader -->
-                <button type="button" class="tb-btn tb-btn-slate share-reader-fullscreen-btn" id="share-reader-fullscreen-btn" hidden aria-label="{{call .T "share_view.reader.fullscreen"}}" title="{{call .T "share_view.reader.fullscreen"}}" onclick="enterShareReaderFullscreen()">
+                <button type="button" class="tb-btn tb-btn-slate share-topbar-icon-btn share-reader-fullscreen-btn" id="share-reader-fullscreen-btn" hidden aria-label="{{call .T "share_view.reader.fullscreen"}}" title="{{call .T "share_view.reader.fullscreen"}}" onclick="enterShareReaderFullscreen()">
                     <i class="fa-solid fa-expand"></i>
                 </button>
                 <!-- Theme toggle -->
-                <button type="button" class="tb-btn tb-btn-slate" id="shareThemeToggle" aria-label="{{call .T "share_view.topbar.theme"}}" title="{{call .T "share_view.topbar.theme"}}" onclick="BookStarkTheme.toggle()">
+                <button type="button" class="tb-btn tb-btn-slate share-topbar-icon-btn" id="shareThemeToggle" aria-label="{{call .T "share_view.topbar.theme"}}" title="{{call .T "share_view.topbar.theme"}}" onclick="BookStarkTheme.toggle()">
                     <i class="fa-solid fa-moon" id="theme-icon"></i>
                 </button>
             </div>
