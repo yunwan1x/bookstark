@@ -18,7 +18,8 @@
  const waiters=new Set(),dirty=()=>operations.length>0||failed||pendingFiles>0;
  function settled(){if((!operations.length&&!pendingFiles)||failed){for(const resolve of waiters)resolve();waiters.clear();}}
  function showState(key){clearTimeout(slowTimer);loadPhase='error';state.dataset.phase='error';state.hidden=false;message.textContent=t(key);document.getElementById('toolRuntimeAnnouncement').setAttribute('role','alert');hint.hidden=true;stateActions.hidden=false;retry.hidden=key==='not_installed';host.setAttribute('aria-busy','false');frame?.remove();if(!meta){identity.classList.remove('is-pending');document.getElementById('toolRuntimeTitle').textContent=t('tools');document.getElementById('toolRuntimeIcon').innerHTML=BookStarkToolAppearance.html({});}}
- function setFullscreen(on){document.body.classList.toggle('tool-runtime-fullscreen',on);fullscreen.setAttribute('aria-pressed',String(on));exit.hidden=!on;if(on)exit.focus();else fullscreen.focus();BSActionDropdown.close(more);}
+ function setFullscreen(on){document.body.classList.toggle('tool-runtime-fullscreen',on);fullscreen.setAttribute('aria-pressed',String(on));exit.hidden=!on;if(on){exitDrag.clamp();exit.focus();}else fullscreen.focus();BSActionDropdown.close(more);}
+ const exitDrag=BSFloatingHandle(exit,()=>document.body.classList.contains('tool-runtime-fullscreen'));
  fullscreen.onclick=()=>setFullscreen(true);exit.onclick=()=>setFullscreen(false);
  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&document.body.classList.contains('tool-runtime-fullscreen')){event.preventDefault();setFullscreen(false);}});
  async function navigate(action){
@@ -113,7 +114,7 @@
     mkdir:(name,options={})=>fileRequest('mkdir',name,undefined,{recursive:options.recursive===true}),
     remove:(name,options={})=>fileRequest('remove',name,undefined,{recursive:options.recursive===true}),
     rename:(name,to)=>fileRequest('rename',name,undefined,{to}),move:(name,to)=>fileRequest('move',name,undefined,{to}),
-    copy:(name,to)=>fileRequest('copy',name,undefined,{to})}};
+    copy:(name,to)=>fileRequest('copy',name,undefined,{to})},secrets:{get:name=>fileRequest('secret_get',name),set:(name,value)=>typeof value==='string'&&value.length<=1024*1024?fileRequest('secret_set',name,undefined,{value}):Promise.reject(Error('invalid_secret')),remove:name=>fileRequest('secret_remove',name)}};
 
     let socketSequence=0;
     const sockets=new Map();
@@ -220,12 +221,12 @@
      return;
     }
     if(item.file===true){
-     const requirements={GET:[true,false],PUT:[false,true],list:[true,false],stat:[true,false],exists:[true,false],mkdir:[false,true],remove:[false,true],rename:[false,true],move:[false,true],copy:[true,true]},required=Object.hasOwn(requirements,item.method)?requirements[item.method]:null;
+     const requirements={GET:[true,false],PUT:[false,true],list:[true,false],stat:[true,false],exists:[true,false],mkdir:[false,true],remove:[false,true],rename:[false,true],move:[false,true],copy:[true,true],secret_get:[true,false],secret_set:[false,true],secret_remove:[false,true]},required=Object.hasOwn(requirements,item.method)?requirements[item.method]:null;
      if(!required||typeof item.name!=='string'||item.name.length>2048||!Number.isSafeInteger(item.request)||(item.method==='PUT'&&!(item.content instanceof ArrayBuffer)))return;
      const reply=value=>frame.contentWindow?.postMessage({market:token,fileReply:true,request:item.request,...value},targetOrigin);
      if(required[0]&&!meta.permissions?.read_files||required[1]&&!meta.permissions?.save_files){reply({error:'permission_denied'});return;}
      if(required[1])pendingFiles++;
-     const options=item.options||{},operation={op:item.method,path:item.name,to:options.to,recursive:options.recursive===true};
+     const options=item.options||{},operation={op:item.method,path:item.name,to:options.to,recursive:options.recursive===true,value:options.value};
      const task=['GET','PUT'].includes(item.method)?store.file(id,meta.revision,meta.instance,item.method,item.name,item.content).then(content=>({content})):store.fileOperation(id,meta.revision,meta.instance,operation).then(result=>({result}));
      task.then(reply).catch(error=>reply({error:error.message||'storage'})).finally(()=>{if(required[1])pendingFiles--;settled();});
      return;

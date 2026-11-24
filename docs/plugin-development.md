@@ -345,7 +345,20 @@ localStorage.removeItem('settings');
 
 较大的内容、图片、二进制结果或需要 `await` 写入结果的数据，使用文件 API。输入自动保存建议在工具中适度防抖，减少频繁写入。
 
-### 5.2 sessionStorage
+### 5.2 加密凭据
+
+密码、私钥和口令需要长期保存时，使用 `BookStark.secrets`，不要写进 localStorage 或发布包。`get(name)` 返回字符串或 `null`，需要读取文件权限；`set(name, value)` 和 `remove(name)` 需要保存文件权限，均为可等待的 Promise。名称为 1–128 位英文字母、数字、下划线或短横线；值最大 1 MiB UTF-8，可自行 JSON 编解码。
+
+```js
+await BookStark.secrets.set('connection-1', JSON.stringify({password: 'example'}));
+const raw = await BookStark.secrets.get('connection-1');
+const credentials = raw === null ? null : JSON.parse(raw);
+await BookStark.secrets.remove('connection-1');
+```
+
+宿主以 AES-256-GCM 加密存入当前工具数据目录 `.credentials/`，按账号、工具、数据目录和名称隔离；工具授权后可读自己的明文凭据。升级及保留数据重装可继续读取，完整卸载清除。程序 ZIP 与运行页导出使用数据不会包含凭据。工作区备份须同时保留主库、WebDAV 库以及 `DB_PATH` 加 `.tool-secrets.key` 的密钥文件（0600），否则已有密文无法恢复。详细边界见 [工具权限说明](tool-permissions.md#加密凭据-api)。
+
+### 5.3 sessionStorage
 
 工具的 sessionStorage 是运行时内存实现。适合临时界面状态，刷新或关闭后清空，不同步后端。不要用它保存需要长期保留的数据。
 
@@ -578,7 +591,7 @@ SSH 工具自身仍需完成主机密钥验证、密码或私钥认证、PTY 分
 
 仓库提供可构建的 [SSH 终端工具](../tools/ssh-terminal/README.md)：复用 xterm、FitAddon 和公共对话框，将 Go `golang.org/x/crypto/ssh` 编译为 WASM，在专用 Worker 中处理 SSH；工具页面通过消息转发 `BookStark.sockets` 的 TCP 字节。它不调用管理后台的 SSH 凭据或终端接口，也没有新增 `BookStark.ssh` 公共 API。
 
-从仓库根目录运行 `python3 tools/ssh-terminal/build.py`，会在仓库父目录的 `artifacts/ssh-terminal/` 生成完整 ZIP，随后按工具包流程上传、发布和安装。示例支持可折叠连接面板、多会话、密码或私钥认证、主机密钥确认、PTY 尺寸同步和断线重连；可使用账号默认 Shell，或选择 sh、bash、zsh、fish 及自定义绝对路径，在远端 PTY 中启动，不接受自定义命令参数。Shell 选择随连接配置保存，密码、私钥或口令不保存。构建环境、许可证和隔离测试步骤见该工具的 README。
+从仓库根目录运行 `python3 tools/ssh-terminal/build.py`，会在仓库父目录的 `artifacts/ssh-terminal/` 生成完整 ZIP，随后按工具包流程上传、发布和安装。示例支持可折叠连接面板、多会话、密码或私钥认证、主机密钥确认、PTY 尺寸同步和断线重连；可使用账号默认 Shell，或选择 sh、bash、zsh、fish 及自定义绝对路径，在远端 PTY 中启动，不接受自定义命令参数。Shell 选择随连接配置保存；勾选“记住登录凭据”时，密码、私钥和口令通过 `BookStark.secrets` 加密保存并在下次选择连接时自动填充，不写入 localStorage 或程序包。构建环境、许可证和隔离测试步骤见该工具的 README。
 
 ## 8. 浏览器原生能力
 

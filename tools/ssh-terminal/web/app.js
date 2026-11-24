@@ -32,9 +32,12 @@
     privateKey: ["私钥文件（PEM / OpenSSH）", "Private key (PEM / OpenSSH)"],
     passphrase: ["私钥口令（可选）", "Passphrase (optional)"],
     secretHint: [
-      "密码、私钥及口令仅用于本次会话，不随连接配置保存。",
-      "Passwords, private keys and passphrases are used only for this session and are never saved with connections.",
+      "勾选后加密保存，下次打开自动填充；导出工具包不含登录凭据。",
+      "When checked, credentials are encrypted and filled next time. Exported tool packages contain no credentials.",
     ],
+    remember: ["记住登录凭据", "Remember credentials"],
+    secretFailed: ["凭据保存或读取失败，请检查工具文件权限后重试。", "Could not save or load credentials. Check tool file permissions and retry."],
+    savedKey: ["已保存：", "Saved: "],
     delete: ["删除连接", "Delete connection"],
     save: ["保存连接", "Save connection"],
     connect: ["连接", "Connect"],
@@ -120,8 +123,8 @@
     ],
     noResult: ["没有匹配", "No matches"],
     reconnectHint: [
-      "连接已断开，输出已保留。重新连接需要再次提供凭据。",
-      "Disconnected. Output is retained. Enter credentials again to reconnect.",
+      "连接已断开，输出已保留。可以重新连接。",
+      "Disconnected. Output is retained. You can reconnect.",
     ],
     invalidHost: [
       "请输入有效主机名或 IP，不包含协议、路径或端口。",
@@ -161,6 +164,11 @@
     editorMode = true,
     reconnectTarget = null,
     keyText = "",
+    keyName = "",
+    editorVersion = 0,
+    secretLoading = false,
+    secretSaving = false,
+    restoredCredentials = false,
     fontSize = Number(localStorage.getItem("ssh.font-size")) || 13;
   fontSize = Math.max(10, Math.min(24, fontSize));
   let worker = null,
@@ -302,7 +310,9 @@
     $("showPassword").setAttribute("aria-pressed", String(show));
   };
   $("privateKey").onchange = async () => {
+    const version = editorVersion;
     keyText = "";
+    keyName = "";
     const file = $("privateKey").files[0];
     $("keyName").textContent = "";
     if (!file) return;
@@ -311,14 +321,24 @@
       $("privateKey").value = "";
       return;
     }
-    keyText = await file.text();
-    $("keyName").textContent = file.name;
+    const text = await file.text();
+    if (version !== editorVersion || $("privateKey").files[0] !== file) return;
+    keyText = text;
+    keyName = file.name;
+    $("keyName").textContent = keyName;
   };
   function openEditor(cfg = null, target = null) {
+    if (secretSaving) return;
+    const version = ++editorVersion;
+    secretLoading = false;
+    restoredCredentials = false;
     editorMode = true;
     reconnectTarget = target;
     $("connectionForm").reset();
     keyText = "";
+    keyName = "";
+    $("rememberCredentials").checked = cfg?.remember === true;
+    setSecretBusy(false);
     $("keyName").textContent = "";
     $("password").type = "password";
     $("showPassword").setAttribute("aria-pressed", "false");
@@ -347,6 +367,59 @@
     renderTabs();
     renderHosts();
     $("host").focus();
+    if (cfg?.remember) {
+      secretLoading = true;
+      setSecretBusy(true);
+      Promise.resolve().then(() => secretAPI().get(secretName(cfg.id))).then(raw => {
+        if (version !== editorVersion || !raw) return;
+        const value = JSON.parse(raw);
+        if (value.target !== credentialTarget(cfg)) throw Error("credential_target_changed");
+        $("password").value = value.password || "";
+        $("passphrase").value = value.passphrase || "";
+        keyText = value.key || "";
+        keyName = value.keyName || "private-key";
+        $("keyName").textContent = keyText ? t("savedKey") + keyName : "";
+        restoredCredentials = true;
+      }).catch(() => {if (version === editorVersion) showError(t("secretFailed"));})
+        .finally(() => {if (version === editorVersion) {secretLoading = false;setSecretBusy(false);}});
+    }
+  }
+  function secretAPI() {
+    if (!window.BookStark?.secrets) throw Error("secret_bridge_missing");
+    return window.BookStark.secrets;
+  }
+  function secretName(id) { return "ssh-" + id; }
+  function credentialTarget(cfg) { return JSON.stringify([cfg.host, cfg.port, cfg.user, cfg.auth]); }
+  function setSecretBusy(busy) {
+    for (const id of ["saveHost", "connect", "deleteHost", "rememberCredentials", "password", "privateKey", "passphrase", ...(secretSaving ? ["host", "port", "username", "hostName", "shell", "customShell"] : [])])
+      $(id).disabled = busy;
+    document.querySelectorAll("[name=auth]").forEach(input => input.disabled = busy && secretSaving);
+    if (!busy) for (const id of ["host", "port", "username", "hostName", "shell", "customShell"]) $(id).disabled = false;
+  }
+  function clearRestoredCredentials() {
+    ++editorVersion;
+    secretLoading = false;
+    if (!secretSaving) setSecretBusy(false);
+    if (!restoredCredentials) return;
+    restoredCredentials = false;
+    $("password").value = $("passphrase").value = $("privateKey").value = "";
+    keyText = keyName = "";
+    $("keyName").textContent = "";
+  }
+  for (const id of ["host", "port", "username"])
+    $(id).addEventListener("input", clearRestoredCredentials);
+  document.querySelectorAll("[name=auth]").forEach(input => input.addEventListener("change", clearRestoredCredentials));
+  async function saveCredentials(cfg) {
+    const remember = $("rememberCredentials").checked;
+    if (remember && cfg.auth === "key" && !keyText) throw Error("missing_key");
+    const previous = hosts.find(h => h.id === cfg.id);
+    if (remember) {
+      await secretAPI().set(secretName(cfg.id), JSON.stringify({
+        target: credentialTarget(cfg), password: cfg.auth === "password" ? $("password").value : "",
+        key: cfg.auth === "key" ? keyText : "", passphrase: cfg.auth === "key" ? $("passphrase").value : "", keyName
+      }));
+    } else if (previous?.remember) await secretAPI().remove(secretName(cfg.id));
+    cfg.remember = remember;
   }
   for (const id of ["addHost", "railAdd", "newConnection"])
     $(id).onclick = () => openEditor();
@@ -359,6 +432,7 @@
       user: cfg.user,
       auth: cfg.auth,
       shell: cfg.shell,
+      remember: cfg.remember === true,
     };
     const list = hosts.filter((h) => h.id !== cfg.id);
     if (list.length >= 100) {
@@ -376,18 +450,41 @@
     renderHosts();
     return true;
   }
-  $("saveHost").onclick = () => {
+  $("saveHost").onclick = async () => {
+    if (secretLoading || secretSaving) return;
     const cfg = hostConfig();
-    if (validConfig(cfg) && saveHost(cfg))
-      BSDialog.toast(t("saved"), "success");
+    if (!validConfig(cfg)) return;
+    secretSaving = true;
+    setSecretBusy(true);
+    try {
+      await saveCredentials(cfg);
+      if (saveHost(cfg)) BSDialog.toast(t("saved"), "success");
+    } catch (_) { showError(t("secretFailed")); }
+    finally {secretSaving = false;setSecretBusy(false);}
   };
   $("deleteHost").onclick = async () => {
-    if (!(await BSDialog.confirm2(t("confirmDelete")))) return;
-    const list = hosts.filter((h) => h.id !== $("hostID").value);
-    if (persist("ssh.hosts", list)) {
-      hosts = list;
-      openEditor();
-    }
+    if (secretLoading || secretSaving) return;
+    const id = $("hostID").value, version = editorVersion;
+    if (!(await BSDialog.confirm2(t("confirmDelete"))) || version !== editorVersion) return;
+    secretSaving = true;
+    setSecretBusy(true);
+    try {
+      if (hosts.find(h => h.id === id)?.remember) await secretAPI().remove(secretName(id));
+      const list = hosts.filter(h => h.id !== id);
+      if (persist("ssh.hosts", list)) {hosts = list;secretSaving = false;openEditor();}
+    } catch (_) {showError(t("secretFailed"));}
+    finally {secretSaving = false;setSecretBusy(false);}
+  };
+  $("rememberCredentials").onchange = async () => {
+    const cfg = hosts.find(h => h.id === $("hostID").value);
+    if ($("rememberCredentials").checked || !cfg?.remember) return;
+    secretSaving = true;
+    setSecretBusy(true);
+    try {
+      await secretAPI().remove(secretName(cfg.id));
+      saveHost({...cfg, remember:false});
+    } catch (_) {$("rememberCredentials").checked = true;showError(t("secretFailed"));}
+    finally {secretSaving = false;setSecretBusy(false);}
   };
   function renderHosts() {
     const q = $("hostSearch").value.trim().toLowerCase();
@@ -805,6 +902,7 @@
   }
   $("connectionForm").onsubmit = async (event) => {
     event.preventDefault();
+    if (secretLoading || secretSaving) return;
     const cfg = hostConfig();
     if (!validConfig(cfg)) return;
     if (cfg.auth === "key" && !keyText) {
@@ -822,6 +920,13 @@
         lang === "zh" ? "最多同时连接 8 个会话" : "Up to 8 live sessions",
       );
       return;
+    }
+    if ($("rememberCredentials").checked || hosts.find(h => h.id === cfg.id)?.remember) {
+      secretSaving = true;
+      setSecretBusy(true);
+      try {await saveCredentials(cfg);if (!saveHost(cfg)) return;}
+      catch (_) {showError(t("secretFailed"));return;}
+      finally {secretSaving = false;setSecretBusy(false);}
     }
     const credentials = {
       password: $("password").value,

@@ -10,7 +10,7 @@ function source(name){
  const code=template.slice(start,end+7);new Function(code);return code;
 }
 const names=['getShareLayoutStorage','readShareLayoutState','writeShareLayoutState','setShareSidebarCollapsed','isCompactShareViewport','applyShareLayoutState','enterShareReaderFullscreen','exitShareReaderFullscreen','toggleShareSidebar','openMobileDrawer','closeMobileDrawer','switchShareTab','switchBookTab','onFullpage','setShareOutlineAvailable','setShareReaderType','buildShareToc','setActiveTocItem','bindTocObserver','renderShareContent'];
-names.push('isShareImmersiveArticle');
+names.push('isShareImmersiveArticle','initShareReaderExitDrag');
 const functions=names.map(source).join('\n');
 // Syntax-check inline scripts from real Go-rendered pages when snapshots exist.
 for(const kind of ['markdown','html','richdoc','spreadsheet','presentation','drawing','mindmap','book'])for(const lang of ['zh','en']){
@@ -59,13 +59,14 @@ for(const kind of ['markdown','html','richdoc','spreadsheet','presentation','dra
    <div id="content-scroll"><div id="preview-wrap"><div id="preview-area"></div></div></div><div id="share-footer">Footer</div></div></div>`);
   await page.addScriptTag({content:fs.readFileSync('static/js/utils.js','utf8')});
   await page.addScriptTag({content:`var shareIdentify='article-a',shareType='blog',shareDocType='markdown',shareTitle='Title';
-   var SHARE_LAYOUT_STORAGE_KEY='bookstark:share-view-layout:v1',_sidebarCollapsed=false,_shareReaderDocType='',_shareOutlineAvailable=false,_shareRenderVersion=0,_shareTocObserver=null,_shareHeadings=[];
+   var SHARE_LAYOUT_STORAGE_KEY='bookstark:share-view-layout:v1',_sidebarCollapsed=false,_shareReaderDocType='',_shareOutlineAvailable=false,_shareRenderVersion=0,_shareTocObserver=null,_shareHeadings=[],shareReaderExitHandle;
    window.__=k=>k;window.BookStarkTabURL={set:function(){}};var delayed=[];
    var BookStarkEditor={renderContent:function(id,content,type,opts){
     document.getElementById(id).innerHTML=type==='markdown'?'<div class="cherry-previewer">'+content+'</div>':'<div>Embedded tool</div>';
     if(type==='markdown')delayed.push(opts.onTocReady);else if(opts.onFullpage)opts.onFullpage();
    }};
-   ${functions}`});
+   ${functions}
+ initShareReaderExitDrag();`});
   const escapeStart=template.indexOf("    document.addEventListener('keydown'",template.indexOf('    function exitShareReaderFullscreen()'));
   await page.addScriptTag({content:'function closeShareCommentsPanel(){}\n'+template.slice(escapeStart,template.indexOf('    function toggleShareSidebar()',escapeStart))});
   await page.evaluate(()=>{
@@ -77,6 +78,13 @@ for(const kind of ['markdown','html','richdoc','spreadsheet','presentation','dra
   assert.equal(await page.locator('.outline-item').count(),2);
   await page.locator('#share-reader-fullscreen-btn').click();assert(await page.locator('#share-reader-exit-btn').isVisible());
   await page.locator('#share-reader-exit-btn').click();assert.equal(await page.locator('#share-reader-exit-btn').isVisible(),false);
+  await page.evaluate(()=>enterShareReaderFullscreen());
+  const handle=page.locator('#share-reader-exit-btn'),rect=await handle.boundingBox();
+  await page.mouse.move(rect.x+rect.width/2,rect.y+rect.height/2);await page.mouse.down();await page.mouse.move(width-10,880,{steps:8});await page.mouse.up();
+  assert(await page.locator('body').evaluate(n=>n.classList.contains('share-reader-fullscreen')),'drag keeps fullscreen');
+  await page.evaluate(()=>exitShareReaderFullscreen());await page.setViewportSize({width:320,height:500});await page.evaluate(()=>enterShareReaderFullscreen());
+  const clamped=await handle.boundingBox();assert(clamped.x>=8&&clamped.y>=8&&clamped.x+clamped.width<=312&&clamped.y+clamped.height<=492,'reenter clamps after hidden resize');
+  await handle.click();assert.equal(await handle.isVisible(),false);await page.setViewportSize({width,height:900});
   await page.evaluate(()=>enterShareReaderFullscreen());await page.keyboard.press('Escape');assert.equal(await page.locator('#share-reader-exit-btn').isVisible(),false,'Escape exits reading fullscreen');
   await page.evaluate(()=>{enterShareReaderFullscreen();shareIdentify='article-b';renderShareContent('No headings','markdown');delayed.shift()();});
   assert.equal(await page.locator('#share-reader-exit-btn').isVisible(),false,'no fullscreen inherited across articles');

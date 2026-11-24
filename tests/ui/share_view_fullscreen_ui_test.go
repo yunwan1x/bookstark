@@ -108,20 +108,21 @@ func TestShareViewFullscreenExitButtonIsDraggable(t *testing.T) {
 	text := string(tpl)
 
 	for _, required := range []string{
-		`touch-action: none;`,
-		`.share-reader-exit-btn.is-dragging`,
-		`function clampShareReaderExitPosition(left, top, rect)`,
-		`function initShareReaderExitDrag()`,
-		`var _shareReaderExitDragSuppressClick = false;`,
-		`btn.addEventListener('pointerdown', function(ev)`,
-		`document.addEventListener('pointermove', function(ev)`,
-		`document.addEventListener('pointerup', endDrag);`,
-		`btn.setPointerCapture(ev.pointerId);`,
-		`ev.stopImmediatePropagation();`,
+		`touch-action: none;`, `.share-reader-exit-btn.is-dragging`,
+		`shareReaderExitHandle = BSFloatingHandle(btn,`, `shareReaderExitHandle.clamp()`,
 		`initShareReaderExitDrag();`,
 	} {
 		if !strings.Contains(text, required) {
-			t.Fatalf("share view fullscreen exit button drag support missing %q", required)
+			t.Fatalf("share drag missing %q", required)
+		}
+	}
+	shared, err := os.ReadFile("static/js/utils.js")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, required := range []string{`function BSFloatingHandle(`, `button.setPointerCapture(event.pointerId)`, `event.stopImmediatePropagation()`, `'pointercancel'`, `'lostpointercapture'`} {
+		if !strings.Contains(string(shared), required) {
+			t.Fatalf("shared drag missing %q", required)
 		}
 	}
 }

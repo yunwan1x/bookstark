@@ -36,3 +36,6 @@
 @media(max-width:640px){.tool-runtime-back>span,.tool-runtime-bar>.tool-runtime-refresh{display:none}.tool-runtime-more-refresh{display:flex}.tool-runtime-title{padding-left:var(--spacing-sm)}.tool-runtime-title h1{font-size:13px}.tool-runtime-bar .row-action,.tool-runtime-more>.bs-action-dd-btn{width:32px;min-width:32px;height:36px}}
 
 .tool-runtime-capability-note{flex-shrink:0;padding:var(--spacing-sm) var(--spacing-md);font-size:13px;border-bottom:1px solid var(--color-border);background:var(--color-warning-light);color:var(--color-text)}
+
+.tool-runtime-exit{touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+.tool-runtime-exit.is-dragging{cursor:grabbing}

@@ -1077,3 +1077,59 @@ window.BookStarkScrollLock = (function() {
         close: closeDropdown
     };
 })();
+// Shared by standalone tool and article fullscreen restore buttons. Pointer
+// capture keeps a drag working across embedded iframes and touch screens.
+function BSFloatingHandle(button, enabled) {
+  let drag = null, suppressClick = false;
+  function clamp(left, top) {
+    const rect = button.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const viewport = window.visualViewport;
+    const x = viewport?.offsetLeft || 0, y = viewport?.offsetTop || 0;
+    const width = viewport?.width || innerWidth, height = viewport?.height || innerHeight;
+    button.style.left = Math.min(Math.max(left ?? rect.left, x + 8), Math.max(x + 8, x + width - rect.width - 8)) + 'px';
+    button.style.top = Math.min(Math.max(top ?? rect.top, y + 8), Math.max(y + 8, y + height - rect.height - 8)) + 'px';
+    button.style.right = 'auto';
+    button.style.transform = 'none';
+  }
+  button.addEventListener('click', event => {
+    if (!suppressClick || event.detail === 0) return;
+    suppressClick = false;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }, true);
+  button.addEventListener('pointerdown', event => {
+    if (!enabled() || event.button !== 0 || event.isPrimary === false) return;
+    suppressClick = false;
+    const rect = button.getBoundingClientRect();
+    drag = {id:event.pointerId,x:event.clientX,y:event.clientY,left:rect.left,top:rect.top,moved:false};
+    button.setPointerCapture(event.pointerId);
+  });
+  button.addEventListener('pointermove', event => {
+    if (!drag || event.pointerId !== drag.id) return;
+    const dx = event.clientX-drag.x, dy = event.clientY-drag.y;
+    if (!drag.moved && Math.abs(dx)+Math.abs(dy)<4) return;
+    drag.moved = true;
+    button.classList.add('is-dragging');
+    event.preventDefault();
+    clamp(drag.left+dx, drag.top+dy);
+  });
+  function end(event) {
+    if (!drag || event.pointerId !== drag.id) return;
+    // Some touch engines omit the compatibility click after a captured drag.
+    // Activate an unmoved touch on pointerup and suppress its optional native
+    // click; keyboard activation (detail 0) remains available after a drag.
+    const activate = event.type === 'pointerup' && !drag.moved && event.pointerType === 'touch';
+    suppressClick = drag.moved || activate;
+    drag = null;
+    button.classList.remove('is-dragging');
+    if (button.hasPointerCapture(event.pointerId)) button.releasePointerCapture(event.pointerId);
+    if (activate) button.click();
+  }
+  button.addEventListener('pointerup', end);
+  button.addEventListener('pointercancel', end);
+  button.addEventListener('lostpointercapture', end);
+  window.addEventListener('resize', () => {if (enabled()) clamp();});
+  window.visualViewport?.addEventListener('resize', () => {if (enabled()) clamp();});
+  return {clamp};
+}

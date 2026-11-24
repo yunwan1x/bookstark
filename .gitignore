@@ -75,3 +75,7 @@ tools/dev-proxy/mihomo/config.yaml
 
 # Isolated native GUI validation evidence
 /artifacts/native-gui-redroid/
+
+# Workspace credential keys must remain outside source archives.
+*.tool-secrets.key
+.tool-secret-key-*

@@ -21,15 +21,16 @@ type ToolFileOperation struct {
 	Path      string `json:"path"`
 	To        string `json:"to,omitempty"`
 	Recursive bool   `json:"recursive,omitempty"`
+	Value     string `json:"value,omitempty"`
 }
 
 var ErrToolDirectoryNotEmpty = errors.New("tool directory not empty")
 
 func ToolFilePermissions(op string) (read, write bool) {
 	switch op {
-	case "read", "list", "stat", "exists":
+	case "read", "list", "stat", "exists", "secret_get":
 		return true, false
-	case "write", "mkdir", "remove", "rename", "move":
+	case "write", "mkdir", "remove", "rename", "move", "secret_set", "secret_remove":
 		return false, true
 	case "copy":
 		return true, true
@@ -90,7 +91,7 @@ func ensureToolDirectory(member int64, value string, recursive bool) error {
 // revision validation and the operation, just like file writes and uninstall.
 func ExecuteToolFileOperation(member, id int64, revision, instance string, request ToolFileOperation) (any, error) {
 	switch request.Op {
-	case "list", "stat", "exists", "mkdir", "remove", "rename", "move", "copy":
+	case "list", "stat", "exists", "mkdir", "remove", "rename", "move", "copy", "secret_get", "secret_set", "secret_remove":
 	default:
 		return nil, ErrDAVInvalidPath
 	}
@@ -113,6 +114,9 @@ func ExecuteToolFileOperation(member, id int64, revision, instance string, reque
 	}
 	if WebDAVDB == nil {
 		return nil, errors.New("file storage unavailable")
+	}
+	if strings.HasPrefix(request.Op, "secret_") {
+		return executeToolSecretOperation(member, id, t, request)
 	}
 	root, err := toolDataPath(t, "", true)
 	if err != nil {

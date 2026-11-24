@@ -998,8 +998,6 @@
     var _shareOutlineAvailable = false;
     var _shareRenderVersion = 0;
     var _shareTocObserver = null;
-    var _shareReaderExitDragState = null;
-    var _shareReaderExitDragSuppressClick = false;
 
     function getShareLayoutStorage() {
         try {
@@ -1064,6 +1062,7 @@
         document.body.classList.toggle('share-article-immersive', isShareImmersiveArticle());
         if (isShareImmersiveArticle() || (_shareReaderDocType === 'markdown' && state.readerShare === shareIdentify && state.readerFullscreen === true)) {
             document.body.classList.add('share-reader-fullscreen');
+            if (shareReaderExitHandle) shareReaderExitHandle.clamp();
             var readerBtn = document.getElementById('share-reader-fullscreen-btn');
             if (readerBtn) readerBtn.setAttribute('aria-pressed', 'true');
         } else {
@@ -1080,82 +1079,11 @@
         }
     }
 
-    function clampShareReaderExitPosition(left, top, rect) {
-        var margin = 8;
-        var width = rect && rect.width ? rect.width : 36;
-        var height = rect && rect.height ? rect.height : 36;
-        var maxLeft = Math.max(margin, window.innerWidth - width - margin);
-        var maxTop = Math.max(margin, window.innerHeight - height - margin);
-        return {
-            left: Math.min(Math.max(left, margin), maxLeft),
-            top: Math.min(Math.max(top, margin), maxTop)
-        };
-    }
-
+    var shareReaderExitHandle;
     function initShareReaderExitDrag() {
         var btn = document.getElementById('share-reader-exit-btn');
-        if (!btn || !window.PointerEvent) return;
-
-        btn.addEventListener('click', function(ev) {
-            if (!_shareReaderExitDragSuppressClick) return;
-            _shareReaderExitDragSuppressClick = false;
-            ev.preventDefault();
-            ev.stopImmediatePropagation();
-        }, true);
-
-        btn.addEventListener('pointerdown', function(ev) {
-            if (ev.button !== undefined && ev.button !== 0) return;
-            if (!document.body.classList.contains('share-reader-fullscreen')) return;
-            var rect = btn.getBoundingClientRect();
-            _shareReaderExitDragState = {
-                pointerId: ev.pointerId,
-                startX: ev.clientX,
-                startY: ev.clientY,
-                left: rect.left,
-                top: rect.top,
-                rect: rect,
-                moved: false
-            };
-            btn.classList.add('is-dragging');
-            if (btn.setPointerCapture) btn.setPointerCapture(ev.pointerId);
-        });
-
-        document.addEventListener('pointermove', function(ev) {
-            var state = _shareReaderExitDragState;
-            if (!state || ev.pointerId !== state.pointerId) return;
-            var dx = ev.clientX - state.startX;
-            var dy = ev.clientY - state.startY;
-            if (!state.moved && Math.abs(dx) + Math.abs(dy) < 4) return;
-            state.moved = true;
-            ev.preventDefault();
-            var next = clampShareReaderExitPosition(state.left + dx, state.top + dy, state.rect);
-            btn.style.left = next.left + 'px';
-            btn.style.top = next.top + 'px';
-            btn.style.right = 'auto';
-            btn.style.transform = 'none';
-        });
-
-        function endDrag(ev) {
-            var state = _shareReaderExitDragState;
-            if (!state || ev.pointerId !== state.pointerId) return;
-            if (state.moved) _shareReaderExitDragSuppressClick = true;
-            _shareReaderExitDragState = null;
-            btn.classList.remove('is-dragging');
-            if (btn.releasePointerCapture) {
-                try { btn.releasePointerCapture(ev.pointerId); } catch(e) {}
-            }
-        }
-        document.addEventListener('pointerup', endDrag);
-        document.addEventListener('pointercancel', endDrag);
-
-        window.addEventListener('resize', function() {
-            if (!document.body.classList.contains('share-reader-fullscreen')) return;
-            var rect = btn.getBoundingClientRect();
-            if (!rect.width || !rect.height) return;
-            var next = clampShareReaderExitPosition(rect.left, rect.top, rect);
-            btn.style.left = next.left + 'px';
-            btn.style.top = next.top + 'px';
-            btn.style.right = 'auto';
+        if (btn) shareReaderExitHandle = BSFloatingHandle(btn, function() {
+            return document.body.classList.contains('share-reader-fullscreen');
         });
     }
 
@@ -1163,6 +1091,7 @@
         if (_shareReaderDocType !== 'markdown') return;
         closeMobileDrawer();
         document.body.classList.add('share-reader-fullscreen');
+        if (shareReaderExitHandle) shareReaderExitHandle.clamp();
         var btn = document.getElementById('share-reader-fullscreen-btn');
         if (btn) btn.setAttribute('aria-pressed', 'true');
         writeShareLayoutState({ readerFullscreen: true });

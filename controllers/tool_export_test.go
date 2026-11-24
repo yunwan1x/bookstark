@@ -35,6 +35,9 @@ func TestInstalledToolZIPExportRoundTripExcludesRuntimeData(t *testing.T) {
 	if err = models.PutToolResource(1, upload.ID, installed.Revision, installed.Instance, "data", "private.txt", "text/plain", strings.NewReader("private-user-file")); err != nil {
 		t.Fatal(err)
 	}
+	if _, err = models.ExecuteToolFileOperation(1, upload.ID, installed.Revision, installed.Instance, models.ToolFileOperation{Op: "secret_set", Path: "ssh-connection", Value: "encrypted-credential-must-not-export"}); err != nil {
+		t.Fatal(err)
+	}
 	other := &models.Member{Account: "export-other", Password: "test-only", Role: 1}
 	if err := other.Insert(); err != nil {
 		t.Fatal(err)
@@ -70,7 +73,10 @@ func TestInstalledToolZIPExportRoundTripExcludesRuntimeData(t *testing.T) {
 	exported := map[string][]byte{}
 	for _, f := range archive.Files {
 		exported[f.Name] = f.Data
-		for _, private := range []string{"runtime-secret", "private-user-file", installed.Instance, installed.Assets, installed.DataRoot} {
+		if strings.Contains(f.Name, ".credentials") || strings.Contains(f.Name, "tool-secrets.key") {
+			t.Fatal("credential file exported")
+		}
+		for _, private := range []string{"encrypted-credential-must-not-export", "runtime-secret", "private-user-file", installed.Instance, installed.Assets, installed.DataRoot} {
 			if private != "" && bytes.Contains(f.Data, []byte(private)) {
 				t.Fatalf("private information in %s: %s", f.Name, private)
 			}
