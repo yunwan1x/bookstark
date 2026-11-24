@@ -39,27 +39,56 @@ func ToolPublishPage(c *gin.Context) {
 		forbidden(c)
 		return
 	}
-	c.Header("Cache-Control", "private, no-store")
-	data := commonData(c, "shares")
-	data["ToolID"] = id
 	publication, err := toolPublicationData(c, b)
 	if err != nil {
 		toolAPIError(c, err)
 		return
 	}
+	renderToolPublishPage(c, publication, b.BlogTitle)
+}
+func PackageToolPublishPage(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.Status(404)
+		return
+	}
+	source, err := models.GetToolSource(id)
+	if err != nil || source.Kind != "package" {
+		c.Status(404)
+		return
+	}
+	if !checkOwnership(c, source.MemberID) {
+		forbidden(c)
+		return
+	}
+	publication, err := publicationForSource(c, source)
+	if err != nil {
+		toolAPIError(c, err)
+		return
+	}
+	renderToolPublishPage(c, publication, "")
+}
+func renderToolPublishPage(c *gin.Context, publication gin.H, source string) {
+	c.Header("Cache-Control", "private, no-store")
+	data := commonData(c, "shares")
+	data["ToolID"] = publication["id"]
 	initial, err := json.Marshal(publication)
 	if err != nil {
 		toolAPIError(c, err)
 		return
 	}
 	data["PublicationJSON"] = template.JS(initial)
+	data["Package"] = publication["package"]
+	data["IsPackage"] = publication["package"] != nil
+	data["PackageEntry"] = publication["metadata"].(models.ToolMetadata).Entry
+	data["PermissionsChanged"] = publication["permissions_changed"]
 	m := publication["metadata"].(models.ToolMetadata)
 	title, description := m.Title, m.Description
 	if title == "" {
-		title = b.BlogTitle
+		title = publication["title"].(string)
 	}
 	if description == "" {
-		description = b.BlogDesc
+		description = publication["description"].(string)
 	}
 	category, access := m.Category, m.Access
 	if category == "" {
@@ -69,6 +98,9 @@ func ToolPublishPage(c *gin.Context) {
 		access = "inherit"
 	}
 	version := "1.0.0"
+	if m.Version != "" && m.SourceKind == "package" {
+		version = m.Version
+	}
 	if versions := publication["versions"].([]gin.H); len(versions) > 0 {
 		parts := strings.SplitN(versions[0]["version"].(string), ".", 3)
 		if len(parts) == 3 {
@@ -76,7 +108,10 @@ func ToolPublishPage(c *gin.Context) {
 			version = parts[0] + "." + parts[1] + "." + strconv.Itoa(patch+1)
 		}
 	}
-	data["PublishForm"] = gin.H{"Source": b.BlogTitle, "Title": title, "Description": description, "Version": version, "Category": category, "Access": access, "Market": publication["market"].(marketSettings).Name, "Members": strings.Join(publication["member_accounts"].([]string), ", "), "Notes": m.Notes}
+	if v, ok := publication["manifest_version"].(string); ok && v != "" {
+		version = v
+	}
+	data["PublishForm"] = gin.H{"Source": source, "Title": title, "Description": description, "Version": version, "Category": category, "Access": access, "Market": publication["market"].(marketSettings).Name, "Members": strings.Join(publication["member_accounts"].([]string), ", "), "Notes": m.Notes}
 
 	flags := m.Permissions.Flags()
 	if m.Version == "" {
@@ -143,7 +178,7 @@ func ToolPublishArticles(c *gin.Context) {
 		return
 	}
 	// Read source metadata only. Never fetch or execute HTML to populate this list.
-	base := ` FROM md_blogs b LEFT JOIN md_tool_releases p ON p.blog_id=b.blog_id
+	base := ` FROM md_blogs b LEFT JOIN md_tools ts ON ts.blog_id=b.blog_id LEFT JOIN md_tool_releases p ON p.tool_id=ts.tool_id
         LEFT JOIN md_tool_versions v ON v.revision=p.revision AND v.status='published'`
 	eligible := ` WHERE b.editor_type='html' AND COALESCE(b.blog_type,'article')='article' AND COALESCE(b.password,'')=''`
 	ownerArgs := []any{}

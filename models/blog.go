@@ -534,7 +534,7 @@ func ListBlogsPagedWithLabels(memberID int64, page, pageSize int, keyword string
 	if blogType == "note" {
 		contentCol = "CASE WHEN b.password != '' THEN '' WHEN COALESCE(b.blog_desc,'') != '' THEN COALESCE(b.blog_desc,'') WHEN COALESCE(b.editor_type,'markdown') = 'html' THEN '' ELSE COALESCE(b.blog_content,'') END"
 	}
-	toolCol := "EXISTS(SELECT 1 FROM md_tool_releases p JOIN md_tool_versions v ON v.revision=p.revision AND v.status='published' WHERE p.blog_id=b.blog_id)"
+	toolCol := "EXISTS(SELECT 1 FROM md_tool_releases p JOIN md_tools ts USING(tool_id) JOIN md_tool_versions v ON v.revision=p.revision AND v.status='published' WHERE ts.blog_id=b.blog_id)"
 	query := "SELECT b.blog_id, b.blog_title, b.blog_identify, b.member_id, b.modify_time, b.create_time, b.version, CASE WHEN b.password != '' THEN 1 ELSE 0 END, COALESCE(b.blog_type,'article'), COALESCE(b.editor_type,'markdown'), COALESCE(b.visibility,0), COALESCE(b.is_pinned,0), COALESCE(b.pin_order,0), COALESCE(b.location_name,''), b.latitude, b.longitude, b.location_accuracy, COALESCE(b.blog_desc,''), " + contentCol + ", " + toolCol + " FROM md_blogs b " + where + " ORDER BY COALESCE(b.is_pinned,0) DESC, COALESCE(b.pin_order,0) ASC, b.modify_time DESC LIMIT ? OFFSET ?"
 	args = append(args, pageSize, offset)
 

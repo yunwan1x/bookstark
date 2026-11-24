@@ -9,7 +9,9 @@
 {{template "header" .}}
 <main role="main" class="market-page publish-selection-page" id="toolPublishSelection" aria-busy="true">
 <nav class="publish-breadcrumb" aria-label="{{call .T "editor.breadcrumb.aria"}}"><a href="/market" data-return-market>{{call .T "market.tools"}}</a><span aria-hidden="true"> / </span><span>{{call .T "market.publish_tool"}}</span></nav>
-<div class="market-heading"><h1 class="page-title">{{call .T "market.choose_article"}}</h1></div>
+<div class="market-heading"><h1 class="page-title">{{call .T "market.publish_tool"}}</h1></div>
+<nav class="publish-source-tabs" aria-label="{{if eq .Lang "en"}}Tool source{{else}}工具来源{{end}}"><button type="button" class="tab-btn active" id="publishArticleTab" aria-pressed="true">{{if eq .Lang "en"}}Source article{{else}}来源文章{{end}}</button><button type="button" class="tab-btn" id="publishPackageTab" aria-pressed="false">{{if eq .Lang "en"}}Upload package{{else}}上传工具包{{end}}</button></nav>
+<section id="publishArticlePanel">
 <form class="publish-selection-filters" id="publishSourceSearch" role="search">
 <div class="market-search"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><label class="sr-only" for="publishSourceQuery">{{call .T "market.search_articles"}}</label><input class="search-input" id="publishSourceQuery" type="search" maxlength="200" placeholder="{{call .T "market.search_articles"}}"></div>
 <label class="sr-only" for="publishSourceState">{{call .T "market.publication_status"}}</label><select class="dialog-input" id="publishSourceState"><option value="all">{{call .T "market.status_all"}}</option><option value="unpublished">{{call .T "market.status_unpublished"}}</option><option value="published">{{call .T "market.status_published"}}</option></select>
@@ -24,11 +26,29 @@
 <div class="market-empty" id="publishSourceEmpty" hidden><p>{{call .T "market.source_empty"}}</p><a class="bs-btn bs-btn-cancel" href="/notes?tab=articles">{{call .T "market.source_empty_action"}}</a></div>
 <nav class="market-pagination" id="publishSourcePagination" aria-label="{{call .T "market.source_pagination"}}"></nav>
 <div class="publish-selection-actions"><p id="publishSourceSelected" aria-live="polite">{{call .T "market.source_none"}}</p><div class="market-actions"><a class="bs-btn bs-btn-cancel" href="/market" data-return-market>{{call .T "market.back_tools"}}</a><button type="button" class="bs-btn bs-btn-primary" id="publishSourceNext" disabled>{{call .T "market.next_settings"}}</button></div></div>
-</main>
+</section>
+<section id="publishPackagePanel" hidden>
+ <input type="file" id="publishPackageFile" accept=".zip,application/zip" class="sr-only" aria-label="{{if eq .Lang "en"}}Choose ZIP package{{else}}选择 ZIP 工具包{{end}}">
+ <div class="publish-package-drop" id="publishPackageDrop"><i class="fa-solid fa-file-zipper" aria-hidden="true"></i><h2>{{if eq .Lang "en"}}Drop your tool package here{{else}}拖拽工具包到这里{{end}}</h2><p class="market-muted">{{if eq .Lang "en"}}ZIP · up to 64 MiB compressed, 256 MiB extracted{{else}}ZIP 格式 · 压缩包最大 64 MiB，解压后最大 256 MiB{{end}}</p><button type="button" class="bs-btn bs-btn-cancel" id="publishPackageChoose">{{if eq .Lang "en"}}Choose file{{else}}选择文件{{end}}</button></div>
+ <details class="publish-package-help"><summary>{{if eq .Lang "en"}}Package format{{else}}工具包格式说明{{end}}</summary><p class="market-muted">{{if eq .Lang "en"}}Include an HTML entry and all JS, CSS, WASM and Worker resources. Add tool.json to prefill publishing settings, or fill them manually.{{else}}包含 HTML 入口及完整的 JS、CSS、WASM、Worker 等资源。可用 tool.json 自动填写发布设置，也可以手动补齐。{{end}}</p><pre>tool.json
+index.html
+assets/
+workers/
+wasm/</pre><pre>{"title":"My tool","version":"1.0.0","entry":"index.html","category":"development","permissions":{"schema":1,"network":false}}</pre></details>
+ <div id="publishPackageProgress" class="market-panel" hidden><div class="market-heading"><strong id="publishPackageName"></strong><button type="button" class="bs-btn bs-btn-cancel" id="publishPackageCancel">{{if eq .Lang "en"}}Cancel{{else}}取消{{end}}</button></div><progress id="publishPackageProgressBar" max="100" value="0"></progress></div>
+ <p id="publishPackageStatus" role="status" aria-live="polite" class="market-muted"></p>
+ <div id="publishPackageCheck" hidden>
+  <div class="market-panel market-heading"><div><strong id="publishPackageCheckedName"></strong><p class="market-muted" id="publishPackageSummary"></p></div><button type="button" id="publishPackageReplace" class="bs-btn bs-btn-cancel">{{if eq .Lang "en"}}Replace package{{else}}更换工具包{{end}}</button></div>
+  <div class="publish-package-check-grid"><section class="market-panel"><h2>{{if eq .Lang "en"}}File list{{else}}文件清单{{end}}</h2><ul id="publishPackageFiles" class="market-resource-list publish-package-files"></ul></section><section class="market-panel"><h2>{{if eq .Lang "en"}}Check results{{else}}检查结果{{end}}</h2><ul class="market-checks"><li>✓ {{if eq .Lang "en"}}HTML entry available{{else}}入口页面可读取{{end}}</li><li>✓ {{if eq .Lang "en"}}Files validated{{else}}文件完整性检查通过{{end}}</li></ul><label for="publishPackageEntry">{{if eq .Lang "en"}}Entry page{{else}}入口页面{{end}}</label><select id="publishPackageEntry" class="dialog-input"></select><p id="publishPackageManifest" class="market-muted"></p></section></div>
+ </div>
+ <details class="market-panel publish-package-drafts" id="publishPackageDrafts" hidden><summary>{{if eq .Lang "en"}}My packages{{else}}我的工具包{{end}}</summary><div id="publishPackageDraftRows"></div></details>
+ <div class="publish-selection-actions"><span></span><div class="market-actions"><a class="bs-btn bs-btn-cancel" href="/market" data-return-market>{{call .T "market.back_tools"}}</a><button type="button" class="bs-btn bs-btn-primary" id="publishPackageNext" disabled>{{call .T "market.next_settings"}}</button></div></div>
+</section></main>
 {{template "footer" .}}
 <script src="/static/js/pagination.js?v={{assetVer "/static/js/pagination.js"}}"></script>
 <script src="/static/js/tool-market-ui.js?v={{assetVer "/static/js/tool-market-ui.js"}}"></script>
 <script src="/static/js/tool-publish-select.js?v={{assetVer "/static/js/tool-publish-select.js"}}"></script>
+<script src="/static/js/tool-package-upload.js?v={{assetVer "/static/js/tool-package-upload.js"}}"></script>
 </body></html>
 
 {{define "publish-source-skeleton"}}<div class="publish-source-placeholder skeleton-row" aria-hidden="true"><div class="skeleton publish-source-skeleton-radio"></div><div class="skeleton-row-body"><div class="skeleton skeleton-row-title"></div><div class="skeleton skeleton-row-meta"></div></div><div class="skeleton skeleton-card-tag"></div><div class="skeleton skeleton-row-meta"></div></div>{{end}}

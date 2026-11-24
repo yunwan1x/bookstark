@@ -13,10 +13,12 @@ import (
 	"strings"
 )
 
+const publishedToolSelect = `SELECT ts.member_id,ts.blog_id,ts.tool_id,p.title,p.description,COALESCE(m.account,''),CASE WHEN ts.kind='article' THEN COALESCE((SELECT share_identify FROM md_shares WHERE share_type='blog' AND target_id=b.blog_id LIMIT 1),b.blog_identify) ELSE 'market' END,p.revision,v.metadata,v.resource_base,v.created FROM md_tool_releases p JOIN md_tools ts USING(tool_id) LEFT JOIN md_blogs b ON b.blog_id=ts.blog_id JOIN md_tool_versions v ON v.revision=p.revision AND v.status='published' LEFT JOIN md_members m ON m.member_id=ts.member_id WHERE (ts.kind='package' OR (b.editor_type='html' AND COALESCE(b.blog_type,'article')='article'))`
+
 func loadPublishedTool(id int64) (marketTool, error) {
 	var t marketTool
 	var raw string
-	err := models.DB.QueryRow(`SELECT b.blog_id,p.title,p.description,COALESCE(m.account,''),COALESCE((SELECT share_identify FROM md_shares WHERE share_type='blog' AND target_id=b.blog_id LIMIT 1),b.blog_identify),p.revision,v.metadata,v.resource_base,v.created FROM md_tool_releases p JOIN md_blogs b ON b.blog_id=p.blog_id JOIN md_tool_versions v ON v.revision=p.revision AND v.status='published' LEFT JOIN md_members m ON m.member_id=b.member_id WHERE b.blog_id=? AND b.editor_type='html' AND COALESCE(b.blog_type,'article')='article'`, id).Scan(&t.ID, &t.Title, &t.Description, &t.Author, &t.Source, &t.Revision, &raw, &t.ResourceBase, &t.Updated)
+	err := models.DB.QueryRow(publishedToolSelect+" AND ts.tool_id=?", id).Scan(&t.Owner, &t.ArticleID, &t.ID, &t.Title, &t.Description, &t.Author, &t.Source, &t.Revision, &raw, &t.ResourceBase, &t.Updated)
 	if err != nil {
 		return t, err
 	}
@@ -31,6 +33,13 @@ func loadPublishedTool(id int64) (marketTool, error) {
 func loadPublishedToolContent(t *marketTool) error {
 	if err := models.DB.QueryRow("SELECT content FROM md_tool_versions WHERE revision=? AND status='published'", t.Revision).Scan(&t.Content); err != nil {
 		return err
+	}
+	if t.Distribution == "files" {
+		p, err := models.GetToolPackage(t.Package)
+		if err != nil {
+			return err
+		}
+		t.Files = p.Files
 	}
 	if len(t.Content) > 20<<20 {
 		return fmt.Errorf("invalid tool HTML size")
@@ -57,7 +66,7 @@ func remoteTool(ctx context.Context, member, id int64, withContent ...bool) (mar
 	if err := json.Unmarshal(data, &t); err != nil {
 		return t, "", err
 	}
-	if t.ID != remoteID || t.Distribution != "references" || !toolSemver.MatchString(t.Version) || len(t.Version) > 64 || !toolDigest.MatchString(t.Revision) || !toolDigest.MatchString(t.Hash) {
+	if t.ID != remoteID || (t.Distribution != "references" && t.Distribution != "files") || !toolSemver.MatchString(t.Version) || len(t.Version) > 64 || !toolDigest.MatchString(t.Revision) || !toolDigest.MatchString(t.Hash) {
 		return t, "", fmt.Errorf("invalid reference manifest")
 	}
 	if includeContent && t.Content == "" {
@@ -69,10 +78,10 @@ func remoteTool(ctx context.Context, member, id int64, withContent ...bool) (mar
 		if status != 200 {
 			return t, "", fmt.Errorf("market_status_%d", status)
 		}
-		if json.Unmarshal(data, &full) != nil || full.ID != remoteID || full.Revision != t.Revision || full.Distribution != "references" || full.Hash != t.Hash || full.Version != t.Version || full.Permissions != t.Permissions || full.Access != t.Access || !reflect.DeepEqual(full.Members, t.Members) {
+		if json.Unmarshal(data, &full) != nil || full.ID != remoteID || full.Revision != t.Revision || full.Distribution != t.Distribution || full.Hash != t.Hash || full.Version != t.Version || full.Permissions != t.Permissions || full.Access != t.Access || !reflect.DeepEqual(full.Members, t.Members) {
 			return t, "", fmt.Errorf("reference manifest mismatch")
 		}
-		t.Content, t.ResourceBase = full.Content, full.ResourceBase
+		t.Content, t.ResourceBase, t.Files = full.Content, full.ResourceBase, full.Files
 	}
 	if includeContent {
 		if len(t.Content) > 20<<20 {
@@ -86,7 +95,11 @@ func remoteTool(ctx context.Context, member, id int64, withContent ...bool) (mar
 		t.Content = ""
 	}
 	t.ID = id
-	t.Source = origin + "/shares/" + url.PathEscape(t.Source)
+	if t.SourceKind == "package" {
+		t.Source = origin + "/market"
+	} else {
+		t.Source = origin + "/shares/" + url.PathEscape(t.Source)
+	}
 	return t, origin, nil
 }
 
@@ -136,7 +149,12 @@ func RemoteToolCatalog(c *gin.Context) {
 			return
 		}
 		t.ID = -t.ID
-		t.Source = origin + "/shares/" + url.PathEscape(t.Source)
+		t.PublishURL = ""
+		if t.SourceKind == "package" {
+			t.Source = origin + "/market"
+		} else {
+			t.Source = origin + "/shares/" + url.PathEscape(t.Source)
+		}
 		t.Content = ""
 	}
 	c.Header("Cache-Control", "no-store")

@@ -46,11 +46,14 @@ func TestToolSourceBulkDeletionPreservesAssociations(t *testing.T) {
 			if err := b.Insert(); err != nil {
 				t.Fatal(err)
 			}
-			if _, err := DB.Exec("INSERT INTO md_tool_versions(blog_id,version,revision,metadata,content,resource_base,status,created) VALUES(?,?,?,?,?,?,?,?)", b.BlogID, "1.0.0", "bulk-"+status, "{}", b.BlogContent, "https://market.example/shares/"+b.BlogIdentify, status, 1); err != nil {
+			if _, err := EnsureArticleTool(b.BlogID, b.MemberID); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := DB.Exec("INSERT INTO md_tool_versions(tool_id,version,revision,metadata,content,resource_base,status,created) VALUES(?,?,?,?,?,?,?,?)", b.BlogID, "1.0.0", "bulk-"+status, "{}", b.BlogContent, "https://market.example/shares/"+b.BlogIdentify, status, 1); err != nil {
 				t.Fatal(err)
 			}
 			if status == "published" {
-				if _, err := DB.Exec("INSERT INTO md_tool_releases(blog_id,title,description,content,revision) VALUES(?,?,?,?,?)", b.BlogID, b.BlogTitle, "", b.BlogContent, "bulk-"+status); err != nil {
+				if _, err := DB.Exec("INSERT INTO md_tool_releases(tool_id,title,description,content,revision) VALUES(?,?,?,?,?)", b.BlogID, b.BlogTitle, "", b.BlogContent, "bulk-"+status); err != nil {
 					t.Fatal(err)
 				}
 			}

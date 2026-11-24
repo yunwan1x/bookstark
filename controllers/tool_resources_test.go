@@ -80,12 +80,12 @@ func TestToolDownloadedResourcesSurviveSourceRemoval(t *testing.T) {
 		t.Fatalf("preview total: %d != %d", total, report.Metadata.Size)
 	}
 	var previewCount int
-	if err := models.DB.QueryRow("SELECT COUNT(*) FROM md_tool_versions WHERE blog_id=?", b.BlogID).Scan(&previewCount); err != nil || previewCount != 0 {
+	if err := models.DB.QueryRow("SELECT COUNT(*) FROM md_tool_versions WHERE tool_id=?", b.BlogID).Scan(&previewCount); err != nil || previewCount != 0 {
 		t.Fatalf("preview created a publication: %d %v", previewCount, err)
 	}
 	revision := publish()
 	var referencedHTML, resourceBase string
-	if err := models.DB.QueryRow("SELECT content,resource_base FROM md_tool_versions WHERE blog_id=?", b.BlogID).Scan(&referencedHTML, &resourceBase); err != nil || !strings.Contains(referencedHTML, "/dav-public/admin/app.js") || resourceBase == "" {
+	if err := models.DB.QueryRow("SELECT content,resource_base FROM md_tool_versions WHERE tool_id=?", b.BlogID).Scan(&referencedHTML, &resourceBase); err != nil || !strings.Contains(referencedHTML, "/dav-public/admin/app.js") || resourceBase == "" {
 		t.Fatalf("publication lost original references: html=%s base=%s err=%v", referencedHTML, resourceBase, err)
 	}
 	// Installation reads the original resource as it exists at installation time.

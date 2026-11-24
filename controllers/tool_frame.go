@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"bookstark/conf"
+	"bookstark/internal/toolpackage"
 	"bookstark/models"
 	"crypto/hmac"
 	"crypto/rand"
@@ -117,7 +118,14 @@ func ToolSandboxMiddleware() gin.HandlerFunc {
 			return
 		}
 		if sandbox {
-			c.AbortWithStatus(http.StatusNotFound)
+			if c.Query("ticket") != "" {
+				ToolFrame(c)
+			} else if instance := sandboxToolInstance(c.Request.Host); instance != "" {
+				serveSandboxToolAsset(c, instance)
+			} else {
+				c.Status(http.StatusNotFound)
+			}
+			c.Abort()
 			return
 		}
 		c.Next()
@@ -130,6 +138,7 @@ type toolFrameTicket struct {
 	Instance    string                 `json:"instance"`
 	Nonce       string                 `json:"nonce"`
 	Permissions models.ToolPermissions `json:"permissions"`
+	Page        string                 `json:"page,omitempty"`
 	Expires     int64                  `json:"expires"`
 }
 
@@ -190,8 +199,15 @@ func toolFrameConfiguration(c *gin.Context, tool *models.InstalledTool) gin.H {
 	}
 	ticket := toolFrameTicket{Parent: toolParentOrigin(c), Origin: origin, Instance: tool.Instance, Nonce: rand.Text(), Permissions: tool.Permissions, Expires: time.Now().Add(10 * time.Minute).Unix()}
 	raw, _ := json.Marshal(ticket)
+	if tool.Distribution == "files" && toolpackage.ValidName(tool.Entry) {
+		ticket.Page = tool.Entry
+		raw, _ = json.Marshal(ticket)
+	}
 	payload := base64.RawURLEncoding.EncodeToString(raw)
 	result["url"] = origin + "/tools/frame?ticket=" + url.QueryEscape(payload) + "&signature=" + signToolFrame(payload)
+	if ticket.Page != "" {
+		result["url"] = origin + "/" + ticket.Page + "?ticket=" + url.QueryEscape(payload) + "&signature=" + signToolFrame(payload)
+	}
 	result["nonce"] = ticket.Nonce
 	c.Header("Permissions-Policy", toolFeaturePolicy(tool.Permissions, origin, true))
 	c.Header("Content-Security-Policy", "frame-src "+origin)
@@ -237,6 +253,16 @@ func ToolFrame(c *gin.Context) {
 		return
 	}
 	assetRoot := ticket.Parent + "/api/tool-assets/" + ticket.Instance + "/"
+	if ticket.Page != "" {
+		if !toolpackage.ValidName(ticket.Page) || c.Request.URL.Path != "/"+ticket.Page {
+			c.Status(403)
+			return
+		}
+		assetRoot = "'self' " + assetRoot
+	} else if c.Request.URL.Path != "/tools/frame" {
+		c.Status(403)
+		return
+	}
 	c.Header("Content-Security-Policy", toolFramePolicy(ticket.Permissions, assetRoot, ticket.Parent))
 	c.Header("Permissions-Policy", toolFeaturePolicy(ticket.Permissions, "", false))
 	data, _ := json.Marshal(gin.H{"parent": ticket.Parent, "nonce": ticket.Nonce})

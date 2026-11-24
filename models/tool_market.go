@@ -13,7 +13,7 @@ var ErrBlogUsedByTool = errors.New("blog_in_tool_market")
 
 func toolSourceInUse(tx *sql.Tx, id int64) (bool, error) {
 	var used bool
-	err := tx.QueryRow(`SELECT EXISTS(SELECT 1 FROM md_tool_releases WHERE blog_id=?) OR EXISTS(SELECT 1 FROM md_tool_versions WHERE blog_id=? AND status='pending')`, id, id).Scan(&used)
+	err := tx.QueryRow(`SELECT EXISTS(SELECT 1 FROM md_tool_releases p JOIN md_tools s USING(tool_id) WHERE s.blog_id=?) OR EXISTS(SELECT 1 FROM md_tool_versions v JOIN md_tools s USING(tool_id) WHERE s.blog_id=? AND v.status='pending')`, id, id).Scan(&used)
 	return used, err
 }
 
@@ -63,6 +63,9 @@ type ToolPermissions struct {
 	PublicKeyCreate  bool `json:"publickey_credentials_create,omitempty"`
 }
 type ToolMetadata struct {
+	SourceKind   string          `json:"source_kind,omitempty"`
+	Entry        string          `json:"entry,omitempty"`
+	Package      string          `json:"package,omitempty"`
 	Updated      int64           `json:"updated"`
 	Distribution string          `json:"distribution,omitempty"`
 	Title        string          `json:"title,omitempty"`
@@ -86,7 +89,7 @@ type ToolMetadata struct {
 
 func initToolMarketTables() error {
 	for _, q := range []string{
-		`CREATE TABLE IF NOT EXISTS md_tool_versions(blog_id INTEGER NOT NULL REFERENCES md_blogs(blog_id) ON DELETE CASCADE,version TEXT NOT NULL,revision TEXT NOT NULL UNIQUE,metadata TEXT NOT NULL,content TEXT NOT NULL,resource_base TEXT NOT NULL,status TEXT NOT NULL,created INTEGER NOT NULL,PRIMARY KEY(blog_id,version))`,
+		`CREATE TABLE IF NOT EXISTS md_tool_packages(token TEXT PRIMARY KEY,member_id INTEGER NOT NULL REFERENCES md_members(member_id) ON DELETE CASCADE,metadata TEXT NOT NULL,created INTEGER NOT NULL)`,
 		`CREATE TABLE IF NOT EXISTS md_tool_retained(member_id INTEGER NOT NULL REFERENCES md_members(member_id) ON DELETE CASCADE,tool_id INTEGER NOT NULL,root TEXT NOT NULL,values_json TEXT NOT NULL,PRIMARY KEY(member_id,tool_id))`,
 		`CREATE TABLE IF NOT EXISTS md_tool_install_metadata(member_id INTEGER NOT NULL,tool_id INTEGER NOT NULL,metadata TEXT NOT NULL,PRIMARY KEY(member_id,tool_id))`,
 		`CREATE TABLE IF NOT EXISTS md_tool_market_clients(member_id INTEGER PRIMARY KEY REFERENCES md_members(member_id) ON DELETE CASCADE,url TEXT NOT NULL DEFAULT '',check_updates INTEGER NOT NULL DEFAULT 1,auto_update INTEGER NOT NULL DEFAULT 0)`,
@@ -99,8 +102,8 @@ func initToolMarketTables() error {
 	}
 	_, err := DB.Exec(`CREATE TRIGGER IF NOT EXISTS md_tool_source_delete_guard
 	BEFORE DELETE ON md_blogs
-	WHEN EXISTS(SELECT 1 FROM md_tool_releases WHERE blog_id=OLD.blog_id)
-	  OR EXISTS(SELECT 1 FROM md_tool_versions WHERE blog_id=OLD.blog_id AND status='pending')
+	WHEN EXISTS(SELECT 1 FROM md_tool_releases p JOIN md_tools s USING(tool_id) WHERE s.blog_id=OLD.blog_id)
+	  OR EXISTS(SELECT 1 FROM md_tool_versions v JOIN md_tools s USING(tool_id) WHERE s.blog_id=OLD.blog_id AND v.status='pending')
 	BEGIN SELECT RAISE(ABORT, 'blog_in_tool_market'); END`)
 	return err
 }

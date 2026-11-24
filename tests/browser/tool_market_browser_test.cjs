@@ -185,7 +185,7 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
   // Installed card menus use the same focus/dismissal rules as the runtime menu.
   async function cardMenu(target,width,lang){
    await target.route(origin+'/api/tool-installs',route=>route.fulfill({json:{tools:[appearanceInstall,{...appearanceInstall,id:-90001,title:'Second installed tool'}]}}));await target.setViewportSize({width,height:950});await target.goto(origin+'/market?status=installed');await target.locator('.market-card').first().waitFor();
-   const card=target.locator('.market-card').first(),trigger=card.locator('.market-card-menu>.bs-action-dd-btn'),panel=card.locator('.market-card-menu>.bs-action-dd-menu'),first=card.locator('[data-market-action=update]'),last=card.locator('[data-market-action=uninstall]');
+   const card=target.locator('.market-card').first(),trigger=card.locator('.market-card-menu>.bs-action-dd-btn'),panel=card.locator('.market-card-menu>.bs-action-dd-menu'),first=card.locator('[data-market-action=update]'),last=panel.locator('[role=menuitem]').last();
    const focused=locator=>locator.evaluate(el=>el===document.activeElement);
    const closed=async()=>{await panel.waitFor({state:'hidden'});assert.equal(await trigger.getAttribute('aria-expanded'),'false');};
    assert.equal(await target.locator('.market-card details,.market-card .public-manage').count(),0,'old card menu is removed');
@@ -193,9 +193,9 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
    const bounds=await panel.boundingBox();assert.ok(bounds.x>=0&&bounds.x+bounds.width<=width+1,'card menu stays within the viewport');
    assert.equal(await first.evaluate(el=>{const r=el.getBoundingClientRect();return el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));}),true,'card menu is not covered by adjacent cards');
    await target.screenshot({path:out+`/card-menu-${width}-${lang}.png`,animations:'disabled'});
-   await target.keyboard.press('Tab');assert.equal(await focused(last),true);assert.equal(await panel.isVisible(),true);
+   for(let index=1;index<await panel.locator('[role=menuitem]').count();index++)await target.keyboard.press('Tab');assert.equal(await focused(last),true);assert.equal(await panel.isVisible(),true);
    await target.locator('#marketQuery').focus();await closed();
-   await trigger.click();await until(()=>focused(first));await target.locator('.market-card h2').first().click();await closed();
+   await trigger.click();await until(()=>focused(first));await target.mouse.click(4,250);await closed();
    await trigger.focus();await target.keyboard.press('ArrowUp');await until(()=>focused(last));await target.keyboard.press('Escape');await closed();assert.equal(await focused(trigger),true);
    await trigger.click();await until(()=>focused(first));await trigger.click();await closed();
    await trigger.click();await until(()=>focused(first));const other=target.locator('.market-card').nth(1);await other.locator('.bs-action-dd-btn').click();await closed();assert.equal(await other.locator('.bs-action-dd-menu').isVisible(),true,'opening another card closes the previous menu');await target.keyboard.press('Escape');await target.unroute(origin+'/api/tool-installs');

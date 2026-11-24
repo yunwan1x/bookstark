@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"bookstark/internal/toolpackage"
 	"bookstark/middleware"
 	"bookstark/models"
 	"context"
@@ -162,7 +161,7 @@ func InstallMarketTool(router http.Handler) gin.HandlerFunc {
 				return
 			}
 		}
-		content, resources, err := toolpackage.Build(ctx, pkg.Content, base, fetch)
+		content, resources, err := installToolResources(ctx, member, id, pkg, origin, base, fetch)
 		if err != nil {
 			c.JSON(422, gin.H{"error": "resource_download_failed"})
 			return

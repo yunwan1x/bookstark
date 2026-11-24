@@ -52,7 +52,7 @@
   finally{draining=false;retrySave.disabled=false;if(!failed)banner.hidden=true;settled();}
  }
  retrySave.onclick=drain;
-  function storageBootstrap(initial,token,parentOrigin) {
+  function storageBootstrap(initial,token,parentOrigin,assetBase) {
     const values=Object.assign(Object.create(null),initial);
     window.addEventListener('load',()=>parent.postMessage({market:token,op:'runtime-ready'},parentOrigin),{once:true});
     const send=(op,key,value)=>parent.postMessage({market:token,op,key,value},parentOrigin);
@@ -75,6 +75,29 @@
         const request=++fileSequence,timer=setTimeout(()=>{files.delete(request);reject(Error('File request timed out'));},30000);
         files.set(request,{resolve,reject,timer});parent.postMessage({market:token,file:true,request,method,name,content,options},parentOrigin);
       });
+    }
+    // Opaque origins require a classic Blob entry; dynamically imported modules
+    // keep import.meta.url while relative fetches resolve to the original entry.
+    function workerBootstrap(address,module){
+      const resolve=value=>new URL(String(value),address).href,nativeFetch=self.fetch.bind(self),nativeImport=self.importScripts.bind(self);
+      self.fetch=(value,options)=>nativeFetch(typeof value==='string'||value instanceof URL?resolve(value):value,options);
+      self.importScripts=(...values)=>nativeImport(...values.map(resolve));
+      if(module){
+        const pending=[],hold=event=>{pending.push(event);event.stopImmediatePropagation();};self.addEventListener('message',hold);
+        import(address).then(()=>{self.removeEventListener('message',hold);for(const event of pending)self.dispatchEvent(event);}).catch(error=>{setTimeout(()=>{throw error;});});
+      }else self.importScripts(address);
+    }
+    if(window.Worker&&assetBase){
+      const NativeWorker=window.Worker,allowed=new URL(assetBase,parentOrigin).href;
+      window.Worker=class extends NativeWorker{
+        constructor(address,options={}){
+          const url=new URL(String(address),document.baseURI);
+          if(url.origin!==location.origin&&url.href.startsWith(allowed)){
+            const source='('+workerBootstrap.toString()+')('+JSON.stringify(url.href)+','+(options.type==='module')+');';
+            const blob=URL.createObjectURL(new Blob([source],{type:'text/javascript'}));super(blob,{...options,type:'classic'});setTimeout(()=>URL.revokeObjectURL(blob),30000);
+          }else super(address,options);
+        }
+      };
     }
     window.BookStark={files:{read:name=>fileRequest('GET',name),write:async(name,value)=>{
       const content=typeof value==='string'?new TextEncoder().encode(value).buffer:value instanceof Blob?await value.arrayBuffer():value instanceof ArrayBuffer?value:value.buffer.slice(value.byteOffset,value.byteOffset+value.byteLength);
@@ -146,13 +169,14 @@
    if(isolated&&new URL(runtime.url).origin===location.origin)throw Error('unsafe tool origin');
    frame.setAttribute('sandbox',permissionsUI.sandbox(meta.permissions,isolated));frame.setAttribute('allow',permissionsUI.allow(meta.permissions,isolated));frame.referrerPolicy='no-referrer';
    const token=crypto.randomUUID(),targetOrigin=isolated?runtime.origin:'*',json=value=>JSON.stringify(value).replace(/</g,'\\u003c'),assetPrefix='/api/tool-assets/'+meta.instance+'/';
-   const doc=new DOMParser().parseFromString(meta.content.split(assetPrefix).join(location.origin+assetPrefix),'text/html');doc.querySelectorAll('base').forEach(el=>el.remove());
-   const assetRoot=location.origin+assetPrefix,policy=doc.createElement('meta');policy.httpEquiv='Content-Security-Policy';
+   const doc=new DOMParser().parseFromString(meta.content.split(assetPrefix).join((meta.distribution==='files'&&isolated?runtime.origin:location.origin)+assetPrefix),'text/html');doc.querySelectorAll('base').forEach(el=>el.remove());
+   const packageTool=meta.distribution==='files',assetRoot=packageTool&&isolated?runtime.origin+'/':location.origin+assetPrefix,policy=doc.createElement('meta');policy.httpEquiv='Content-Security-Policy';
    const network=meta.permissions?.network?' http: https: wss:':'',formAction=meta.permissions?.network&&permissionsUI.effective(meta.permissions).forms?'http: https:':"'none'";
    policy.content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' blob: "+assetRoot+network+"; style-src 'unsafe-inline' "+assetRoot+network+"; img-src data: blob: "+assetRoot+network+"; font-src data: "+assetRoot+network+"; media-src blob: data: "+assetRoot+network+"; connect-src "+assetRoot+network+"; form-action "+formAction+"; frame-src 'none'; object-src 'none'";
    doc.head.prepend(policy);
    if(!isolated){const base=doc.createElement('base');base.href=new URL(/^https?:\/\//.test(meta.source)?meta.source:'/market',location.origin).href;doc.head.prepend(base);}
-   const script=doc.createElement('script');script.textContent='('+storageBootstrap.toString()+')('+json(meta.values||{})+','+json(token)+','+json(location.origin)+');';doc.head.insertBefore(script,policy.nextSibling);
+   if(packageTool&&!isolated){doc.querySelectorAll('base').forEach(el=>el.remove());const base=doc.createElement('base');base.href=new URL('./',new URL(meta.entry||'index.html',location.origin+meta.asset_base)).href;doc.head.prepend(base);}
+   const script=doc.createElement('script');script.textContent='('+storageBootstrap.toString()+')('+json(meta.values||{})+','+json(token)+','+json(location.origin)+','+json(location.origin+meta.asset_base)+');';doc.head.insertBefore(script,policy.nextSibling);
    const sockets=new Map(),closeSockets=()=>{for(const record of sockets.values()){clearTimeout(record.timer);record.ws.close();}sockets.clear();};
    window.addEventListener('pagehide',closeSockets,{once:true});
    window.addEventListener('message',event=>{

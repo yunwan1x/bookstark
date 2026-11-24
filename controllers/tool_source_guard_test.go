@@ -69,7 +69,7 @@ func TestToolSourceDeletionRequiresWithdrawal(t *testing.T) {
 			}
 			if tc.status == "pending" {
 				var status string
-				if err := models.DB.QueryRow("SELECT status FROM md_tool_versions WHERE blog_id=?", b.BlogID).Scan(&status); err != nil || status != "withdrawn" {
+				if err := models.DB.QueryRow("SELECT status FROM md_tool_versions WHERE tool_id=?", b.BlogID).Scan(&status); err != nil || status != "withdrawn" {
 					t.Fatalf("pending version not withdrawn: %s %v", status, err)
 				}
 			}
@@ -77,7 +77,7 @@ func TestToolSourceDeletionRequiresWithdrawal(t *testing.T) {
 				t.Fatalf("withdrawn source cannot be deleted: %d %s", w.Code, w.Body.String())
 			}
 			var remaining int
-			if err := models.DB.QueryRow("SELECT COUNT(*) FROM md_tool_versions WHERE blog_id=?", b.BlogID).Scan(&remaining); err != nil || remaining != 0 {
+			if err := models.DB.QueryRow("SELECT COUNT(*) FROM md_tool_versions WHERE tool_id=?", b.BlogID).Scan(&remaining); err != nil || remaining != 0 {
 				t.Fatalf("withdrawn history left behind: %d %v", remaining, err)
 			}
 			// The next subtest must start with no recycle-bin entries.

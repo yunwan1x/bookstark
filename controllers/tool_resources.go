@@ -149,6 +149,10 @@ func requestToolOrigin(c *gin.Context) string {
 // An unguessable installation/epoch pair grants read access only to that asset set.
 // Sandbox/CORS headers also allow module scripts in the opaque tool iframe.
 func ServeToolAsset(c *gin.Context) {
+	if c.GetHeader("Service-Worker") == "script" || c.GetHeader("Sec-Fetch-Dest") == "serviceworker" {
+		c.Status(http.StatusForbidden)
+		return
+	}
 	instance, epoch := c.Param("instance"), c.Param("epoch")
 	if len(instance) != 32 || len(epoch) != 32 {
 		c.Status(404)

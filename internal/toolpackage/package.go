@@ -177,6 +177,7 @@ func (b *builder) asset(raw string, base *url.URL) (string, error) {
 }
 
 var cssRefs = regexp.MustCompile(`(?i)url\(\s*(?:"([^"]*)"|'([^']*)'|([^\s)]*))\s*\)|@import\s+(?:"([^"]*)"|'([^']*)')`)
+var binaryRefs = regexp.MustCompile(`["']((?:\./|\.\./|/|https?://)[^"'\r\n]*\.(?:wasm(?:\.part[0-9]+)?|bin|data|onnx|tflite))["']`)
 var moduleRefs = regexp.MustCompile(`(?:\bfrom\s*|\bimport\s*\(?\s*|new\s+URL\(\s*)["']([^"'\r\n]+)["']`)
 
 // Literal/comment masking prevents example code and commented dependencies from being fetched.
@@ -201,6 +202,7 @@ func codeMask(s string, js bool) []bool {
 		}
 		if s[i] == '\'' || s[i] == '"' || (js && s[i] == '`') {
 			quote := s[i]
+			mask[i] = true
 			i++
 			for i < len(s) {
 				if s[i] == '\\' {
@@ -236,6 +238,12 @@ func (b *builder) rewrite(s string, base *url.URL, re *regexp.Regexp, css bool) 
 				rawStart, rawEnd = indices[j], indices[j+1]
 				raw = s[rawStart:rawEnd]
 				break
+			}
+		}
+		if !css && strings.HasPrefix(s[start:end], "new") {
+			u, _ := url.Parse(raw)
+			if u != nil && (strings.HasPrefix(u.Path, "/api/") || strings.HasPrefix(u.Path, "api/")) {
+				continue
 			}
 		}
 		if !css && !strings.HasPrefix(raw, ".") && !strings.HasPrefix(raw, "/") && !strings.HasPrefix(raw, "http") {
@@ -274,7 +282,31 @@ func (b *builder) css(s string, base *url.URL) (string, error) {
 	return b.rewrite(s, base, cssRefs, true)
 }
 func (b *builder) modules(s string, base *url.URL) (string, error) {
-	return b.rewrite(s, base, moduleRefs, false)
+	result, err := b.rewrite(s, base, moduleRefs, false)
+	if err != nil {
+		return "", err
+	}
+	mask := codeMask(result, true)
+	var out strings.Builder
+	last := 0
+	for _, indices := range binaryRefs.FindAllStringSubmatchIndex(result, -1) {
+		start, end := indices[0], indices[1]
+		if !mask[start] {
+			continue
+		}
+		raw := result[indices[2]:indices[3]]
+		value, e := b.asset(raw, base)
+		if e != nil {
+			return "", e
+		}
+		out.WriteString(result[last:start])
+		out.WriteString(result[start : start+1])
+		out.WriteString(value)
+		out.WriteString(result[end-1 : end])
+		last = end
+	}
+	out.WriteString(result[last:])
+	return out.String(), nil
 }
 func (b *builder) walk(n *html.Node, base *url.URL) error {
 	if n.Type == html.ElementNode {
@@ -292,6 +324,13 @@ func (b *builder) walk(n *html.Node, base *url.URL) error {
 			if n.Data == "link" && a.Key == "href" {
 				for _, r := range n.Attr {
 					if r.Key == "rel" && (strings.Contains(r.Val, "stylesheet") || strings.Contains(r.Val, "icon") || strings.Contains(r.Val, "preload")) {
+						static = true
+					}
+				}
+			}
+			if n.Data == "meta" && a.Key == "content" {
+				for _, attr := range n.Attr {
+					if attr.Key == "name" && strings.Contains(strings.ToLower(attr.Val), "worker") && strings.HasSuffix(strings.ToLower(a.Val), ".js") {
 						static = true
 					}
 				}

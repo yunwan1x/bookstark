@@ -22,7 +22,7 @@ func TestToolMarketMetadataDoesNotReadHTMLBeforeAuthorization(t *testing.T) {
 	}
 	// Metadata and permission checks must not load the HTML body. Oversized HTML
 	// makes an accidental body read observable.
-	if _, err := models.DB.Exec("UPDATE md_tool_versions SET content=? WHERE blog_id=?", strings.Repeat("x", (20<<20)+1), b.BlogID); err != nil {
+	if _, err := models.DB.Exec("UPDATE md_tool_versions SET content=? WHERE tool_id=?", strings.Repeat("x", (20<<20)+1), b.BlogID); err != nil {
 		t.Fatal(err)
 	}
 	path := "/api/tool-market/" + id
@@ -47,7 +47,7 @@ func TestToolMarketMetadataDoesNotReadHTMLBeforeAuthorization(t *testing.T) {
 	if full := adminAssetRequest(router, token, "GET", path, nil); full.Code != 404 {
 		t.Fatalf("oversized HTML was not rejected: %d", full.Code)
 	}
-	if _, err := models.DB.Exec(`UPDATE md_tool_versions SET metadata=json_set(metadata,'$.access','members','$.members',json('[999999]')) WHERE blog_id=?`, b.BlogID); err != nil {
+	if _, err := models.DB.Exec(`UPDATE md_tool_versions SET metadata=json_set(metadata,'$.access','members','$.members',json('[999999]')) WHERE tool_id=?`, b.BlogID); err != nil {
 		t.Fatal(err)
 	}
 	install := adminAssetRequest(router, token, "PUT", "/api/tool-installs/"+id, map[string]any{"revision": metadata["revision"]})

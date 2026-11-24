@@ -86,3 +86,29 @@ func TestImportMapModulesAreLocalized(t *testing.T) {
 		t.Fatalf("import map %s: %v", content, err)
 	}
 }
+
+func TestRuntimeAPIURLIsNotAStaticResource(t *testing.T) {
+	source := `<script>const endpoint=new URL('/api/cctv-live/channels',document.baseURI);fetch(endpoint);</script>`
+	content, assets, err := Build(context.Background(), source, "https://source.test/shares/tv", func(context.Context, *url.URL) ([]byte, string, error) {
+		t.Fatal("runtime API must not be downloaded")
+		return nil, "", nil
+	})
+	if err != nil || len(assets) != 0 || !strings.Contains(content, "/api/cctv-live/channels") {
+		t.Fatalf("runtime URL changed: %s %v", content, err)
+	}
+}
+func TestWASMPartsAndWorkerMetadataAreInstalled(t *testing.T) {
+	source := `<base href="https://source.test/pdf/"><meta name="pdfcraft-ocr-worker" content="./ocr.js"><script type="module">const chunks=["./app.wasm.part00","./app.wasm.part01"]; // "./fake.wasm"
+ const sample="fetch('./example.wasm')"; await Promise.all(chunks.map(path=>fetch(path)));</script>`
+	fixtures := map[string]string{"/pdf/app.wasm.part00": "part0", "/pdf/app.wasm.part01": "part1", "/pdf/ocr.js": "self.onmessage=()=>{}"}
+	content, assets, err := Build(context.Background(), source, "https://source.test/shares/pdf", func(_ context.Context, u *url.URL) ([]byte, string, error) {
+		s, ok := fixtures[u.Path]
+		if !ok {
+			return nil, "", fmt.Errorf("unexpected static dependency %s", u)
+		}
+		return []byte(s), "application/octet-stream", nil
+	})
+	if err != nil || len(assets) != 3 || strings.Contains(content, `content="./ocr.js"`) || strings.Contains(content, `["./app.wasm.part00"`) {
+		t.Fatalf("dynamic resources missing: %d %s %v", len(assets), content, err)
+	}
+}
