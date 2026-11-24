@@ -36,6 +36,7 @@ type connection struct {
 	transport net.Conn
 	input     chan []byte
 	keyboard  chan []byte
+	resize    chan [2]int
 	output    chan bool
 	outputMu  sync.Mutex
 	writes    chan bool
@@ -215,6 +216,19 @@ func (c *connection) start(cfg configuration) {
 		return
 	}
 	timer.Stop()
+	go func() {
+		for {
+			select {
+			case size := <-c.resize:
+				if err := sess.WindowChange(size[1], size[0]); err != nil {
+					c.close("连接已断开")
+					return
+				}
+			case <-c.done:
+				return
+			}
+		}
+	}()
 	event(c.id, "connected", nil)
 	go func() {
 		ticker := time.NewTicker(30 * time.Second)
@@ -283,7 +297,7 @@ func main() {
 				return nil
 			}
 			a, b := net.Pipe()
-			c = &connection{id: id, pipe: a, transport: b, input: make(chan []byte, 4), keyboard: make(chan []byte, 4), output: make(chan bool, 1), writes: make(chan bool, 1), trust: make(chan bool, 1), done: make(chan struct{})}
+			c = &connection{id: id, pipe: a, transport: b, input: make(chan []byte, 4), keyboard: make(chan []byte, 4), resize: make(chan [2]int, 1), output: make(chan bool, 1), writes: make(chan bool, 1), trust: make(chan bool, 1), done: make(chan struct{})}
 			sessions[id] = c
 			go c.start(cfg)
 			return nil
@@ -324,11 +338,22 @@ func main() {
 
 		case "resize":
 			cols, rows := m.Get("cols").Int(), m.Get("rows").Int()
-			go func() {
-				if c.session != nil && cols > 1 && rows > 1 {
-					c.session.WindowChange(rows, cols)
+			if cols > 1 && rows > 1 {
+				size := [2]int{cols, rows}
+				select {
+				case c.resize <- size:
+				default:
+					select {
+					case <-c.resize:
+					default:
+					}
+					select {
+					case c.resize <- size:
+					default:
+					}
 				}
-			}()
+			}
+
 		case "close":
 			go c.close("连接已断开")
 		}

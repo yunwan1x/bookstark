@@ -605,6 +605,12 @@
         renderTabs();
         updateSession();
         fitActive();
+        worker.postMessage({
+          type: "resize",
+          id: s.run,
+          cols: s.term.cols,
+          rows: s.term.rows,
+        });
         s.term.focus();
         break;
       case "output":

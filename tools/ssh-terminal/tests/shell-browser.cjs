@@ -115,6 +115,8 @@ const { chromium } = require("playwright"),
           await f.locator("#hostFingerprint").textContent(),
         ),
       );
+      await page.setViewportSize({ width: 1280, height: 900 });
+      await page.waitForTimeout(250);
       await f.locator("[data-trust=once]").click();
     }
     await setup("bash");
@@ -133,6 +135,16 @@ const { chromium } = require("playwright"),
       "printf 'BASH_%s_END\\n' \"$(readlink /proc/$$/exe)\"",
       "BASH_" + expectedBash + "_END",
     );
+    const dimensions = await f.locator("body").evaluate(() => {
+      const t = window.__qaTerms.find((t) => !t.element.parentElement.hidden);
+      return t.rows + " " + t.cols;
+    });
+    await command(
+      f,
+      "printf 'CONNECT_PTY_%s_END\\n' \"$(stty size)\"",
+      "CONNECT_PTY_" + dimensions + "_END",
+    );
+    console.log("RESIZE DURING HOST KEY CONFIRM VERIFIED", dimensions);
     console.log("REAL PRESET BASH VERIFIED", expectedBash);
     await setup("custom", "/bin/sh");
     await f.locator("#saveHost").click();
