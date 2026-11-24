@@ -15,7 +15,7 @@
 <label class="sr-only" for="publishSourceState">{{call .T "market.publication_status"}}</label><select class="dialog-input" id="publishSourceState"><option value="all">{{call .T "market.status_all"}}</option><option value="unpublished">{{call .T "market.status_unpublished"}}</option><option value="published">{{call .T "market.status_published"}}</option></select>
 <label class="sr-only" for="publishSourceSort">{{call .T "market.sort"}}</label><select class="dialog-input" id="publishSourceSort"><option value="updated">{{call .T "market.sort_updated"}}</option><option value="name">{{call .T "market.sort_name"}}</option></select>
 </form>
-<div class="market-results"><span id="publishSourceCount" role="status"></span><label for="publishSourceTake">{{call .T "market.per_page"}} <select class="dialog-input" id="publishSourceTake"><option>10</option><option>20</option><option>50</option></select></label></div>
+<div class="market-results"><span id="publishSourceCount" role="status"></span></div>
 <p id="publishSourceStatus" class="market-muted" role="status" aria-live="polite">{{call .T "market.source_loading"}}</p>
 <button type="button" class="bs-btn bs-btn-cancel" id="publishSourceRetry" hidden>{{call .T "tools.retry"}}</button>
 <fieldset class="publish-source-list" id="publishSourceList"><legend class="sr-only">{{call .T "market.choose_article"}}</legend>

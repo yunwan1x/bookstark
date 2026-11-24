@@ -2,17 +2,17 @@
  'use strict';
  const U=ToolMarketUI,{text:t,esc:e,api}=U,params=new URLSearchParams(location.search);
  const root=document.getElementById('toolPublishSelection');if(!root)return;
- const query=document.getElementById('publishSourceQuery'),state=document.getElementById('publishSourceState'),sort=document.getElementById('publishSourceSort'),take=document.getElementById('publishSourceTake'),next=document.getElementById('publishSourceNext'),rows=document.getElementById('publishSourceRows'),status=document.getElementById('publishSourceStatus');
+ const query=document.getElementById('publishSourceQuery'),state=document.getElementById('publishSourceState'),sort=document.getElementById('publishSourceSort'),next=document.getElementById('publishSourceNext'),rows=document.getElementById('publishSourceRows'),status=document.getElementById('publishSourceStatus');
  let page=Math.max(1,Number(params.get('page'))||1),selectedID=Math.max(0,Number(params.get('selected'))||0),selected=null,articles=[],loadVersion=0,timer=0;
  const returnTo=U.marketReturn(params.get('return'));
+ const take=['10','20','50'].includes(params.get('take'))?params.get('take'):'10';
  root.querySelectorAll('[data-return-market]').forEach(link=>link.href=returnTo);
  query.value=params.get('q')||'';
  state.value=['all','published','unpublished'].includes(params.get('status'))?params.get('status'):'all';
  sort.value=params.get('sort')==='name'?'name':'updated';
- take.value=['10','20','50'].includes(params.get('take'))?params.get('take'):'10';
  function updateURL(){
   const url=new URL('/market/publish',location.origin);url.searchParams.set('return',returnTo);
-  for(const [key,value,fallback]of [['q',query.value,''],['status',state.value,'all'],['sort',sort.value,'updated'],['page',String(page),'1'],['take',take.value,'10'],['selected',String(selectedID),'0']])if(value!==fallback)url.searchParams.set(key,value);
+  for(const [key,value,fallback]of [['q',query.value,''],['status',state.value,'all'],['sort',sort.value,'updated'],['page',String(page),'1'],['take',take,'10'],['selected',String(selectedID),'0']])if(value!==fallback)url.searchParams.set(key,value);
   history.replaceState(null,'',url.pathname+url.search);
  }
  function selection(){
@@ -23,7 +23,7 @@
  function dateText(value){const date=new Date(value);return Number.isNaN(date.getTime())?'—':new Intl.DateTimeFormat(document.documentElement.lang,{dateStyle:'short',timeStyle:'short'}).format(date);}
  async function load(){
   const token=++loadVersion;next.disabled=true;root.setAttribute('aria-busy','true');document.getElementById('publishSourceList').disabled=true;document.getElementById('publishSourceRetry').hidden=true;status.className='market-muted';status.hidden=false;status.textContent=t('正在读取文章…','Loading articles…');
-  const p=new URLSearchParams({q:query.value,status:state.value,sort:sort.value,take:take.value,page:String(page),selected:String(selectedID)});
+  const p=new URLSearchParams({q:query.value,status:state.value,sort:sort.value,take,page:String(page),selected:String(selectedID)});
   try{
    const result=await api('/api/tool-market/articles?'+p);if(token!==loadVersion)return;
    articles=result.articles;page=result.page;selected=result.selected;selectedID=selected?selected.id:0;
@@ -39,6 +39,6 @@
  function filter(){clearTimeout(timer);page=1;load();}
  query.oninput=()=>{clearTimeout(timer);++loadVersion;next.disabled=true;document.getElementById('publishSourceList').disabled=true;timer=setTimeout(filter,220);};
  document.getElementById('publishSourceSearch').onsubmit=event=>{event.preventDefault();filter();};
- state.onchange=sort.onchange=take.onchange=filter;document.getElementById('publishSourceRetry').onclick=()=>load();
+ state.onchange=sort.onchange=filter;document.getElementById('publishSourceRetry').onclick=()=>load();
  load();
 })();
