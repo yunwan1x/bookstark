@@ -4,6 +4,7 @@
 package main
 
 import (
+	"bookstark-ssh-terminal/internal/sessionconfig"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -19,6 +20,7 @@ import (
 
 type configuration struct {
 	Host       string `json:"host"`
+	Shell      string `json:"shell"`
 	Port       int    `json:"port"`
 	User       string `json:"user"`
 	Auth       string `json:"auth"`
@@ -110,6 +112,11 @@ func (c *connection) bridge() {
 	}()
 }
 func (c *connection) start(cfg configuration) {
+	command, err := sessionconfig.ShellCommand(cfg.Shell)
+	if err != nil {
+		c.close("Shell 程序无效，请使用程序名或绝对路径")
+		return
+	}
 	c.bridge()
 	timer := time.AfterFunc(60*time.Second, func() { c.close("连接超时，请重试") })
 	defer timer.Stop()
@@ -198,7 +205,12 @@ func (c *connection) start(cfg configuration) {
 			}
 		}
 	}()
-	if err = sess.Shell(); err != nil {
+	if command == "" {
+		err = sess.Shell()
+	} else {
+		err = sess.Start(command)
+	}
+	if err != nil {
 		c.close("无法启动 Shell：" + err.Error())
 		return
 	}
@@ -230,7 +242,10 @@ func (c *connection) start(cfg configuration) {
 			}
 		}
 	}()
-	sess.Wait()
+	if err := sess.Wait(); err != nil {
+		c.close("Shell 已退出：" + err.Error())
+		return
+	}
 	c.close("会话已结束")
 }
 

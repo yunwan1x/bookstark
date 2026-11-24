@@ -131,6 +131,33 @@
                 spellcheck="false"
               />
             </div>
+            <div class="field">
+              <label for="shell" data-i18n="shell">Shell 程序</label>
+              <select id="shell">
+                <option value="" data-i18n="defaultShell">
+                  服务器账户默认 Shell
+                </option>
+                <option value="sh">sh</option>
+                <option value="bash">bash</option>
+                <option value="zsh">zsh</option>
+                <option value="fish">fish</option>
+                <option value="custom" data-i18n="customShell">
+                  自定义路径
+                </option>
+              </select>
+            </div>
+            <div class="field" id="customShellField" hidden>
+              <label for="customShell" data-i18n="shellPath"
+                >Shell 程序路径</label
+              >
+              <input
+                id="customShell"
+                maxlength="512"
+                placeholder="/usr/local/bin/fish"
+                autocapitalize="off"
+                spellcheck="false"
+              />
+            </div>
             <fieldset>
               <legend data-i18n="authentication">登录凭据</legend>
               <div class="segments">

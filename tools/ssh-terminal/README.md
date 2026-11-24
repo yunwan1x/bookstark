@@ -17,7 +17,8 @@ python3 tools/ssh-terminal/build.py
 ## 操作与存储
 
 - 桌面左侧列表可收缩为窄栏；手机从菜单展开，再点遮罩或菜单收起。
-- 保存连接只写入名称、主机、端口、用户名与认证方式。密码、私钥、私钥口令不写入 localStorage、工具使用数据或 ZIP。
+- 可选择账户默认 Shell、sh、bash、zsh、fish，或填写自定义绝对路径。指定程序在远端 PTY 中以登录 Shell 启动，路径支持空格及 Unicode，不把输入当作命令参数；程序必须已安装在目标服务器。
+- 保存连接只写入名称、主机、端口、用户名、认证方式与 Shell。密码、私钥、私钥口令不写入 localStorage、工具使用数据或 ZIP。
 - PEM/OpenSSH 私钥支持加密口令。首次主机密钥显示完整算法及 SHA256 指纹，需核对后选择仅此一次或保存信任；密钥变化会再次确认，取消不能建立 Shell。
 - 支持最多 8 个同时连接的会话、真实 PTY、窗口尺寸同步、终端选区复制、手动粘贴回退、搜索、字号调节和手机辅助按键。
 - 输入严格按序并确认写入；输出等待 xterm 消费，避免持续输出无限积压。每次重连使用独立运行 ID，旧连接的异步结果不会覆盖新连接。
@@ -48,7 +49,11 @@ go run ./testserver ../../../artifacts/ssh-terminal
 node tools/ssh-terminal/tests/browser-test.cjs
 node tools/ssh-terminal/tests/resilience.cjs
 node tools/ssh-terminal/tests/edge-test.cjs
+# 设置下述真实SSH环境变量后，验证选择的程序和自定义路径。
+node tools/ssh-terminal/tests/shell-browser.cjs
 GOMAXPROCS=2 GOMEMLIMIT=350MiB go test -p=1 ./controllers -run TestInstalledToolZIPExport -count=1
 ```
 
 可用 `BOOKSTARK_TEST_ORIGIN` 与 `BOOKSTARK_SSH_ARTIFACTS` 改测试地址和产物目录。edge 测试默认不访问真实服务器；只有显式设置 `BOOKSTARK_SSH_REAL_HOST`、`BOOKSTARK_SSH_REAL_USER`、`BOOKSTARK_SSH_REAL_KEY` 才执行远端 PTY / Ctrl+C 验证，可选 `BOOKSTARK_SSH_REAL_PORT`。它通过已信任的 SSH CLI 读取远端公开主机密钥指纹进行比对，私钥只通过浏览器本地文件选择读取，不上传到工具发布包或日志。
+
+Shell 程序边界另有嵌套模块测试：`cd tools/ssh-terminal && go test ./internal/...`，验证默认请求、各预设、绝对路径以及单引号/空格/Unicode路径的安全转义。CI 同时执行此测试。

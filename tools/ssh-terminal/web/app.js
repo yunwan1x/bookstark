@@ -4,6 +4,14 @@
   const $ = (id) => document.getElementById(id),
     e = escHtml;
   const labels = {
+    shell: ["Shell 程序", "Shell program"],
+    defaultShell: ["服务器账户默认 Shell", "Account default shell"],
+    customShell: ["自定义路径", "Custom path"],
+    shellPath: ["Shell 程序路径", "Shell program path"],
+    invalidShell: [
+      "请输入 Shell 程序名或绝对路径，不要附加参数。",
+      "Choose a shell program or enter an absolute path without arguments.",
+    ],
     connections: ["连接", "Connections"],
     searchHosts: ["搜索连接", "Search connections"],
     savedLocally: ["配置保存到当前工具", "Saved in this tool"],
@@ -247,11 +255,23 @@
         .replace(/^\[|\]$/g, ""),
       port: Number($("port").value),
       user: $("username").value.trim(),
+      shell:
+        $("shell").value === "custom"
+          ? $("customShell").value.trim()
+          : $("shell").value,
       auth: document.querySelector("[name=auth]:checked").value,
     };
   }
   function validConfig(cfg) {
     if (!$("connectionForm").reportValidity()) return false;
+    if (
+      cfg.shell &&
+      !["sh", "bash", "zsh", "fish"].includes(cfg.shell) &&
+      (!cfg.shell.startsWith("/") || /[\x00\r\n]/.test(cfg.shell))
+    ) {
+      showError(t("invalidShell"));
+      return false;
+    }
     if (!cfg.host || /[\s/?#@\\]/.test(cfg.host) || cfg.host.includes("://")) {
       showError(t("invalidHost"));
       return false;
@@ -262,6 +282,12 @@
     $("formError").textContent = message;
     $("formError").hidden = false;
   }
+  function shellFields() {
+    const custom = $("shell").value === "custom";
+    $("customShellField").hidden = !custom;
+    $("customShell").required = custom;
+  }
+  $("shell").onchange = shellFields;
   function authFields() {
     const key = document.querySelector("[name=auth]:checked").value === "key";
     $("keyFields").hidden = !key;
@@ -304,6 +330,13 @@
     document.querySelector(
       '[name=auth][value="' + (cfg?.auth === "key" ? "key" : "password") + '"]',
     ).checked = true;
+    $("shell").value = cfg?.shell
+      ? ["sh", "bash", "zsh", "fish"].includes(cfg.shell)
+        ? cfg.shell
+        : "custom"
+      : "";
+    $("customShell").value = $("shell").value === "custom" ? cfg.shell : "";
+    shellFields();
     authFields();
     $("deleteHost").hidden = !hosts.some((h) => h.id === cfg?.id);
     $("formTitle").textContent = t(cfg ? "editConnection" : "newConnection");
@@ -325,6 +358,7 @@
       port: cfg.port,
       user: cfg.user,
       auth: cfg.auth,
+      shell: cfg.shell,
     };
     const list = hosts.filter((h) => h.id !== cfg.id);
     if (list.length >= 100) {
@@ -426,6 +460,8 @@
     });
   }
   const reasonLabels = {
+    "Shell 程序无效，请使用程序名或绝对路径":
+      "Invalid shell program. Choose a program or absolute path.",
     "连接超时，请重试": "Connection timed out. Try again.",
     "无法解析私钥，请检查格式和口令":
       "Cannot parse the private key. Check its format and passphrase.",
@@ -433,6 +469,7 @@
     "无法创建 SSH 会话：": "Cannot create an SSH session: ",
     "服务器拒绝 PTY：": "Server rejected PTY: ",
     无法打开标准输入: "Cannot open standard input.",
+    "Shell 已退出：": "Shell exited: ",
     "无法启动 Shell：": "Cannot start a shell: ",
     连接已断开: "Disconnected.",
     会话已结束: "Session ended.",
@@ -452,7 +489,13 @@
     const s = sessions.get(active);
     if (!s) return;
     $("sessionHost").textContent =
-      s.cfg.user + "@" + s.cfg.host + ":" + s.cfg.port;
+      s.cfg.user +
+      "@" +
+      s.cfg.host +
+      ":" +
+      s.cfg.port +
+      " · " +
+      (s.cfg.shell || t("defaultShell"));
     $("sessionStatus").textContent = t(s.state);
     $("statusDot").classList.toggle("online", s.state === "connected");
     $("dimensions").textContent = s.term.cols + " × " + s.term.rows;

@@ -51,6 +51,9 @@ func ExportInstalledTool(ctx context.Context, member, id int64, revision, instan
 	if err != nil {
 		return err
 	}
+	if len(config) > 16384 {
+		return ErrDAVFileTooLarge
+	}
 	z := zip.NewWriter(output)
 	count := 0
 	var total int64

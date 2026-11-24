@@ -113,6 +113,13 @@ func TestInstalledToolZIPExportRoundTripExcludesRuntimeData(t *testing.T) {
 	if err != nil || !bytes.Equal(body, files["assets/protocol.wasm"]) {
 		t.Fatal("binary changed")
 	}
+	// Exported tool.json must remain within the importer's 16 KiB limit.
+	if _, err := models.DB.Exec(`UPDATE md_tool_installs SET description=? WHERE member_id=1 AND tool_id=?`, strings.Repeat("<>&", 4000), upload.ID); err != nil {
+		t.Fatal(err)
+	}
+	if response := packageWorkflowGet(router, token, base+"/export?"+query); response.Code != 413 {
+		t.Fatalf("oversized generated manifest %d", response.Code)
+	}
 	// Article/reference installations have no complete program tree to export.
 	if _, err := models.DB.Exec(`UPDATE md_tool_install_metadata SET metadata=json_set(metadata,'$.distribution','references') WHERE member_id=1 AND tool_id=?`, upload.ID); err != nil {
 		t.Fatal(err)
