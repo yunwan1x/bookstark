@@ -35,3 +35,13 @@ jobs:
 
       - name: Native workspace setup tests
         run: go test -tags wails,gtk3,purego -run 'TestNativeWorkspaces|TestValidateServerURL|TestValidateLocalPassword' .
+
+      - name: Standalone SSH tool WASM build
+        run: python3 tools/ssh-terminal/build.py --output "${{ runner.temp }}/ssh-terminal"
+
+      - name: Installed tool ZIP export regression
+        run: go test ./controllers -run '^TestInstalledToolZIPExport' -count=1
+
+      - name: SSH shell selection validation
+        working-directory: tools/ssh-terminal
+        run: go test ./internal/...

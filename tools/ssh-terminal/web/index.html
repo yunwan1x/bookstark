@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SSH 终端</title>
+    <link rel="stylesheet" href="components.css" />
+    <link rel="stylesheet" href="font-awesome.css" />
+    <link rel="stylesheet" href="xterm.css" />
+    <link rel="stylesheet" href="dialog.css" />
+    <link rel="stylesheet" href="app.css" />
+  </head>
+  <body>
+    <div class="app" id="app">
+      <aside class="sidebar" id="sidebar" aria-label="连接列表">
+        <div class="sidebar-head">
+          <button
+            class="icon"
+            id="sidebarToggle"
+            aria-controls="sidebar"
+            aria-expanded="true"
+            title="收起连接列表"
+          >
+            <i class="fa-solid fa-bars" aria-hidden="true"></i></button
+          ><strong class="wide" data-i18n="connections">连接</strong
+          ><button class="icon wide" id="addHost" aria-label="新建连接">
+            <i class="fa-solid fa-plus" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="wide sidebar-body">
+          <label class="sr-only" for="hostSearch" data-i18n="searchHosts"
+            >搜索连接</label
+          ><input id="hostSearch" type="search" placeholder="搜索连接" />
+          <div id="hostList" class="host-list"></div>
+        </div>
+        <button class="rail-add icon" id="railAdd" title="新建连接">
+          <i class="fa-solid fa-plus" aria-hidden="true"></i>
+        </button>
+        <div class="sidebar-foot wide">
+          <span class="dot"></span
+          ><span data-i18n="savedLocally">配置保存到当前工具</span>
+        </div>
+      </aside>
+      <button
+        id="sidebarShade"
+        class="sidebar-shade"
+        aria-label="关闭连接列表"
+        hidden
+      ></button>
+      <main>
+        <header class="workspace-head">
+          <button
+            class="icon mobile-toggle"
+            id="mobileToggle"
+            aria-controls="sidebar"
+            aria-expanded="false"
+            aria-label="展开连接列表"
+          >
+            <i class="fa-solid fa-bars" aria-hidden="true"></i>
+          </button>
+          <div
+            class="tabs"
+            id="sessions"
+            role="tablist"
+            aria-label="SSH 会话"
+          ></div>
+          <button
+            class="icon"
+            id="newConnection"
+            aria-label="新建连接"
+            title="新建连接"
+          >
+            <i class="fa-solid fa-plus" aria-hidden="true"></i></button
+          ><button
+            class="icon"
+            id="language"
+            aria-label="切换语言"
+            title="中文 / English"
+          >
+            EN
+          </button>
+        </header>
+        <section class="editor" id="editor">
+          <form id="connectionForm" autocomplete="off">
+            <div class="form-heading">
+              <div class="app-mark" aria-hidden="true">›_</div>
+              <h1 id="formTitle" data-i18n="newConnection">新建连接</h1>
+              <p data-i18n="connectHint">连接你的服务器，开始终端会话。</p>
+            </div>
+            <input type="hidden" id="hostID" />
+            <div class="field">
+              <label for="hostName" data-i18n="name">连接名称</label
+              ><input
+                id="hostName"
+                maxlength="80"
+                placeholder="例如：生产服务器"
+              />
+            </div>
+            <div class="host-port">
+              <div class="field">
+                <label for="host" data-i18n="host">主机地址</label
+                ><input
+                  id="host"
+                  required
+                  maxlength="253"
+                  placeholder="192.168.1.10"
+                  autocapitalize="off"
+                  spellcheck="false"
+                />
+              </div>
+              <div class="field">
+                <label for="port" data-i18n="port">端口</label
+                ><input
+                  id="port"
+                  required
+                  type="number"
+                  min="1"
+                  max="65535"
+                  value="22"
+                />
+              </div>
+            </div>
+            <div class="field">
+              <label for="username" data-i18n="user">用户名</label
+              ><input
+                id="username"
+                required
+                maxlength="128"
+                placeholder="root"
+                autocapitalize="off"
+                spellcheck="false"
+              />
+            </div>
+            <div class="field">
+              <label for="shell" data-i18n="shell">Shell 程序</label>
+              <select id="shell">
+                <option value="" data-i18n="defaultShell">
+                  服务器账户默认 Shell
+                </option>
+                <option value="sh">sh</option>
+                <option value="bash">bash</option>
+                <option value="zsh">zsh</option>
+                <option value="fish">fish</option>
+                <option value="custom" data-i18n="customShell">
+                  自定义路径
+                </option>
+              </select>
+            </div>
+            <div class="field" id="customShellField" hidden>
+              <label for="customShell" data-i18n="shellPath"
+                >Shell 程序路径</label
+              >
+              <input
+                id="customShell"
+                maxlength="512"
+                placeholder="/usr/local/bin/fish"
+                autocapitalize="off"
+                spellcheck="false"
+              />
+            </div>
+            <fieldset>
+              <legend data-i18n="authentication">登录凭据</legend>
+              <div class="segments">
+                <label
+                  ><input
+                    type="radio"
+                    name="auth"
+                    value="password"
+                    checked
+                  /><span data-i18n="passwordAuth">密码</span></label
+                ><label
+                  ><input type="radio" name="auth" value="key" /><span
+                    data-i18n="keyAuth"
+                    >私钥</span
+                  ></label
+                >
+              </div>
+              <div id="passwordFields" class="field">
+                <label for="password" data-i18n="password">密码</label>
+                <div class="password-field">
+                  <input
+                    id="password"
+                    type="password"
+                    autocomplete="new-password"
+                  /><button
+                    class="icon"
+                    id="showPassword"
+                    type="button"
+                    aria-label="显示密码"
+                    aria-pressed="false"
+                  >
+                    <i class="fa-solid fa-eye" aria-hidden="true"></i>
+                  </button>
+                </div>
+              </div>
+              <div id="keyFields" hidden>
+                <div class="field">
+                  <label for="privateKey" data-i18n="privateKey"
+                    >私钥文件（PEM / OpenSSH）</label
+                  ><input id="privateKey" type="file" /><span
+                    id="keyName"
+                    class="hint"
+                  ></span>
+                </div>
+                <div class="field">
+                  <label for="passphrase" data-i18n="passphrase"
+                    >私钥口令（可选）</label
+                  ><input
+                    id="passphrase"
+                    type="password"
+                    autocomplete="new-password"
+                  />
+                </div>
+              </div>
+              <p class="hint" data-i18n="secretHint">
+                密码、私钥及口令仅用于本次会话，不随连接配置保存。
+              </p>
+            </fieldset>
+            <div class="form-error" id="formError" role="alert" hidden></div>
+            <div class="form-actions">
+              <button
+                class="danger-text"
+                id="deleteHost"
+                type="button"
+                hidden
+                data-i18n="delete"
+              >
+                删除连接</button
+              ><span class="spacer"></span
+              ><button id="saveHost" type="button" data-i18n="save">
+                保存连接</button
+              ><button
+                id="connect"
+                class="primary"
+                type="submit"
+                data-i18n="connect"
+              >
+                连接
+              </button>
+            </div>
+          </form>
+        </section>
+        <section class="terminal-workspace" id="terminalWorkspace" hidden>
+          <div class="terminal-toolbar">
+            <span class="host-label" id="sessionHost"></span
+            ><span class="spacer"></span
+            ><button
+              class="icon"
+              id="searchTerminal"
+              title="搜索"
+              aria-label="搜索终端"
+            >
+              <i
+                class="fa-solid fa-magnifying-glass"
+                aria-hidden="true"
+              ></i></button
+            ><button
+              class="icon"
+              id="copyTerminal"
+              title="复制选中内容"
+              aria-label="复制选中内容"
+            >
+              <i class="fa-solid fa-copy" aria-hidden="true"></i></button
+            ><button
+              class="icon"
+              id="pasteTerminal"
+              title="粘贴"
+              aria-label="粘贴"
+            >
+              <i class="fa-solid fa-paste" aria-hidden="true"></i></button
+            ><button
+              class="icon"
+              id="smallerFont"
+              title="减小字号"
+              aria-label="减小字号"
+            >
+              A−</button
+            ><button
+              class="icon"
+              id="largerFont"
+              title="增大字号"
+              aria-label="增大字号"
+            >
+              A＋</button
+            ><button id="disconnect" class="danger-text" data-i18n="disconnect">
+              断开
+            </button>
+          </div>
+          <div id="searchBar" class="search-bar" hidden>
+            <label class="sr-only" for="terminalQuery" data-i18n="search"
+              >搜索</label
+            ><input
+              type="search"
+              id="terminalQuery"
+              placeholder="搜索终端输出"
+            /><button id="findNext" data-i18n="next">下一处</button
+            ><span id="searchResult" role="status"></span
+            ><button class="icon" id="closeSearch" aria-label="关闭搜索">
+              <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+            </button>
+          </div>
+          <div
+            class="connection-banner"
+            id="connectionBanner"
+            role="status"
+            hidden
+          >
+            <span id="connectionMessage"></span
+            ><button id="reconnect" data-i18n="reconnect">重新连接</button>
+          </div>
+          <div id="terminalStack" class="terminal-stack"></div>
+          <div class="extra-keys" id="extraKeys">
+            <button data-key="esc">Esc</button
+            ><button data-key="tab">Tab</button
+            ><button data-key="ctrl" aria-pressed="false">Ctrl</button
+            ><button data-key="alt" aria-pressed="false">Alt</button
+            ><button data-key="left">←</button><button data-key="down">↓</button
+            ><button data-key="up">↑</button><button data-key="right">→</button>
+          </div>
+          <footer class="terminal-status">
+            <span class="dot" id="statusDot"></span
+            ><span id="sessionStatus"></span><span class="spacer"></span
+            ><span id="dimensions">80 × 24</span><span>SSH · UTF-8</span>
+          </footer>
+        </section>
+      </main>
+    </div>
+    <script src="utils.js"></script>
+    <script src="bs-dialog.js"></script>
+    <script src="xterm.js"></script>
+    <script src="addon-fit.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
