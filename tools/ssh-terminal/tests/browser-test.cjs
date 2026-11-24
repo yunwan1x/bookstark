@@ -140,7 +140,7 @@ const { chromium } = require("playwright"),
       await page.keyboard.press("Enter");
       await f.locator("body").evaluate(async (body, marker) => {
         const term = window.__qaTerms.find(
-          (t) => !t.element.parentElement.hidden,
+          (t) => !t.element.closest(".terminal-panel").hidden,
         );
         for (let n = 0; n < 150; n++) {
           let text = "";
