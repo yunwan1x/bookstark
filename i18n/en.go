@@ -38,12 +38,9 @@ var enMessages = map[string]string{
 	"market.unpublished":           "Tool unpublished",
 
 	"market.title":         "Tool market",
-	"market.mine":          "My tools",
 	"market.search":        "Search tools or authors",
 	"market.check":         "Check updates",
 	"market.export":        "Export data",
-	"market.browse":        "Browse tools",
-	"market.manage":        "Manage all",
 	"market.failed":        "Could not complete. Try again.",
 	"market.saved":         "Saved",
 	"market.saving":        "Saving…",

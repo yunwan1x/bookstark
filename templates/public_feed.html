@@ -11,8 +11,6 @@
 <link rel="stylesheet" href="/static/css/public-feed.css?v={{assetVer "/static/css/public-feed.css"}}">
 <link rel="stylesheet" href="/static/css/share-note-reader.css?v={{assetVer "/static/css/share-note-reader.css"}}">
 <link rel="stylesheet" href="/static/css/local-tools.css?v={{assetVer "/static/css/local-tools.css"}}">
-<link rel="stylesheet" href="/static/css/font-awesome-brands.min.css?v={{assetVer "/static/css/font-awesome-brands.min.css"}}">
-<link rel="stylesheet" href="/static/css/tool-market.css?v={{assetVer "/static/css/tool-market.css"}}">
 </head>
 <body class="public-feed-body" data-public-account="{{.Account}}" data-market-workspace="{{if .MemberID}}member-{{.MemberID}}{{else}}guest{{end}}">
 {{if .Account}}{{template "header" .}}{{else}}
@@ -37,9 +35,6 @@
 <script src="/static/js/public-widgets.js?v={{assetVer "/static/js/public-widgets.js"}}"></script>
 <script src="/static/js/public-news.js?v={{assetVer "/static/js/public-news.js"}}"></script>
 <script src="/static/js/public-feed.js?v={{assetVer "/static/js/public-feed.js"}}"></script>
-<script src="/static/js/tool-appearance.js?v={{assetVer "/static/js/tool-appearance.js"}}"></script>
-<script src="/static/js/tool-market-store.js?v={{assetVer "/static/js/tool-market-store.js"}}"></script>
-<script src="/static/js/tool-market-shortcuts.js?v={{assetVer "/static/js/tool-market-shortcuts.js"}}"></script>
 </body></html>
 
 {{define "public-feed-content"}}

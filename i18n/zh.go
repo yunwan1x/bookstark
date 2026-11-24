@@ -38,12 +38,9 @@ var zhMessages = map[string]string{
 	"market.unpublished":           "工具已下架",
 
 	"market.title":         "工具市场",
-	"market.mine":          "我的工具",
 	"market.search":        "搜索工具、作者",
 	"market.check":         "检查更新",
 	"market.export":        "导出数据",
-	"market.browse":        "浏览工具市场",
-	"market.manage":        "管理全部",
 	"market.failed":        "操作失败，请重试",
 	"market.saved":         "已保存",
 	"market.saving":        "保存中…",

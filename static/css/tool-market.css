@@ -128,8 +128,6 @@
 .market-runner{padding:16px;flex:1}
 #marketFrameHost iframe{width:100%;height:calc(100dvh - 150px);border:1px solid var(--color-border);background:var(--color-white)}
 #marketSaveStatus{font-size:13px}
-.market-shortcut{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;font-size:14px}
-.market-shortcut strong{flex:1;min-width:0;overflow-wrap:anywhere}
 .market-review{padding:12px 0;border-bottom:1px solid var(--color-border)}
 [hidden]{display:none!important}
 @media(max-width:1024px){.market-toolbar{grid-template-columns:repeat(3,minmax(0,1fr))}.market-search{grid-column:1/-1}.market-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.market-layout:has(.market-detail:not([hidden])){grid-template-columns:minmax(0,1fr) 320px}.market-layout:has(.market-detail:not([hidden])) .market-grid{grid-template-columns:1fr}}
