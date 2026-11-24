@@ -63,7 +63,7 @@ func TestToolPublishPageRendersInitialFormWithoutMetadataFetch(t *testing.T) {
 				}
 			}
 			walk(document)
-			for _, key := range []string{"toolPublishFields", "publishTitle", "publishVersion", "publishCategory", "publishDestination", "publishDescription", "publishAccess", "publishRead", "publishSave", "publishNetwork", "publishNotes", "toolPublishBack", "toolPublishDraft", "toolPublishPreview", "toolAppearancePlaceholder"} {
+			for _, key := range []string{"toolPublishFields", "publishTitle", "publishVersion", "publishCategory", "publishDestination", "publishDescription", "publishAccess", "publishRead", "publishSave", "publishNotes", "toolPublishBack", "toolPublishDraft", "toolPublishPreview", "toolAppearancePlaceholder"} {
 				if nodes[key] == nil {
 					t.Fatalf("initial HTML is missing %s", key)
 				}
@@ -96,7 +96,10 @@ func TestToolPublishPageRendersInitialFormWithoutMetadataFetch(t *testing.T) {
 			if initial["published"] != published || initial["title"] != title {
 				t.Fatal("source metadata changed")
 			}
-			if published && (has(nodes["publishRead"], "checked") || has(nodes["publishSave"], "checked") || !has(nodes["publishNetwork"], "checked") || has(nodes["publishMembers"], "hidden")) {
+			if nodes["publishNetwork"] != nil || nodes["publishPermission_camera"] != nil {
+				t.Fatal("browser controls still rendered")
+			}
+			if published && (has(nodes["publishRead"], "checked") || has(nodes["publishSave"], "checked") || has(nodes["publishMembers"], "hidden")) {
 				t.Fatal("published permissions were not rendered")
 			}
 		}

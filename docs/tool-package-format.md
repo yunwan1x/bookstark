@@ -40,7 +40,7 @@ my-tool.zip
     "schema": 1,
     "read_files": true,
     "save_files": true,
-    "network": false
+    "socket_tcp": false
   },
   "notes": "首次发布"
 }
@@ -54,7 +54,7 @@ my-tool.zip
 | `entry` | 包内 HTML / HTM 入口的相对路径，必须存在 |
 | `category` | `document`、`image`、`media`、`development`、`productivity` 或 `other` |
 | `access` | `public`、`login`、`members` 或 `inherit`，仍受市场设置约束；指定成员在发布表单中选择 |
-| `permissions` | 权限对象，使用 `schema: 1` 和实际需要的能力；完整字段见 [权限目录](plugin-development.md#43-完整权限目录) |
+| `permissions` | 仅需声明 `schema: 1` 与 `read_files`、`save_files`、`socket_tcp` 三项平台权限；浏览器能力默认允许，见 [权限说明](plugin-development.md#43-平台权限与浏览器默认能力) |
 | `notes` | 本版本更新说明 |
 
 不提供 `tool.json` 也可以发布：上传后选择入口，再手动填写发布设置。提供配置时，格式错误或指定不存在的入口会让检查失败。权限配置只声明工具需要的能力，不能绕过浏览器授权或服务器 TCP 代理开关。
@@ -72,7 +72,7 @@ my-tool.zip
 
 ## 更新同一个工具
 
-进入原工具的发布设置，点击「更换工具包」，上传新 ZIP。工具 ID 不变，已有安装可以发现更新。新的 `tool.json` 可以填写新版本和权限；发布页提示权限变化，用户安装新增权限的版本仍须确认。
+进入原工具的发布设置，点击「更换工具包」，上传新 ZIP。工具 ID 不变，已有安装可以发现更新。新的 `tool.json` 可以填写新版本和权限；发布页提示权限变化，用户安装新增 BookStark 桥接权限的版本仍须确认。
 
 版本号不能覆盖。工具包完整清单与每个文件的大小、摘要随版本校验，文件缺失或字节被修改会使检查或安装失败。更新准备成功后才替换当前安装；失败保留旧安装。代码和静态资源与运行数据分开，既有安装实例、localStorage 状态及通过文件桥接保存的用户文件继续保留。
 
@@ -98,7 +98,7 @@ ZIP 来源的工具安装后，可在独立运行页右上角「更多 → 导�
 | 配额 | 还受安装或上传工作区 WebDAV 单文件和总配额限制 |
 | 路径 | 必须是安全相对路径；拒绝绝对路径、穿越路径、反斜杠、符号链接及重复路径 |
 
-专用 Worker 可用于后台计算和 WASM 执行，网络访问仍受工具权限控制。`BookStark` 桥接对象注入到工具页面，Worker 需要通过消息与页面协作，不会自动获得这个对象。Service Worker 注册被禁止，插件应由 BookStark 管理安装与版本。
+专用 Worker 可用于后台计算和 WASM 执行，网页联网默认允许，仍受运行环境、CSP 与 CORS 等限制。`BookStark` 桥接对象注入到工具页面，Worker 需要通过消息与页面协作，不会自动获得这个对象。Service Worker 注册被禁止，插件应由 BookStark 管理安装与版本。
 
 WASM 文件能随包分发，不表示任意桌面软件能直接运行。程序及依赖必须适配浏览器 WASM，系统 socket、文件、进程和原生动态库等调用仍需要替换或桥接。多线程、图形加速和设备 API 还依赖实际浏览器及运行环境。
 

@@ -225,7 +225,7 @@ func publicationForSource(c *gin.Context, s models.ToolSource) (gin.H, error) {
 			data["manifest_version"] = manifest.Version
 		}
 	}
-	data["permissions_changed"] = len(data["versions"].([]gin.H)) > 0 && previousPermissions != m.Permissions
+	data["permissions_changed"] = len(data["versions"].([]gin.H)) > 0 && !previousPermissions.SameManaged(m.Permissions)
 
 	if m.Title == "" {
 		m.Title = strings.TrimSuffix(p.Name, filepath.Ext(p.Name))

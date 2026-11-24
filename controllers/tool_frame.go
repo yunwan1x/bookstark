@@ -148,10 +148,11 @@ func signToolFrame(payload string) string {
 	return hex.EncodeToString(mac.Sum(nil))
 }
 func toolFramePolicy(p models.ToolPermissions, assetRoot, parent string) string {
+	p = p.Effective()
 	flags := p.Flags()
 	network := ""
 	if p.Network {
-		network = " http: https: wss:"
+		network = " http: https: ws: wss:"
 	}
 	form := "'none'"
 	if flags["forms"] && p.Network {

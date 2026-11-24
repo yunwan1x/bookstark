@@ -25,13 +25,19 @@ func TestToolPermissionDeclarationsAreExplicitAndVersioned(t *testing.T) {
 	if err := json.Unmarshal([]byte(`{"schema":1,"camera":true,"clipboard_read":true}`), &p); err != nil {
 		t.Fatal(err)
 	}
-	flags := p.Flags()
-	if !flags["camera"] || !flags["clipboard_read"] || flags["downloads"] || flags["forms"] {
-		t.Fatal(flags)
+	for _, permissions := range []models.ToolPermissions{p, {}, {Schema: 1, Camera: false, Network: false, Downloads: false}} {
+		flags := permissions.Flags()
+		for _, spec := range models.ToolPermissionCatalog {
+			if !spec.Managed && !flags[spec.Key] {
+				t.Fatalf("browser capability not enabled: %s", spec.Key)
+			}
+			if spec.Managed && flags[spec.Key] {
+				t.Fatalf("bridge capability silently granted: %s", spec.Key)
+			}
+		}
 	}
-	legacy := models.ToolPermissions{}.Flags()
-	if !legacy["downloads"] || !legacy["forms"] || legacy["camera"] {
-		t.Fatal(legacy)
+	if !((models.ToolPermissions{ReadFiles: true}).Flags()["read_files"]) {
+		t.Fatal("read permission lost")
 	}
 	if len(models.ToolPermissionCatalog) != 42 {
 		t.Fatal("catalog missing capabilities")
@@ -58,7 +64,7 @@ func TestToolFrameUsesSignedInstallationSpecificOrigin(t *testing.T) {
 	if config.Origin == "" || config.Origin == "http://127.0.0.1:8089" {
 		t.Fatal(config)
 	}
-	if !strings.Contains(response.Header().Get("Permissions-Policy"), `camera=(self "`+config.Origin+`")`) || !strings.Contains(response.Header().Get("Permissions-Policy"), `microphone=()`) {
+	if !strings.Contains(response.Header().Get("Permissions-Policy"), `camera=(self "`+config.Origin+`")`) || !strings.Contains(response.Header().Get("Permissions-Policy"), `microphone=(self "`+config.Origin+`")`) {
 		t.Fatal(response.Header())
 	}
 	if response.Header().Get("Content-Security-Policy") != "frame-src "+config.Origin {
@@ -70,7 +76,7 @@ func TestToolFrameUsesSignedInstallationSpecificOrigin(t *testing.T) {
 		t.Fatal(frame.Code, frame.Header(), frame.Body.String())
 	}
 	policy := frame.Header().Get("Content-Security-Policy")
-	if !strings.Contains(policy, "sandbox allow-scripts allow-same-origin;") || !strings.Contains(policy, "frame-ancestors http://127.0.0.1:8089") || strings.Contains(policy, "allow-popups") || strings.Contains(frame.Body.String(), "PRIVATE_TOOL_HTML") {
+	if !strings.Contains(policy, "sandbox allow-scripts allow-same-origin ") || !strings.Contains(policy, "frame-ancestors http://127.0.0.1:8089") || !strings.Contains(policy, "allow-popups") || strings.Contains(frame.Body.String(), "PRIVATE_TOOL_HTML") {
 		t.Fatal(policy, frame.Body.String())
 	}
 	for _, suffix := range []string{"/login", "/api/profile", "/static/js/utils.js"} {
