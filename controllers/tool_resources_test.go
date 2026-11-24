@@ -4,6 +4,7 @@ import (
 	"bookstark/models"
 	"encoding/json"
 	"net/http/httptest"
+	"net/url"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -46,6 +47,41 @@ func TestToolDownloadedResourcesSurviveSourceRemoval(t *testing.T) {
 		var x map[string]any
 		json.Unmarshal(w.Body.Bytes(), &x)
 		return x["revision"].(string)
+	}
+	preview := adminAssetRequest(router, token, "POST", "/api/blogs/"+id+"/tool?preview=1", nil)
+	var report struct {
+		Metadata  models.ToolMetadata `json:"metadata"`
+		Resources []struct {
+			URL     string `json:"url"`
+			Kind    string `json:"kind"`
+			Size    int64  `json:"size"`
+			Account string `json:"account"`
+			Path    string `json:"webdav_path"`
+		} `json:"resources"`
+	}
+	if preview.Code != 200 || json.Unmarshal(preview.Body.Bytes(), &report) != nil || len(report.Resources) != 3 || report.Metadata.AssetCount != 3 {
+		t.Fatalf("preview: %d %s", preview.Code, preview.Body.String())
+	}
+	seen := map[string]bool{}
+	decoded, err := models.DecodeContentForType("html", b.BlogContent)
+	if err != nil {
+		t.Fatal(err)
+	}
+	total := int64(len(decoded))
+	for _, resource := range report.Resources {
+		u, err := url.Parse(resource.URL)
+		if err != nil || !strings.HasPrefix(u.Path, "/dav-public/admin/") || resource.Kind != "webdav" || resource.Account != "admin" || resource.Path != "/"+strings.TrimPrefix(u.Path, "/dav-public/admin/") || resource.Size <= 0 || seen[resource.URL] {
+			t.Fatalf("incorrect preview resource: %+v", resource)
+		}
+		seen[resource.URL] = true
+		total += resource.Size
+	}
+	if total != report.Metadata.Size {
+		t.Fatalf("preview total: %d != %d", total, report.Metadata.Size)
+	}
+	var previewCount int
+	if err := models.DB.QueryRow("SELECT COUNT(*) FROM md_tool_versions WHERE blog_id=?", b.BlogID).Scan(&previewCount); err != nil || previewCount != 0 {
+		t.Fatalf("preview created a publication: %d %v", previewCount, err)
 	}
 	revision := publish()
 	var referencedHTML, resourceBase string

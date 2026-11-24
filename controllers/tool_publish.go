@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -23,6 +24,46 @@ type toolPublication struct {
 	Title          string   `json:"title"`
 	Description    string   `json:"description"`
 	models.ToolMetadata
+}
+
+type toolResourcePreview struct {
+	URL        string `json:"url"`
+	Kind       string `json:"kind"`
+	MIME       string `json:"mime"`
+	Size       int64  `json:"size"`
+	Account    string `json:"account,omitempty"`
+	WebDAVPath string `json:"webdav_path,omitempty"`
+}
+
+func toolResourcePreviews(assets []toolpackage.Asset, origin string) []toolResourcePreview {
+	resources := make([]toolResourcePreview, 0, len(assets))
+	base, _ := url.Parse(origin)
+	for _, asset := range assets {
+		u, err := url.Parse(asset.URL)
+		if err != nil {
+			continue
+		}
+		resource := toolResourcePreview{URL: u.Redacted(), Kind: "external", MIME: asset.MIME, Size: int64(len(asset.Data))}
+		if base != nil && strings.EqualFold(u.Scheme, base.Scheme) && strings.EqualFold(u.Host, base.Host) {
+			switch {
+			case strings.HasPrefix(u.Path, "/dav-public/"):
+				resource.Kind = "webdav"
+				parts := strings.SplitN(strings.TrimPrefix(u.Path, "/dav-public/"), "/", 2)
+				if len(parts) == 2 {
+					resource.Account = parts[0]
+					resource.WebDAVPath = "/" + parts[1]
+				}
+			case strings.HasPrefix(u.Path, "/upload-files/"):
+				resource.Kind = "upload"
+			case strings.HasPrefix(u.Path, "/static/"):
+				resource.Kind = "static"
+			default:
+				resource.Kind = "other"
+			}
+		}
+		resources = append(resources, resource)
+	}
+	return resources
 }
 
 func latestToolMetadata(id int64) models.ToolMetadata {
@@ -214,7 +255,7 @@ func PublishMarketTool(router http.Handler) gin.HandlerFunc {
 		}
 		revision := fmt.Sprintf("%x", sha256.Sum256([]byte(req.Hash+fmt.Sprint(time.Now().UnixNano()))))
 		if c.Query("preview") == "1" {
-			c.JSON(200, gin.H{"metadata": req.ToolMetadata})
+			c.JSON(200, gin.H{"metadata": req.ToolMetadata, "resources": toolResourcePreviews(assets, base)})
 			return
 		}
 		metadata, _ := json.Marshal(req.ToolMetadata)

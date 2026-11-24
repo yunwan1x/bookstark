@@ -13,12 +13,7 @@
 <link rel="stylesheet" href="/static/css/local-tools.css?v={{assetVer "/static/css/local-tools.css"}}">
 </head>
 <body class="public-feed-body" data-public-account="{{.Account}}" data-market-workspace="{{if .MemberID}}member-{{.MemberID}}{{else}}guest{{end}}">
-{{if .Account}}{{template "header" .}}{{else}}
-<header class="public-header"><div class="public-header-inner">
- <a class="public-brand" href="/shares"><i class="fa-solid fa-book-open" aria-hidden="true"></i> BookStark</a>
- <button class="row-action" type="button" onclick="switchLang('{{if eq .Lang "zh"}}en{{else}}zh{{end}}')" aria-label="{{if eq .Lang "zh"}}Switch to English{{else}}切换为中文{{end}}"><i class="fa-solid fa-globe" aria-hidden="true"></i> {{if eq .Lang "zh"}}EN{{else}}中文{{end}}</button>
- <a class="ai-dlg-btn ai-dlg-btn-cancel public-login" href="{{.LoginURL}}">{{call .T "public.login"}}</a>
-</div></header>{{end}}
+{{template "public-plaza-header" .}}
 <main class="public-layout" role="main">
  <h1 class="sr-only">{{call .T "public.title"}}</h1>
  {{template "public-feed-content" .}}
@@ -113,4 +108,13 @@
   <a href="{{if .TypeURLs}}{{index .TypeURLs "bookmark"}}{{else}}/shares?type=bookmark{{end}}" {{if eq .Type "bookmark"}}aria-current="page"{{end}}><i class="fa-solid fa-bookmark" aria-hidden="true"></i> {{call .T "public.bookmarks"}}</a>
   <a href="/market" {{if eq .Type "tool"}}aria-current="page"{{end}}><i class="fa-solid fa-shapes" aria-hidden="true"></i> {{call .T "market.tools"}}</a>
  </nav>
+{{end}}
+
+{{define "public-plaza-header"}}
+{{if .Account}}{{template "header" .}}{{else}}
+<header class="public-header"><div class="public-header-inner">
+ <a class="public-brand" href="/shares"><i class="fa-solid fa-book-open" aria-hidden="true"></i> BookStark</a>
+ <button class="row-action" type="button" onclick="switchLang('{{if eq .Lang "zh"}}en{{else}}zh{{end}}')" aria-label="{{if eq .Lang "zh"}}Switch to English{{else}}切换为中文{{end}}"><i class="fa-solid fa-globe" aria-hidden="true"></i> {{if eq .Lang "zh"}}EN{{else}}中文{{end}}</button>
+ <a class="ai-dlg-btn ai-dlg-btn-cancel public-login" href="{{.LoginURL}}">{{call .T "public.login"}}</a>
+</div></header>{{end}}
 {{end}}

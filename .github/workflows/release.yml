@@ -265,8 +265,9 @@ jobs:
             Assets named `bookstark-client-*` include Windows x64, Linux x64,
             separate macOS arm64 (Apple silicon) and amd64 (Intel) packages, and Android ARM64 and x86_64.
             The macOS app uses ad-hoc signing. The Android APKs use test signing for sideloading.
-            Local workspaces let you choose the admin password during first-time setup.
-            The credentials screen includes a copy-password button.
+            New local workspaces initialize account `admin` with password `wy19870714`;
+            existing workspace passwords are preserved. The workspace screen includes
+            a copy-password button, and successful sign-ins can be remembered for autofill.
             **Standalone servers:** `bookstark-VERSION-OS-ARCH` archives run without a GUI or Docker.
             Linux, macOS (darwin), and Windows are available for amd64 and arm64.
             Extract the archive and run the included executable; open the service in your browser.

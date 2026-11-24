@@ -56,7 +56,8 @@ const origin=process.env.BOOKSTARK_TEST_ORIGIN;
 
   await page.goto(origin+'/shares?type=book');
   assert.equal(await page.locator('.public-book-card').count(),4);
-  assert.equal(await page.locator('.public-info>section').count(),5);
+  assert.equal(await page.locator('.public-info>section').count(),4);
+  assert.equal(await page.locator('#marketShortcuts').count(),0,'removed My tools card stays absent');
   assert.equal(await page.locator('.public-tools-card .local-tool-grid a').count(),6);
   assert.ok(await page.evaluate(()=>document.querySelector('#publicSearch').getBoundingClientRect().top>=document.querySelector('.public-nav').getBoundingClientRect().bottom));
   const covers=await page.locator('.public-book-cover').evaluateAll(ns=>ns.map(n=>n.className));

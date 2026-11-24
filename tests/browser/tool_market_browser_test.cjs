@@ -9,22 +9,28 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
  async function manage(selector){await page.locator(selector).click();}
  async function toolbarLayout(target=page){
   const layout=await target.evaluate(()=>{
-   const ids=['marketSearch','marketCategory','marketState','marketSort','marketSettings','marketPublish'];
+   const ids=['marketSearch','marketState','marketSort','marketSettings','marketPublish'];
    const rects=Object.fromEntries(ids.map(id=>[id,document.getElementById(id)]).filter(([,el])=>el).map(([id,el])=>{const r=el.getBoundingClientRect();return[id,{left:r.left,right:r.right,cy:r.top+r.height/2}];}));
    return {width:innerWidth,rects,rows:new Set(Object.values(rects).map(r=>Math.round(r.cy))).size,overflow:document.documentElement.scrollWidth>innerWidth+1};
   });
   assert.equal(layout.overflow,false,'toolbar fits '+layout.width);
   assert.equal(layout.rows,layout.width<=1024?2:1,'toolbar occupies the approved number of rows: '+JSON.stringify(layout));
   const r=layout.rects;
-  assert.ok(Math.abs(r.marketSearch.cy-r.marketCategory.cy)<2,'search and category share a row');
   assert.ok(Math.abs(r.marketState.cy-r.marketSort.cy)<2,'state and sorting share a row');
   if(layout.width<=1024)assert.ok(r.marketSort.cy>r.marketSearch.cy,'sorting is on the second row');
+  assert.equal(await target.locator('#marketCategory,#marketPageSize').count(),0,'replaced controls are removed');
+  assert.equal(await target.locator('#marketCategories a[aria-current]').count(),1,'category tags have one active filter');
+  assert.equal(await target.locator('#marketCategories a').count(),7);
+  assert.equal(await target.locator('#marketMain>.public-info .local-tool-grid a').count(),6,'same creation tools as the other plaza tabs');
+  const shell=await target.evaluate(()=>{const c=document.querySelector('.market-content').getBoundingClientRect(),s=document.querySelector('#marketMain>.public-info').getBoundingClientRect(),n=document.getElementById('marketCategories');return {content:{left:c.left,right:c.right,bottom:c.bottom},sidebar:{left:s.left,top:s.top,width:s.width},tagsFit:n.scrollWidth<=n.clientWidth+1};});
+  assert.equal(shell.tagsFit,true,'category strip scrolls within the content width');
+  if(layout.width>640)assert.ok(shell.sidebar.left>=shell.content.right,'shared sidebar sits to the right');else assert.ok(shell.sidebar.top>=shell.content.bottom,'mobile sidebar follows all tool results');
   const actions=[r.marketSettings,r.marketPublish].filter(Boolean);
   if(actions.length){assert.ok(actions[0].left>=r.marketSort.right&&actions[0].left-r.marketSort.right<=12,'action group directly follows sorting');for(const a of actions)assert.ok(Math.abs(a.cy-r.marketSort.cy)<2,'actions remain on the sorting row');}
  }
  async function footerAtBottom(target=page){
-  const box=await target.evaluate(()=>{const footer=document.querySelector('.site-footer').getBoundingClientRect(),main=document.getElementById('marketMain').getBoundingClientRect();return {bottom:footer.bottom,top:footer.top,mainBottom:main.bottom,height:innerHeight,width:innerWidth,theme:document.documentElement.dataset.themeStyle};});
-  assert.ok(Math.abs(box.bottom-box.height)<2,'empty and short lists push footer to viewport bottom: '+JSON.stringify(box));
+  const box=await target.evaluate(()=>{const footer=document.querySelector('.site-footer').getBoundingClientRect(),main=document.getElementById('marketMain').getBoundingClientRect();return {bottom:footer.bottom+scrollY,top:footer.top+scrollY,mainBottom:main.bottom+scrollY,height:innerHeight,pageHeight:document.documentElement.scrollHeight,width:innerWidth,theme:document.documentElement.dataset.themeStyle};});
+  assert.ok(Math.abs(box.bottom-Math.max(box.height,box.pageHeight))<2,'footer follows the shared sidebar and stays at the page bottom: '+JSON.stringify(box));
   assert.ok(box.top>=box.mainBottom-1,'footer never overlaps tools');
   assert.equal(await target.locator('.site-footer-bottom').evaluate(el=>getComputedStyle(el).borderTopWidth),'0px','empty friend links do not leave an inner separator');
  }
@@ -32,14 +38,21 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
  try{
   let releaseCatalog;const catalogGate=new Promise(resolve=>releaseCatalog=resolve);
   await page.route(origin+'/api/tool-market',async route=>{await catalogGate;await route.continue();});
-  await page.goto(origin+'/market');await page.locator('#marketItems[aria-busy=true] .market-card-placeholder').first().waitFor();assert.equal(await page.locator('.market-card-placeholder').count(),6);await footerAtBottom();await page.locator('#marketQuery').fill('loading filter');assert.equal(await page.locator('.market-card-placeholder').count(),6,'filtering must not erase an in-flight skeleton');await page.locator('#marketQuery').fill('');await page.screenshot({path:out+'/tools-loading-initial.png',fullPage:true,animations:'disabled'});releaseCatalog();await page.locator('.market-empty').waitFor();assert.equal(await page.locator('.market-card-placeholder').count(),0);await page.unroute(origin+'/api/tool-market');
+  await page.goto(origin+'/market');await page.locator('#marketItems[aria-busy=true] .market-card-placeholder').first().waitFor();assert.equal(await page.locator('.market-card-placeholder').count(),6);assert.equal(new URL(await page.locator('.public-login').getAttribute('href'),origin).searchParams.get('next'),'/market');assert.equal(await page.locator('#marketCategories [data-category=all][aria-current]').count(),1,'active category is ready before the catalog');await footerAtBottom();await page.locator('#marketQuery').fill('loading filter');assert.equal(await page.locator('.market-card-placeholder').count(),6,'filtering must not erase an in-flight skeleton');await page.locator('#marketQuery').fill('');await page.screenshot({path:out+'/tools-loading-initial.png',fullPage:true,animations:'disabled'});releaseCatalog();await page.locator('.market-empty').waitFor();assert.equal(await page.locator('.market-card-placeholder').count(),0);await page.unroute(origin+'/api/tool-market');
   assert.equal(await page.locator('#marketSource').count(),0,'obsolete source form removed');
   assert.equal(await page.locator('#marketMore,#marketPublish,#marketSettings,#marketCatalogTab,#marketInstalledTab,.market-switch').count(),0,'guest and nested controls must be absent');
   assert.equal(await page.locator('#marketIntro,#marketHeading').count(),0,'redundant heading and market attribution are removed');
   await toolbarLayout();await footerAtBottom();
+  const shellBox=target=>target.evaluate(()=>{const m=document.querySelector('.public-layout'),c=m.querySelector('.public-content').getBoundingClientRect(),s=m.querySelector('.public-info').getBoundingClientRect();return {main:Math.round(m.getBoundingClientRect().width),left:Math.round(c.left),content:Math.round(c.width),sidebar:Math.round(s.left),sidebarWidth:Math.round(s.width),tools:[...m.querySelectorAll('.local-tool-grid a')].map(a=>a.getAttribute('href'))};});
+  const marketShell=await shellBox(page),sibling=await context.newPage();for(const type of ['bookmark','news']){await sibling.goto(origin+'/shares?type='+type);assert.deepEqual(await shellBox(sibling),marketShell,'tool layout matches '+type);}
+  await sibling.close();
+  await page.locator('#publicRadioDiscoverTab').click();await page.locator('#publicRadioDiscovery').click();await page.locator('#publicRadioDiscovery[open]').waitFor();await page.locator('#publicRadioCountry button').first().waitFor();await page.locator('#publicRadioDiscovery').click();
   for(const [width,lang]of [[320,'en'],[390,'zh'],[768,'en']]){await context.addCookies([{name:'lang',value:lang,url:origin}]);await page.setViewportSize({width,height:950});await page.reload();await page.locator('.market-empty').waitFor();await toolbarLayout();await footerAtBottom();}
-  await context.addCookies([{name:'lang',value:'zh',url:origin}]);await page.setViewportSize({width:1440,height:1050});await page.reload();await page.locator('.market-empty').waitFor();
-  assert.equal(await page.locator('#marketMain>.market-plaza-bar>.public-nav').count(),1);assert.equal(await page.locator('#marketMain>.market-plaza-bar>.public-nav a[aria-current]').textContent().then(x=>x.trim()),'工具');
+  await context.addCookies([{name:'lang',value:'en',url:origin}]);await page.setViewportSize({width:320,height:950});await page.goto(origin+'/market?category=other');await page.locator('#marketItems[aria-busy=false]').waitFor();
+  const activeTag=page.locator('#marketCategories [aria-current]');assert.equal(await activeTag.getAttribute('data-category'),'other');assert.equal(await activeTag.evaluate(el=>{const a=el.getBoundingClientRect(),p=el.parentElement.getBoundingClientRect();return a.left>=p.left-1&&a.right<=p.right+1;}),true,'deep-linked tag scrolls into view');
+  await page.locator('#marketCategories [data-category=document]').focus();await page.keyboard.press('Enter');assert.equal(new URL(page.url()).searchParams.get('category'),'document','keyboard selection uses the same category filter');
+  await context.addCookies([{name:'lang',value:'zh',url:origin}]);await page.setViewportSize({width:1440,height:1050});await page.goto(origin+'/market');await page.locator('.market-empty').waitFor();
+  assert.equal(await page.locator('#marketMain>.market-content>.public-nav').count(),1);assert.equal(await page.locator('#marketMain>.market-content>.public-nav a[aria-current]').textContent().then(x=>x.trim()),'工具');
   const signedIn=await context.request.post(origin+'/api/login',{data:{account:'admin',password:process.env.BOOKSTARK_TEST_PASSWORD}});assert.equal(signedIn.status(),200);
   const defaults=await api('/api/tool-market/client');assert.equal(defaults.url,'https://books.vs2010wy.top/market');assert.equal(defaults.configured,false);
   await api('/api/tool-market/client','PUT',{url:origin+'/market',check_updates:true,auto_update:false});
@@ -60,6 +73,22 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
   await page.locator('input[name="name"]').fill('我的工具市场');await page.locator('#marketAdminForm button[type="submit"]').click();await page.getByText('设置已保存',{exact:true}).waitFor();
   await page.getByRole('button',{name:'复制市场地址',exact:true}).click();assert.equal(await page.evaluate(()=>navigator.clipboard.readText()),origin+'/market');
   await page.screenshot({path:out+'/01-server-market.png',fullPage:true});
+  async function sourceFooter(){
+   const box=await page.evaluate(()=>{const f=document.querySelector('.site-footer').getBoundingClientRect(),m=document.getElementById('toolPublishSelection').getBoundingClientRect();return {bottom:f.bottom+scrollY,top:f.top+scrollY,main:m.bottom+scrollY,height:innerHeight,page:document.documentElement.scrollHeight};});
+   assert.ok(Math.abs(box.bottom-Math.max(box.height,box.page))<2,'source page footer stays at the document bottom: '+JSON.stringify(box));assert.ok(box.top>=box.main-1,'footer follows source actions');
+  }
+  const articleRequest=url=>url.pathname==='/api/tool-market/articles';
+  for(const [width,lang,theme]of [[1440,'zh','light'],[390,'zh','light'],[320,'en','glass']]){
+   await context.addCookies([{name:'lang',value:lang,url:origin}]);await page.evaluate(theme=>localStorage.setItem('bookstark-theme',theme),theme);await page.setViewportSize({width,height:950});
+   let release;const gate=new Promise(resolve=>release=resolve);await page.route(articleRequest,async route=>{await gate;await route.continue();});
+   await page.goto(origin+'/market/publish');await page.locator('#toolPublishSelection[aria-busy=true] .publish-source-placeholder').first().waitFor();assert.equal(await page.locator('.publish-source-placeholder').count(),6);assert.equal(await page.locator('#publishSourceList').evaluate(el=>el.disabled),true);assert.equal(await page.locator('#publishSourceNext').isDisabled(),true);await sourceFooter();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true);
+   await page.emulateMedia({reducedMotion:'reduce'});assert.equal(await page.locator('.publish-source-placeholder').first().evaluate(el=>getComputedStyle(el,'::after').display),'none');await page.emulateMedia({reducedMotion:'no-preference'});
+   await page.screenshot({path:out+`/source-loading-${width}-${lang}.png`,fullPage:true,animations:'disabled'});release();await page.locator('#toolPublishSelection:not([aria-busy])').waitFor();assert.equal(await page.locator('.publish-source-placeholder').count(),0);await page.unroute(articleRequest);
+   await page.locator('#publishSourceQuery').fill('no-source-matches-this-query');await page.locator('#publishSourceEmpty').waitFor();assert.equal(await page.locator('.publish-source-placeholder').count(),0);await sourceFooter();
+   let releaseFilter;const filterGate=new Promise(resolve=>releaseFilter=resolve);await page.route(articleRequest,async route=>{await filterGate;await route.continue();});await page.locator('#publishSourceState').selectOption('unpublished');await page.locator('.publish-source-placeholder').first().waitFor();assert.equal(await page.locator('#publishSourceEmpty').isVisible(),false,'new search replaces the old empty state with skeletons');await sourceFooter();releaseFilter();await page.locator('#publishSourceEmpty').waitFor();await page.unroute(articleRequest);
+   await page.route(articleRequest,route=>route.fulfill({status:500,json:{error:'failed'}}));await page.goto(origin+'/market/publish');await page.locator('#publishSourceRetry').waitFor();assert.equal(await page.locator('.publish-source-placeholder').count(),0);assert.equal(await page.locator('#publishSourceList').isVisible(),false);await sourceFooter();await page.unroute(articleRequest);await page.locator('#publishSourceRetry').click();await page.locator('.publish-source-row').first().waitFor();assert.equal(await page.locator('.publish-source-placeholder').count(),0);
+  }
+  await context.addCookies([{name:'lang',value:'zh',url:origin}]);await page.evaluate(()=>localStorage.setItem('bookstark-theme','light'));await page.setViewportSize({width:1440,height:1050});
   const temporarySources=[];
   for(let i=0;i<15;i++){const result=await api('/api/blogs','POST',{blog_title:'示例工具 '+String(i+1).padStart(2,'0'),blog_type:'article',editor_type:'html',blog_desc:'可发布的 HTML 文章',blog_content:'<h1>Example source</h1>'});temporarySources.push(result.data.blog_id);}
   await page.goto(origin+'/market?sort=name&layout=list');await manage('#marketPublish');await page.locator('#toolPublishSelection').waitFor();assert.equal(await page.locator('dialog[open]').count(),0,'publishing opens a page, not a modal');assert.equal(await page.locator('#publishSourceTake,label[for="publishSourceTake"]').count(),0,'article selection omits the per-page dropdown');assert.equal(await page.locator('#publishSourceNext').isDisabled(),true);
@@ -75,6 +104,11 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
   await page.locator('#publishSourceQuery').fill('Craft');await until(async()=>await page.locator('.publish-source-row').count()===1);await page.locator('input[name=publish_source][value="'+id+'"]').check();await page.locator('#publishSourceNext').click();await page.waitForURL(url=>url.pathname==='/market/publish/'+id);await page.locator('input[name=title]').waitFor();assert.equal(await page.locator('input[name=title]').inputValue(),'按文章保留的草稿 A','returning restores the correct article draft');
   await page.locator('input[name="title"]').fill('PDF 工具箱');await page.locator('select[name="category"]').selectOption('document');await page.locator('textarea[name="notes"]').fill('首次发布，原始资源在安装时下载。');
   await page.locator('select[name="access"]').selectOption('members');await page.locator('input[name="members"]').fill('admin');
+  async function colorsAligned(){
+   const boxes=await page.locator('.market-color-settings').evaluate(el=>{const swatches=[...el.querySelectorAll('[data-tool-color]')].map(b=>b.getBoundingClientRect().bottom),c=el.querySelector('[name=icon_color]').getBoundingClientRect(),r=el.querySelector('[data-tool-reset]').getBoundingClientRect();return {width:innerWidth,preset:Math.max(...swatches),color:c.bottom,reset:r.bottom};});
+   assert.ok(Math.abs(boxes.color-boxes.reset)<2,'custom color and reset align at the bottom: '+JSON.stringify(boxes));if(boxes.width>640)assert.ok(Math.abs(boxes.preset-boxes.color)<2,'preset colors share the same bottom: '+JSON.stringify(boxes));
+  }
+  await colorsAligned();await page.locator('.market-color-settings').screenshot({path:out+'/colors-bottom-desktop.png'});
   await page.locator('.market-icon-choice:has(input[value="solid:palette"])').click();await page.getByRole('button',{name:'紫色',exact:true}).click();
   await page.locator('#toolAppearancePreview .fa-palette').waitFor();assert.equal(await page.locator('#toolAppearancePreview .market-icon').evaluate(el=>el.style.getPropertyValue('--tool-icon-color')),'#7c3aed');
   await page.getByRole('button',{name:'恢复默认',exact:true}).click();assert.equal(await page.locator('input[id="toolIconAutomatic"]').isChecked(),true);await page.locator('#toolAppearancePreview .fa-file-pdf').waitFor();
@@ -87,13 +121,21 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
   await page.locator('#toolIconQuery').fill('');await page.locator('#toolIconStyle').selectOption('all');await page.locator('.market-icon-choice:has(input[value="solid:palette"])').click();
   await page.locator('.market-appearance').screenshot({path:out+'/appearance-01-publisher.png',animations:'disabled',style:'header{visibility:hidden!important}'});await page.locator('#toolIconStyle').selectOption('brands');await page.locator('#toolIconQuery').fill('github');await page.locator('.market-icon-choice:has(input[value="brands:github"])').click();await page.getByRole('button',{name:'保存草稿',exact:true}).click();
   for(const [width,lang]of [[390,'zh'],[320,'en']]){
-   await context.addCookies([{name:'lang',value:lang,url:origin}]);await page.setViewportSize({width,height:950});await page.reload();await page.locator('#toolAppearancePreview .fa-brands.fa-github').waitFor();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'appearance editor fits '+width+'/'+lang);await page.locator('.market-appearance').screenshot({path:out+`/appearance-02-${width}-${lang}.png`,animations:'disabled',style:'header{visibility:hidden!important}'});
+   await context.addCookies([{name:'lang',value:lang,url:origin}]);await page.setViewportSize({width,height:950});await page.reload();await page.locator('#toolAppearancePreview .fa-brands.fa-github').waitFor();assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'appearance editor fits '+width+'/'+lang);await colorsAligned();await page.locator('.market-color-settings').screenshot({path:out+`/colors-bottom-${width}-${lang}.png`});await page.locator('.market-appearance').screenshot({path:out+`/appearance-02-${width}-${lang}.png`,animations:'disabled',style:'header{visibility:hidden!important}'});
   }
   await context.addCookies([{name:'lang',value:'zh',url:origin}]);await page.setViewportSize({width:1440,height:1050});await page.reload();await page.locator('#toolAppearancePreview .fa-brands.fa-github').waitFor();
 
   await page.evaluate(()=>window.scrollTo(0,0));await page.screenshot({path:out+'/02-publish-article.png',fullPage:true});
   await page.getByRole('button',{name:'检查资源',exact:true}).click();await page.getByRole('heading',{name:'资源检查结果',exact:true}).waitFor();
+  const expectedResources=['market-fixture.js','market-fixture.css','market-module.js','market-dep.js'].map(name=>origin+'/dav-public/admin/'+name).sort();
+  assert.deepEqual((await page.locator('.market-resource-list .market-resource-url').allTextContents()).sort(),expectedResources,'report includes original URLs and recursive module dependencies');
+  assert.equal(await page.locator('.market-resource-list li .tag-badge').filter({hasText:'WebDAV 公开文件'}).count(),4);assert.equal(await page.locator('.market-resource-list li').filter({hasText:'admin · /market-dep.js'}).count(),1);
+  for(const link of await page.locator('.market-resource-url').all()){assert.equal(await link.getAttribute('href'),await link.textContent());assert.equal(await link.getAttribute('rel'),'noopener noreferrer');}
   await page.screenshot({path:out+'/publish-04-resource-check.png'});await page.getByRole('button',{name:'关闭',exact:true}).click();
+  for(const [width,lang]of [[390,'zh'],[320,'en']]){
+   await context.addCookies([{name:'lang',value:lang,url:origin}]);await page.setViewportSize({width,height:950});await page.reload();await page.locator('#toolAppearancePreview .market-icon').waitFor();await page.getByRole('button',{name:lang==='zh'?'检查资源':'Check resources',exact:true}).click();await page.locator('.market-resource-url').first().waitFor();assert.equal(await page.locator('.market-resource-url').count(),4);assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),true,'resource URLs fit '+width+'/'+lang);assert.equal(await page.locator('dialog').evaluate(el=>el.scrollWidth<=el.clientWidth+1),true);await page.screenshot({path:out+`/resource-check-${width}-${lang}.png`});await page.getByRole('button',{name:lang==='zh'?'关闭':'Close',exact:true}).click();
+  }
+  await context.addCookies([{name:'lang',value:'zh',url:origin}]);await page.setViewportSize({width:1440,height:1050});await page.reload();await page.locator('#toolAppearancePreview .market-icon').waitFor();
   await page.locator('#toolPublishForm button[type="submit"]').click();await page.locator('#publishStatus').filter({hasText:'发布成功'}).waitFor();
   await page.evaluate(()=>window.scrollTo(0,0));await page.screenshot({path:out+'/publish-05-success.png',fullPage:true});
   const catalog=(await api('/api/tool-market')).tools;const tool=catalog.find(x=>x.id===id);assert.equal(tool.version,'1.0.0');assert.equal(tool.asset_count,4);assert.equal(tool.offline,true);assert.equal(tool.icon,'github');assert.equal(tool.icon_style,'brands');assert.equal(tool.icon_color,'#4f46e5');for(const temporaryID of temporarySources)await api('/api/blogs/'+temporaryID,'DELETE');
@@ -117,17 +159,17 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
   const mockTools=[{...tool,revision:'available-update'},...Array.from({length:20},(_,i)=>({...tool,id:1000+i,title:'筛选工具 '+String(i).padStart(2,'0'),category:i%2?'image':'document',size:1024+i,updated:1000+i}))];
   await page.route(origin+'/api/tool-market',route=>route.fulfill({json:{tools:mockTools,market:{name:'我的工具市场'}}}));
   await page.goto(origin+'/market');await until(async()=>await page.locator('.market-card').count()===12);assert.equal(await page.locator('#marketResultCount').textContent(),'21 个结果');
-  await page.locator('#marketCategory').selectOption('image');assert.equal(await page.locator('.market-card').count(),10);
+  await page.locator('#marketCategories [data-category=image]').click();assert.equal(new URL(page.url()).searchParams.get('category'),'image');await page.reload();await page.locator('#marketCategories [data-category=image][aria-current]').waitFor();await page.locator('#marketItems[aria-busy=false]').waitFor();assert.equal(await page.locator('.market-card').count(),10);
   await page.locator('#marketQuery').fill('工具 03');assert.equal(await page.locator('.market-card').count(),1);assert.equal(await page.locator('.market-card').getAttribute('data-tool-id'),'1003');
-  await page.locator('#marketQuery').fill('');await page.locator('#marketCategory').selectOption('all');await page.locator('#marketState').selectOption('installed');assert.equal(await page.locator('.market-card').count(),1);
+  await page.locator('#marketQuery').fill('');await page.locator('#marketCategories [data-category=all]').click();await page.locator('#marketState').selectOption('installed');assert.equal(await page.locator('.market-card').count(),1);
   await page.locator('#marketState').selectOption('updates');assert.equal(await page.locator('.market-card').count(),1);await page.locator('.market-install-state.has-update').waitFor();
   await page.locator('#marketState').selectOption('uninstalled');assert.equal(await page.locator('#marketResultCount').textContent(),'20 个结果');
   await page.locator('#marketSort').selectOption('size');assert.equal(await page.locator('.market-card').first().getAttribute('data-tool-id'),'1000');
   await page.locator('#marketPagination [data-page="2"]').first().click();assert.equal(await page.locator('.market-card').count(),8);
   await page.locator('#marketListView').click();assert.equal(await page.locator('#marketItems').evaluate(el=>el.classList.contains('is-list')),true);await page.reload();await until(async()=>await page.locator('.market-card').count()===8);assert.equal(await page.locator('#marketState').inputValue(),'uninstalled');
-  await page.locator('#marketPageSize').selectOption('24');assert.equal(await page.locator('.market-card').count(),20);
+  await page.goto(origin+'/market?status=uninstalled&sort=size&layout=list&take=24');await page.locator('#marketItems[aria-busy=false]').waitFor();assert.equal(await page.locator('.market-card').count(),20);
   assert.equal(await page.evaluate(()=>{const footer=document.querySelector('.site-footer').getBoundingClientRect(),main=document.getElementById('marketMain').getBoundingClientRect();return document.documentElement.scrollHeight>innerHeight&&footer.top>=main.bottom-1;}),true,'long lists grow naturally and push the footer below content');await page.screenshot({path:out+'/07-flat-list-view.png',fullPage:true});
-  await page.locator('#marketGridView').click();await page.locator('#marketPageSize').selectOption('12');await page.locator('#marketState').selectOption('all');await page.locator('#marketSort').selectOption('updated');await page.screenshot({path:out+'/08-flat-tools-grid.png',fullPage:true});
+  await page.goto(origin+'/market?status=uninstalled&sort=size');await page.locator('#marketItems[aria-busy=false]').waitFor();await page.locator('#marketGridView').click();await page.locator('#marketState').selectOption('all');await page.locator('#marketSort').selectOption('updated');await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:out+'/08-flat-tools-grid.png',fullPage:true});await page.screenshot({path:out+'/plaza-tools-desktop.png',animations:'disabled'});
   await page.evaluate(()=>scrollTo(0,200));const marketPosition=await page.evaluate(()=>scrollY),marketReturnURL=page.url();await page.locator('#marketPublish').evaluate(link=>link.click());await page.locator('#toolPublishSelection').waitFor();await page.locator('[data-return-market]').first().click();await page.waitForURL(marketReturnURL);await page.locator('.market-card').first().waitFor();await until(async()=>Math.abs((await page.evaluate(()=>scrollY))-marketPosition)<3);
   await page.unroute(origin+'/api/tool-market');
   const viewer=await browser.newContext();await viewer.addCookies([{name:'lang',value:'zh',url:origin}]);assert.equal((await viewer.request.post(origin+'/api/login',{data:{account:'tools-viewer',password:'viewer-password-2026'}})).status(),200);
@@ -164,7 +206,7 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
    assert.equal(await page.locator('#marketActions>.row-action:visible').count(),2);
    for(const id of ['marketSettings','marketPublish']){assert.equal((await page.locator('#'+id).textContent()).trim(),'','management actions are icons only');assert.ok(await page.locator('#'+id).getAttribute('aria-label'));assert.equal(await page.locator('#'+id).evaluate(el=>{const r=el.getBoundingClientRect();return el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));}),true,'direct action receives pointer input');}
    assert.equal(await page.evaluate(()=>document.querySelector('.market-results').getBoundingClientRect().top>=document.querySelector('.market-layout').getBoundingClientRect().bottom),true,'counts and pagination sit below results');
-   await page.screenshot({path:out+`/two-row-${width}-${lang}-${theme}.png`,animations:'disabled'});
+   await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:out+`/two-row-${width}-${lang}-${theme}.png`,animations:'disabled'});
    await page.locator('#marketSettings').focus();await page.keyboard.press('Enter');await page.locator('dialog input[name=url]').waitFor();await page.getByRole('button',{name:lang==='zh'?'取消':'Cancel',exact:true}).click();await until(async()=>await page.locator('#marketSettings').evaluate(el=>el===document.activeElement));
    await page.locator('#marketPublish').focus();await page.keyboard.press('Enter');await page.locator('#toolPublishSelection').waitFor();assert.equal(await page.locator('dialog[open]').count(),0,'publishing remains a standalone page');await page.locator('[data-return-market]').first().click();await page.locator('.market-card').first().waitFor();await toolbarLayout();await footerAtBottom();
   }

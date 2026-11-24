@@ -4,19 +4,19 @@
 <title>{{call .T "market.tools"}} · BookStark</title>
 <link rel="stylesheet" href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}">
 {{template "head-assets" .}}
+<link rel="stylesheet" href="/static/css/selection-controls.css?v={{assetVer "/static/css/selection-controls.css"}}">
+<link rel="stylesheet" href="/static/css/local-tools.css?v={{assetVer "/static/css/local-tools.css"}}">
 <link rel="stylesheet" href="/static/css/public-feed.css?v={{assetVer "/static/css/public-feed.css"}}">
 <link rel="stylesheet" href="/static/css/font-awesome-brands.min.css?v={{assetVer "/static/css/font-awesome-brands.min.css"}}">
 <link rel="stylesheet" href="/static/css/tool-market.css?v={{assetVer "/static/css/tool-market.css"}}">
-</head><body class="market-body" data-market-workspace="{{if .MemberID}}member-{{.MemberID}}{{else}}guest{{end}}" data-market-admin="{{if .IsAdmin}}1{{end}}">
-{{template "header" .}}
-<main class="market-page" id="marketMain">
+</head><body class="public-feed-body market-body" data-market-workspace="{{if .MemberID}}member-{{.MemberID}}{{else}}guest{{end}}" data-market-admin="{{if .IsAdmin}}1{{end}}">
+{{template "public-plaza-header" .}}
+<main class="public-layout" id="marketMain" role="main">
+<div class="public-content market-content">
 <h1 class="page-title sr-only">{{call .T "market.tools"}}</h1>
-<div class="market-plaza-bar">
- {{template "public-plaza-nav" .}}
-</div>
-<div class="market-toolbar">
- <form id="marketSearch" role="search" class="market-search"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><label class="sr-only" for="marketQuery">{{call .T "market.search"}}</label><input class="search-input" id="marketQuery" type="search" placeholder="{{call .T "market.search"}}"></form>
- <label class="sr-only" for="marketCategory">{{call .T "market.category"}}</label><select id="marketCategory" class="dialog-input" aria-label="{{call .T "market.category"}}"></select>
+{{template "public-plaza-nav" .}}
+<div class="public-toolbar market-toolbar">
+ <form id="marketSearch" role="search" class="public-search"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i><label class="sr-only" for="marketQuery">{{call .T "market.search"}}</label><input id="marketQuery" type="search" placeholder="{{call .T "market.search"}}"></form>
  <label class="sr-only" for="marketState">{{call .T "market.install_status"}}</label><select id="marketState" class="dialog-input" aria-label="{{call .T "market.install_status"}}"></select>
  <div class="market-sort-actions">
   <label class="sr-only" for="marketSort">{{call .T "market.sort"}}</label><select id="marketSort" class="dialog-input" aria-label="{{call .T "market.sort"}}"></select>
@@ -28,6 +28,7 @@
   {{end}}
  </div>
 </div>
+<nav id="marketCategories" class="public-categories" aria-label="{{call .T "market.category"}}"><div></div></nav>
 <p id="marketStatus" role="status" aria-live="polite" hidden></p>
 <div class="market-layout"><section id="marketItems" class="market-grid" aria-label="{{call .T "market.tools"}}" aria-busy="true">{{template "market-card-skeleton" .}}{{template "market-card-skeleton" .}}{{template "market-card-skeleton" .}}{{template "market-card-skeleton" .}}{{template "market-card-skeleton" .}}{{template "market-card-skeleton" .}}</section><aside id="marketDetail" class="market-detail" hidden></aside></div>
 <div class="market-results">
@@ -35,12 +36,17 @@
  <div class="market-actions">
   <div class="market-view-actions"><button type="button" id="marketGridView" class="row-action" aria-label="{{call .T "market.grid_view"}}" aria-pressed="true"><i class="fa-solid fa-table-cells-large" aria-hidden="true"></i></button><button type="button" id="marketListView" class="row-action" aria-label="{{call .T "market.list_view"}}" aria-pressed="false"><i class="fa-solid fa-list" aria-hidden="true"></i></button><button type="button" id="marketCheck" class="row-action" aria-label="{{call .T "market.check"}}"><i class="fa-solid fa-rotate" aria-hidden="true"></i></button></div>
   <nav id="marketPagination" class="market-pagination" aria-label="{{call .T "market.pagination"}}"></nav>
-  <label for="marketPageSize">{{call .T "market.per_page"}} <select id="marketPageSize" class="dialog-input"><option value="12">12</option><option value="24">24</option><option value="48">48</option></select></label>
  </div>
 </div>
+</div>
+{{template "public-widgets" .}}
 </main>
 <section id="marketRunner" class="market-runner" hidden><div class="market-heading"><a href="/market?status=installed" class="bs-btn bs-btn-cancel">← {{call .T "market.tools"}}</a><h1 id="marketRunnerTitle" class="page-title"></h1><span id="marketSaveStatus" role="status"></span><button type="button" class="bs-btn bs-btn-cancel" id="marketRetry" hidden>{{call .T "tools.retry"}}</button><button type="button" class="bs-btn bs-btn-cancel" id="marketRunExport">{{call .T "market.export"}}</button></div><div id="marketFrameHost"></div></section>
 {{template "footer" .}}
+<script src="/static/js/selection-controls.js?v={{assetVer "/static/js/selection-controls.js"}}"></script>
+<script src="/static/js/local-drafts.js?v={{assetVer "/static/js/local-drafts.js"}}"></script>
+<script src="/static/js/local-tools-widget.js?v={{assetVer "/static/js/local-tools-widget.js"}}"></script>
+<script src="/static/js/public-widgets.js?v={{assetVer "/static/js/public-widgets.js"}}"></script>
 <script src="/static/js/pagination.js?v={{assetVer "/static/js/pagination.js"}}"></script>
 <script src="/static/js/tool-appearance.js?v={{assetVer "/static/js/tool-appearance.js"}}"></script>
 <script src="/static/js/tool-market-store.js?v={{assetVer "/static/js/tool-market-store.js"}}"></script>

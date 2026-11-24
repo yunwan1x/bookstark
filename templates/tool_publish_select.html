@@ -5,9 +5,9 @@
 <link rel="stylesheet" href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}">
 {{template "head-assets" .}}
 <link rel="stylesheet" href="/static/css/tool-market.css?v={{assetVer "/static/css/tool-market.css"}}">
-</head><body class="min-h-screen flex flex-col" data-market-workspace="member-{{.MemberID}}">
+</head><body class="market-body" data-market-workspace="member-{{.MemberID}}">
 {{template "header" .}}
-<main role="main" class="market-page publish-selection-page" id="toolPublishSelection">
+<main role="main" class="market-page publish-selection-page" id="toolPublishSelection" aria-busy="true">
 <nav class="publish-breadcrumb" aria-label="{{call .T "editor.breadcrumb.aria"}}"><a href="/market" data-return-market>{{call .T "market.tools"}}</a><span aria-hidden="true"> / </span><span>{{call .T "market.publish_tool"}}</span></nav>
 <div class="market-heading"><h1 class="page-title">{{call .T "market.choose_article"}}</h1></div>
 <form class="publish-selection-filters" id="publishSourceSearch" role="search">
@@ -18,9 +18,9 @@
 <div class="market-results"><span id="publishSourceCount" role="status"></span></div>
 <p id="publishSourceStatus" class="market-muted" role="status" aria-live="polite">{{call .T "market.source_loading"}}</p>
 <button type="button" class="bs-btn bs-btn-cancel" id="publishSourceRetry" hidden>{{call .T "tools.retry"}}</button>
-<fieldset class="publish-source-list" id="publishSourceList"><legend class="sr-only">{{call .T "market.choose_article"}}</legend>
+<fieldset class="publish-source-list" id="publishSourceList" disabled><legend class="sr-only">{{call .T "market.choose_article"}}</legend>
 <div class="publish-source-columns" aria-hidden="true"><span>{{call .T "market.article_name"}}</span><span>{{call .T "market.publication_status"}}</span><span>{{call .T "market.updated_at"}}</span></div>
-<div id="publishSourceRows"></div></fieldset>
+<div id="publishSourceRows">{{template "publish-source-skeleton" .}}{{template "publish-source-skeleton" .}}{{template "publish-source-skeleton" .}}{{template "publish-source-skeleton" .}}{{template "publish-source-skeleton" .}}{{template "publish-source-skeleton" .}}</div></fieldset>
 <div class="market-empty" id="publishSourceEmpty" hidden><p>{{call .T "market.source_empty"}}</p><a class="bs-btn bs-btn-cancel" href="/notes?tab=articles">{{call .T "market.source_empty_action"}}</a></div>
 <nav class="market-pagination" id="publishSourcePagination" aria-label="{{call .T "market.source_pagination"}}"></nav>
 <div class="publish-selection-actions"><p id="publishSourceSelected" aria-live="polite">{{call .T "market.source_none"}}</p><div class="market-actions"><a class="bs-btn bs-btn-cancel" href="/market" data-return-market>{{call .T "market.back_tools"}}</a><button type="button" class="bs-btn bs-btn-primary" id="publishSourceNext" disabled>{{call .T "market.next_settings"}}</button></div></div>
@@ -30,3 +30,5 @@
 <script src="/static/js/tool-market-ui.js?v={{assetVer "/static/js/tool-market-ui.js"}}"></script>
 <script src="/static/js/tool-publish-select.js?v={{assetVer "/static/js/tool-publish-select.js"}}"></script>
 </body></html>
+
+{{define "publish-source-skeleton"}}<div class="publish-source-placeholder skeleton-row" aria-hidden="true"><div class="skeleton publish-source-skeleton-radio"></div><div class="skeleton-row-body"><div class="skeleton skeleton-row-title"></div><div class="skeleton skeleton-row-meta"></div></div><div class="skeleton skeleton-card-tag"></div><div class="skeleton skeleton-row-meta"></div></div>{{end}}

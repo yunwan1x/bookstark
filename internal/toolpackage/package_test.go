@@ -41,6 +41,10 @@ func TestStaticDependencyGraph(t *testing.T) {
 		t.Fatal(doc)
 	}
 	for _, a := range assets {
+		u, err := url.Parse(a.URL)
+		if err != nil || u.Scheme != "https" || u.Host != "source.test" || calls[u.Path] != 1 || u.Fragment != "" {
+			t.Fatalf("original resource URL lost: %+v %v", a, err)
+		}
 		if strings.HasSuffix(a.Name, ".js") && strings.Contains(string(a.Data), "fetch") && !strings.Contains(string(a.Data), "fetch('/api/live')") {
 			t.Fatal("runtime API rewritten")
 		}

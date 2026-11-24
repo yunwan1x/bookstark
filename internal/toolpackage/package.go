@@ -22,6 +22,7 @@ const MaxFiles = 256
 
 type Asset struct {
 	Name, MIME string
+	URL        string
 	Data       []byte
 }
 type Fetch func(context.Context, *url.URL) ([]byte, string, error)
@@ -168,7 +169,7 @@ func (b *builder) asset(raw string, base *url.URL) (string, error) {
 		}
 		data = []byte(s)
 	}
-	b.assets = append(b.assets, Asset{name, mime, data})
+	b.assets = append(b.assets, Asset{Name: name, MIME: mime, URL: key, Data: data})
 	if fragment != "" {
 		local += "#" + fragment
 	}

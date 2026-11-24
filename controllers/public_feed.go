@@ -213,16 +213,7 @@ func PublicFeedPage(c *gin.Context) {
 		categories = append(categories, publicNavItem{Name: display, URL: categoryLink(l), Icon: icons[l], Active: label == l})
 	}
 	data["SearchKey"] = "public.search_" + kind
-	if !partial {
-		data["VisitSummary"], _ = models.GetPublicVisitSummary(time.Now())
-	}
-	// Resolve the optional full player without loading/decompressing its HTML.
-	var radioIdentify string
-	if err := models.DB.QueryRow(`SELECT COALESCE(s.share_identify,b.blog_identify)
- FROM md_blogs b LEFT JOIN md_shares s ON s.share_type='blog' AND s.target_id=b.blog_id
- WHERE b.blog_identify=? AND b.visibility=1 AND COALESCE(b.password,'')='' LIMIT 1`, "radio-web").Scan(&radioIdentify); err == nil {
-		data["RadioURL"] = "/shares/" + url.PathEscape(radioIdentify)
-	}
+	addPublicWidgetData(data, !partial)
 	covers := map[string]struct {
 		Theme, Title string
 		Compact      bool
@@ -287,4 +278,18 @@ func PublicFeedPage(c *gin.Context) {
 		return
 	}
 	c.HTML(http.StatusOK, "public_feed.html", data)
+}
+
+// addPublicWidgetData keeps all plaza tabs on the same sidebar data source.
+func addPublicWidgetData(data gin.H, includeVisits bool) {
+	if includeVisits {
+		data["VisitSummary"], _ = models.GetPublicVisitSummary(time.Now())
+	}
+	// Resolve the optional full player without loading/decompressing its HTML.
+	var radioIdentify string
+	if err := models.DB.QueryRow(`SELECT COALESCE(s.share_identify,b.blog_identify)
+ FROM md_blogs b LEFT JOIN md_shares s ON s.share_type='blog' AND s.target_id=b.blog_id
+ WHERE b.blog_identify=? AND b.visibility=1 AND COALESCE(b.password,'')='' LIMIT 1`, "radio-web").Scan(&radioIdentify); err == nil {
+		data["RadioURL"] = "/shares/" + url.PathEscape(radioIdentify)
+	}
 }

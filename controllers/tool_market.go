@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -35,6 +36,9 @@ func ToolMarketPage(c *gin.Context) {
 	c.Header("Cache-Control", "private, no-store")
 	data := commonData(c, "shares")
 	data["Type"] = "tool"
+	data["Background"] = nil
+	data["LoginURL"] = "/login?next=" + url.QueryEscape(c.Request.URL.RequestURI())
+	addPublicWidgetData(data, true)
 	data["CanConfigureTools"] = isAdmin(c)
 	data["CanPublishTools"] = canPublishTools(c)
 	c.HTML(http.StatusOK, "tool_market.html", data)
