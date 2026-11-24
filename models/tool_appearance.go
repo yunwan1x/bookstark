@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"regexp"
+	"strings"
 )
 
 type ToolIconOption struct {
@@ -51,4 +52,29 @@ func ValidToolAppearance(icon, style, color string) bool {
 		return false
 	}
 	return validToolIcon(icon, style)
+}
+
+// ResolveToolAppearance mirrors the browser's ToolAppearance.values fallback so
+// the initial server-rendered tool identity matches its hydrated appearance.
+func ResolveToolAppearance(m ToolMetadata) (icon, style, color string) {
+	defaults := map[string][2]string{
+		"document": {"file-pdf", "#dc2626"}, "image": {"image", "#7c3aed"},
+		"media": {"photo-film", "#db2777"}, "development": {"code", "#0891b2"},
+		"productivity": {"diagram-project", "#d97706"}, "other": {"cube", "#2563eb"},
+	}
+	fallback, ok := defaults[m.Category]
+	if !ok {
+		fallback = defaults["other"]
+	}
+	icon, style, color = fallback[0], "solid", fallback[1]
+	if m.Icon != "" && validToolIcon(m.Icon, m.IconStyle) {
+		icon = m.Icon
+		if m.IconStyle != "" {
+			style = m.IconStyle
+		}
+	}
+	if toolIconColor.MatchString(m.IconColor) {
+		color = strings.ToLower(m.IconColor)
+	}
+	return
 }

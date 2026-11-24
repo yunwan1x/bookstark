@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"bookstark/middleware"
+	"bookstark/models"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -23,5 +24,11 @@ func ToolRuntimePage(c *gin.Context) {
 	data := commonData(c, "tools")
 	data["Background"] = nil
 	data["ToolID"] = id
+	// Read only the installed tool summary, without embedding its HTML or values.
+	if tool, err := models.GetInstalledTool(middleware.GetMemberID(c), id); err == nil {
+		data["RuntimeName"] = tool.Title
+		icon, style, color := models.ResolveToolAppearance(tool.ToolMetadata)
+		data["RuntimeAppearance"] = gin.H{"Class": "fa-" + style + " fa-" + icon, "Color": color, "Background": color + "18"}
+	}
 	c.HTML(http.StatusOK, "tool_runtime.html", data)
 }

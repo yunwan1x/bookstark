@@ -4,10 +4,19 @@
  const host=document.getElementById('marketFrameHost'),state=document.getElementById('toolRuntimeState'),message=document.getElementById('toolRuntimeMessage'),retry=document.getElementById('toolRuntimeRetry'),banner=document.getElementById('toolRuntimeSaveError'),retrySave=document.getElementById('toolRuntimeRetrySave');
  const back=document.getElementById('toolRuntimeBack'),fullscreen=document.getElementById('toolRuntimeFullscreen'),exit=document.getElementById('toolRuntimeExit'),more=document.getElementById('toolRuntimeMore'),info=document.getElementById('toolRuntimeInfo'),exportButton=document.getElementById('toolRuntimeExport'),newTab=document.getElementById('toolRuntimeNewTab');
  const params=new URLSearchParams(location.search);back.href=U.marketReturn(params.get('return')||'/market?status=installed');newTab.href=location.pathname+location.search;
+ const hint=document.getElementById('toolRuntimeHint'),stateActions=document.getElementById('toolRuntimeStateActions'),stateBack=document.getElementById('toolRuntimeStateBack'),identity=document.getElementById('toolRuntimeIdentity');stateBack.href=back.href;
  let meta=null,frame=null,values=Object.create(null),operations=[],draining=false,failed=false,pendingFiles=0,allowLeave=false,navigating=false,stale=false;
+ let loadPhase='loading';
+ const slowTimer=setTimeout(()=>{if(loadPhase!=='loading')return;loadPhase='slow';state.dataset.phase='slow';message.textContent=t('run_slow');hint.textContent=t('run_slow_hint');hint.hidden=false;stateActions.hidden=false;},8000);
+ function completeLoading(){if(stale||loadPhase==='error')return;clearTimeout(slowTimer);loadPhase='ready';state.dataset.phase='ready';state.hidden=true;host.setAttribute('aria-busy','false');}
+ function updateIdentity(row){
+  document.title=row.title+' · BookStark';document.getElementById('toolRuntimeTitle').textContent=row.title;document.getElementById('toolRuntimeIcon').innerHTML=BookStarkToolAppearance.html(row,true);identity.classList.remove('is-pending');
+  document.getElementById('toolRuntimeLaunchIcon').innerHTML=BookStarkToolAppearance.html(row);
+  if(loadPhase==='loading')message.textContent=t('run_loading_named').replace('%s',row.title);
+ }
  const waiters=new Set(),dirty=()=>operations.length>0||failed||pendingFiles>0;
  function settled(){if((!operations.length&&!pendingFiles)||failed){for(const resolve of waiters)resolve();waiters.clear();}}
- function showState(key){state.hidden=false;message.textContent=t(key);document.getElementById('toolRuntimeSkeleton').hidden=true;retry.hidden=key==='not_installed';host.setAttribute('aria-busy','false');}
+ function showState(key){clearTimeout(slowTimer);loadPhase='error';state.dataset.phase='error';state.hidden=false;message.textContent=t(key);document.getElementById('toolRuntimeAnnouncement').setAttribute('role','alert');hint.hidden=true;stateActions.hidden=false;retry.hidden=key==='not_installed';host.setAttribute('aria-busy','false');frame?.remove();if(!meta){identity.classList.remove('is-pending');document.getElementById('toolRuntimeTitle').textContent=t('tools');document.getElementById('toolRuntimeIcon').innerHTML=BookStarkToolAppearance.html({});}}
  function setFullscreen(on){document.body.classList.toggle('tool-runtime-fullscreen',on);fullscreen.setAttribute('aria-pressed',String(on));exit.hidden=!on;if(on)exit.focus();else fullscreen.focus();BSActionDropdown.close(more);}
  fullscreen.onclick=()=>setFullscreen(true);exit.onclick=()=>setFullscreen(false);
  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&document.body.classList.contains('tool-runtime-fullscreen')){event.preventDefault();setFullscreen(false);}});
@@ -20,8 +29,10 @@
   }finally{navigating=false;}
  }
  back.onclick=event=>{if(event.button||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;event.preventDefault();navigate(()=>location.assign(back.href));};
+ stateBack.onclick=back.onclick;
  const refresh=()=>navigate(()=>location.reload());document.getElementById('toolRuntimeRefresh').onclick=refresh;document.querySelector('[data-runtime=refresh]').onclick=()=>{BSActionDropdown.close(more);refresh();};retry.onclick=refresh;
  window.addEventListener('beforeunload',event=>{if(!allowLeave&&dirty()){event.preventDefault();event.returnValue='';}});
+ window.addEventListener('pagehide',()=>clearTimeout(slowTimer),{once:true});
  function exportData(){
   if(!meta)return;
   try{const blob=new Blob([JSON.stringify({tool:meta.id,values},null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='tool-data.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),10000);}
@@ -43,6 +54,7 @@
   function storageBootstrap(initial,token) {
     const values=Object.assign(Object.create(null),initial);
     const send=(op,key,value)=>parent.postMessage({market:token,op,key,value},'*');
+    window.addEventListener('error',event=>{const node=event.target;if(node?.tagName==='SCRIPT'&&node.src||node?.tagName==='LINK'&&node.relList.contains('stylesheet'))send('resource-error');},true);
     window.addEventListener('keydown',event=>{if(event.key==='Escape'&&!event.defaultPrevented)send('exit-fullscreen');});
     const methods={getItem:key=>Object.hasOwn(values,String(key))?values[String(key)]:null,setItem:(key,value)=>{key=String(key);value=String(value);const next={...values,[key]:value};if(new Blob([JSON.stringify(next)]).size>5*1024*1024)throw new DOMException('Storage quota','QuotaExceededError');values[key]=value;send('set',key,value);},removeItem:key=>{key=String(key);delete values[key];send('remove',key);},clear:()=>{Object.keys(values).forEach(k=>delete values[k]);send('clear');},key:index=>Object.keys(values)[index]??null};
     const storage=new Proxy(methods,{get:(target,key)=>key==='length'?Object.keys(values).length:key in target?target[key]:values[key],set:(target,key,value)=>{methods.setItem(key,value);return true;},deleteProperty:(target,key)=>{methods.removeItem(key);return true;},ownKeys:()=>Object.keys(values),getOwnPropertyDescriptor:(target,key)=>Object.hasOwn(values,key)?{enumerable:true,configurable:true,value:values[key]}:undefined});
@@ -72,7 +84,7 @@
  async function run(){
   try{
    meta=await store.snapshot(id);
-   document.title=meta.title+' · BookStark';document.getElementById('toolRuntimeTitle').textContent=meta.title;document.getElementById('toolRuntimeIcon').innerHTML=BookStarkToolAppearance.html(meta,true);
+   updateIdentity(meta);
    values=Object.assign(Object.create(null),meta.values||{});info.disabled=false;exportButton.disabled=false;
    newTab.hidden=!!window.BookStarkHost?.available;if(window.BookStarkClient)Promise.resolve(BookStarkClient.ready).then(ready=>{if(ready)newTab.hidden=true;}).catch(()=>{});
    frame=document.createElement('iframe');frame.title=meta.title;frame.setAttribute('sandbox','allow-scripts allow-forms allow-downloads');frame.referrerPolicy='no-referrer';
@@ -86,6 +98,7 @@
    window.addEventListener('message',event=>{
     const item=event.data;if(stale||event.source!==frame.contentWindow||!item||item.market!==token)return;
     if(item.op==='exit-fullscreen'){if(document.body.classList.contains('tool-runtime-fullscreen'))setFullscreen(false);return;}
+    if(item.op==='resource-error'){if(loadPhase==='loading'||loadPhase==='slow')showState('run_resource_failed');return;}
     if(item.file===true){
      if(!['GET','PUT'].includes(item.method)||typeof item.name!=='string'||item.name.length>2048||(item.method==='PUT'&&!(item.content instanceof ArrayBuffer)))return;
      if((item.method==='GET'&&!meta.permissions?.read_files)||(item.method==='PUT'&&!meta.permissions?.save_files)){frame.contentWindow?.postMessage({market:token,fileReply:true,request:item.request,error:t('failed')},'*');return;}
@@ -99,7 +112,8 @@
     if(operations.length>500){frame.remove();banner.hidden=false;failed=true;showState('failed');return;}
     if(!failed)drain();
    });
-   frame.addEventListener('load',()=>{if(!stale){state.hidden=true;host.setAttribute('aria-busy','false');}},{once:true});
+   frame.addEventListener('load',()=>setTimeout(completeLoading,0),{once:true});
+   frame.addEventListener('error',()=>showState('run_resource_failed'),{once:true});
    frame.srcdoc='<!doctype html>'+doc.documentElement.outerHTML;host.append(frame);
    const check=async()=>{if(stale)return;try{const current=await store.get('tools',id);if(!current||current.revision!==meta.revision||current.instance!==meta.instance){stale=true;frame.remove();showState('stale');}}catch(_){}};
    window.addEventListener('tool-market-changed',check);const timer=setInterval(()=>{if(!document.hidden)check();},15000);window.addEventListener('pagehide',()=>clearInterval(timer),{once:true});
