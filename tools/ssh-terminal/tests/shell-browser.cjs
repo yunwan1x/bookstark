@@ -51,7 +51,9 @@ const { chromium } = require("playwright"),
     await page.keyboard.type(cmd);
     await page.keyboard.press("Enter");
     await f.locator("body").evaluate(async (body, marker) => {
-      const t = window.__qaTerms.find((t) => !t.element.parentElement.hidden);
+      const t = window.__qaTerms.find(
+        (t) => !t.element.closest(".terminal-panel").hidden,
+      );
       for (let n = 0; n < 150; n++) {
         let text = "";
         for (let i = 0; i < t.buffer.active.length; i++)
@@ -136,7 +138,9 @@ const { chromium } = require("playwright"),
       "BASH_" + expectedBash + "_END",
     );
     const dimensions = await f.locator("body").evaluate(() => {
-      const t = window.__qaTerms.find((t) => !t.element.parentElement.hidden);
+      const t = window.__qaTerms.find(
+        (t) => !t.element.closest(".terminal-panel").hidden,
+      );
       return t.rows + " " + t.cols;
     });
     await command(

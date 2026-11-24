@@ -492,9 +492,12 @@ window.BookStarkErrors = (function() {
 })();
 
 (function() {
-    if (!('serviceWorker' in navigator)) return;
+    // Opaque tool frames expose the property but throw on reading it.
+    var serviceWorker;
+    try { serviceWorker = navigator.serviceWorker; } catch (_) { return; }
+    if (!serviceWorker) return;
     var lastStaleToastAt = 0;
-    navigator.serviceWorker.addEventListener('message', function(event) {
+    serviceWorker.addEventListener('message', function(event) {
         if (!event.data || event.data.type !== 'API_CACHE_STALE') return;
         var now = Date.now();
         if (now - lastStaleToastAt < 8000) return;

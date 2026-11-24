@@ -573,8 +573,8 @@
     }
     if (m.type === "fatal") {
       clearTimeout(engineTimer);
-      rejectEngine(Error(m.reason));
-      for (const s of sessions.values()) finish(s, m.reason);
+      rejectEngine(Error(t("moduleFailed")));
+      for (const s of sessions.values()) finish(s, t("moduleFailed"));
       return;
     }
     const s = [...sessions.values()].find((item) => item.run === m.id);
@@ -711,6 +711,9 @@
     const id = "ssh-" + Date.now() + "-" + Math.random().toString(36).slice(2);
     const el = document.createElement("div");
     el.className = "terminal-panel";
+    const mount = document.createElement("div");
+    mount.className = "terminal-mount";
+    el.appendChild(mount);
     $("terminalStack").appendChild(el);
     const term = new Terminal({
       fontSize,
@@ -727,7 +730,7 @@
     });
     const fit = new FitAddon.FitAddon();
     term.loadAddon(fit);
-    term.open(el);
+    term.open(mount);
     const s = {
       id,
       run: id + "-run-1",

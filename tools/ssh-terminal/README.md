@@ -10,7 +10,7 @@
 python3 tools/ssh-terminal/build.py
 ```
 
-产物在项目父目录 `artifacts/ssh-terminal/`，包括完整 `package/` 与 `bookstark-ssh-terminal-1.0.0.zip`。无需外部 CDN；许可证随包保留。
+产物在项目父目录 `artifacts/ssh-terminal/`，包括完整 `package/` 与 `bookstark-ssh-terminal-1.0.1.zip`。无需外部 CDN；许可证随包保留。
 
 在广场的工具发布页选择上传 ZIP，检查入口 `index.html` 后发布。登录的用户可安装。客户端本地提供 TCP 桥接；远端服务器还需在工具市场设置启用工具 TCP 代理。连接地址从 **TCP 代理所在服务器** 解析及访问，并非浏览器自己的内网地址。
 
@@ -57,3 +57,5 @@ GOMAXPROCS=2 GOMEMLIMIT=350MiB go test -p=1 ./controllers -run TestInstalledTool
 可用 `BOOKSTARK_TEST_ORIGIN` 与 `BOOKSTARK_SSH_ARTIFACTS` 改测试地址和产物目录。edge 测试默认不访问真实服务器；只有显式设置 `BOOKSTARK_SSH_REAL_HOST`、`BOOKSTARK_SSH_REAL_USER`、`BOOKSTARK_SSH_REAL_KEY` 才执行远端 PTY / Ctrl+C 验证，可选 `BOOKSTARK_SSH_REAL_PORT`。它通过已信任的 SSH CLI 读取远端公开主机密钥指纹进行比对，私钥只通过浏览器本地文件选择读取，不上传到工具发布包或日志。
 
 Shell 程序边界另有嵌套模块测试：`cd tools/ssh-terminal && go test ./internal/...`，验证默认请求、各预设、绝对路径以及单引号/空格/Unicode路径的安全转义。CI 同时执行此测试。
+
+远端未配置独立运行来源时使用 opaque iframe；本地回归可把 `BOOKSTARK_TEST_ORIGIN` 指向 `http://127.0.0.2:18281` 强制使用同样的沙箱，验证公共脚本、Worker、认证及资源加载。共享工具函数会处理 `navigator.serviceWorker` 属性 getter 被沙箱拒绝的情况，不为此扩大 iframe 权限。

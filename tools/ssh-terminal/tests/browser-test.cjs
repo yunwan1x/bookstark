@@ -64,7 +64,7 @@ const { chromium } = require("playwright"),
           name: "ssh-terminal.zip",
           mimeType: "application/zip",
           buffer: fs.readFileSync(
-            path.join(out, "bookstark-ssh-terminal-1.0.0.zip"),
+            path.join(out, "bookstark-ssh-terminal-1.0.1.zip"),
           ),
         },
       },
@@ -77,7 +77,7 @@ const { chromium } = require("playwright"),
     const payload = {
       ...config,
       title: "SSH 终端",
-      version: "1.0.0",
+      version: config.version || "1.0.1",
       category: "development",
       access: "login",
       package: pkg.token,
@@ -140,7 +140,7 @@ const { chromium } = require("playwright"),
       await page.keyboard.press("Enter");
       await f.locator("body").evaluate(async (body, marker) => {
         const term = window.__qaTerms.find(
-          (t) => !t.element.parentElement.hidden,
+          (t) => !t.element.closest(".terminal-panel").hidden,
         );
         for (let n = 0; n < 150; n++) {
           let text = "";

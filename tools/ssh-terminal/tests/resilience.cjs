@@ -124,12 +124,10 @@ const { chromium } = require("playwright"),
     const positions = [];
     for (let i = 0; i < 4; i++) {
       await f.locator("#findNext").click();
-      const result = await f
-        .locator("body")
-        .evaluate(() => ({
-          selection: window.__qaTerm.getSelection(),
-          position: window.__qaTerm.getSelectionPosition(),
-        }));
+      const result = await f.locator("body").evaluate(() => ({
+        selection: window.__qaTerm.getSelection(),
+        position: window.__qaTerm.getSelectionPosition(),
+      }));
       assert.equal(result.selection, "MATCH_7F");
       positions.push(result.position);
     }
@@ -162,6 +160,10 @@ const { chromium } = require("playwright"),
     } finally {
       await api("/api/tool-market/settings", "PUT", settings);
     }
+    await f
+      .locator("body")
+      .evaluate(() => localStorage.setItem("ssh.language", "en"));
+    await page.waitForTimeout(250);
     await page.route("**/ssh.wasm", (route) => route.abort());
     f = await load();
     await fill(f);
@@ -169,7 +171,7 @@ const { chromium } = require("playwright"),
     await f.locator("#reconnect").waitFor({ timeout: 30000 });
     assert.match(
       await f.locator("#connectionMessage").textContent(),
-      /模块加载失败|module failed/,
+      /SSH module failed to load/,
     );
     await page.unroute("**/ssh.wasm");
     console.log("MODULE LOAD FAILURE VERIFIED");

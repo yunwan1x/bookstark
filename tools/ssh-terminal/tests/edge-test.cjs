@@ -88,7 +88,7 @@ const { chromium } = require("playwright"),
     await f.locator("body").evaluate(
       async (body, { marker }) => {
         const term = window.__qaTerms.find(
-          (t) => !t.element.parentElement.hidden,
+          (t) => !t.element.closest(".terminal-panel").hidden,
         );
         for (let n = 0; n < 200; n++) {
           let text = "";
@@ -174,13 +174,11 @@ const { chromium } = require("playwright"),
     await closed(f, /authenticate|认证/);
     console.log("WRONG PASSWORD REJECTED");
     await editor(f, "key");
-    await f
-      .locator("#privateKey")
-      .setInputFiles({
-        name: "invalid-key",
-        mimeType: "application/octet-stream",
-        buffer: Buffer.from("this is not a private key"),
-      });
+    await f.locator("#privateKey").setInputFiles({
+      name: "invalid-key",
+      mimeType: "application/octet-stream",
+      buffer: Buffer.from("this is not a private key"),
+    });
     await f.locator("#keyName").filter({ hasText: "invalid-key" }).waitFor();
     await f.locator("#connect").click();
     await closed(f, /无法解析私钥|Cannot parse/);
@@ -260,7 +258,7 @@ const { chromium } = require("playwright"),
         await page.waitForTimeout(350);
         const dimensions = await f.locator("body").evaluate(() => {
           const t = window.__qaTerms.find(
-            (t) => !t.element.parentElement.hidden,
+            (t) => !t.element.closest(".terminal-panel").hidden,
           );
           return { cols: t.cols, rows: t.rows };
         });
