@@ -103,5 +103,5 @@ func TestToolMarketPublicPackages(t *testing.T) {
 	if w := adminAssetRequest(router, token, "DELETE", "/api/blogs/"+strconv.FormatInt(publicID, 10)+"/tool", nil); w.Code != 200 {
 		t.Fatal(w.Body.String())
 	}
-	get("/market")
+	get("/shares?type=tool")
 }

@@ -1,18 +1,7 @@
-<!doctype html>
-<html lang="{{.Lang}}"><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{call .T "market.tools"}} · BookStark</title>
-<link rel="stylesheet" href="/static/css/tailwind.min.css?v={{assetVer "/static/css/tailwind.min.css"}}">
-{{template "head-assets" .}}
-<link rel="stylesheet" href="/static/css/selection-controls.css?v={{assetVer "/static/css/selection-controls.css"}}">
-<link rel="stylesheet" href="/static/css/local-tools.css?v={{assetVer "/static/css/local-tools.css"}}">
-<link rel="stylesheet" href="/static/css/public-feed.css?v={{assetVer "/static/css/public-feed.css"}}">
-<link rel="stylesheet" href="/static/css/font-awesome-brands.min.css?v={{assetVer "/static/css/font-awesome-brands.min.css"}}">
-<link rel="stylesheet" href="/static/css/tool-market.css?v={{assetVer "/static/css/tool-market.css"}}">
-</head><body class="public-feed-body market-body" data-market-workspace="{{if .MemberID}}member-{{.MemberID}}{{else}}guest{{end}}" data-market-admin="{{if .IsAdmin}}1{{end}}">
-{{template "public-plaza-header" .}}
-<main class="public-layout" id="marketMain" role="main">
-<div class="public-content market-content">
+{{define "public-tool-content"}}
+<div class="public-content market-content" id="marketMain" data-login-url="{{.LoginURL}}">
+<script type="application/json" class="public-feed-state">{{.PublicFeedStateJSON}}</script>
+<p class="public-load-status" role="status" hidden></p>
 <h1 class="page-title sr-only">{{call .T "market.tools"}}</h1>
 {{template "public-plaza-nav" .}}
 <div class="public-toolbar market-toolbar">
@@ -30,7 +19,7 @@
 </div>
 <nav id="marketCategories" class="public-categories" aria-label="{{call .T "market.category"}}"><div></div></nav>
 <p id="marketStatus" role="status" aria-live="polite" hidden></p>
-<div class="market-layout"><section id="marketItems" class="market-grid" aria-label="{{call .T "market.tools"}}" aria-busy="true">{{template "market-card-skeleton" .}}{{template "market-card-skeleton" .}}{{template "market-card-skeleton" .}}{{template "market-card-skeleton" .}}{{template "market-card-skeleton" .}}{{template "market-card-skeleton" .}}</section><aside id="marketDetail" class="market-detail" hidden></aside></div>
+<section class="public-feed market-feed"><div class="market-layout"><section id="marketItems" class="market-grid" aria-label="{{call .T "market.tools"}}" aria-busy="true">{{template "market-card-skeleton" .}}{{template "market-card-skeleton" .}}{{template "market-card-skeleton" .}}{{template "market-card-skeleton" .}}{{template "market-card-skeleton" .}}{{template "market-card-skeleton" .}}</section><aside id="marketDetail" class="market-detail" hidden></aside></div>
 <div class="market-results">
  <span id="marketResultCount" role="status">{{call .T "public.loading"}}</span>
  <div class="market-actions">
@@ -38,21 +27,8 @@
   <nav id="marketPagination" class="market-pagination" aria-label="{{call .T "market.pagination"}}"></nav>
  </div>
 </div>
+</section>
 </div>
-{{template "public-widgets" .}}
-</main>
-
-{{template "footer" .}}
-<script src="/static/js/selection-controls.js?v={{assetVer "/static/js/selection-controls.js"}}"></script>
-<script src="/static/js/local-drafts.js?v={{assetVer "/static/js/local-drafts.js"}}"></script>
-<script src="/static/js/local-tools-widget.js?v={{assetVer "/static/js/local-tools-widget.js"}}"></script>
-<script src="/static/js/public-widgets.js?v={{assetVer "/static/js/public-widgets.js"}}"></script>
-<script src="/static/js/pagination.js?v={{assetVer "/static/js/pagination.js"}}"></script>
-<script src="/static/js/tool-appearance.js?v={{assetVer "/static/js/tool-appearance.js"}}"></script>
-<script src="/static/js/tool-market-store.js?v={{assetVer "/static/js/tool-market-store.js"}}"></script>
-<script src="/static/js/tool-market-ui.js?v={{assetVer "/static/js/tool-market-ui.js"}}"></script>
-{{template "tool-permissions" .}}
-<script src="/static/js/tool-market.js?v={{assetVer "/static/js/tool-market.js"}}"></script>
-</body></html>
+{{end}}
 
 {{define "market-card-skeleton"}}<article class="market-card-placeholder skeleton-card" aria-hidden="true"><div class="market-card-top"><div class="skeleton market-skeleton-icon"></div><div class="market-card-body"><div class="skeleton skeleton-card-title"></div><div class="skeleton skeleton-card-desc"></div><div class="skeleton skeleton-card-desc2"></div></div></div><div class="market-card-footer"><div class="skeleton skeleton-card-tag"></div><div class="skeleton market-skeleton-action"></div></div></article>{{end}}

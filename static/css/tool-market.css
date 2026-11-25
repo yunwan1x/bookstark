@@ -3,6 +3,8 @@
 /* Theme footer margins must not leave a gap below a short tools page. */
 .market-body>.site-footer{margin-bottom:0!important}
 @media(max-width:1024px){html[lang="en"] .market-body .header-nav-trigger .nav-text{display:none}}
+/* Tool cards share the public plaza shell. */
+.market-feed{padding:0;border:0;background:transparent}
 .market-page{max-width:1440px;width:100%;margin:0 auto;padding:24px;color:var(--color-text);flex:1;min-width:0}
 .market-heading,.market-actions,.market-meta{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .market-heading{justify-content:space-between;margin-bottom:24px}

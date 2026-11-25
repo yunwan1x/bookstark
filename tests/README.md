@@ -39,3 +39,12 @@ HUD_VARIANT=hud-light node tests/browser/hud_theme_browser_test.cjs
 ```
 
 只运行根目录的 `go test .` 不再包含 UI 约束测试；主程序的 Go 回归应运行 `go test ./...`，独立 SSH 工具还需按上述说明单独验证。
+
+### 广场工具 AJAX 回归
+
+```sh
+BOOKSTARK_BROWSER_TEST=1 NODE_PATH=/path/to/playwright/node_modules \
+  go test -p=1 . -run 'TestPublicToolsAJAXBrowser|TestClientToolsMarketNavigationBrowser' -count=1
+```
+
+使用隔离的临时工作区与真实页面片段，验证工具和其他标签切换保留右侧栏/播放器、历史筛选恢复、迟到请求和会话隔离、弹窗与事件清理、BFCache 重新挂载，以及原生客户端的本地安装入口。市场目录使用固定测试数据，原市场发布、安装、更新和资源操作另由 `TestToolMarketBrowser` 回归。

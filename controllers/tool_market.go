@@ -9,6 +9,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io"
 	"net/http"
 	"net/url"
@@ -48,7 +49,8 @@ func ToolMarketPage(c *gin.Context) {
 		query := c.Request.URL.Query()
 		query.Del("open")
 		query.Del("return")
-		back := "/market"
+		query.Set("type", "tool")
+		back := "/shares"
 		if query.Encode() != "" {
 			back += "?" + query.Encode()
 		}
@@ -56,15 +58,29 @@ func ToolMarketPage(c *gin.Context) {
 		c.Redirect(http.StatusFound, "/tools/run/"+strconv.FormatInt(id, 10)+"?return="+url.QueryEscape(back))
 		return
 	}
+	query := c.Request.URL.Query()
+	query.Set("type", "tool")
 	c.Header("Cache-Control", "private, no-store")
+	c.Redirect(http.StatusFound, "/shares?"+query.Encode())
+}
+
+// Tools use the same plaza shell and fragment navigation as other public tabs.
+func publicToolFeedPage(c *gin.Context) {
+	partial := c.GetHeader("X-BookStark-Feed") == "content"
 	data := commonData(c, "shares")
 	data["Type"] = "tool"
 	data["Background"] = nil
 	data["LoginURL"] = "/login?next=" + url.QueryEscape(c.Request.URL.RequestURI())
-	addPublicWidgetData(data, true)
+	addPublicWidgetData(data, !partial)
 	data["CanConfigureTools"] = isAdmin(c)
 	data["CanPublishTools"] = canPublishTools(c)
-	c.HTML(http.StatusOK, "tool_market.html", data)
+	state, _ := json.Marshal(gin.H{"kind": "tool", "account": data["Account"]})
+	data["PublicFeedStateJSON"] = template.JS(state)
+	if partial {
+		c.HTML(http.StatusOK, "public-tool-content", data)
+		return
+	}
+	c.HTML(http.StatusOK, "public_feed.html", data)
 }
 
 func ToolMarketCatalog(c *gin.Context) {

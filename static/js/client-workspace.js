@@ -28,7 +28,7 @@
   async function init() {
     const info = await infoPromise;
     if (!info) return;
-    document.addEventListener('click',event=>{const link=event.target.closest('a[href]');if(!link)return;const u=new URL(link.href,location.href);if(u.origin===location.origin&&u.pathname==='/market'&&!info.local){event.preventDefault();event.stopImmediatePropagation();window.BookStarkClient.openTools();}},true);
+    document.addEventListener('click',event=>{const link=event.target.closest('a[href]');if(!link)return;const u=new URL(link.href,location.href);if(u.origin===location.origin&&(u.pathname==='/market'||(u.pathname==='/shares'&&u.searchParams.get('type')==='tool'))&&!info.local){event.preventDefault();event.stopImmediatePropagation();window.BookStarkClient.openTools();}},true);
     const account = document.getElementById('account'), password = document.getElementById('password');
     if (account && password) {
       document.getElementById('remember-client-credentials')?.removeAttribute('hidden');
