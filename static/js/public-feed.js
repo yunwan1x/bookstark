@@ -1,7 +1,8 @@
 /* One public reading surface for guests and signed-in readers. */
 (function () {
   'use strict';
-  let content = document.querySelector('.public-content');
+  let content = document.querySelector('.public-content'),unmountMarket;
+  if(!content)return;
   function readState(root) { return JSON.parse(root.querySelector('.public-feed-state').textContent); }
   function hydrate(root, state) {
     window.__PUBLIC_NOTES__ = state.notes || {};
@@ -10,6 +11,7 @@
     window.__SHARE_COMMENT_GUEST_NAME__ = state.guestName || '';
     window.__SHARE_COMMENT_MAX_LENGTH__ = state.commentMaxLength;
     resetShareNoteStore();
+    if(state.kind==='tool')unmountMarket=BookStarkToolMarket.mount(root);
     const login=document.querySelector('.public-login');if(login)login.href=root.dataset.loginUrl;
 
     root.querySelectorAll('.public-items-bookmark .bm-row-favicon, [data-news-favicon]').forEach(icon => {
@@ -47,11 +49,16 @@
       prepareShareNoteImages(body);
     });
   }
-  hydrate(content,readState(content));
   let renderedURL=location.pathname+location.search+location.hash, requestID=0, requestAbort;
   const historyData=()=>({...history.state,publicFeed:true,scrollY:window.scrollY});
   history.replaceState(historyData(),'',renderedURL);
   history.scrollRestoration='manual';
+  window.BookStarkPublicFeed={updateURL(url){
+    if(url.origin!==location.origin||url.pathname!=='/shares'||url.searchParams.get('type')!=='tool')return;
+    renderedURL=url.pathname+url.search+url.hash;
+    history.replaceState(historyData(),'',renderedURL);
+  }};
+  hydrate(content,readState(content));
   let scrollTimer;
   window.addEventListener('scroll',()=>{
     clearTimeout(scrollTimer);scrollTimer=setTimeout(()=>{
@@ -85,11 +92,13 @@
       if((state.account||'')!==(document.body.dataset.publicAccount||''))throw Error(window.__('public.session_changed'));
       if(id!==requestID)return;
       closeShareNoteViewer();closeShareImageLightbox();
-      content.replaceWith(next);content=next;hydrate(content,state);
+      unmountMarket?.();unmountMarket=null;
+      content.replaceWith(next);content=next;
       renderedURL=url.pathname+url.search+url.hash;
       const y=options.pop?Number(options.scrollY)||0:options.replace?previousY:0;
       if(options.pop||options.replace)history.replaceState({...history.state,publicFeed:true,scrollY:y},'',renderedURL);
       else history.pushState({publicFeed:true,scrollY:y},'',renderedURL);
+      hydrate(content,state);
       window.scrollTo({top:y,behavior:'instant'});
       content.querySelector('.public-nav a[aria-current]')?.focus({preventScroll:true});
       document.dispatchEvent(new CustomEvent('bookstark:public-feed-updated'));
@@ -118,12 +127,13 @@
   });
   document.addEventListener('change',event=>{if(event.target.matches('[data-news-language]')){const u=new URL(location.href);u.searchParams.set('language',event.target.value);u.searchParams.set('page','1');navigateFeed(u);}if(event.target.id==='publicSort')navigateFeed(new URL(event.target.value,location.href));});
   window.addEventListener('popstate',event=>navigateFeed(new URL(location.href),{pop:true,scrollY:event.state?.scrollY}));
-  window.addEventListener('pagehide',()=>{requestID++;requestAbort?.abort();clearTimeout(scrollTimer);});
+  window.addEventListener('pagehide',()=>{requestID++;requestAbort?.abort();clearTimeout(scrollTimer);unmountMarket?.();});
+  window.addEventListener('pageshow',event=>{if(event.persisted){unmountMarket?.();unmountMarket=null;hydrate(content,readState(content));}});
 
   // Save only this tab's reading position, not content or credentials.
   const positionKey = 'bookstark:public-login-return';
   document.querySelector('.public-login')?.addEventListener('click', () => {
-    try { sessionStorage.setItem(positionKey, JSON.stringify({url: '/shares' + location.search, y: scrollY})); } catch (_) {}
+    try { sessionStorage.setItem(positionKey, JSON.stringify({url: location.pathname + location.search, y: scrollY})); } catch (_) {}
   });
   try {
     const saved = JSON.parse(sessionStorage.getItem(positionKey) || 'null');

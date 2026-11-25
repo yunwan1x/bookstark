@@ -360,3 +360,11 @@ func TestToolPermissionsWebKitBrowser(t *testing.T) {
 		}
 	})
 }
+
+func TestPublicToolsAJAXBrowser(t *testing.T) {
+	runIsolatedBrowser(t, "public_tools_ajax_test.cjs")
+}
+
+func TestClientToolsMarketNavigationBrowser(t *testing.T) {
+	runIsolatedBrowser(t, "client_tools_market_navigation_test.cjs")
+}

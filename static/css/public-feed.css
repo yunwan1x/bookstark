@@ -332,3 +332,8 @@
 .public-skeleton-excerpt { height:12px; width:92%; margin-bottom:var(--spacing-sm); }
 .public-skeleton-excerpt + .public-skeleton-excerpt { width:80%; }
 .public-feed-skeleton .skeleton-row-time { width:35%; margin-top:var(--spacing-sm); }
+/* Keep the shared signed-in header compact on medium English viewports. */
+@media (max-width: 1024px) {
+ html[lang="en"] .public-feed-body .header-nav-trigger .nav-text { display:none; }
+}
+.public-feed-body>.site-footer { margin-bottom:0!important; }

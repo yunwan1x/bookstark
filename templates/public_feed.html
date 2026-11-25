@@ -11,12 +11,14 @@
 <link rel="stylesheet" href="/static/css/public-feed.css?v={{assetVer "/static/css/public-feed.css"}}">
 <link rel="stylesheet" href="/static/css/share-note-reader.css?v={{assetVer "/static/css/share-note-reader.css"}}">
 <link rel="stylesheet" href="/static/css/local-tools.css?v={{assetVer "/static/css/local-tools.css"}}">
+<link rel="stylesheet" href="/static/css/font-awesome-brands.min.css?v={{assetVer "/static/css/font-awesome-brands.min.css"}}">
+<link rel="stylesheet" href="/static/css/tool-market.css?v={{assetVer "/static/css/tool-market.css"}}">
 </head>
 <body class="public-feed-body" data-public-account="{{.Account}}" data-market-workspace="{{if .MemberID}}member-{{.MemberID}}{{else}}guest{{end}}">
 {{template "public-plaza-header" .}}
 <main class="public-layout" role="main">
  <h1 class="sr-only">{{call .T "public.title"}}</h1>
- {{template "public-feed-content" .}}
+ {{if eq .Type "tool"}}{{template "public-tool-content" .}}{{else}}{{template "public-feed-content" .}}{{end}}
  {{template "public-widgets" .}}
 </main>
 {{template "footer" .}}
@@ -29,6 +31,12 @@
 <script src="/static/js/local-tools-widget.js?v={{assetVer "/static/js/local-tools-widget.js"}}"></script>
 <script src="/static/js/public-widgets.js?v={{assetVer "/static/js/public-widgets.js"}}"></script>
 <script src="/static/js/public-news.js?v={{assetVer "/static/js/public-news.js"}}"></script>
+<script src="/static/js/pagination.js?v={{assetVer "/static/js/pagination.js"}}"></script>
+<script src="/static/js/tool-appearance.js?v={{assetVer "/static/js/tool-appearance.js"}}"></script>
+<script src="/static/js/tool-market-store.js?v={{assetVer "/static/js/tool-market-store.js"}}"></script>
+<script src="/static/js/tool-market-ui.js?v={{assetVer "/static/js/tool-market-ui.js"}}"></script>
+{{template "tool-permissions" .}}
+<script src="/static/js/tool-market.js?v={{assetVer "/static/js/tool-market.js"}}"></script>
 <script src="/static/js/public-feed.js?v={{assetVer "/static/js/public-feed.js"}}"></script>
 </body></html>
 
@@ -106,7 +114,7 @@
   <a href="{{if .TypeURLs}}{{index .TypeURLs "note"}}{{else}}/shares?type=note{{end}}" {{if eq .Type "note"}}aria-current="page"{{end}}><i class="fa-solid fa-note-sticky" aria-hidden="true"></i> {{call .T "public.notes"}}</a>
   <a href="{{if .TypeURLs}}{{index .TypeURLs "book"}}{{else}}/shares?type=book{{end}}" {{if eq .Type "book"}}aria-current="page"{{end}}><i class="fa-solid fa-book" aria-hidden="true"></i> {{call .T "public.books"}}</a>
   <a href="{{if .TypeURLs}}{{index .TypeURLs "bookmark"}}{{else}}/shares?type=bookmark{{end}}" {{if eq .Type "bookmark"}}aria-current="page"{{end}}><i class="fa-solid fa-bookmark" aria-hidden="true"></i> {{call .T "public.bookmarks"}}</a>
-  <a href="/market" {{if eq .Type "tool"}}aria-current="page"{{end}}><i class="fa-solid fa-shapes" aria-hidden="true"></i> {{call .T "market.tools"}}</a>
+  <a href="/shares?type=tool" {{if eq .Type "tool"}}aria-current="page"{{end}}><i class="fa-solid fa-shapes" aria-hidden="true"></i> {{call .T "market.tools"}}</a>
  </nav>
 {{end}}
 

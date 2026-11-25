@@ -42,7 +42,7 @@ func TestInstalledToolRuntimeUsesPrivateStandalonePage(t *testing.T) {
 			t.Fatal("invalid runtime ID accepted")
 		}
 	}
-	market := adminAssetRequest(router, admin, "GET", "/market", nil).Body.String()
+	market := adminAssetRequest(router, admin, "GET", "/shares?type=tool", nil).Body.String()
 	if strings.Contains(market, `id="marketRunner"`) || strings.Contains(market, `/static/js/tool-runner.js`) {
 		t.Fatal("market still includes the old runner")
 	}
@@ -95,7 +95,7 @@ func TestLegacyToolOpenRedirectsToStandaloneRuntime(t *testing.T) {
 		t.Fatal(response.Code, response.Header().Get("Location"))
 	}
 	back, err := url.Parse(target.Query().Get("return"))
-	if err != nil || back.Path != "/market" || back.Query().Get("status") != "installed" || back.Query().Get("category") != "image" || back.Query().Has("open") {
+	if err != nil || back.Path != "/shares" || back.Query().Get("type") != "tool" || back.Query().Get("status") != "installed" || back.Query().Get("category") != "image" || back.Query().Has("open") {
 		t.Fatal("legacy redirect lost market filters")
 	}
 }

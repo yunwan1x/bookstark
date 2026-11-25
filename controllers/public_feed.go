@@ -77,6 +77,10 @@ func assignPublicLabelIcons(labels []string) map[string]string {
 func PublicFeedPage(c *gin.Context) {
 	c.Header("Cache-Control", "private, no-store")
 	c.Header("Vary", "X-BookStark-Feed")
+	if c.Query("type") == "tool" || (c.Query("type") == "" && c.Query("tab") == "tool") {
+		publicToolFeedPage(c)
+		return
+	}
 	partial := c.GetHeader("X-BookStark-Feed") == "content"
 	data := commonData(c, "shares")
 	data["Background"] = nil
@@ -265,7 +269,7 @@ func PublicFeedPage(c *gin.Context) {
 		data["NextURL"] = link(kind, order, label, page+1)
 	}
 	stateJSON, err := json.Marshal(gin.H{
-		"notes": notes, "commentsEnabled": data["ShareCommentsEnabled"], "account": data["Account"],
+		"kind": kind, "notes": notes, "commentsEnabled": data["ShareCommentsEnabled"], "account": data["Account"],
 		"guestName": data["ShareCommentGuestName"], "commentMaxLength": data["ShareCommentMaxLength"],
 	})
 	if err != nil {

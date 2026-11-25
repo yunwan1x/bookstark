@@ -24,7 +24,7 @@ func TestToolMarketConfigurationRequiresWorkspaceAdministrator(t *testing.T) {
 		{"guest", "", false, false}, {"member", token.Token, false, true}, {"admin", admin, true, true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			page := adminAssetRequest(router, tc.token, "GET", "/market", nil)
+			page := adminAssetRequest(router, tc.token, "GET", "/shares?type=tool", nil)
 			if page.Code != 200 {
 				t.Fatal(page.Body.String())
 			}
@@ -69,7 +69,7 @@ func TestToolMarketConfigurationRequiresWorkspaceAdministrator(t *testing.T) {
 	if err := models.BatchUpdateSettings(map[string]string{"tool_market_members_publish": "0"}); err != nil {
 		t.Fatal(err)
 	}
-	page := adminAssetRequest(router, token.Token, "GET", "/market", nil)
+	page := adminAssetRequest(router, token.Token, "GET", "/shares?type=tool", nil)
 	if strings.Contains(page.Body.String(), `id="marketPublish"`) || strings.Contains(page.Body.String(), `id="marketMore"`) {
 		t.Fatal("publication menu exposed after permission revoked")
 	}
@@ -84,12 +84,12 @@ func TestArticleToolPublicationFollowsMarketAvailability(t *testing.T) {
 	if err := models.BatchUpdateSettings(map[string]string{"tool_market_enabled": "0"}); err != nil {
 		t.Fatal(err)
 	}
-	for _, path := range []string{"/market", "/notes?tab=articles"} {
+	for _, path := range []string{"/shares?type=tool", "/notes?tab=articles"} {
 		page := adminAssetRequest(router, admin, "GET", path, nil)
 		if page.Code != 200 || strings.Contains(page.Body.String(), `id="marketPublish"`) || strings.Contains(page.Body.String(), "canPublishTools: true") {
 			t.Fatalf("publication exposed while market disabled on %s", path)
 		}
-		if path == "/market" && (strings.Contains(page.Body.String(), `id="marketMore"`) || !strings.Contains(page.Body.String(), `id="marketSettings"`)) {
+		if path == "/shares?type=tool" && (strings.Contains(page.Body.String(), `id="marketMore"`) || !strings.Contains(page.Body.String(), `id="marketSettings"`)) {
 			t.Fatal("disabled publishing must hide its menu while keeping administrator settings")
 		}
 	}
