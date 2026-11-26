@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>密码箱 &amp; 2FA 验证码</title>
+    <link rel="stylesheet" href="components.css" />
+    <link rel="stylesheet" href="font-awesome.css" />
+    <link rel="stylesheet" href="dialog.css" />
+    <link rel="stylesheet" href="app.css" />
+  </head>
+  <body>
+    <div id="toast" class="vault-toast" role="status" aria-live="polite" hidden></div>
+
+    <!-- Lock / First-time Setup Screen -->
+    <section id="lockScreen" class="lock-screen" aria-label="主密码锁" hidden>
+      <div class="lock-topbar">
+        <span class="storage-pill" id="lockStorageBadge">
+          <i class="fa-solid fa-shield-halved" aria-hidden="true"></i>
+          <span data-i18n="e2eeBadge">前端零知识加密</span>
+        </span>
+        <button type="button" class="btn-ghost btn-sm" id="lockLangBtn" title="中文 / English">EN</button>
+      </div>
+
+      <div class="lock-card">
+        <div class="lock-emblem" aria-hidden="true">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <h1 id="lockTitle" data-i18n="setupTitle">设置前端主密码</h1>
+        <p id="lockSubtitle" class="lock-sub" data-i18n="setupSubtitle">
+          密码箱在浏览器本地使用 PBKDF2-SHA256 与 AES-256-GCM 加密后同步至当前工作区，服务端不保存明文与主密码。
+        </p>
+
+        <form id="lockForm" autocomplete="off">
+          <div class="field">
+            <label for="masterPassword" data-i18n="masterPasswordLabel">主密码</label>
+            <div class="input-with-action">
+              <input
+                id="masterPassword"
+                type="password"
+                autocomplete="current-password"
+                required
+                minlength="6"
+                placeholder="至少 6 位，建议使用强密码"
+              />
+              <button type="button" class="icon-btn" id="toggleMasterVis" aria-label="显示或隐藏密码">
+                <i class="fa-solid fa-eye" aria-hidden="true"></i>
+              </button>
+            </div>
+            <div id="setupStrengthWrap" class="strength-wrap" hidden>
+              <div class="strength-bar"><span id="setupStrengthFill"></span></div>
+              <span id="setupStrengthLabel" class="strength-text"></span>
+            </div>
+          </div>
+
+          <div class="field" id="confirmPasswordField" hidden>
+            <label for="confirmMasterPassword" data-i18n="confirmMasterLabel">确认主密码</label>
+            <input
+              id="confirmMasterPassword"
+              type="password"
+              autocomplete="new-password"
+              placeholder="再次输入主密码"
+            />
+          </div>
+
+          <div id="setupWarning" class="warn-box" hidden>
+            <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+            <span data-i18n="masterWarning">主密码仅保留在当前浏览器内存中，无法通过服务端找回；忘记主密码将无法解密已有数据。</span>
+          </div>
+
+          <p id="lockError" class="form-error" role="alert" hidden></p>
+
+          <button type="submit" class="btn-primary btn-block" id="lockSubmitBtn">
+            <i class="fa-solid fa-lock-open" aria-hidden="true"></i>
+            <span id="lockSubmitText" data-i18n="unlockBtn">解锁密码箱</span>
+          </button>
+        </form>
+
+        <div class="lock-footer">
+          <button type="button" class="btn-link" id="restoreBackupFromLock">
+            <i class="fa-solid fa-file-import" aria-hidden="true"></i>
+            <span data-i18n="restoreFromFile">从 .bsvault.json 加密备份恢复</span>
+          </button>
+          <input type="file" id="lockBackupFileInput" accept=".json,.bsvault.json" hidden />
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Unlocked Workspace -->
+    <div id="workspace" class="app" hidden>
+      <!-- Left Category Sidebar -->
+      <aside id="catSidebar" class="cat-sidebar" aria-label="分类导航">
+        <div class="cat-head">
+          <div class="brand-mark">
+            <span class="brand-icon"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i></span>
+            <span class="brand-title" data-i18n="appTitle">密码箱 &amp; 2FA</span>
+          </div>
+          <button type="button" class="icon-btn mobile-only" id="closeSidebarBtn" aria-label="关闭菜单">
+            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+          </button>
+        </div>
+
+        <div class="cat-primary-action">
+          <button type="button" class="btn-primary btn-block" id="newEntryBtn">
+            <i class="fa-solid fa-plus" aria-hidden="true"></i>
+            <span data-i18n="newEntry">新建条目</span>
+          </button>
+        </div>
+
+        <nav class="cat-nav" id="catNav" aria-label="条目分类">
+          <button type="button" class="cat-item active" data-cat="all">
+            <span class="cat-left"><i class="fa-solid fa-layer-group" aria-hidden="true"></i><span data-i18n="catAll">全部条目</span></span>
+            <span class="cat-count" data-count="all">0</span>
+          </button>
+          <button type="button" class="cat-item" data-cat="has_totp">
+            <span class="cat-left"><i class="fa-solid fa-clock" aria-hidden="true"></i><span data-i18n="catHasTotp">2FA 动态码</span></span>
+            <span class="cat-count" data-count="has_totp">0</span>
+          </button>
+          <button type="button" class="cat-item" data-cat="favorite">
+            <span class="cat-left"><i class="fa-solid fa-star" aria-hidden="true"></i><span data-i18n="catFavorite">收藏</span></span>
+            <span class="cat-count" data-count="favorite">0</span>
+          </button>
+          <div class="cat-divider"></div>
+          <button type="button" class="cat-item" data-cat="web">
+            <span class="cat-left"><i class="fa-solid fa-globe" aria-hidden="true"></i><span data-i18n="catWeb">网站账号</span></span>
+            <span class="cat-count" data-count="web">0</span>
+          </button>
+          <button type="button" class="cat-item" data-cat="server">
+            <span class="cat-left"><i class="fa-solid fa-server" aria-hidden="true"></i><span data-i18n="catServer">服务器 / 云</span></span>
+            <span class="cat-count" data-count="server">0</span>
+          </button>
+          <button type="button" class="cat-item" data-cat="token">
+            <span class="cat-left"><i class="fa-solid fa-key" aria-hidden="true"></i><span data-i18n="catToken">API Token</span></span>
+            <span class="cat-count" data-count="token">0</span>
+          </button>
+          <button type="button" class="cat-item" data-cat="totp">
+            <span class="cat-left"><i class="fa-solid fa-qrcode" aria-hidden="true"></i><span data-i18n="catTotpOnly">仅 2FA</span></span>
+            <span class="cat-count" data-count="totp">0</span>
+          </button>
+          <button type="button" class="cat-item" data-cat="other">
+            <span class="cat-left"><i class="fa-solid fa-folder" aria-hidden="true"></i><span data-i18n="catOther">其他</span></span>
+            <span class="cat-count" data-count="other">0</span>
+          </button>
+        </nav>
+
+        <div class="cat-actions">
+          <button type="button" class="cat-action-btn" id="openImportBtn">
+            <i class="fa-solid fa-file-import" aria-hidden="true"></i>
+            <span data-i18n="importTitle">导入（二维码 / CSV）</span>
+          </button>
+          <button type="button" class="cat-action-btn" id="openSettingsBtn">
+            <i class="fa-solid fa-gear" aria-hidden="true"></i>
+            <span data-i18n="securitySettings">安全与备份</span>
+          </button>
+          <button type="button" class="cat-action-btn danger" id="lockNowBtn">
+            <i class="fa-solid fa-lock" aria-hidden="true"></i>
+            <span data-i18n="lockNow">立即锁定</span>
+          </button>
+        </div>
+
+        <div class="cat-foot">
+          <div class="sync-status" id="syncStatus">
+            <span class="status-dot"></span>
+            <span id="syncStatusText" data-i18n="syncWorkspace">工作区加密同步</span>
+          </div>
+          <button type="button" class="btn-ghost btn-xs" id="langToggleBtn" title="中文 / English">EN</button>
+        </div>
+      </aside>
+
+      <button type="button" id="sidebarShade" class="sidebar-shade" aria-label="关闭侧栏" hidden></button>
+
+      <!-- Middle Entry List Pane -->
+      <section id="listPane" class="list-pane" aria-label="条目列表">
+        <header class="list-head">
+          <button type="button" class="icon-btn mobile-only" id="openSidebarBtn" aria-label="打开分类菜单">
+            <i class="fa-solid fa-bars" aria-hidden="true"></i>
+          </button>
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+            <input id="searchInput" type="search" placeholder="搜索名称、账号、网址、备注…" aria-label="搜索条目" />
+          </div>
+          <button type="button" class="icon-btn mobile-only" id="mobileAddBtn" aria-label="新建条目" title="新建条目">
+            <i class="fa-solid fa-plus" aria-hidden="true"></i>
+          </button>
+          <button type="button" class="icon-btn mobile-only" id="mobileLockBtn" aria-label="立即锁定" title="立即锁定">
+            <i class="fa-solid fa-lock" aria-hidden="true"></i>
+          </button>
+        </header>
+
+        <div id="clockDriftBanner" class="drift-banner" hidden>
+          <i class="fa-solid fa-clock" aria-hidden="true"></i>
+          <span id="clockDriftText"></span>
+        </div>
+
+        <div id="entryList" class="entry-list" role="listbox" aria-label="密码与 2FA 列表"></div>
+      </section>
+
+      <!-- Right Detail / Editor Pane -->
+      <main id="detailPane" class="detail-pane" aria-label="条目详情">
+        <div id="detailEmpty" class="detail-empty">
+          <div class="empty-icon"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i></div>
+          <h2 data-i18n="emptyDetailTitle">选择条目查看详情</h2>
+          <p data-i18n="emptyDetailDesc">点击左侧条目查看实时 2FA 验证码与密码，或快速新建、导入已有数据。</p>
+          <div class="empty-actions">
+            <button type="button" class="btn-primary" id="emptyNewBtn">
+              <i class="fa-solid fa-plus" aria-hidden="true"></i>
+              <span data-i18n="newEntry">新建条目</span>
+            </button>
+            <button type="button" class="btn-secondary" id="emptyImportBtn">
+              <i class="fa-solid fa-qrcode" aria-hidden="true"></i>
+              <span data-i18n="importBtnShort">扫码 / CSV 导入</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="detailView" class="detail-view" hidden></div>
+
+        <form id="entryForm" class="entry-form" autocomplete="off" hidden>
+          <div class="detail-bar">
+            <div class="detail-bar-left">
+              <button type="button" class="icon-btn mobile-only" id="formBackBtn" aria-label="返回列表">
+                <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+              </button>
+              <h2 id="entryFormTitle" data-i18n="newEntry">新建条目</h2>
+            </div>
+            <div class="detail-bar-right">
+              <button type="button" class="btn-secondary btn-sm" id="cancelEntryBtn" data-i18n="cancel">取消</button>
+              <button type="submit" class="btn-primary btn-sm" id="saveEntryBtn" data-i18n="save">保存</button>
+            </div>
+          </div>
+
+          <div class="form-scroll">
+            <input type="hidden" id="entryId" />
+
+            <div class="form-row-2">
+              <div class="field">
+                <label for="fTitle" data-i18n="fieldTitle">名称 *</label>
+                <input id="fTitle" required maxlength="100" placeholder="例如：GitHub / Cloudflare" />
+              </div>
+              <div class="field">
+                <label for="fCategory" data-i18n="fieldCategory">分类</label>
+                <select id="fCategory">
+                  <option value="web" data-i18n="catWeb">网站账号</option>
+                  <option value="server" data-i18n="catServer">服务器 / 云</option>
+                  <option value="token" data-i18n="catToken">API Token</option>
+                  <option value="totp" data-i18n="catTotpOnly">仅 2FA</option>
+                  <option value="other" data-i18n="catOther">其他</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row-2">
+              <div class="field">
+                <label for="fIssuer" data-i18n="fieldIssuer">签发方 / 服务名</label>
+                <input id="fIssuer" maxlength="100" placeholder="例如：GitHub" />
+              </div>
+              <div class="field">
+                <label for="fUsername" data-i18n="fieldUsername">账号 / 邮箱</label>
+                <input id="fUsername" maxlength="200" placeholder="user@example.com" autocapitalize="off" spellcheck="false" />
+              </div>
+            </div>
+
+            <div class="field">
+              <div class="label-row">
+                <label for="fPassword" data-i18n="fieldPassword">密码 / Token</label>
+                <button type="button" class="btn-link btn-xs" id="toggleGenBtn">
+                  <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+                  <span data-i18n="genPassword">生成强密码</span>
+                </button>
+              </div>
+              <div class="input-with-action">
+                <input id="fPassword" type="password" maxlength="4096" placeholder="可选，留空表示仅保存 2FA" />
+                <button type="button" class="icon-btn" id="toggleEntryPwdVis" aria-label="显示或隐藏密码">
+                  <i class="fa-solid fa-eye" aria-hidden="true"></i>
+                </button>
+              </div>
+              <div id="genPanel" class="gen-panel" hidden>
+                <div class="gen-row">
+                  <label for="genLen"><span data-i18n="genLength">长度</span>: <strong id="genLenVal">20</strong></label>
+                  <input id="genLen" type="range" min="10" max="48" value="20" />
+                </div>
+                <div class="gen-checks">
+                  <label><input type="checkbox" id="genUpper" checked /> A-Z</label>
+                  <label><input type="checkbox" id="genLower" checked /> a-z</label>
+                  <label><input type="checkbox" id="genDigits" checked /> 0-9</label>
+                  <label><input type="checkbox" id="genSymbols" checked /> !@#$</label>
+                  <button type="button" class="btn-primary btn-xs" id="runGenBtn" data-i18n="applyGenerated">生成并填入</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="fUrl" data-i18n="fieldUrl">网址</label>
+              <input id="fUrl" type="url" maxlength="500" placeholder="https://example.com" autocapitalize="off" spellcheck="false" />
+            </div>
+
+            <div class="totp-form-box">
+              <div class="totp-form-head">
+                <strong><i class="fa-solid fa-clock" aria-hidden="true"></i> <span data-i18n="totpSection">2FA 动态验证码（TOTP）</span></strong>
+                <button type="button" class="btn-secondary btn-xs" id="quickScanQrBtn">
+                  <i class="fa-solid fa-qrcode" aria-hidden="true"></i>
+                  <span data-i18n="scanOrUploadQr">识别二维码</span>
+                </button>
+                <input type="file" id="quickQrFileInput" accept="image/*" hidden />
+              </div>
+              <div class="field">
+                <label for="fTotpSecret" data-i18n="fieldTotpSecret">密钥（Base32 或直接粘贴 otpauth:// 链接）</label>
+                <input
+                  id="fTotpSecret"
+                  maxlength="1024"
+                  placeholder="JBSWY3DPEHPK3PXP 或 otpauth://totp/..."
+                  autocapitalize="off"
+                  spellcheck="false"
+                />
+              </div>
+              <div class="form-row-3">
+                <div class="field">
+                  <label for="fTotpAlgo" data-i18n="fieldAlgo">算法</label>
+                  <select id="fTotpAlgo">
+                    <option value="SHA-1">SHA-1</option>
+                    <option value="SHA-256">SHA-256</option>
+                    <option value="SHA-512">SHA-512</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="fTotpDigits" data-i18n="fieldDigits">位数</label>
+                  <select id="fTotpDigits">
+                    <option value="6">6</option>
+                    <option value="8">8</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="fTotpPeriod" data-i18n="fieldPeriod">周期 (秒)</label>
+                  <input id="fTotpPeriod" type="number" min="10" max="120" value="30" />
+                </div>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="fNotes" data-i18n="fieldNotes">备注 / 恢复码</label>
+              <textarea id="fNotes" rows="3" maxlength="8000" placeholder="可存放恢复码、绑定手机号或说明"></textarea>
+            </div>
+
+            <label class="check-inline">
+              <input type="checkbox" id="fFavorite" />
+              <span data-i18n="markFavorite">加入收藏置顶</span>
+            </label>
+          </div>
+        </form>
+      </main>
+    </div>
+
+    <!-- Import Modal (QR / Google Migration / CSV / Encrypted Backup) -->
+    <div id="importModal" class="modal-backdrop" hidden>
+      <div class="modal-dialog modal-lg" role="dialog" aria-modal="true" aria-labelledby="importModalTitle">
+        <div class="modal-head">
+          <h3 id="importModalTitle" data-i18n="importTitle">导入（二维码 / CSV）</h3>
+          <button type="button" class="icon-btn" data-close-modal="importModal" aria-label="关闭">
+            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+          </button>
+        </div>
+
+        <div class="modal-tabs" role="tablist">
+          <button type="button" class="tab-pill active" data-import-tab="qr" data-i18n="tabQr">二维码 / 2FA 链接</button>
+          <button type="button" class="tab-pill" data-import-tab="csv" data-i18n="tabCsv">CSV 密码导入</button>
+          <button type="button" class="tab-pill" data-import-tab="backup" data-i18n="tabBackup">加密备份恢复</button>
+        </div>
+
+        <div class="modal-body">
+          <!-- Tab 1: QR & otpauth / Google migration -->
+          <div id="importTabQr" class="import-tab-panel">
+            <div id="qrDropzone" class="dropzone" tabindex="0">
+              <i class="fa-solid fa-qrcode drop-icon" aria-hidden="true"></i>
+              <p data-i18n="qrDropHint">直接按 <strong>Ctrl+V</strong> 粘贴二维码截图、拖拽图片到这里，或点击下方按钮</p>
+              <div class="drop-actions">
+                <button type="button" class="btn-secondary btn-sm" id="pickQrImgBtn">
+                  <i class="fa-solid fa-image" aria-hidden="true"></i>
+                  <span data-i18n="pickQrImage">选择二维码图片</span>
+                </button>
+                <button type="button" class="btn-secondary btn-sm" id="startCameraBtn">
+                  <i class="fa-solid fa-camera" aria-hidden="true"></i>
+                  <span data-i18n="startCamera">摄像头扫码</span>
+                </button>
+                <input type="file" id="importQrFileInput" accept="image/*" hidden />
+              </div>
+              <small data-i18n="qrSupportHint">支持单个网站 otpauth:// 二维码，以及 Google Authenticator「导出账号」生成的批量迁移二维码。</small>
+            </div>
+
+            <div id="cameraBox" class="camera-box" hidden>
+              <video id="cameraVideo" playsinline muted></video>
+              <div class="camera-bar">
+                <span data-i18n="cameraScanning">将二维码对准取景框，识别后自动停止…</span>
+                <button type="button" class="btn-secondary btn-xs" id="stopCameraBtn" data-i18n="stopCamera">关闭摄像头</button>
+              </div>
+            </div>
+
+            <div class="field" style="margin-top: 12px;">
+              <label for="otpTextInput" data-i18n="otpTextLabel">或直接粘贴 otpauth:// / otpauth-migration:// / Base32 密钥（支持多行）</label>
+              <textarea id="otpTextInput" rows="3" placeholder="otpauth://totp/GitHub:user?secret=...&#10;或 otpauth-migration://offline?data=..."></textarea>
+            </div>
+            <button type="button" class="btn-secondary btn-sm" id="parseOtpTextBtn" data-i18n="parseText">解析文本</button>
+          </div>
+
+          <!-- Tab 2: CSV -->
+          <div id="importTabCsv" class="import-tab-panel" hidden>
+            <div class="dropzone">
+              <i class="fa-solid fa-file-csv drop-icon" aria-hidden="true"></i>
+              <p data-i18n="csvDropHint">选择从 Chrome / Edge / Bitwarden / 1Password / KeePass / iCloud 导出的 CSV 文件</p>
+              <div class="drop-actions">
+                <button type="button" class="btn-secondary btn-sm" id="pickCsvFileBtn">
+                  <i class="fa-solid fa-upload" aria-hidden="true"></i>
+                  <span data-i18n="pickCsvFile">选择 CSV 文件</span>
+                </button>
+                <input type="file" id="importCsvFileInput" accept=".csv,text/csv" hidden />
+              </div>
+            </div>
+            <div class="field" style="margin-top: 12px;">
+              <label for="csvTextInput" data-i18n="csvPasteLabel">或粘贴 CSV 文本</label>
+              <textarea id="csvTextInput" rows="4" placeholder="name,url,username,password,totp,notes"></textarea>
+            </div>
+            <button type="button" class="btn-secondary btn-sm" id="parseCsvTextBtn" data-i18n="parseCsv">解析 CSV</button>
+          </div>
+
+          <!-- Tab 3: Encrypted Backup -->
+          <div id="importTabBackup" class="import-tab-panel" hidden>
+            <div class="field">
+              <label for="backupFileInput" data-i18n="backupSelectLabel">选择 .bsvault.json 加密备份文件</label>
+              <input type="file" id="backupFileInput" accept=".json,.bsvault.json" />
+            </div>
+            <div class="field">
+              <label for="backupPasswordInput" data-i18n="backupPwdLabel">该备份文件对应的主密码</label>
+              <input type="password" id="backupPasswordInput" placeholder="输入备份时的主密码以解密" />
+            </div>
+            <button type="button" class="btn-secondary btn-sm" id="decryptBackupBtn" data-i18n="decryptBackup">解密并预览条目</button>
+          </div>
+
+          <p id="importError" class="form-error" role="alert" hidden></p>
+
+          <!-- Parsed Preview Area -->
+          <div id="importPreviewBox" class="import-preview" hidden>
+            <div class="import-preview-head">
+              <strong id="importPreviewSummary"></strong>
+              <label class="check-inline">
+                <input type="checkbox" id="skipDuplicateCheck" checked />
+                <span data-i18n="skipDuplicates">自动跳过完全重复项</span>
+              </label>
+            </div>
+            <div id="importPreviewList" class="import-preview-list"></div>
+          </div>
+        </div>
+
+        <div class="modal-foot">
+          <button type="button" class="btn-secondary" data-close-modal="importModal" data-i18n="cancel">取消</button>
+          <button type="button" class="btn-primary" id="confirmImportBtn" disabled data-i18n="confirmImport">确认导入</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- QR Export Modal -->
+    <div id="qrModal" class="modal-backdrop" hidden>
+      <div class="modal-dialog modal-sm" role="dialog" aria-modal="true" aria-labelledby="qrModalTitle">
+        <div class="modal-head">
+          <h3 id="qrModalTitle" data-i18n="exportQrTitle">2FA 迁移二维码</h3>
+          <button type="button" class="icon-btn" data-close-modal="qrModal" aria-label="关闭">
+            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="modal-body qr-export-body">
+          <div id="qrSvgWrap" class="qr-svg-wrap"></div>
+          <strong id="qrEntryName"></strong>
+          <p id="qrEntrySub" class="muted-text"></p>
+          <p class="muted-text" style="font-size: 12px;" data-i18n="exportQrHint">
+            使用手机任意 Authenticator（Google / 微软 / 1Password 等）扫码即可同步备份此 2FA。
+          </p>
+        </div>
+        <div class="modal-foot">
+          <button type="button" class="btn-secondary" id="copyOtpUriBtn">
+            <i class="fa-solid fa-copy" aria-hidden="true"></i>
+            <span data-i18n="copyOtpUri">复制 otpauth 链接</span>
+          </button>
+          <button type="button" class="btn-primary" data-close-modal="qrModal" data-i18n="close">关闭</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Security & Backup Modal -->
+    <div id="settingsModal" class="modal-backdrop" hidden>
+      <div class="modal-dialog modal-md" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
+        <div class="modal-head">
+          <h3 id="settingsModalTitle" data-i18n="securitySettings">安全与备份</h3>
+          <button type="button" class="icon-btn" data-close-modal="settingsModal" aria-label="关闭">
+            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="modal-body settings-body">
+          <section class="settings-section">
+            <h4 data-i18n="autoLockSection">无操作自动锁定</h4>
+            <div class="field">
+              <label for="autoLockSelect" data-i18n="autoLockLabel">空闲超过以下时长自动清空内存并锁定</label>
+              <select id="autoLockSelect">
+                <option value="1">1 分钟 / 1 min</option>
+                <option value="5">5 分钟 / 5 min</option>
+                <option value="15">15 分钟 / 15 min</option>
+                <option value="30">30 分钟 / 30 min</option>
+                <option value="0">永不自动锁定 / Never</option>
+              </select>
+            </div>
+          </section>
+
+          <section class="settings-section">
+            <h4 data-i18n="changeMasterSection">修改前端主密码</h4>
+            <form id="changeMasterForm" autocomplete="off">
+              <div class="field">
+                <label for="oldMasterInput" data-i18n="oldMasterLabel">当前主密码</label>
+                <input id="oldMasterInput" type="password" required />
+              </div>
+              <div class="form-row-2">
+                <div class="field">
+                  <label for="newMasterInput" data-i18n="newMasterLabel">新主密码（至少 6 位）</label>
+                  <input id="newMasterInput" type="password" required minlength="6" />
+                </div>
+                <div class="field">
+                  <label for="newMasterConfirm" data-i18n="confirmNewMasterLabel">确认新主密码</label>
+                  <input id="newMasterConfirm" type="password" required minlength="6" />
+                </div>
+              </div>
+              <p id="changeMasterError" class="form-error" role="alert" hidden></p>
+              <button type="submit" class="btn-secondary btn-sm" id="changeMasterSubmitBtn" data-i18n="updateMasterBtn">
+                重新加密并更换主密码
+              </button>
+            </form>
+          </section>
+
+          <section class="settings-section">
+            <h4 data-i18n="backupSection">加密备份（保持前端主密码加密，绝不明文落盘）</h4>
+            <div class="backup-actions">
+              <button type="button" class="btn-secondary btn-sm" id="downloadBackupBtn">
+                <i class="fa-solid fa-download" aria-hidden="true"></i>
+                <span data-i18n="downloadEncBackup">下载 .bsvault.json</span>
+              </button>
+              <button type="button" class="btn-secondary btn-sm" id="saveWorkspaceSnapshotBtn">
+                <i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i>
+                <span data-i18n="saveWorkspaceBackup">保存加密快照到工作区</span>
+              </button>
+            </div>
+            <div id="snapshotList" class="snapshot-list"></div>
+          </section>
+        </div>
+        <div class="modal-foot">
+          <button type="button" class="btn-primary" data-close-modal="settingsModal" data-i18n="close">关闭</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="jsQR.js"></script>
+    <script src="qrcode.js"></script>
+    <script src="vault-crypto.js"></script>
+    <script src="vault-import.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
