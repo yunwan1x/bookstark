@@ -30,7 +30,7 @@ test('market scroll restoration is scoped to workspace and exact list state',()=
 });
 
 test('native defaults do not override an explicitly saved workspace marketplace',async()=>{
- const official='https://books.vs2010wy.top/market';
+ const official='https://cloud.vs2010wy.top/market';
  for(const [saved,native,expected]of [
   [{url:'https://custom.test/market',configured:true},{url:official,configured:false},'https://custom.test/market'],
   [{url:official,configured:false},{url:official,configured:false},official],

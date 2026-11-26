@@ -54,7 +54,7 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
   await context.addCookies([{name:'lang',value:'zh',url:origin}]);await page.setViewportSize({width:1440,height:1050});await page.goto(origin+'/market');await page.locator('.market-empty').waitFor();
   assert.equal(await page.locator('#marketMain>.public-nav').count(),1);assert.equal(await page.locator('#marketMain>.public-nav a[aria-current]').textContent().then(x=>x.trim()),'工具');
   const signedIn=await context.request.post(origin+'/api/login',{data:{account:'admin',password:process.env.BOOKSTARK_TEST_PASSWORD}});assert.equal(signedIn.status(),200);
-  const defaults=await api('/api/tool-market/client');assert.equal(defaults.url,'https://books.vs2010wy.top/market');assert.equal(defaults.configured,false);
+  const defaults=await api('/api/tool-market/client');assert.equal(defaults.url,'https://cloud.vs2010wy.top/market');assert.equal(defaults.configured,false);
   await api('/api/tool-market/client','PUT',{url:origin+'/market',check_updates:true,auto_update:false});
   async function adminFooter(){assert.equal(await page.evaluate(()=>{const f=document.querySelector('.site-footer').getBoundingClientRect(),m=document.getElementById('marketAdminPage').getBoundingClientRect();return f.bottom>=innerHeight-1&&f.top>=m.bottom-1;}),true,'admin footer follows reserved loading/content height');const tab=await page.locator('#marketAdminTab').boundingBox(),bar=await page.locator('.market-admin-tabs').boundingBox();assert.ok(tab.width<220&&Math.abs(tab.x-bar.x-4)<2,'single marketplace tab is compact and left-aligned within the shared admin tab bar: '+JSON.stringify({tab:tab.width,bar:bar.width}));}
   for(const [width,lang,theme]of [[1440,'zh','light'],[390,'en','glass']]){

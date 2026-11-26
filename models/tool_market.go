@@ -7,7 +7,7 @@ import (
 )
 
 // DefaultToolMarketURL is used until a workspace chooses its marketplace source.
-const DefaultToolMarketURL = "https://books.vs2010wy.top/market"
+const DefaultToolMarketURL = "https://cloud.vs2010wy.top/market"
 
 var ErrBlogUsedByTool = errors.New("blog_in_tool_market")
 

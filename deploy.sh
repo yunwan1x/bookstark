@@ -55,9 +55,10 @@ fi
 COMMIT="$(git rev-parse HEAD)"
 
 IMAGE="changhui/bookstark"
-REMOTE="root@www.vs2010wy.top"
-REMOTE_PORT=28246
-COMPOSE_FILE="bookstark.yml"
+REMOTE="${REMOTE:-root@cloud.vs2010wy.top}"
+REMOTE_PORT="${REMOTE_PORT:-22}"
+REMOTE_DIR="${REMOTE_DIR:-/root}"
+COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.yml}"
 BUILD_DIR="$(mktemp -d -t bookstark-release.XXXXXX)"
 trap 'rm -rf -- "${BUILD_DIR}"' EXIT
 SOURCE_DIR="${BUILD_DIR}/source"
@@ -152,14 +153,15 @@ fi
 # 4. Remote deploy and verify the image revision.
 echo ""
 echo "[4/4] Deploying on remote server..."
-ssh -p "${REMOTE_PORT}" "${REMOTE}" bash -s "${FULL_IMAGE}" "${COMPOSE_FILE}" "${DEPLOY_TRANSPORT}" "${COMMIT}" <<'REMOTE_SCRIPT'
+ssh -p "${REMOTE_PORT}" "${REMOTE}" bash -s "${FULL_IMAGE}" "${REMOTE_DIR}" "${COMPOSE_FILE}" "${DEPLOY_TRANSPORT}" "${COMMIT}" <<'REMOTE_SCRIPT'
 set -euo pipefail
 IMAGE="$1"
-COMPOSE_FILE="$2"
-DEPLOY_TRANSPORT="$3"
-EXPECTED_COMMIT="$4"
+REMOTE_DIR="$2"
+COMPOSE_FILE="$3"
+DEPLOY_TRANSPORT="$4"
+EXPECTED_COMMIT="$5"
 
-cd /root/docker
+cd "${REMOTE_DIR}"
 
 # Update image in compose file
 sed -i "s|image: changhui/bookstark:.*|image: ${IMAGE}|" "${COMPOSE_FILE}"
