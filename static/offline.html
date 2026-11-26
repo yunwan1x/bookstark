@@ -2,137 +2,505 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>离线 - BookStark</title>
+    <script>
+    (function() {
+        try {
+            var t = localStorage.getItem('bookstark-theme') || '';
+            if (t === 'dark' || t === 'hud' || t === 'glass-dark' || (!t && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.setAttribute('data-offline-dark', '1');
+            }
+        } catch (_) {}
+    })();
+    </script>
     <style>
+        :root {
+            --bg: #f8fafc;
+            --bg-grid: rgba(148, 163, 184, 0.16);
+            --bg-glow: rgba(37, 99, 235, 0.08);
+            --surface: #ffffff;
+            --surface-subtle: #f8fafc;
+            --surface-hover: #eff6ff;
+            --border: #e2e8f0;
+            --border-strong: #cbd5e1;
+            --text: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --primary-soft: #eff6ff;
+            --primary-border: #bfdbfe;
+            --amber-bg: #fffbeb;
+            --amber-text: #b45309;
+            --amber-border: #fde68a;
+            --emerald-bg: #ecfdf5;
+            --emerald-text: #047857;
+            --emerald-border: #a7f3d0;
+            --shadow: 0 20px 48px -18px rgba(15, 23, 42, 0.12), 0 4px 14px -4px rgba(15, 23, 42, 0.05);
+            --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        }
+        html[data-offline-dark="1"] {
+            --bg: #0b1120;
+            --bg-grid: rgba(148, 163, 184, 0.08);
+            --bg-glow: rgba(59, 130, 246, 0.16);
+            --surface: #111827;
+            --surface-subtle: #172033;
+            --surface-hover: rgba(37, 99, 235, 0.16);
+            --border: #1f2937;
+            --border-strong: #334155;
+            --text: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --primary: #3b82f6;
+            --primary-hover: #2563eb;
+            --primary-soft: rgba(59, 130, 246, 0.14);
+            --primary-border: rgba(96, 165, 250, 0.35);
+            --amber-bg: rgba(217, 119, 6, 0.14);
+            --amber-text: #fbbf24;
+            --amber-border: rgba(251, 191, 36, 0.28);
+            --emerald-bg: rgba(5, 150, 105, 0.15);
+            --emerald-text: #34d399;
+            --emerald-border: rgba(52, 211, 153, 0.28);
+            --shadow: 0 24px 56px -16px rgba(0, 0, 0, 0.55), 0 4px 16px rgba(0, 0, 0, 0.35);
+        }
+
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: #f8fafc;
-            color: #0f172a;
+            font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Roboto, sans-serif;
+            background-color: var(--bg);
+            background-image:
+                radial-gradient(640px 360px at 50% 0%, var(--bg-glow), transparent 72%),
+                radial-gradient(var(--bg-grid) 1px, transparent 1px);
+            background-size: 100% 100%, 24px 24px;
+            color: var(--text);
             min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: max(20px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .offline-shell {
+            width: 100%;
+            max-width: 560px;
+            margin: auto 0;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        /* Top Bar */
+        .offline-topbar {
+            padding: 14px 22px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            background: var(--surface-subtle);
+        }
+        .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            font-size: 14.5px;
+            letter-spacing: -0.02em;
+            color: var(--text);
+        }
+        .brand-mark {
+            width: 26px;
+            height: 26px;
+            border-radius: 7px;
+            background: var(--primary);
+            color: #ffffff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .net-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            background: var(--amber-bg);
+            color: var(--amber-text);
+            border: 1px solid var(--amber-border);
+        }
+        .net-pill.online {
+            background: var(--emerald-bg);
+            color: var(--emerald-text);
+            border-color: var(--emerald-border);
+        }
+        .net-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        /* Hero Section */
+        .offline-hero {
+            padding: 26px 24px 22px;
+            text-align: center;
+        }
+        .offline-icon-badge {
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 14px;
+            border-radius: 14px;
+            background: var(--primary-soft);
+            border: 1px solid var(--primary-border);
+            color: var(--primary);
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 1rem;
-        }
-        .offline-card {
-            text-align: center;
-            width: 100%;
-            max-width: 440px;
-            padding: 2.5rem 2rem;
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
-        }
-        .offline-icon {
-            font-size: 3rem;
-            color: #64748b;
-            margin-bottom: 1.25rem;
         }
         .offline-title {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
+            font-size: 19px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: var(--text);
+            margin-bottom: 6px;
         }
         .offline-desc {
-            font-size: 14px;
-            color: #475569;
+            font-size: 13.5px;
+            color: var(--text-secondary);
             line-height: 1.6;
-            margin-bottom: 1.5rem;
+            max-width: 420px;
+            margin: 0 auto;
+        }
+        .path-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 12px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            background: var(--surface-subtle);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 12px;
+            font-family: var(--mono);
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .path-chip[hidden] { display: none; }
+
+        .action-row {
+            margin-top: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .offline-btn,
+        .offline-btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            min-height: 38px;
+            padding: 0 18px;
+            border-radius: 8px;
+            font-size: 13.5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
         }
         .offline-btn {
-            display: inline-block;
-            padding: 0.55rem 1.5rem;
-            background: #2563eb;
-            color: #fff;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.15s ease;
+            background: var(--primary);
+            color: #ffffff;
+            border: 1px solid transparent;
         }
-        .offline-btn:hover { background: #1d4ed8; }
-        .offline-btn:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+        .offline-btn:hover { background: var(--primary-hover); }
+        .offline-btn:active { transform: translateY(1px); }
+        .offline-btn-secondary {
+            background: var(--surface);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-strong);
+        }
+        .offline-btn-secondary:hover {
+            background: var(--surface-subtle);
+            color: var(--text);
+        }
+        .offline-btn-secondary[hidden] { display: none; }
+        .offline-btn:focus-visible,
+        .offline-btn-secondary:focus-visible,
+        .cached-link:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        /* Cached Pages Navigation Hub */
         .cached-section {
-            margin-top: 1.5rem;
-            padding-top: 1.25rem;
-            border-top: 1px solid #e2e8f0;
-            text-align: left;
+            padding: 18px 22px 22px;
+            border-top: 1px solid var(--border);
+            background: var(--surface-subtle);
         }
         .cached-section[hidden] { display: none; }
+        .cached-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
         .cached-title {
             font-size: 12.5px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            letter-spacing: 0.01em;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .cached-count {
+            font-size: 11.5px;
             font-weight: 600;
-            color: #64748b;
-            margin-bottom: 0.75rem;
+            color: var(--primary);
+            background: var(--primary-soft);
+            border: 1px solid var(--primary-border);
+            padding: 1px 8px;
+            border-radius: 999px;
         }
         .cached-grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 0.5rem;
+            gap: 9px;
         }
         .cached-link {
-            display: block;
-            padding: 0.55rem 0.75rem;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            min-height: 54px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
             text-decoration: none;
-            font-size: 13px;
-            font-weight: 500;
+            transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+        }
+        .cached-link:hover {
+            border-color: var(--primary);
+            background: var(--surface-hover);
+            box-shadow: 0 4px 12px -4px rgba(37, 99, 235, 0.18);
+        }
+        .cached-link-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            background: var(--primary-soft);
+            color: var(--primary);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .cached-link-body {
+            flex: 1;
+            min-width: 0;
+        }
+        .cached-link-label {
+            display: block;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--text);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            transition: border-color 0.15s ease, background-color 0.15s ease;
         }
-        .cached-link:hover {
-            border-color: #2563eb;
-            background: #eff6ff;
-            color: #2563eb;
+        .cached-link-path {
+            display: block;
+            font-size: 11px;
+            font-family: var(--mono);
+            color: var(--text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 1px;
+        }
+        .cached-chevron {
+            color: var(--text-muted);
+            flex-shrink: 0;
+            transition: transform 0.15s ease, color 0.15s ease;
+        }
+        .cached-link:hover .cached-chevron {
+            transform: translateX(2px);
+            color: var(--primary);
+        }
+
+        /* Empty Cache Tip */
+        .empty-tip {
+            padding: 14px 22px 16px;
+            border-top: 1px solid var(--border);
+            background: var(--surface-subtle);
+            font-size: 12.5px;
+            color: var(--text-muted);
+            text-align: center;
+            line-height: 1.55;
+        }
+        .empty-tip[hidden] { display: none; }
+
+        @media (max-width: 520px) {
+            .offline-topbar { padding: 12px 16px; }
+            .offline-hero { padding: 22px 16px 18px; }
+            .cached-section { padding: 16px; }
+            .cached-grid { grid-template-columns: minmax(0, 1fr); }
+            .action-row { flex-direction: column; align-items: stretch; }
+            .offline-btn, .offline-btn-secondary { width: 100%; min-height: 42px; }
         }
     </style>
 </head>
 <body>
-    <div class="offline-card">
-        <div class="offline-icon">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="1" y1="1" x2="23" y2="23"></line>
-                <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
-                <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
-                <path d="M10.71 5.05A16 16 0 0 1 22.56 9"></path>
-                <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
-                <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
-                <line x1="12" y1="20" x2="12.01" y2="20"></line>
-            </svg>
-        </div>
-        <h1 class="offline-title">暂时无法连接 BookStark</h1>
-        <p class="offline-desc">当前页面尚未缓存且网络不可用或连接超时。你可以检查网络后重试，或直接打开已缓存的离线页面。</p>
-        <button class="offline-btn" onclick="window.location.reload()">重试</button>
-        <div id="cachedSection" class="cached-section" hidden>
-            <div class="cached-title">可离线访问的已缓存页面</div>
+    <main class="offline-shell">
+        <header class="offline-topbar">
+            <div class="brand">
+                <span class="brand-mark" aria-hidden="true">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path>
+                    </svg>
+                </span>
+                <span>BookStark</span>
+            </div>
+            <div id="netPill" class="net-pill" role="status" aria-live="polite">
+                <span class="net-dot" aria-hidden="true"></span>
+                <span id="netStatusText">离线模式</span>
+            </div>
+        </header>
+
+        <section class="offline-hero">
+            <div class="offline-icon-badge" aria-hidden="true">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="2" y1="2" x2="22" y2="22"></line>
+                    <path d="M8.5 16.5a5 5 0 0 1 7 0"></path>
+                    <path d="M2 8.82a15 15 0 0 1 4.17-2.65"></path>
+                    <path d="M10.66 5c4.01-.36 8.14.9 11.34 3.76"></path>
+                    <path d="M16.85 11.25a10 10 0 0 1 2.22 1.68"></path>
+                    <path d="M5 13a10 10 0 0 1 5.24-2.76"></path>
+                    <line x1="12" y1="20" x2="12.01" y2="20"></line>
+                </svg>
+            </div>
+            <h1 class="offline-title">暂时无法连接 BookStark</h1>
+            <p class="offline-desc" id="offlineDesc">当前页面尚未缓存在本机，且网络不可用或连接超时。你可以检查网络后重试，或直接切换至下方已缓存页面继续浏览。</p>
+            <div id="pathChip" class="path-chip" hidden></div>
+
+            <div class="action-row">
+                <button type="button" class="offline-btn" id="retryBtn" onclick="window.location.reload()">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M21 12a9 9 0 1 1-2.64-6.36"></path>
+                        <polyline points="21 3 21 9 15 9"></polyline>
+                    </svg>
+                    <span>重试</span>
+                </button>
+                <button type="button" class="offline-btn-secondary" id="backBtn" hidden onclick="window.history.back()">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    <span>返回上一页</span>
+                </button>
+            </div>
+        </section>
+
+        <section id="cachedSection" class="cached-section" hidden aria-label="可离线访问的已缓存页面">
+            <div class="cached-head">
+                <div class="cached-title">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                        <path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"></path>
+                        <path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"></path>
+                    </svg>
+                    <span>可离线访问的已缓存页面</span>
+                </div>
+                <span id="cachedCount" class="cached-count"></span>
+            </div>
             <div id="cachedList" class="cached-grid"></div>
+        </section>
+
+        <div id="emptyTip" class="empty-tip" hidden>
+            有网时访问过的首页、广场、文章、书籍、速记与书签会自动保存在本机，断网时可直接从这里打开。
         </div>
-    </div>
+    </main>
+
     <script>
     (function() {
-        if (!('caches' in window)) return;
-        var LABELS = {
-            '/': '首页',
-            '/home': '个人首页',
-            '/shares': '广场',
-            '/blogs': '文章',
-            '/books': '书籍',
-            '/notes': '速记与待办',
-            '/bookmarks': '书签',
-            '/topics': '专题',
-            '/labels': '标签',
-            '/nav': '导航',
-            '/tools': '本机创作工具'
+        var curPath = location.pathname + location.search;
+        if (curPath && curPath.indexOf('/static/offline.html') !== 0) {
+            var chip = document.getElementById('pathChip');
+            chip.textContent = '当前地址：' + curPath;
+            chip.hidden = false;
+        }
+        if (window.history && window.history.length > 1) {
+            document.getElementById('backBtn').hidden = false;
+        }
+
+        function syncNetState() {
+            var online = navigator.onLine === true;
+            var pill = document.getElementById('netPill');
+            var text = document.getElementById('netStatusText');
+            pill.classList.toggle('online', online);
+            text.textContent = online ? '网络已恢复，可点击重试' : '离线模式';
+        }
+        window.addEventListener('online', syncNetState);
+        window.addEventListener('offline', syncNetState);
+
+        var ICONS = {
+            home: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>',
+            shares: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M2 12h20"></path><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>',
+            blogs: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>',
+            books: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path></svg>',
+            notes: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>',
+            bookmarks: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"></path></svg>',
+            topics: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect></svg>',
+            labels: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"></path><path d="M7 7h.01"></path></svg>',
+            tools: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>',
+            page: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>'
         };
+
+        var ROUTES = {
+            '/': { label: '首页', icon: 'home', order: 1 },
+            '/home': { label: '个人首页', icon: 'home', order: 2 },
+            '/shares': { label: '广场', icon: 'shares', order: 3 },
+            '/blogs': { label: '文章', icon: 'blogs', order: 4 },
+            '/books': { label: '书籍', icon: 'books', order: 5 },
+            '/notes': { label: '速记与待办', icon: 'notes', order: 6 },
+            '/bookmarks': { label: '书签', icon: 'bookmarks', order: 7 },
+            '/topics': { label: '专题', icon: 'topics', order: 8 },
+            '/labels': { label: '标签', icon: 'labels', order: 9 },
+            '/nav': { label: '网址导航', icon: 'shares', order: 10 },
+            '/tools': { label: '本机创作工具', icon: 'tools', order: 11 }
+        };
+
+        function describeRoute(pathname) {
+            if (ROUTES[pathname]) return ROUTES[pathname];
+            if (pathname.indexOf('/blogs/') === 0) return { label: '已缓存文章', icon: 'blogs', order: 20 };
+            if (pathname.indexOf('/books/') === 0) return { label: '已缓存书籍', icon: 'books', order: 21 };
+            if (pathname.indexOf('/topics/') === 0) return { label: '已缓存专题', icon: 'topics', order: 22 };
+            if (pathname.indexOf('/shares/') === 0) return { label: '已缓存分享页', icon: 'shares', order: 23 };
+            return { label: pathname, icon: 'page', order: 30 };
+        }
+
+        var chevronSvg = '<svg class="cached-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>';
+
+        if (!('caches' in window)) {
+            document.getElementById('emptyTip').hidden = false;
+            return;
+        }
+
         caches.open('bookstark-dynamic-v1').then(function(cache) {
             return cache.keys();
         }).then(function(requests) {
@@ -143,24 +511,55 @@
                     var u = new URL(req.url);
                     if (u.origin !== location.origin) return;
                     if (u.pathname.indexOf('/api/') === 0 || u.pathname.indexOf('/__') === 0 || u.pathname.indexOf('/static/') === 0) return;
+                    if (u.pathname === '/login' || u.pathname === '/register') return;
                     if (seen[u.pathname]) return;
                     seen[u.pathname] = true;
-                    var label = LABELS[u.pathname] || u.pathname;
-                    links.push({ href: u.pathname + u.search, label: label, priority: LABELS[u.pathname] ? 0 : 1 });
+                    var info = describeRoute(u.pathname);
+                    links.push({
+                        href: u.pathname + u.search,
+                        pathText: u.pathname + (u.search || ''),
+                        label: info.label,
+                        icon: info.icon,
+                        order: info.order
+                    });
                 } catch (_) {}
             });
-            links.sort(function(a, b) { return a.priority - b.priority; });
-            if (!links.length) return;
+            links.sort(function(a, b) {
+                return a.order - b.order || a.href.localeCompare(b.href);
+            });
+            if (!links.length) {
+                document.getElementById('emptyTip').hidden = false;
+                return;
+            }
             var host = document.getElementById('cachedList');
             links.slice(0, 8).forEach(function(item) {
                 var a = document.createElement('a');
                 a.className = 'cached-link';
                 a.href = item.href;
-                a.textContent = item.label;
+                var iconWrap = document.createElement('span');
+                iconWrap.className = 'cached-link-icon';
+                iconWrap.setAttribute('aria-hidden', 'true');
+                iconWrap.innerHTML = ICONS[item.icon] || ICONS.page;
+                var body = document.createElement('span');
+                body.className = 'cached-link-body';
+                var titleEl = document.createElement('span');
+                titleEl.className = 'cached-link-label';
+                titleEl.textContent = item.label;
+                var pathEl = document.createElement('span');
+                pathEl.className = 'cached-link-path';
+                pathEl.textContent = item.pathText;
+                body.appendChild(titleEl);
+                body.appendChild(pathEl);
+                a.appendChild(iconWrap);
+                a.appendChild(body);
+                a.insertAdjacentHTML('beforeend', chevronSvg);
                 host.appendChild(a);
             });
+            document.getElementById('cachedCount').textContent = links.length + ' 个可用';
             document.getElementById('cachedSection').hidden = false;
-        }).catch(function() {});
+        }).catch(function() {
+            document.getElementById('emptyTip').hidden = false;
+        });
     })();
     </script>
 </body>
