@@ -110,7 +110,15 @@
 
   function isCachedPageRequest(request) {
     var accept = request.headers && request.headers.get ? (request.headers.get('accept') || '') : '';
-    return request.mode === 'navigate' || request.destination === 'document' || accept.indexOf('text/html') !== -1;
+    if (request.mode === 'navigate' || request.destination === 'document' || accept.indexOf('text/html') !== -1) {
+      return true;
+    }
+    try {
+      var p = new URL(request.url).pathname;
+      return p.indexOf('/api/') !== 0 && p.indexOf('/__') !== 0 && p.indexOf('/static/') !== 0;
+    } catch (_) {
+      return false;
+    }
   }
 
   function clearPageCache() {

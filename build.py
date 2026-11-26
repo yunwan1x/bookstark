@@ -32,13 +32,19 @@ def sw_logic_md5(filepath):
 
 def should_precache(rel):
     """Return whether an asset belongs in the install-time cache."""
-    # Install only the public offline fallback and app icons. Page assets are
-    # cached on demand by the fetch handler; editors/fonts must not compete
-    # with the first paint or dashboard API on a mobile connection.
+    # Pre-cache only the lightweight offline fallback, app icons, and core shell
+    # CSS/JS so cached pages remain styled and interactive offline after upgrades.
+    # Heavy editors (excalidraw/univer/pptist) and webfonts remain on-demand.
     return rel in {
         'static/offline.html',
         'static/icon-192.png',
         'static/icon-512.png',
+        'static/css/tailwind.min.css',
+        'static/css/variables.css',
+        'static/css/components.css',
+        'static/js/i18n.js',
+        'static/js/sw-register.js',
+        'static/js/bs-dialog.js',
     }
 
 

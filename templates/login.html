@@ -75,6 +75,11 @@
             });
             const data = await res.json();
             if (res.ok) {
+                try {
+                    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+                        navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_API_CACHE' });
+                    }
+                } catch (_) {}
                 if (window.BookStarkPWA && window.BookStarkPWA.clearPageCache) {
                     await window.BookStarkPWA.clearPageCache().catch(function() {});
                 }

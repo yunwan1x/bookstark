@@ -8,8 +8,8 @@
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: #f9fafb;
-            color: #1e293b;
+            background: #f8fafc;
+            color: #0f172a;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -18,16 +18,18 @@
         }
         .offline-card {
             text-align: center;
-            max-width: 400px;
-            padding: 3rem 2rem;
+            width: 100%;
+            max-width: 440px;
+            padding: 2.5rem 2rem;
             background: #fff;
             border: 1px solid #e2e8f0;
-            border-radius: 8px;
+            border-radius: 10px;
+            box-shadow: 0 4px 16px rgba(15, 23, 42, 0.04);
         }
         .offline-icon {
             font-size: 3rem;
             color: #64748b;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
         }
         .offline-title {
             font-size: 18px;
@@ -36,13 +38,13 @@
         }
         .offline-desc {
             font-size: 14px;
-            color: #64748b;
+            color: #475569;
             line-height: 1.6;
             margin-bottom: 1.5rem;
         }
         .offline-btn {
             display: inline-block;
-            padding: 0.5rem 1.5rem;
+            padding: 0.55rem 1.5rem;
             background: #2563eb;
             color: #fff;
             border: none;
@@ -54,6 +56,44 @@
         }
         .offline-btn:hover { background: #1d4ed8; }
         .offline-btn:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+        .cached-section {
+            margin-top: 1.5rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid #e2e8f0;
+            text-align: left;
+        }
+        .cached-section[hidden] { display: none; }
+        .cached-title {
+            font-size: 12.5px;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 0.75rem;
+        }
+        .cached-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.5rem;
+        }
+        .cached-link {
+            display: block;
+            padding: 0.55rem 0.75rem;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            color: #1e293b;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: border-color 0.15s ease, background-color 0.15s ease;
+        }
+        .cached-link:hover {
+            border-color: #2563eb;
+            background: #eff6ff;
+            color: #2563eb;
+        }
     </style>
 </head>
 <body>
@@ -70,8 +110,58 @@
             </svg>
         </div>
         <h1 class="offline-title">暂时无法连接 BookStark</h1>
-        <p class="offline-desc">网络不可用、连接超时或服务暂时不可用，请稍后重试。为保护隐私，个人首页不会显示缓存的账号内容。</p>
+        <p class="offline-desc">当前页面尚未缓存且网络不可用或连接超时。你可以检查网络后重试，或直接打开已缓存的离线页面。</p>
         <button class="offline-btn" onclick="window.location.reload()">重试</button>
+        <div id="cachedSection" class="cached-section" hidden>
+            <div class="cached-title">可离线访问的已缓存页面</div>
+            <div id="cachedList" class="cached-grid"></div>
+        </div>
     </div>
+    <script>
+    (function() {
+        if (!('caches' in window)) return;
+        var LABELS = {
+            '/': '首页',
+            '/home': '个人首页',
+            '/shares': '广场',
+            '/blogs': '文章',
+            '/books': '书籍',
+            '/notes': '速记与待办',
+            '/bookmarks': '书签',
+            '/topics': '专题',
+            '/labels': '标签',
+            '/nav': '导航',
+            '/tools': '本机创作工具'
+        };
+        caches.open('bookstark-dynamic-v1').then(function(cache) {
+            return cache.keys();
+        }).then(function(requests) {
+            var seen = Object.create(null);
+            var links = [];
+            (requests || []).forEach(function(req) {
+                try {
+                    var u = new URL(req.url);
+                    if (u.origin !== location.origin) return;
+                    if (u.pathname.indexOf('/api/') === 0 || u.pathname.indexOf('/__') === 0 || u.pathname.indexOf('/static/') === 0) return;
+                    if (seen[u.pathname]) return;
+                    seen[u.pathname] = true;
+                    var label = LABELS[u.pathname] || u.pathname;
+                    links.push({ href: u.pathname + u.search, label: label, priority: LABELS[u.pathname] ? 0 : 1 });
+                } catch (_) {}
+            });
+            links.sort(function(a, b) { return a.priority - b.priority; });
+            if (!links.length) return;
+            var host = document.getElementById('cachedList');
+            links.slice(0, 8).forEach(function(item) {
+                var a = document.createElement('a');
+                a.className = 'cached-link';
+                a.href = item.href;
+                a.textContent = item.label;
+                host.appendChild(a);
+            });
+            document.getElementById('cachedSection').hidden = false;
+        }).catch(function() {});
+    })();
+    </script>
 </body>
 </html>
