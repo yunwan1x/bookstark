@@ -611,12 +611,16 @@ func TestToolPublicationPatchUpdatesMetadataWithoutVersionBump(t *testing.T) {
 	router, token := initPackageWorkflow(t)
 	market := httptest.NewServer(router)
 	t.Cleanup(market.Close)
-	if err := models.BatchUpdateSettings(map[string]string{"tool_market_public_url": market.URL, "tool_market_login_required": "0"}); err != nil {
+	if err := models.BatchUpdateSettings(map[string]string{"tool_market_public_url": "https://old-domain.example", "tool_market_login_required": "0"}); err != nil {
 		t.Fatal(err)
 	}
 	upload := packageWorkflowUploadOK(t, router, token, packageWorkflowFiles("index.html", "1.0.0"), 0)
 	pub := packageWorkflowPublish(t, router, token, upload, "1.0.0", "login")
 	idStr := strconv.FormatInt(upload.ID, 10)
+	// Switch marketplace public URL to the live test server; PATCH should refresh resource_base and hash too.
+	if err := models.BatchUpdateSettings(map[string]string{"tool_market_public_url": market.URL}); err != nil {
+		t.Fatal(err)
+	}
 
 	// Before PATCH: access=login blocks anonymous install even when market allows login-free installs.
 	if w := packageWorkflowGet(router, "", "/api/tool-market/"+idStr+"?metadata=1"); w.Code != 401 {

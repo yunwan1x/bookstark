@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -382,6 +383,7 @@ func updatePublishedToolInfo(c *gin.Context, source models.ToolSource) {
 		return
 	}
 	var files []toolpackage.File
+	base := strings.TrimSuffix(settings.PublicURL, "/market")
 	if current.Distribution == "files" {
 		p, e := models.GetToolPackage(current.Package)
 		if e != nil {
@@ -389,6 +391,9 @@ func updatePublishedToolInfo(c *gin.Context, source models.ToolSource) {
 			return
 		}
 		files = p.Files
+		resourceBase = base + "/api/tool-package-assets/" + current.Package + "/"
+	} else if u, e := url.Parse(resourceBase); e == nil && u.Path != "" {
+		resourceBase = base + u.Path
 	}
 	current.Title = req.Title
 	current.Description = req.Description
@@ -422,7 +427,7 @@ func updatePublishedToolInfo(c *gin.Context, source models.ToolSource) {
 		}
 	}
 	if err == nil {
-		_, err = tx.Exec("UPDATE md_tool_versions SET metadata=? WHERE revision=? AND status='published'", string(metadata), revision)
+		_, err = tx.Exec("UPDATE md_tool_versions SET metadata=?,resource_base=? WHERE revision=? AND status='published'", string(metadata), resourceBase, revision)
 	}
 	if err == nil {
 		err = tx.Commit()
