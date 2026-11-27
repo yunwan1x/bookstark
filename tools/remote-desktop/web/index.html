@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>远程桌面 · BookStark</title>
+  <link rel="stylesheet" href="font-awesome.css">
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <!-- Mobile backdrop for sidebar -->
+    <div id="sidebarBackdrop" class="sidebar-backdrop" hidden></div>
+
+    <!-- Left Sidebar: Unified RDP + VNC Host Manager -->
+    <aside id="sidebar" class="sidebar" aria-label="主机连接列表">
+      <div class="sb-head">
+        <div class="brand">
+          <span class="brand-icon"><i class="fa fa-desktop"></i></span>
+          <span class="brand-title">远程桌面</span>
+        </div>
+        <button id="btnNewConn" class="btn btn-pri btn-sm" type="button">
+          <i class="fa fa-plus"></i> 新建
+        </button>
+      </div>
+
+      <div class="sb-search-wrap">
+        <i class="fa fa-search sb-search-ico"></i>
+        <input id="searchInput" class="sb-search" type="search" placeholder="搜索主机名、IP 或协议…" autocomplete="off">
+      </div>
+
+      <div class="filter-pills" role="tablist">
+        <button class="pill active" data-filter="all" type="button">全部 <span id="cntAll">0</span></button>
+        <button class="pill" data-filter="rdp" type="button">RDP <span id="cntRdp">0</span></button>
+        <button class="pill" data-filter="vnc" type="button">VNC <span id="cntVnc">0</span></button>
+      </div>
+
+      <div id="hostList" class="host-list"></div>
+
+      <div class="sb-foot">
+        <span class="sec-note"><i class="fa fa-shield"></i> AES-256-GCM 凭据托管</span>
+        <button id="btnCollapseSidebar" class="icon-link" type="button" title="折叠侧边栏">
+          <i class="fa fa-columns"></i> 折叠
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="workspace">
+      <!-- Top Session Tabs & Telemetry Bar -->
+      <header class="tabbar">
+        <div class="tabbar-left">
+          <button id="btnExpandSidebar" class="tab-icon-btn" type="button" title="展开主机列表">
+            <i class="fa fa-bars"></i>
+          </button>
+          <div id="sessionTabs" class="session-tabs" role="tablist"></div>
+        </div>
+        <div id="telemetryPill" class="telemetry-pill" hidden>
+          <span id="telemetryDot" class="status-dot"></span>
+          <span id="telemetryText">未连接</span>
+        </div>
+      </header>
+
+      <!-- Remote Display Stage -->
+      <section id="stage" class="stage">
+        <!-- Floating Capsule Toolbar (visible when a session is active) -->
+        <div id="floatingToolbar" class="floating-toolbar" hidden>
+          <div class="tb-group">
+            <div class="dropdown-wrap">
+              <button id="btnCombos" class="tb-btn" type="button" title="发送系统组合键">
+                <i class="fa fa-keyboard"></i><span>快捷键</span><i class="fa fa-caret-down"></i>
+              </button>
+              <div id="comboMenu" class="popover combo-menu" hidden></div>
+            </div>
+
+            <button id="btnVkbd" class="tb-btn" type="button" title="虚拟键盘与粘滞修饰键">
+              <i class="fa fa-th"></i><span>虚拟键盘</span>
+            </button>
+
+            <div class="dropdown-wrap">
+              <button id="btnClipboard" class="tb-btn" type="button" title="双向剪贴板与中文直传">
+                <i class="fa fa-clipboard"></i><span>剪贴板</span>
+              </button>
+              <div id="clipboardPopover" class="popover clip-popover" hidden>
+                <div class="pop-head">
+                  <strong><i class="fa fa-clipboard"></i> 双向剪贴板 &amp; 文本直传</strong>
+                  <span id="clipStatusBadge" class="badge-ok">就绪</span>
+                </div>
+                <textarea id="clipTextarea" class="clip-textarea" rows="4" placeholder="在此输入中文、密码或命令；远端复制的内容也会自动同步显示在这里…"></textarea>
+                <div class="pop-actions">
+                  <button id="btnClipSync" class="btn btn-pri btn-sm" type="button">同步到远端剪贴板</button>
+                  <button id="btnClipType" class="btn btn-sec btn-sm" type="button">模拟键入文本</button>
+                </div>
+                <div class="pop-tip"><i class="fa fa-lightbulb"></i> 遇到登录框或禁止粘贴的终端窗口，点「模拟键入文本」直接输入。</div>
+              </div>
+            </div>
+
+            <!-- RDP-only Audio Control -->
+            <div id="audioControlWrap" class="dropdown-wrap" hidden>
+              <button id="btnAudio" class="tb-btn" type="button" title="RDP 音频回传控制">
+                <i id="audioBtnIco" class="fa fa-volume-up"></i>
+                <span>音频</span>
+                <span id="audioWaveBars" class="wave-bars" hidden>
+                  <i></i><i></i><i></i><i></i>
+                </span>
+              </button>
+              <div id="audioPopover" class="popover audio-popover" hidden>
+                <div class="pop-head">
+                  <strong><i class="fa fa-volume-up"></i> 远端声音输出</strong>
+                  <label class="switch-toggle">
+                    <input id="audioEnabledToggle" type="checkbox" checked>
+                    <span class="switch-slider"></span>
+                  </label>
+                </div>
+                <div class="audio-vol-row">
+                  <i class="fa fa-volume-down"></i>
+                  <input id="audioVolumeSlider" type="range" min="0" max="100" value="85">
+                  <span id="audioVolumeVal" class="mono">85%</span>
+                </div>
+                <div class="vu-panel">
+                  <div class="vu-row">
+                    <span>L</span>
+                    <div class="vu-bar"><div id="vuFillL" class="vu-fill"></div></div>
+                  </div>
+                  <div class="vu-row">
+                    <span>R</span>
+                    <div class="vu-bar"><div id="vuFillR" class="vu-fill"></div></div>
+                  </div>
+                </div>
+                <div class="buf-label">缓冲策略（AudioWorklet 环形队列）</div>
+                <div class="seg-3" id="audioBufferGroup">
+                  <button type="button" class="seg-btn" data-ms="40"><strong>低延迟</strong><small>40ms</small></button>
+                  <button type="button" class="seg-btn active" data-ms="80"><strong>均衡</strong><small>80ms</small></button>
+                  <button type="button" class="seg-btn" data-ms="160"><strong>抗抖动</strong><small>160ms</small></button>
+                </div>
+                <div id="audioFormatMeta" class="audio-meta mono">通道: RDPSND · 等待音频流</div>
+              </div>
+            </div>
+
+            <!-- RDP-only File Transfer Drawer Toggle -->
+            <button id="btnFiles" class="tb-btn" type="button" title="双向文件传输与虚拟共享盘" hidden>
+              <i class="fa fa-folder-open"></i><span>文件传输</span><span id="fileBadge" class="count-badge" hidden>0</span>
+            </button>
+          </div>
+
+          <div class="tb-sep"></div>
+
+          <div class="tb-group">
+            <div class="dropdown-wrap">
+              <button id="btnScale" class="tb-btn" type="button" title="画面缩放模式">
+                <i class="fa fa-expand"></i><span id="scaleLabel">自适应</span><i class="fa fa-caret-down"></i>
+              </button>
+              <div id="scaleMenu" class="popover small-menu" hidden>
+                <button type="button" class="menu-item active" data-scale="fit"><i class="fa fa-compress"></i> 自适应窗口</button>
+                <button type="button" class="menu-item" data-scale="actual"><i class="fa fa-search-plus"></i> 1:1 原始像素</button>
+                <button type="button" class="menu-item" data-scale="stretch"><i class="fa fa-arrows-alt"></i> 铺满画面</button>
+              </div>
+            </div>
+
+            <button id="btnTouchMode" class="tb-btn" type="button" title="切换触控板 / 直触模式">
+              <i class="fa fa-hand-pointer"></i><span>触控板</span>
+            </button>
+
+            <button id="btnScreenshot" class="tb-btn" type="button" title="截取当前远程桌面为 PNG">
+              <i class="fa fa-camera"></i><span>截图</span>
+            </button>
+
+            <button id="btnFullscreen" class="tb-btn" type="button" title="全屏显示">
+              <i class="fa fa-arrows-alt"></i><span>全屏</span>
+            </button>
+
+            <button id="btnReconnect" class="tb-btn" type="button" title="重新连接">
+              <i class="fa fa-refresh"></i>
+            </button>
+
+            <button id="btnDisconnect" class="tb-btn tb-danger" type="button" title="断开当前会话">
+              <i class="fa fa-power-off"></i><span>断开</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Audio Autoplay Unlock Banner -->
+        <div id="audioUnlockBanner" class="audio-unlock-banner" hidden>
+          <span><i class="fa fa-volume-off"></i> 远端有声音到达，浏览器需一次点击手势才能播放</span>
+          <button id="btnUnlockAudio" class="btn btn-pri btn-xs" type="button">激活声音</button>
+        </div>
+
+        <!-- Drag & Drop Overlay -->
+        <div id="dropOverlay" class="drop-overlay" hidden>
+          <div class="drop-box">
+            <i class="fa fa-cloud-upload"></i>
+            <strong>松开鼠标上传文件到远端 Windows</strong>
+            <span>文件将自动注入剪贴板（资源管理器按 Ctrl+V 粘贴）并同步至虚拟共享盘</span>
+          </div>
+        </div>
+
+        <!-- Empty Welcome State -->
+        <div id="welcomeView" class="welcome-view">
+          <div class="welcome-card">
+            <div class="welcome-icon"><i class="fa fa-desktop"></i></div>
+            <h2>远程桌面工作台</h2>
+            <p class="welcome-desc">
+              基于 <strong>Rust IronRDP WASM</strong> 与 <strong>noVNC</strong>，直接复用 BookStark 裸 TCP 隧道零网关直连 Windows RDP（3389）和 Linux / macOS / PVE VNC（5900）。
+            </p>
+            <div class="welcome-features">
+              <span><i class="fa fa-shield"></i> 纯 Rust TLS 1.3 + 指纹核对</span>
+              <span><i class="fa fa-keyboard"></i> 粘滞修饰键 + 中文直传</span>
+              <span><i class="fa fa-volume-up"></i> RDPSND 音频回传</span>
+              <span><i class="fa fa-folder-open"></i> 剪贴板快传 + 虚拟共享盘</span>
+            </div>
+            <div class="welcome-actions">
+              <button id="btnWelcomeNewRdp" class="btn btn-pri" type="button"><i class="fa fa-windows"></i> 新建 RDP 连接</button>
+              <button id="btnWelcomeNewVnc" class="btn btn-sec" type="button"><i class="fa fa-desktop"></i> 新建 VNC 连接</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Multi-Session Viewport Container -->
+        <div id="viewportHost" class="viewport-host" hidden></div>
+
+        <!-- RDP File Transfer & Virtual Drive Slide-Over Drawer -->
+        <aside id="fileDrawer" class="file-drawer" hidden>
+          <div class="fd-head">
+            <strong><i class="fa fa-folder-open"></i> 双向文件传输</strong>
+            <button id="btnCloseFileDrawer" class="icon-btn" type="button" title="关闭"><i class="fa fa-times"></i></button>
+          </div>
+          <div class="fd-tabs">
+            <button id="fdTabClip" class="fd-tab active" type="button">⚡ 剪贴板快传</button>
+            <button id="fdTabVdrive" class="fd-tab" type="button">💾 虚拟共享盘</button>
+          </div>
+
+          <!-- Tab 1: CLIPRDR Drag & Drop + Remote Copy -->
+          <div id="fdPaneClip" class="fd-pane">
+            <div id="clipDropArea" class="fd-dropzone">
+              <i class="fa fa-upload"></i>
+              <div>
+                <strong>拖放文件或点击选择</strong>
+                <span>注入远端剪贴板后，在 Windows 按 Ctrl+V 粘贴</span>
+              </div>
+              <input id="clipFileInput" type="file" multiple hidden>
+            </div>
+
+            <div class="fd-section-title">
+              <span>远端已复制文件（Ctrl+C）</span>
+              <small id="remoteFilesCount">0 个</small>
+            </div>
+            <div id="remoteFilesList" class="fd-list">
+              <div class="fd-empty">在远端 Windows 选中文件按 Ctrl+C，这里会自动出现下载卡片。</div>
+            </div>
+
+            <div class="fd-section-title">
+              <span>本地待粘贴文件（→ 远端）</span>
+              <small id="localFilesCount">0 个</small>
+            </div>
+            <div id="localFilesList" class="fd-list">
+              <div class="fd-empty">暂未注入本地文件。</div>
+            </div>
+          </div>
+
+          <!-- Tab 2: RDPDR Virtual Shared Drive \\tsclient\BookStark -->
+          <div id="fdPaneVdrive" class="fd-pane" hidden>
+            <div class="vd-banner">
+              <div class="vd-banner-top">
+                <span id="vdriveStatusBadge" class="badge-ok">等待挂载</span>
+                <code class="mono">\\tsclient\BookStark</code>
+              </div>
+              <p>在远端 Windows「此电脑」中直接读写共享盘文件，浏览器端同步管理。</p>
+            </div>
+            <div class="vd-actions">
+              <button id="btnVdriveUpload" class="btn btn-pri btn-sm" type="button"><i class="fa fa-upload"></i> 上传到共享盘</button>
+              <button id="btnVdriveRefresh" class="btn btn-sec btn-sm" type="button"><i class="fa fa-refresh"></i> 刷新</button>
+              <input id="vdriveFileInput" type="file" multiple hidden>
+            </div>
+            <div id="vdriveFilesList" class="fd-list">
+              <div class="fd-empty">共享盘暂无文件。</div>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Virtual Keyboard Dock / Floating Layer -->
+        <div id="vkbdContainer" class="vkbd-container" hidden>
+          <!-- Mode 1: Compact Sticky Modifier Strip -->
+          <div id="vkbdStrip" class="vkbd-strip">
+            <div class="vkbd-strip-keys">
+              <button class="vk-key vk-mod" data-code="ControlLeft" type="button">Ctrl</button>
+              <button class="vk-key vk-mod" data-code="AltLeft" type="button">Alt</button>
+              <button class="vk-key vk-mod" data-code="ShiftLeft" type="button">Shift</button>
+              <button class="vk-key vk-mod" data-code="MetaLeft" type="button">Win</button>
+              <button class="vk-key" data-code="Escape" type="button">Esc</button>
+              <button class="vk-key" data-code="Tab" type="button">Tab</button>
+              <button class="vk-key" data-code="Delete" type="button">Del</button>
+              <button class="vk-key vk-accent" data-combo="cad" type="button">Ctrl+Alt+Del</button>
+              <button class="vk-key" data-code="ArrowLeft" type="button">←</button>
+              <button class="vk-key" data-code="ArrowUp" type="button">↑</button>
+              <button class="vk-key" data-code="ArrowDown" type="button">↓</button>
+              <button class="vk-key" data-code="ArrowRight" type="button">→</button>
+            </div>
+            <div class="vkbd-strip-ctrl">
+              <button id="btnToggleFullKbd" class="vk-ctl-btn" type="button"><i class="fa fa-chevron-up"></i> 全键盘</button>
+              <button id="btnCloseVkbd" class="vk-ctl-btn" type="button" title="隐藏虚拟键盘"><i class="fa fa-times"></i></button>
+            </div>
+          </div>
+
+          <!-- Mode 2: Full QWERTY + Chinese Direct-Text Bar -->
+          <div id="vkbdFull" class="vkbd-full" hidden>
+            <div class="vkbd-ime-bar">
+              <input id="vkbdImeInput" class="vkbd-ime-input" type="text" placeholder="直接用本机/手机中文输入法打字，回车发送到远端光标处…" autocomplete="off">
+              <button id="btnVkbdSendText" class="btn btn-ok btn-sm" type="button">发送文本 ↵</button>
+              <button id="btnVkbdFloatToggle" class="vk-ctl-btn" type="button" title="切换半透明悬浮/底部停靠"><i class="fa fa-window-restore"></i></button>
+            </div>
+            <div id="vkbdGrid" class="vkbd-grid"></div>
+          </div>
+        </div>
+
+        <!-- Mobile / Tablet Virtual Touchpad Panel -->
+        <div id="touchpadDeck" class="touchpad-deck" hidden>
+          <div class="tp-bar">
+            <span class="tp-hint"><i class="fa fa-hand-pointer"></i> 单指移光标 · 轻点左键 · 双指轻点右键 · 双指滚动</span>
+            <button id="btnCloseTouchpad" class="vk-ctl-btn" type="button"><i class="fa fa-times"></i> 切回直触</button>
+          </div>
+          <div id="touchpadSurface" class="tp-surface">
+            <span>虚拟触控板（指针不挡视线）</span>
+          </div>
+          <div class="tp-buttons">
+            <button id="tpBtnLeft" class="tp-btn" type="button">左键</button>
+            <button id="tpBtnMiddle" class="tp-btn" type="button">中键 / 滚轮</button>
+            <button id="tpBtnRight" class="tp-btn" type="button">右键</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Modal 1: Create / Edit Connection -->
+  <div id="connModal" class="modal-mask" hidden>
+    <div class="modal-card modal-lg" role="dialog" aria-modal="true" aria-labelledby="connModalTitle">
+      <div class="modal-head">
+        <h3 id="connModalTitle">新建远程桌面连接</h3>
+        <button id="btnCloseConnModal" class="icon-btn" type="button"><i class="fa fa-times"></i></button>
+      </div>
+      <form id="connForm" class="modal-body">
+        <input type="hidden" id="fId">
+        <div class="proto-switch">
+          <button type="button" class="proto-opt active" data-proto="rdp">
+            <strong><i class="fa fa-windows"></i> RDP 远程桌面（Rust IronRDP）</strong>
+            <span>默认 3389 · Windows 10/11 / Server / xrdp</span>
+          </button>
+          <button type="button" class="proto-opt" data-proto="vnc">
+            <strong><i class="fa fa-desktop"></i> VNC 远程控制（noVNC）</strong>
+            <span>默认 5900 · Linux / macOS / PVE / TigerVNC</span>
+          </button>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-field">
+            <label for="fName">连接名称</label>
+            <input id="fName" type="text" placeholder="如：书房 Win11 主力机" required>
+          </div>
+          <div class="form-field form-host-port">
+            <div>
+              <label for="fHost">主机地址 / IP</label>
+              <input id="fHost" type="text" placeholder="192.168.1.10 或 127.0.0.1" required>
+            </div>
+            <div>
+              <label for="fPort">端口</label>
+              <input id="fPort" type="number" min="1" max="65535" value="3389" required>
+            </div>
+          </div>
+
+          <div class="form-field" id="fieldUsername">
+            <label for="fUsername">用户名</label>
+            <input id="fUsername" type="text" placeholder="Windows / Linux 用户名" autocomplete="off">
+          </div>
+          <div class="form-field">
+            <label for="fPassword">密码（留空则连接时询问）</label>
+            <input id="fPassword" type="password" placeholder="••••••••" autocomplete="new-password">
+          </div>
+
+          <div class="form-field rdp-only">
+            <label for="fDomain">域名 Domain（可选）</label>
+            <input id="fDomain" type="text" placeholder="WORKGROUP（留空自动）">
+          </div>
+          <div class="form-field rdp-only">
+            <label for="fResolution">初始分辨率</label>
+            <select id="fResolution">
+              <option value="auto">自动匹配当前窗口（推荐）</option>
+              <option value="1920x1080">1920 × 1080 (Full HD)</option>
+              <option value="1600x900">1600 × 900 (HD+)</option>
+              <option value="1440x900">1440 × 900</option>
+              <option value="1280x800">1280 × 800</option>
+              <option value="1024x768">1024 × 768</option>
+            </select>
+          </div>
+
+          <div class="form-field vnc-only" hidden>
+            <label for="fVncQuality">VNC 画质压缩</label>
+            <select id="fVncQuality">
+              <option value="6">均衡画质（默认）</option>
+              <option value="9">高清无损优先</option>
+              <option value="3">流畅省流量</option>
+            </select>
+          </div>
+          <div class="form-field vnc-only" hidden>
+            <label>观察模式</label>
+            <label class="inline-check">
+              <input id="fVncViewOnly" type="checkbox">
+              <span>仅查看画面（只读，防误触）</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="rdp-toggles rdp-only">
+          <label class="inline-check">
+            <input id="fRdpNla" type="checkbox" checked>
+            <span>启用 NLA / CredSSP（Windows 推荐；连 xrdp 兼容自动回落 TLS）</span>
+          </label>
+          <label class="inline-check">
+            <input id="fRdpAudio" type="checkbox" checked>
+            <span>启用 RDP 音频回传（RDPSND）</span>
+          </label>
+          <label class="inline-check">
+            <input id="fRdpVdrive" type="checkbox" checked>
+            <span>挂载虚拟共享盘（\\tsclient\BookStark）</span>
+          </label>
+        </div>
+
+        <label class="secret-check">
+          <input id="fSaveSecret" type="checkbox" checked>
+          <span><i class="fa fa-lock"></i> <strong>记住登录密码</strong>（通过 BookStark.secrets AES-256-GCM 加密保存）</span>
+        </label>
+
+        <div class="modal-foot">
+          <button id="btnCancelConn" class="btn btn-sec" type="button">取消</button>
+          <button id="btnSaveOnly" class="btn btn-sec" type="button">仅保存</button>
+          <button id="btnSaveConnect" class="btn btn-pri" type="submit">保存并立即连接</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 2: RDP TLS Certificate Fingerprint Verification (TOFU) -->
+  <div id="tlsModal" class="modal-mask" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="tlsModalTitle">
+      <div class="modal-head">
+        <h3 id="tlsModalTitle"><i class="fa fa-shield"></i> RDP TLS 证书指纹核对</h3>
+      </div>
+      <div class="modal-body">
+        <div id="tlsAlertBox" class="tls-alert">
+          <div id="tlsWarnTitle" class="tls-warn-title">首次连接该主机，请核对服务器 TLS 证书指纹</div>
+          <div class="tls-kv">
+            <div><span>目标主机：</span><strong id="tlsHost" class="mono"></strong></div>
+            <div><span>证书主体：</span><strong id="tlsSubject" class="mono"></strong></div>
+            <div><span>加密套件：</span><strong id="tlsProtocol" class="mono"></strong></div>
+          </div>
+          <div class="tls-fp-label">SHA-256 指纹：</div>
+          <div id="tlsFingerprint" class="tls-fp mono"></div>
+          <div id="tlsOldFpWrap" class="tls-old-fp" hidden>
+            <div>⚠️ 警告：该主机之前信任的指纹与此不一致！可能存在证书重签或中间人攻击。</div>
+            <div class="mono" id="tlsOldFingerprint"></div>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button id="btnTlsReject" class="btn btn-sec" type="button">取消连接</button>
+          <button id="btnTlsOnce" class="btn btn-sec" type="button">仅本次信任</button>
+          <button id="btnTlsSave" class="btn btn-pri" type="button">信任并保存指纹</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 3: Runtime Password / Auth Prompt -->
+  <div id="authModal" class="modal-mask" hidden>
+    <div class="modal-card modal-sm" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <h3 id="authModalTitle">输入认证凭据</h3>
+        <button id="btnCloseAuthModal" class="icon-btn" type="button"><i class="fa fa-times"></i></button>
+      </div>
+      <form id="authForm" class="modal-body">
+        <div id="authUserWrap" class="form-field">
+          <label for="authUser">用户名</label>
+          <input id="authUser" type="text" autocomplete="off">
+        </div>
+        <div class="form-field">
+          <label for="authPass">密码</label>
+          <input id="authPass" type="password" required autocomplete="current-password">
+        </div>
+        <div class="modal-foot">
+          <button id="btnAuthCancel" class="btn btn-sec" type="button">取消</button>
+          <button class="btn btn-pri" type="submit">继续连接</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="toastRoot" class="toast-root" aria-live="polite"></div>
+
+  <script src="novnc-rfb.js"></script>
+  <script src="keymaps.js"></script>
+  <script src="audio-player.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
