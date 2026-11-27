@@ -51,8 +51,9 @@
 </div>
 </div>
 <label for="publishNotes">{{call .T "market.form_notes"}}<textarea class="dialog-input" id="publishNotes" name="notes" rows="3">{{.PublishForm.Notes}}</textarea></label>
+{{if .CanSaveInfo}}<p class="market-info" id="publishInfoModeHint">{{call .T "market.form_save_info_hint"}}</p>{{end}}
 <p role="status" id="publishStatus"></p>
-<div class="market-actions"><a class="bs-btn bs-btn-cancel" href="/market/publish?selected={{.ToolID}}" id="toolPublishBack">{{call .T "market.back_selection"}}</a><button class="bs-btn bs-btn-cancel" id="toolPublishDraft" type="button">{{call .T "market.form_draft"}}</button><button class="bs-btn bs-btn-cancel" id="toolPublishPreview" type="button">{{call .T "market.form_check"}}</button><button class="bs-btn bs-btn-primary" type="submit">{{if .IsAdmin}}{{call .T "market.form_publish"}}{{else}}{{call .T "market.form_review"}}{{end}}</button></div>
+<div class="market-actions"><a class="bs-btn bs-btn-cancel" href="/market/publish?selected={{.ToolID}}" id="toolPublishBack">{{call .T "market.back_selection"}}</a><button class="bs-btn bs-btn-cancel" id="toolPublishDraft" type="button">{{call .T "market.form_draft"}}</button><button class="bs-btn bs-btn-cancel" id="toolPublishPreview" type="button">{{call .T "market.form_check"}}</button>{{if .CanSaveInfo}}<button class="bs-btn bs-btn-primary" id="toolPublishSaveInfo" type="button">{{call .T "market.form_save_info"}}</button>{{end}}<button class="bs-btn {{if .CanSaveInfo}}bs-btn-cancel{{else}}bs-btn-primary{{end}}" id="toolPublishSubmit" type="submit">{{if .IsAdmin}}{{if .CanSaveInfo}}{{call .T "market.form_publish_new"}}{{else}}{{call .T "market.form_publish"}}{{end}}{{else}}{{call .T "market.form_review"}}{{end}}</button></div>
 </fieldset>
 </form>
 <button id="toolPublishRetry" class="bs-btn bs-btn-cancel mt-4" type="button" hidden>{{call .T "tools.retry"}}</button>

@@ -82,6 +82,12 @@ func renderToolPublishPage(c *gin.Context, publication gin.H, source string) {
 	data["IsPackage"] = publication["package"] != nil
 	data["PackageEntry"] = publication["metadata"].(models.ToolMetadata).Entry
 	data["PermissionsChanged"] = publication["permissions_changed"]
+	published, _ := publication["published"].(bool)
+	publishedPkg, _ := publication["published_package"].(string)
+	packageReplaced := data["IsPackage"].(bool) && published && publishedPkg != "" && publishedPkg != publication["metadata"].(models.ToolMetadata).Package
+	data["Published"] = published
+	data["PackageReplaced"] = packageReplaced
+	data["CanSaveInfo"] = published && !packageReplaced
 	m := publication["metadata"].(models.ToolMetadata)
 	title, description := m.Title, m.Description
 	if title == "" {

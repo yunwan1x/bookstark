@@ -115,7 +115,13 @@ func toolPublicationDataFor(c *gin.Context, id int64, title, description string)
 			accounts = append(accounts, account)
 		}
 	}
-	return gin.H{"id": id, "published": current != "", "revision": current, "title": title, "description": description, "metadata": m, "member_accounts": accounts, "versions": versions, "market": readMarketSettings(c), "icons": models.ToolIconOptions}, nil
+	var publishedPackage string
+	var publishedPermissions models.ToolPermissions
+	if current != "" {
+		publishedPackage = m.Package
+		publishedPermissions = m.Permissions
+	}
+	return gin.H{"id": id, "published": current != "", "revision": current, "published_package": publishedPackage, "published_permissions": publishedPermissions, "title": title, "description": description, "metadata": m, "member_accounts": accounts, "versions": versions, "market": readMarketSettings(c), "icons": models.ToolIconOptions}, nil
 }
 
 func validToolCategory(s string) bool {

@@ -19,7 +19,43 @@
   return '<h3>'+t('引用资源','Referenced resources')+'</h3><ul class="market-checks market-resource-list">'+resources.map(resource=>'<li><div class="market-meta"><span class="tag-badge">'+e(labels[resource.kind]||labels.other)+'</span><span>'+(resource.size<1024?e(String(resource.size))+' B':size(resource.size))+'</span></div><a class="market-resource-url" href="'+escAttr(resource.url)+'" target="_blank" rel="noopener noreferrer">'+e(resource.url)+'</a>'+(resource.webdav_path?'<p class="market-muted">'+t('WebDAV 路径：','WebDAV path: ')+e(resource.account+' · '+resource.webdav_path)+'</p>':'')+'</li>').join('')+'</ul><p class="market-muted">'+t('总大小还包含 HTML 入口；资源按地址去重。','The total also includes the HTML entry. Resource URLs are deduplicated.')+'</p>';
  }
  previewButton.onclick=async()=>{previewButton.disabled=true;const status=document.getElementById('publishStatus');status.textContent=t('正在检查资源…','Checking resources…');try{const result=await api(path+'?preview=1','POST',payload());const m=result.metadata;ToolMarketUI.modal(t('资源检查结果','Resource check results'),'<div class="market-form"><p>'+e(f.title.value)+' · v'+e(m.version)+'</p><ul class="market-checks"><li>✓ '+t('HTML 入口已包含','HTML entry included')+'</li><li>✓ '+m.asset_count+(isPackage?t(' 项包内资源可读取',' package files accessible'):t(' 项原始资源可读取',' original dependencies accessible'))+'</li><li>'+t('预计下载大小：','Estimated download size: ')+size(m.size)+'</li></ul>'+'<h3>'+t('声明权限','Declared capabilities')+'</h3>'+BookStarkToolPermissions.list(m.permissions)+resourceChecks(result.resources||[])+'<p>'+t('检查不会发布工具，资源会在安装时下载。','Checking does not publish the tool. Resources are downloaded on installation.')+'</p></div>');status.textContent=t('资源检查通过。','Resource checks passed.');}catch(err){status.textContent=errorText(err);}finally{previewButton.disabled=false;}};
- form.onsubmit=async event=>{event.preventDefault();const b=form.querySelector('[type=submit]'),status=document.getElementById('publishStatus');b.disabled=true;status.textContent=t('正在检查原始资源并发布，请稍候…','Checking original resources and publishing…');try{const result=await api(path,'POST',payload());published=true;clearTimeout(draftTimer);try{sessionStorage.removeItem(draftKey);}catch(_){}const meta=result.metadata;status.className='market-info market-success';status.textContent=(result.status==='pending'?t('已提交审核','Submitted for review'):t('发布成功','Published'))+' · v'+meta.version+' · '+size(meta.size)+' · '+meta.asset_count+t(' 项资源',' resources');b.disabled=true;const a=document.createElement('a');a.href='/market?selected='+(result.id||id);a.className='bs-btn bs-btn-primary';a.textContent=t('查看市场','View marketplace');status.after(a);}catch(err){status.className='market-error';status.textContent=errorText(err);b.disabled=false;}};
+ const saveInfoButton=document.getElementById('toolPublishSaveInfo'),submitButton=document.getElementById('toolPublishSubmit')||form.querySelector('[type=submit]'),infoModeHint=document.getElementById('publishInfoModeHint');
+ const defaultInfoHint=infoModeHint?.textContent||'';
+ const managedPermissionKeys=(BookStarkToolPermissions.catalog||[]).filter(spec=>spec.managed??['read_files','save_files','socket_tcp'].includes(spec.key)).map(spec=>spec.key);
+ function permissionsModified(){
+  if(!data.published)return false;
+  const cur=BookStarkToolPermissions.effective(BookStarkToolPermissions.collect(form)),pub=BookStarkToolPermissions.effective(data.published_permissions||{});
+  return managedPermissionKeys.some(key=>Boolean(cur[key])!==Boolean(pub[key]));
+ }
+ function syncSaveInfoMode(){
+  if(!saveInfoButton)return;
+  const blocked=permissionsModified();
+  saveInfoButton.disabled=blocked;
+  saveInfoButton.classList.toggle('bs-btn-primary',!blocked);
+  saveInfoButton.classList.toggle('bs-btn-cancel',blocked);
+  if(submitButton){submitButton.classList.toggle('bs-btn-primary',blocked);submitButton.classList.toggle('bs-btn-cancel',!blocked);}
+  if(infoModeHint)infoModeHint.textContent=blocked?t('已修改 BookStark 运行权限，需填写新版本号并点击「发布新版本」。','BookStark runtime permissions changed. Enter a new version and publish a new release.'):defaultInfoHint;
+ }
+ if(saveInfoButton){
+  form.querySelectorAll('[data-tool-permission]').forEach(el=>el.addEventListener('change',syncSaveInfoMode));
+  syncSaveInfoMode();
+  saveInfoButton.onclick=async()=>{
+   if(permissionsModified()){syncSaveInfoMode();return;}
+   const status=document.getElementById('publishStatus');
+   saveInfoButton.disabled=true;status.className='';status.textContent=t('正在保存信息…','Saving information…');
+   try{
+    const result=await api(path,'PATCH',payload());
+    published=true;clearTimeout(draftTimer);try{sessionStorage.removeItem(draftKey);}catch(_){}
+    const meta=result.metadata;
+    status.className='market-info market-success';
+    status.textContent=t('信息已保存（未升级版本号）','Information saved (version unchanged)')+' · v'+meta.version;
+    if(!status.nextElementSibling||status.nextElementSibling.tagName!=='A'){
+     const a=document.createElement('a');a.href='/market?selected='+(result.id||id);a.className='bs-btn bs-btn-primary';a.textContent=t('查看市场','View marketplace');status.after(a);
+    }
+   }catch(err){status.className='market-error';status.textContent=errorText(err);}finally{syncSaveInfoMode();}
+  };
+ }
+ form.onsubmit=async event=>{event.preventDefault();const b=submitButton,status=document.getElementById('publishStatus');b.disabled=true;status.textContent=t('正在检查原始资源并发布，请稍候…','Checking original resources and publishing…');try{const result=await api(path,'POST',payload());published=true;clearTimeout(draftTimer);try{sessionStorage.removeItem(draftKey);}catch(_){}const meta=result.metadata;status.className='market-info market-success';status.textContent=(result.status==='pending'?t('已提交审核','Submitted for review'):t('发布成功','Published'))+' · v'+meta.version+' · '+size(meta.size)+' · '+meta.asset_count+t(' 项资源',' resources');b.disabled=true;const a=document.createElement('a');a.href='/market?selected='+(result.id||id);a.className='bs-btn bs-btn-primary';a.textContent=t('查看市场','View marketplace');status.after(a);}catch(err){status.className='market-error';status.textContent=errorText(err);b.disabled=false;}};
  if(data.published||versions.some(v=>v.status==='pending')){const withdraw=document.createElement('button');withdraw.type='button';withdraw.className='bs-btn bs-btn-cancel';withdraw.textContent=t('下架 / 撤回工具','Withdraw tool');withdraw.onclick=async()=>{if(!await BSDialog.confirm2(t('下架并撤回待审核版本？已安装的工具不受影响。','Withdraw this tool and pending submissions? Installed copies remain available.')))return;withdraw.disabled=true;try{await api(path,'DELETE');document.getElementById('publishStatus').textContent=isPackage?t('已下架并撤回待审核版本。','Tool and pending submissions withdrawn.'):t('已下架并撤回待审核版本，现在可以删除来源文章。','Tool and pending submissions withdrawn. The source article can now be deleted.');}catch(err){document.getElementById('publishStatus').textContent=errorText(err);withdraw.disabled=false;}};form.querySelector('.market-actions').prepend(withdraw);}
  if(versions.length){const history=document.createElement('section');history.className='market-panel';history.style.marginTop='20px';history.innerHTML='<h2>'+t('发布记录','Release history')+'</h2>'+versions.map(v=>'<p class="market-review">v'+e(v.version)+' · '+e(({published:t('已发布','Published'),pending:t('待审核','Pending review'),rejected:t('已拒绝','Rejected'),withdrawn:t('已撤回','Withdrawn')})[v.status]||v.status)+'</p>').join('');form.closest('section').after(history);}
  document.getElementById('toolPublishFields').disabled=false;form.removeAttribute('aria-busy');document.getElementById('toolPublishLoading').hidden=true;

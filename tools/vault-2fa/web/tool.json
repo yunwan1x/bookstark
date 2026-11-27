@@ -7,7 +7,7 @@
   "icon_style": "solid",
   "icon_color": "#2563eb",
   "entry": "index.html",
-  "access": "login",
+  "access": "inherit",
   "permissions": {
     "read_files": true,
     "save_files": true,

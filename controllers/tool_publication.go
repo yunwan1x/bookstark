@@ -104,6 +104,10 @@ func publishToolSource(c *gin.Context, router http.Handler, source models.ToolSo
 		c.JSON(200, gin.H{"ok": true})
 		return
 	}
+	if c.Request.Method == "PATCH" {
+		updatePublishedToolInfo(c, source)
+		return
+	}
 	settings := readMarketSettings(c)
 	if !settings.Enabled {
 		c.JSON(503, gin.H{"error": "market_disabled"})
@@ -295,4 +299,137 @@ func publishToolSource(c *gin.Context, router http.Handler, source models.ToolSo
 	}
 	// Store review metadata independently from the editable source article.
 	c.JSON(200, gin.H{"ok": true, "id": id, "revision": revision, "metadata": req.ToolMetadata, "status": req.Status})
+}
+
+func updatePublishedToolInfo(c *gin.Context, source models.ToolSource) {
+	settings := readMarketSettings(c)
+	if !settings.Enabled {
+		c.JSON(503, gin.H{"error": "market_disabled"})
+		return
+	}
+	if !isAdmin(c) && !settings.MembersPublish {
+		c.Status(403)
+		return
+	}
+	var revision, rawMeta, content, resourceBase string
+	err := models.DB.QueryRow(`SELECT r.revision,v.metadata,v.content,v.resource_base FROM md_tool_releases r JOIN md_tool_versions v ON v.revision=r.revision AND v.status='published' WHERE r.tool_id=?`, source.ID).Scan(&revision, &rawMeta, &content, &resourceBase)
+	if err != nil {
+		toolAPIError(c, err)
+		return
+	}
+	var current models.ToolMetadata
+	if err = json.Unmarshal([]byte(rawMeta), &current); err != nil {
+		toolAPIError(c, err)
+		return
+	}
+	var req struct {
+		Title          string                  `json:"title"`
+		Description    string                  `json:"description"`
+		Category       string                  `json:"category"`
+		Icon           string                  `json:"icon"`
+		IconStyle      string                  `json:"icon_style"`
+		IconColor      string                  `json:"icon_color"`
+		Access         string                  `json:"access"`
+		Members        []int64                 `json:"members"`
+		MemberAccounts []string                `json:"member_accounts"`
+		Notes          string                  `json:"notes"`
+		Package        string                  `json:"package"`
+		Entry          string                  `json:"entry"`
+		Permissions    *models.ToolPermissions `json:"permissions"`
+	}
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, 16384)
+	if c.ShouldBindJSON(&req) != nil {
+		c.Status(400)
+		return
+	}
+	if (req.Package != "" && req.Package != current.Package) || (req.Entry != "" && req.Entry != current.Entry) || (req.Permissions != nil && !current.Permissions.SameManaged(req.Permissions.Effective())) {
+		c.JSON(409, gin.H{"error": "version_bump_required"})
+		return
+	}
+	req.Title = strings.TrimSpace(req.Title)
+	if !models.ValidToolAppearance(req.Icon, req.IconStyle, req.IconColor) {
+		c.JSON(400, gin.H{"error": "invalid_tool_appearance"})
+		return
+	}
+	req.IconColor = strings.ToLower(req.IconColor)
+	if len(req.MemberAccounts) > 1000 {
+		c.Status(400)
+		return
+	}
+	if req.Access == "members" {
+		if len(req.MemberAccounts) > 0 {
+			req.Members = nil
+			for _, account := range req.MemberAccounts {
+				m, e := models.GetMemberByAccount(strings.TrimSpace(account))
+				if e != nil || m.Status != 1 {
+					c.JSON(400, gin.H{"error": "invalid_market_member"})
+					return
+				}
+				req.Members = append(req.Members, m.MemberID)
+			}
+		}
+		for _, memberID := range req.Members {
+			if memberID <= 0 {
+				c.Status(400)
+				return
+			}
+		}
+	} else {
+		req.Members = nil
+	}
+	if len(req.Title) == 0 || len(req.Title) > 200 || len(req.Description) > 4000 || len(req.Notes) > 8000 || !validToolCategory(req.Category) || (req.Access != "inherit" && req.Access != "login" && req.Access != "public" && req.Access != "members") || len(req.Members) > 1000 || (req.Access == "members" && len(req.Members) == 0) {
+		c.JSON(400, gin.H{"error": "invalid_publication"})
+		return
+	}
+	var files []toolpackage.File
+	if current.Distribution == "files" {
+		p, e := models.GetToolPackage(current.Package)
+		if e != nil {
+			toolAPIError(c, e)
+			return
+		}
+		files = p.Files
+	}
+	current.Title = req.Title
+	current.Description = req.Description
+	current.Category = req.Category
+	current.Icon = req.Icon
+	current.IconStyle = req.IconStyle
+	current.IconColor = req.IconColor
+	current.Access = req.Access
+	current.Members = req.Members
+	current.Notes = req.Notes
+	current.Hash, err = referenceDigest(marketTool{ToolMetadata: current, Title: current.Title, Description: current.Description, Content: content, ResourceBase: resourceBase, Files: files})
+	if err != nil {
+		toolAPIError(c, err)
+		return
+	}
+	metadata, _ := json.Marshal(current)
+	tx, err := models.DB.Begin()
+	if err != nil {
+		toolAPIError(c, err)
+		return
+	}
+	defer tx.Rollback()
+	result, err := tx.Exec("UPDATE md_tool_releases SET title=?,description=? WHERE tool_id=? AND revision=?", current.Title, current.Description, source.ID, revision)
+	if err == nil {
+		n, e := result.RowsAffected()
+		if e != nil {
+			err = e
+		} else if n != 1 {
+			c.JSON(409, gin.H{"error": "conflict"})
+			return
+		}
+	}
+	if err == nil {
+		_, err = tx.Exec("UPDATE md_tool_versions SET metadata=? WHERE revision=? AND status='published'", string(metadata), revision)
+	}
+	if err == nil {
+		err = tx.Commit()
+	}
+	if err != nil {
+		toolAPIError(c, err)
+		return
+	}
+	c.JSON(200, gin.H{"ok": true, "id": source.ID, "revision": revision, "metadata": current, "status": current.Status, "updated_in_place": true})
 }

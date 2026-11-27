@@ -606,3 +606,114 @@ func TestToolPackageWorkflowDraftFilesRequireOwner(t *testing.T) {
 		t.Fatal("anonymous draft file exposed")
 	}
 }
+
+func TestToolPublicationPatchUpdatesMetadataWithoutVersionBump(t *testing.T) {
+	router, token := initPackageWorkflow(t)
+	market := httptest.NewServer(router)
+	t.Cleanup(market.Close)
+	if err := models.BatchUpdateSettings(map[string]string{"tool_market_public_url": market.URL, "tool_market_login_required": "0"}); err != nil {
+		t.Fatal(err)
+	}
+	upload := packageWorkflowUploadOK(t, router, token, packageWorkflowFiles("index.html", "1.0.0"), 0)
+	pub := packageWorkflowPublish(t, router, token, upload, "1.0.0", "login")
+	idStr := strconv.FormatInt(upload.ID, 10)
+
+	// Before PATCH: access=login blocks anonymous install even when market allows login-free installs.
+	if w := packageWorkflowGet(router, "", "/api/tool-market/"+idStr+"?metadata=1"); w.Code != 401 {
+		t.Fatalf("expected 401 before patch, got %d %s", w.Code, w.Body.String())
+	}
+	// Publish page shows Save Info button when viewing currently published package.
+	if page := packageWorkflowGet(router, token, "/market/packages/"+idStr); page.Code != 200 || !strings.Contains(page.Body.String(), "toolPublishSaveInfo") {
+		t.Fatalf("expected save-info button on published package page: %d", page.Code)
+	}
+
+	// PATCH metadata & access without version bump.
+	patchBody := map[string]any{
+		"title":       "Packaged terminal updated",
+		"description": "Updated description without bumping version",
+		"category":    "productivity",
+		"icon":        "terminal",
+		"icon_style":  "solid",
+		"icon_color":  "#2563eb",
+		"access":      "inherit",
+		"notes":       "Updated release notes in place",
+		"package":     upload.Package.Token,
+		"entry":       upload.Package.Entry,
+		"permissions": map[string]any{"schema": 1, "read_files": true, "save_files": true},
+	}
+	w := adminAssetRequest(router, token, "PATCH", "/api/tool-publications/"+idStr, patchBody)
+	var patched struct {
+		OK             bool                `json:"ok"`
+		Revision       string              `json:"revision"`
+		UpdatedInPlace bool                `json:"updated_in_place"`
+		Metadata       models.ToolMetadata `json:"metadata"`
+	}
+	if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &patched) != nil || !patched.OK || !patched.UpdatedInPlace {
+		t.Fatalf("patch failed: %d %s", w.Code, w.Body.String())
+	}
+	if patched.Revision != pub.Revision || patched.Metadata.Version != "1.0.0" || patched.Metadata.Access != "inherit" || patched.Metadata.Title != "Packaged terminal updated" {
+		t.Fatalf("unexpected patched state: rev=%s/%s meta=%+v", patched.Revision, pub.Revision, patched.Metadata)
+	}
+	var versionCount int
+	if err := models.DB.QueryRow(`SELECT COUNT(*) FROM md_tool_versions WHERE tool_id=?`, upload.ID).Scan(&versionCount); err != nil || versionCount != 1 {
+		t.Fatalf("expected 1 version row, got %d err=%v", versionCount, err)
+	}
+
+	// After PATCH: remote client without market login can fetch catalog, manifest (verifies referenceDigest!), and install completely.
+	w = adminAssetRequest(router, token, "POST", "/api/tool-sources", map[string]any{"server": market.URL + "/market"})
+	var catalog struct {
+		Tools []struct {
+			ID     int64  `json:"id"`
+			Title  string `json:"title"`
+			Access string `json:"access"`
+		} `json:"tools"`
+	}
+	if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &catalog) != nil || len(catalog.Tools) != 1 || catalog.Tools[0].Access != "inherit" || catalog.Tools[0].Title != "Packaged terminal updated" {
+		t.Fatalf("remote catalog after patch: %d %s", w.Code, w.Body.String())
+	}
+	remoteID := catalog.Tools[0].ID
+	w = packageWorkflowGet(router, token, "/api/tool-sources/"+strconv.FormatInt(remoteID, 10))
+	var manifest struct {
+		models.ToolMetadata
+		Revision string `json:"revision"`
+	}
+	if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &manifest) != nil || manifest.Revision != pub.Revision || manifest.Hash != patched.Metadata.Hash {
+		t.Fatalf("remote manifest after patch: %d %s", w.Code, w.Body.String())
+	}
+	w = adminAssetRequest(router, token, "PUT", "/api/tool-installs/"+strconv.FormatInt(remoteID, 10), map[string]any{"revision": manifest.Revision, "hash": manifest.Hash})
+	if w.Code != 200 {
+		t.Fatalf("remote install without market login after patch failed: %d %s", w.Code, w.Body.String())
+	}
+
+	// Attempting to change runtime permissions via PATCH must be rejected with version_bump_required.
+	badPerm := map[string]any{
+		"title":       "Packaged terminal updated",
+		"description": "Updated description",
+		"category":    "productivity",
+		"access":      "inherit",
+		"package":     upload.Package.Token,
+		"entry":       upload.Package.Entry,
+		"permissions": map[string]any{"schema": 1, "read_files": true, "save_files": true, "socket_tcp": true},
+	}
+	if w := adminAssetRequest(router, token, "PATCH", "/api/tool-publications/"+idStr, badPerm); w.Code != 409 || !strings.Contains(w.Body.String(), "version_bump_required") {
+		t.Fatalf("expected 409 version_bump_required for permission change, got %d %s", w.Code, w.Body.String())
+	}
+
+	// Uploading a replacement package hides Save Info button and blocks PATCH with new package token.
+	next := packageWorkflowUploadOK(t, router, token, packageWorkflowFiles("index.html", "1.0.1"), upload.ID)
+	if page := packageWorkflowGet(router, token, "/market/packages/"+idStr+"?package="+next.Package.Token); page.Code != 200 || strings.Contains(page.Body.String(), "toolPublishSaveInfo") {
+		t.Fatalf("save-info button should be hidden when package is replaced: %d", page.Code)
+	}
+	badPkg := map[string]any{
+		"title":       "Packaged terminal updated",
+		"description": "Updated description",
+		"category":    "productivity",
+		"access":      "inherit",
+		"package":     next.Package.Token,
+		"entry":       next.Package.Entry,
+		"permissions": map[string]any{"schema": 1, "read_files": true, "save_files": true},
+	}
+	if w := adminAssetRequest(router, token, "PATCH", "/api/tool-publications/"+idStr, badPkg); w.Code != 409 || !strings.Contains(w.Body.String(), "version_bump_required") {
+		t.Fatalf("expected 409 version_bump_required for package replacement, got %d %s", w.Code, w.Body.String())
+	}
+}
