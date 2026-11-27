@@ -313,7 +313,12 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
   // Reauthentication must target that original market without changing the default.
   await api('/api/tool-market/client/login','DELETE',{server:remote+'/market'});
   await api('/api/tool-market/client','PUT',{url:origin+'/market',check_updates:true,auto_update:false});
-  await page.goto(origin+'/market?status=installed');await act('details',remoteID).click();await act('update',remoteID).click();
+  await page.goto(origin+'/market?status=installed');
+  assert.equal(await page.locator(`.market-card[data-tool-id="${id}"] .market-source-badge.is-local`).getAttribute('data-tool-server'),new URL(origin).host,'local installed card shows local server host');
+  assert.equal(await page.locator(`.market-card[data-tool-id="${remoteID}"] .market-source-badge.is-remote`).getAttribute('data-tool-server'),new URL(remote).host,'remote installed card shows remote server host');
+  await act('details',remoteID).click();
+  assert.ok((await page.locator('#marketDetail').textContent()).includes(new URL(remote).origin),'detail panel shows remote source server');
+  await act('update',remoteID).click();
   await page.getByRole('heading',{name:'登录工具市场',exact:true}).waitFor();
   assert.equal(await page.locator('dialog .market-info').textContent(),remote,'login must target the installed tool source');
   await page.locator('dialog input[name="account"]').fill('remote-user');await page.locator('dialog input[name="password"]').fill('remote-password');await page.getByRole('button',{name:'登录并继续安装',exact:true}).click();

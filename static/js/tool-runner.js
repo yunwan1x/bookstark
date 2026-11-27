@@ -51,8 +51,8 @@
  exportButton.onclick=exportData;document.getElementById('toolRuntimeExportError').onclick=exportData;
  info.onclick=()=>{
   if(!meta)return;BSActionDropdown.close(more);
-  const p=meta.permissions||{};
-  U.modal(t('run_info'),'<dl class="tool-runtime-info"><dt>'+t('run_name')+'</dt><dd>'+e(meta.title)+'</dd><dt>'+t('run_version')+'</dt><dd>v'+e(meta.version)+'</dd><dt>'+t('run_source')+'</dt><dd>'+e(meta.source||location.origin+'/market')+'</dd><dt>'+t('run_permissions')+'</dt><dd>'+permissionsUI.list(p)+'</dd></dl>');
+  const p=meta.permissions||{},rawSource=meta.source||'',displaySource=/^https?:\/\//i.test(rawSource)?rawSource:rawSource&&rawSource!=='market'?location.origin+'/shares/'+encodeURIComponent(rawSource):location.origin+'/market';
+  U.modal(t('run_info'),'<dl class="tool-runtime-info"><dt>'+t('run_name')+'</dt><dd>'+e(meta.title)+'</dd><dt>'+t('run_version')+'</dt><dd>v'+e(meta.version)+'</dd><dt>'+t('run_source')+'</dt><dd>'+e(displaySource)+'</dd><dt>'+t('run_permissions')+'</dt><dd>'+permissionsUI.list(p)+'</dd></dl>');
  };
  async function drain(){
   if(draining)return;draining=true;failed=false;retrySave.disabled=true;

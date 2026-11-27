@@ -47,6 +47,7 @@
 .market-card h2 button{text-align:left}
 .market-card p{font-size:13px;margin-bottom:8px;color:var(--color-text-secondary);overflow-wrap:anywhere}
 .market-card-footer{border-top:1px solid var(--color-border);padding-top:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.market-card-footer>.market-meta{min-width:0;max-width:100%}
 .market-card-footer .market-actions{margin-left:auto;gap:8px}
 .market-card:has(.market-card-menu.open){z-index:3}
 .market-card-menu>.bs-action-dd-btn{border:0;background:transparent}
@@ -84,6 +85,10 @@
 .market-install-state{background:var(--color-bg-hover);color:var(--color-text-secondary)}
 .market-install-state.is-installed{background:var(--color-success-light);color:var(--color-success)}
 .market-install-state.has-update{background:var(--color-warning-light);color:var(--color-warning)}
+.market-source-badge{display:inline-flex;align-items:center;gap:4px;max-width:190px;min-width:0;background:var(--color-bg-hover);color:var(--color-text-secondary);border:1px solid var(--color-border)}
+.market-source-badge.is-remote{background:var(--color-primary-light);color:var(--color-primary);border-color:transparent}
+.market-source-badge>i{font-size:10px;flex-shrink:0}
+.market-source-badge>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .market-grid.is-list{grid-template-columns:1fr}
 .market-grid.is-list :is(.market-card,.market-card-placeholder){flex-direction:row;align-items:center}
 .market-grid.is-list .market-card-footer{border:0;padding:0;justify-content:flex-end}
