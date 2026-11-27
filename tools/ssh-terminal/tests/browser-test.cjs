@@ -58,13 +58,16 @@ const { chromium } = require("playwright"),
     const csrf = (
       await (await context.request.get(origin + "/api/csrf-token")).json()
     ).csrf_token;
+    const toolVersion = JSON.parse(
+      fs.readFileSync(path.resolve(__dirname, "../web/tool.json"), "utf8"),
+    ).version;
     const upload = await context.request.post(origin + "/api/tool-packages", {
       multipart: {
         file: {
           name: "ssh-terminal.zip",
           mimeType: "application/zip",
           buffer: fs.readFileSync(
-            path.join(out, "bookstark-ssh-terminal-1.0.2.zip"),
+            path.join(out, `bookstark-ssh-terminal-${toolVersion}.zip`),
           ),
         },
       },
@@ -77,7 +80,7 @@ const { chromium } = require("playwright"),
     const payload = {
       ...config,
       title: "SSH 终端",
-      version: config.version || "1.0.2",
+      version: config.version || toolVersion,
       category: "development",
       access: "login",
       package: pkg.token,

@@ -42,6 +42,9 @@
     save: ["保存连接", "Save connection"],
     connect: ["连接", "Connect"],
     disconnect: ["断开", "Disconnect"],
+    zenMode: ["专注模式（最大化终端）", "Focus mode (maximize terminal)"],
+    exitZen: ["退出专注", "Exit focus"],
+    moreActions: ["更多操作", "More actions"],
     search: ["搜索", "Search"],
     next: ["下一处", "Next"],
     reconnect: ["重新连接", "Reconnect"],
@@ -201,6 +204,10 @@
       ["pasteTerminal", "粘贴", "Paste"],
       ["smallerFont", "减小字号", "Smaller font"],
       ["largerFont", "增大字号", "Larger font"],
+      ["zenToggle", "专注模式（最大化终端）", "Focus mode (maximize terminal)"],
+      ["zenExit", "退出专注模式", "Exit focus mode"],
+      ["mobileMore", "更多操作", "More actions"],
+      ["disconnect", "断开连接", "Disconnect"],
       ["closeSearch", "关闭搜索", "Close search"],
       ["sidebarShade", "关闭连接列表", "Close connections"],
     ]) {
@@ -363,6 +370,12 @@
     $("formError").hidden = true;
     $("editor").hidden = false;
     $("terminalWorkspace").hidden = true;
+    $("terminalActions").hidden = true;
+    $("app").classList.remove("in-terminal", "zen-mode");
+    $("zenExit").hidden = true;
+    $("zenToggle").setAttribute("aria-pressed", "false");
+    $("moreWrap").classList.remove("open");
+    $("mobileMore").setAttribute("aria-expanded", "false");
     mobile(false);
     renderTabs();
     renderHosts();
@@ -525,6 +538,7 @@
     for (const s of sessions.values()) {
       const el = document.createElement("div");
       el.className = "tab" + (!editorMode && active === s.id ? " active" : "");
+      el.title = s.cfg.user + "@" + s.cfg.host + ":" + s.cfg.port;
       el.innerHTML =
         '<span class="dot ' +
         (s.state === "connected" ? "online" : "") +
@@ -538,6 +552,9 @@
       el.querySelector("[role=tab]").onclick = () => activate(s.id);
       el.querySelector(".close-tab").onclick = () => closeSession(s);
       container.appendChild(el);
+      if (!editorMode && active === s.id) {
+        el.scrollIntoView({ block: "nearest", inline: "nearest" });
+      }
     }
   }
   function activate(id) {
@@ -547,6 +564,8 @@
     reconnectTarget = null;
     $("editor").hidden = true;
     $("terminalWorkspace").hidden = false;
+    $("terminalActions").hidden = false;
+    $("app").classList.add("in-terminal");
     for (const s of sessions.values()) s.el.hidden = s.id !== id;
     mobile(false);
     renderTabs();
@@ -1045,6 +1064,33 @@
   }
   $("smallerFont").onclick = () => setFont(-1);
   $("largerFont").onclick = () => setFont(1);
+  function setZen(on) {
+    const enabled = Boolean(on) && !editorMode;
+    $("app").classList.toggle("zen-mode", enabled);
+    $("zenExit").hidden = !enabled;
+    $("zenToggle").setAttribute("aria-pressed", String(enabled));
+    $("moreWrap").classList.remove("open");
+    $("mobileMore").setAttribute("aria-expanded", "false");
+    requestAnimationFrame(() => {
+      fitActive();
+      sessions.get(active)?.term.focus();
+    });
+  }
+  $("zenToggle").onclick = () =>
+    setZen(!$("app").classList.contains("zen-mode"));
+  $("zenExit").onclick = () => setZen(false);
+  $("mobileMore").onclick = (event) => {
+    event.stopPropagation();
+    const open = !$("moreWrap").classList.contains("open");
+    $("moreWrap").classList.toggle("open", open);
+    $("mobileMore").setAttribute("aria-expanded", String(open));
+  };
+  document.addEventListener("click", (event) => {
+    if (!event.target.closest("#moreWrap")) {
+      $("moreWrap").classList.remove("open");
+      $("mobileMore").setAttribute("aria-expanded", "false");
+    }
+  });
   $("searchTerminal").onclick = () => {
     $("searchBar").hidden = !$("searchBar").hidden;
     if (!$("searchBar").hidden) $("terminalQuery").focus();
