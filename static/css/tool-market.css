@@ -46,9 +46,10 @@
 .market-card h2{font-size:14px;font-weight:600;margin-bottom:8px;overflow-wrap:anywhere}
 .market-card h2 button{text-align:left}
 .market-card p{font-size:13px;margin-bottom:8px;color:var(--color-text-secondary);overflow-wrap:anywhere}
-.market-card-footer{border-top:1px solid var(--color-border);padding-top:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.market-card-footer>.market-meta{min-width:0;max-width:100%}
-.market-card-footer .market-actions{margin-left:auto;gap:8px}
+.market-card-footer{border-top:1px solid var(--color-border);padding-top:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:nowrap}
+.market-card-footer>.market-meta{min-width:0;flex-wrap:nowrap;overflow:hidden}
+.market-card-footer .market-actions{margin-left:auto;gap:6px;flex-wrap:nowrap;flex-shrink:0}
+.market-card-footer .bs-btn{white-space:nowrap;flex-shrink:0}
 .market-card:has(.market-card-menu.open){z-index:3}
 .market-card-menu>.bs-action-dd-btn{border:0;background:transparent}
 .market-card-menu :is(button,[role=menuitem]):focus-visible{outline:2px solid var(--color-focus);outline-offset:2px}
@@ -82,10 +83,10 @@
 .market-color-swatches [aria-pressed=true]{outline:2px solid var(--color-focus);outline-offset:2px}
 .market-appearance input[type=color]{width:64px;height:36px;padding:4px;cursor:pointer}
 .market-meta{font-size:12px;color:var(--color-text-secondary);gap:8px}
-.market-install-state{background:var(--color-bg-hover);color:var(--color-text-secondary)}
+.market-install-state{background:var(--color-bg-hover);color:var(--color-text-secondary);white-space:nowrap;flex-shrink:0}
 .market-install-state.is-installed{background:var(--color-success-light);color:var(--color-success)}
 .market-install-state.has-update{background:var(--color-warning-light);color:var(--color-warning)}
-.market-source-badge{display:inline-flex;align-items:center;gap:4px;max-width:190px;min-width:0;background:var(--color-bg-hover);color:var(--color-text-secondary);border:1px solid var(--color-border)}
+.market-source-badge{display:inline-flex;align-items:center;gap:4px;max-width:220px;min-width:0;background:var(--color-bg-hover);color:var(--color-text-secondary);border:1px solid var(--color-border)}
 .market-source-badge.is-remote{background:var(--color-primary-light);color:var(--color-primary);border-color:transparent}
 .market-source-badge>i{font-size:10px;flex-shrink:0}
 .market-source-badge>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
