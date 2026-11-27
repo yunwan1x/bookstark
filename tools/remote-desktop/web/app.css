@@ -48,7 +48,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 }
 .sb-search:focus { border-color: var(--pri-hi); }
 
-.filter-pills { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.filter-pills { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
 .pill {
   background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--muted);
   font-size: 11.5px; font-weight: 700; padding: 5px 6px; cursor: pointer; display: flex; justify-content: center; gap: 4px;
@@ -71,6 +71,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 }
 .proto-rdp { background: rgba(59, 130, 246, .2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, .35); }
 .proto-vnc { background: rgba(139, 92, 246, .22); color: #c4b5fd; border: 1px solid rgba(139, 92, 246, .35); }
+.proto-android { background: rgba(16, 185, 129, .2); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, .38); }
 .hc-addr { font-size: 11.5px; color: var(--muted); font-family: var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hc-foot { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 11px; color: #64748b; }
 .hc-secret { color: #fbbf24; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }
@@ -274,7 +275,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .viewport-host { flex: 1; min-height: 0; position: relative; overflow: hidden; }
 .session-viewport {
   position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-  overflow: auto; background: #05080f; outline: none;
+  overflow: auto; background: #05080f; outline: none; padding: 50px 10px 10px;
 }
 .session-viewport.scale-fit canvas { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; }
 .session-viewport.scale-actual { align-items: flex-start; justify-content: flex-start; }
@@ -432,6 +433,30 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .modal-foot { display: flex; justify-content: flex-end; gap: 8px; padding-top: 6px; }
 
 .proto-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.proto-switch-3 { grid-template-columns: repeat(3, 1fr); }
+
+/* Android Navigation Dock & ADB File Browser */
+.android-nav-bar {
+  flex-shrink: 0; background: rgba(15, 23, 42, .96); border-top: 1px solid var(--border-hi);
+  padding: 6px 12px; display: flex; align-items: center; justify-content: center; gap: 6px; z-index: 30;
+  overflow-x: auto;
+}
+.anav-btn {
+  height: 32px; padding: 0 11px; border-radius: 8px; border: 1px solid #334155; background: #1e293b;
+  color: #e2e8f0; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;
+  cursor: pointer; white-space: nowrap;
+}
+.anav-btn:hover { background: #334155; color: #fff; }
+.anav-btn:active { background: #059669; border-color: #10b981; color: #fff; }
+.anav-sep { width: 1px; height: 20px; background: #334155; margin: 0 3px; }
+.adb-path-bar { display: flex; gap: 5px; align-items: center; }
+.adb-path-input {
+  flex: 1; background: #070b12; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0;
+  font-size: 11.5px; padding: 5px 8px; outline: none;
+}
+.adb-path-input:focus { border-color: #10b981; }
+.adb-quick-paths { display: flex; gap: 5px; flex-wrap: wrap; }
+.android-canvas { border-radius: 14px; border: 1px solid #1f2937; }
 .proto-opt {
   text-align: left; padding: 10px 12px; border-radius: 11px; border: 1.5px solid var(--border);
   background: var(--bg); color: var(--text); cursor: pointer; display: flex; flex-direction: column; gap: 3px;
@@ -482,6 +507,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .toast.ok { border-color: #10b981; }
 .toast.err { border-color: #ef4444; color: #fecaca; }
 
+.stage.drawer-open .viewport-host { margin-right: 356px; }
 .stage.drawer-open .floating-toolbar { left: calc(50% - 178px); max-width: calc(100% - 372px); padding: 4px 6px; gap: 3px; }
 .stage.drawer-open .floating-toolbar .tb-btn { padding: 0 7px; font-size: 11.5px; }
 
@@ -490,6 +516,7 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 @media (max-width: 860px) {
   .sidebar { position: fixed; left: 0; top: 0; bottom: 0; margin-left: 0 !important; transform: translateX(-100%); }
   .sidebar.mobile-open { transform: translateX(0); }
+  .stage.drawer-open .viewport-host { margin-right: 0; }
   .stage.drawer-open .floating-toolbar { left: 50%; max-width: calc(100% - 12px); }
   .floating-toolbar { padding: 4px 6px; gap: 3px; overflow-x: auto; scrollbar-width: none; }
   .floating-toolbar::-webkit-scrollbar { display: none; }

@@ -1042,6 +1042,363 @@
   }
 
   // =========================================================================
+  // Android Session Controller (Tango ADB + Scrcpy v3.3.3 + WebCodecs)
+  // =========================================================================
+  class AndroidSession {
+    constructor(profile, app) {
+      this.id = uid();
+      this.protocol = "android";
+      this.profile = profile;
+      this.app = app;
+      this.status = "connecting";
+      this.statusDetail = "正在建立 ADB TCP 隧道…";
+      this.width = 0;
+      this.height = 0;
+      this.deviceName = profile.name;
+      this.socket = null;
+      this.handle = null;
+      this.destroyed = false;
+      this.remoteClipText = "";
+      this.cursorX = 360;
+      this.cursorY = 640;
+
+      // Audio
+      this.audioEnabled = profile.androidAudio !== false;
+      this.audioFormat = "Scrcpy RAW PCM · 等待音频流";
+      this.audioPlayer = new window.RdpAudioPlayer({
+        onVu: (l, r) => this.app.onSessionAudioVu(this, l, r),
+        onSuspended: () => this.app.onSessionAudioSuspended(this, true),
+        onActive: () => this.app.onSessionAudioSuspended(this, false),
+      });
+
+      // ADB File Manager state
+      this.adbPath = "/sdcard/Download";
+      this.adbFiles = [];
+      this.adbLoading = false;
+
+      // DOM elements
+      this.viewportEl = document.createElement("div");
+      this.viewportEl.className = "session-viewport scale-fit";
+      this.viewportEl.tabIndex = 0;
+
+      this.canvas = document.createElement("canvas");
+      this.canvas.className = "rdp-canvas android-canvas";
+      this.canvas.width = 720;
+      this.canvas.height = 1280;
+
+      this.overlayEl = document.createElement("div");
+      this.overlayEl.className = "session-overlay-msg";
+      this.viewportEl.appendChild(this.canvas);
+      this.viewportEl.appendChild(this.overlayEl);
+
+      this.bindInputEvents();
+      this.updateOverlay("正在连接 Android " + profile.host + ":" + profile.port, this.statusDetail, true);
+    }
+
+    async connect() {
+      if (!window.BookStark || !window.BookStark.sockets) {
+        this.setError("当前环境未提供 BookStark.sockets TCP 能力。");
+        return;
+      }
+      if (!window.BookStarkAndroid) {
+        this.setError("Android ADB/Scrcpy 引擎尚未加载，请刷新重试。");
+        return;
+      }
+      try {
+        this.status = "connecting";
+        this.updateOverlay("正在连接 " + this.profile.host + ":" + this.profile.port, "正在建立 BookStark TCP 隧道…", true);
+        this.app.refreshChrome();
+
+        const port = Number(this.profile.port) || 5555;
+        this.socket = await window.BookStark.sockets.connect(this.profile.host, port);
+        if (this.destroyed) {
+          this.socket.close();
+          return;
+        }
+
+        const [bitRateStr, fpsStr] = String(this.profile.androidBitrate || "4000000:60").split(":");
+        this.handle = await window.BookStarkAndroid.connect({
+          toolSocket: this.socket,
+          serial: this.profile.host + ":" + port,
+          secretGet,
+          secretSet,
+          canvas: this.canvas,
+          maxSize: Number(this.profile.androidMaxSize ?? 1280),
+          bitRate: Number(bitRateStr) || 4000000,
+          maxFps: Number(fpsStr) || 60,
+          enableAudio: this.audioEnabled,
+          onStatus: (detail) => {
+            if (this.destroyed || this.status === "connected") return;
+            this.statusDetail = detail;
+            this.updateOverlay("正在连接 " + this.profile.name, detail, true);
+          },
+          onSize: (w, h) => {
+            this.width = w;
+            this.height = h;
+            this.cursorX = Math.floor(w / 2);
+            this.cursorY = Math.floor(h / 2);
+            this.app.refreshChrome();
+          },
+          onClipboard: (text) => {
+            this.remoteClipText = text || "";
+            this.app.onSessionRemoteClipboard(this, this.remoteClipText);
+          },
+          onAudioState: (ok, label) => {
+            this.audioFormat = label || (ok ? "Scrcpy RAW PCM" : "音频未启用");
+            this.app.refreshAudioUi();
+          },
+          onAudioPcm: (buf, sr, ch, bps) => {
+            this.app.onSessionAudioPacket(this);
+            if (this.audioEnabled) {
+              this.audioPlayer.feedPcm(sr, ch, bps, buf);
+            }
+          },
+          onDisconnected: (reason) => {
+            if (this.destroyed || this.status === "error") return;
+            this.status = "disconnected";
+            this.updateOverlay("Android 会话已断开", reason || "ADB 连接已关闭", false);
+            this.app.refreshChrome();
+          },
+        });
+
+        if (this.destroyed) {
+          this.handle.close();
+          return;
+        }
+
+        this.status = "connected";
+        this.deviceName = this.handle.deviceName || this.profile.name;
+        this.width = this.handle.width || this.width;
+        this.height = this.handle.height || this.height;
+        this.overlayEl.hidden = true;
+        this.viewportEl.focus();
+        this.app.refreshChrome();
+        toast("已连接 Android：" + this.deviceName, "ok");
+      } catch (err) {
+        const msg = (err && (err.message || err.code)) || String(err);
+        this.setError("Android 连接失败：" + msg);
+      }
+    }
+
+    setError(message) {
+      this.status = "error";
+      this.statusDetail = message;
+      this.updateOverlay("连接失败", message, false);
+      this.app.refreshChrome();
+      toast(message, "err");
+    }
+
+    updateOverlay(title, detail, spinning) {
+      this.overlayEl.hidden = false;
+      this.overlayEl.innerHTML =
+        (spinning ? '<div class="spinner"></div>' : '<i class="fa fa-mobile" style="font-size:32px;color:#64748b;"></i>') +
+        "<strong>" + escapeHtml(title) + "</strong>" +
+        "<span>" + escapeHtml(detail) + "</span>" +
+        (!spinning
+          ? '<button type="button" class="btn btn-pri btn-sm js-reconnect-inline"><i class="fa fa-refresh"></i> 重新连接</button>'
+          : "");
+      const btn = this.overlayEl.querySelector(".js-reconnect-inline");
+      if (btn) btn.onclick = () => this.app.reconnectSession(this.id);
+    }
+
+    mapCanvasCoords(clientX, clientY) {
+      const rect = this.canvas.getBoundingClientRect();
+      const w = this.width || this.canvas.width || 720;
+      const h = this.height || this.canvas.height || 1280;
+      if (!rect.width || !rect.height) return { x: 0, y: 0 };
+      const rx = (clientX - rect.left) / rect.width;
+      const ry = (clientY - rect.top) / rect.height;
+      const x = Math.max(0, Math.min(w - 1, Math.round(rx * w)));
+      const y = Math.max(0, Math.min(h - 1, Math.round(ry * h)));
+      this.cursorX = x;
+      this.cursorY = y;
+      return { x, y };
+    }
+
+    bindInputEvents() {
+      let dragging = false;
+      this.canvas.addEventListener("contextmenu", (e) => {
+        e.preventDefault();
+        // Right click acts as Android Back button
+        if (this.status === "connected" && this.handle) {
+          this.handle.sendAndroidAction("back").catch(() => {});
+        }
+      });
+      this.canvas.addEventListener("pointerdown", (e) => {
+        if (e.button === 2) return;
+        if (this.app.touchpadEnabled && e.pointerType === "touch") return;
+        this.viewportEl.focus();
+        this.audioPlayer.unlock().catch(() => {});
+        if (this.status !== "connected" || !this.handle) return;
+        dragging = true;
+        this.canvas.setPointerCapture?.(e.pointerId);
+        const { x, y } = this.mapCanvasCoords(e.clientX, e.clientY);
+        this.handle.injectTouch("down", x, y, 1).catch(() => {});
+      });
+      this.canvas.addEventListener("pointermove", (e) => {
+        if (!dragging || this.status !== "connected" || !this.handle) return;
+        const { x, y } = this.mapCanvasCoords(e.clientX, e.clientY);
+        this.handle.injectTouch("move", x, y, 1).catch(() => {});
+      });
+      const endDrag = (e) => {
+        if (!dragging) return;
+        dragging = false;
+        if (this.status !== "connected" || !this.handle) return;
+        const { x, y } = this.mapCanvasCoords(e.clientX, e.clientY);
+        this.handle.injectTouch("up", x, y, 0).catch(() => {});
+      };
+      this.canvas.addEventListener("pointerup", endDrag);
+      this.canvas.addEventListener("pointercancel", endDrag);
+      this.canvas.addEventListener(
+        "wheel",
+        (e) => {
+          e.preventDefault();
+          if (this.status !== "connected" || !this.handle) return;
+          const { x, y } = this.mapCanvasCoords(e.clientX, e.clientY);
+          const sx = Math.max(-1, Math.min(1, -e.deltaX / 120));
+          const sy = Math.max(-1, Math.min(1, -e.deltaY / 120));
+          this.handle.injectScroll(x, y, sx, sy).catch(() => {});
+        },
+        { passive: false }
+      );
+      this.viewportEl.addEventListener("keydown", (e) => {
+        if (this.status !== "connected") return;
+        if (e.isComposing || e.keyCode === 229) return;
+        e.preventDefault();
+        this.app.handlePhysicalKey(this, e.code, true);
+      });
+      this.viewportEl.addEventListener("keyup", (e) => {
+        if (this.status !== "connected") return;
+        e.preventDefault();
+        this.app.handlePhysicalKey(this, e.code, false);
+      });
+    }
+
+    sendMouse(x, y, flags) {
+      if (this.status !== "connected" || !this.handle) return;
+      if (flags & PTR_DOWN) {
+        if (flags & PTR_BUTTON2) {
+          this.handle.sendAndroidAction("back").catch(() => {});
+        } else {
+          this.handle.injectTouch("down", x, y, 1).catch(() => {});
+        }
+      } else if (flags & (PTR_BUTTON1 | PTR_BUTTON3)) {
+        this.handle.injectTouch("up", x, y, 0).catch(() => {});
+      } else if (flags & PTR_MOVE) {
+        this.handle.injectTouch("move", x, y, 0).catch(() => {});
+      }
+    }
+
+    sendWheel(x, y, delta, horizontal) {
+      if (this.status !== "connected" || !this.handle) return;
+      const v = Math.max(-1, Math.min(1, delta / 120));
+      this.handle.injectScroll(x, y, horizontal ? v : 0, horizontal ? 0 : v).catch(() => {});
+    }
+
+    sendKeyCode(code, pressed) {
+      if (this.status !== "connected" || !this.handle) return;
+      this.handle.injectKeyCode(code, pressed, 0).catch(() => {});
+    }
+
+    sendText(text) {
+      if (this.status !== "connected" || !this.handle || !text) return;
+      // Scrcpy setClipboard with paste=true seamlessly injects Chinese & Unicode into Android!
+      this.handle.setClipboard(text, true).catch(() => {});
+    }
+
+    sendClipboardText(text) {
+      if (this.status !== "connected" || !this.handle) return;
+      this.handle.setClipboard(text, false).catch(() => {});
+    }
+
+    sendAction(act) {
+      if (this.status !== "connected" || !this.handle) return;
+      this.handle.sendAndroidAction(act).catch(() => {});
+    }
+
+    setAudioEnabled(enabled) {
+      this.audioEnabled = !!enabled;
+      this.audioPlayer.setMuted(!enabled);
+    }
+
+    async loadAdbDir(dirPath) {
+      if (this.status !== "connected" || !this.handle) return;
+      this.adbPath = (dirPath || "/sdcard/Download").replace(/\/+$/, "") || "/";
+      this.adbLoading = true;
+      this.app.renderFileDrawer();
+      try {
+        this.adbFiles = await this.handle.listDir(this.adbPath);
+      } catch (err) {
+        this.adbFiles = [];
+        toast("读取手机目录失败：" + ((err && err.message) || err), "err");
+      } finally {
+        this.adbLoading = false;
+        this.app.renderFileDrawer();
+      }
+    }
+
+    async handleUploadOrApk(files) {
+      if (this.status !== "connected" || !this.handle || !files.length) return;
+      for (const file of Array.from(files)) {
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        if (/\.apk$/i.test(file.name)) {
+          toast("正在推送并安装 APK：" + file.name + "…");
+          try {
+            const out = await this.handle.installApk(file.name, bytes);
+            if (/Success/i.test(String(out))) {
+              toast("APK 安装成功：" + file.name, "ok");
+            } else {
+              toast("APK 安装结果：" + String(out).trim().slice(0, 80), "err");
+            }
+          } catch (err) {
+            toast("APK 安装失败：" + ((err && err.message) || err), "err");
+          }
+        } else {
+          const target = (this.adbPath === "/" ? "" : this.adbPath) + "/" + file.name;
+          try {
+            await this.handle.pushFile(target, bytes);
+            toast("已上传到手机：" + target, "ok");
+          } catch (err) {
+            toast("上传失败：" + ((err && err.message) || err), "err");
+          }
+        }
+      }
+      await this.loadAdbDir(this.adbPath);
+    }
+
+    async downloadAdbFile(name) {
+      if (this.status !== "connected" || !this.handle) return;
+      const fullPath = (this.adbPath === "/" ? "" : this.adbPath) + "/" + name;
+      try {
+        toast("正在从手机拉取：" + name + "…");
+        const bytes = await this.handle.pullFile(fullPath);
+        triggerBrowserDownload(new Blob([bytes]), name);
+        toast("已下载到本地：" + name, "ok");
+      } catch (err) {
+        toast("拉取文件失败：" + ((err && err.message) || err), "err");
+      }
+    }
+
+    getCanvasForScreenshot() {
+      return this.canvas;
+    }
+
+    destroy() {
+      this.destroyed = true;
+      if (this.handle) {
+        this.handle.close().catch(() => {});
+        this.handle = null;
+      }
+      if (this.socket) {
+        try { this.socket.close(); } catch (_) {}
+        this.socket = null;
+      }
+      this.audioPlayer.destroy();
+      this.viewportEl.remove();
+    }
+  }
+
+  // =========================================================================
   // Main Application Controller
   // =========================================================================
   class RemoteDesktopApp {
@@ -1084,6 +1441,7 @@
       $("btnNewConn").onclick = () => this.openConnModal(null, "rdp");
       $("btnWelcomeNewRdp").onclick = () => this.openConnModal(null, "rdp");
       $("btnWelcomeNewVnc").onclick = () => this.openConnModal(null, "vnc");
+      $("btnWelcomeNewAndroid").onclick = () => this.openConnModal(null, "android");
       $("btnCollapseSidebar").onclick = () => this.toggleSidebar(false);
       $("btnExpandSidebar").onclick = () => this.toggleSidebar();
       $("sidebarBackdrop").onclick = () => this.toggleSidebar(false);
@@ -1190,7 +1548,7 @@
       // Audio Popover controls
       $("audioEnabledToggle").onchange = (e) => {
         const s = this.activeSession();
-        if (s && s.protocol === "rdp") {
+        if (s && (s.protocol === "rdp" || s.protocol === "android")) {
           s.setAudioEnabled(e.target.checked);
           if (e.target.checked) s.audioPlayer.unlock().catch(() => {});
           this.refreshAudioUi();
@@ -1200,19 +1558,19 @@
         const val = Number(e.target.value);
         $("audioVolumeVal").textContent = val + "%";
         const s = this.activeSession();
-        if (s && s.protocol === "rdp") s.audioPlayer.setVolume(val / 100);
+        if (s && s.audioPlayer) s.audioPlayer.setVolume(val / 100);
       };
       $("audioBufferGroup").querySelectorAll(".seg-btn").forEach((btn) => {
         btn.onclick = () => {
           $("audioBufferGroup").querySelectorAll(".seg-btn").forEach((b) => b.classList.remove("active"));
           btn.classList.add("active");
           const s = this.activeSession();
-          if (s && s.protocol === "rdp") s.audioPlayer.setBufferMs(Number(btn.dataset.ms));
+          if (s && s.audioPlayer) s.audioPlayer.setBufferMs(Number(btn.dataset.ms));
         };
       });
       $("btnUnlockAudio").onclick = () => {
         const s = this.activeSession();
-        if (s && s.protocol === "rdp") s.audioPlayer.unlock().catch(() => {});
+        if (s && s.audioPlayer) s.audioPlayer.unlock().catch(() => {});
         $("audioUnlockBanner").hidden = true;
       };
 
@@ -1233,6 +1591,7 @@
         if (!drawer.hidden) {
           const s = this.activeSession();
           if (s && s.protocol === "rdp") s.refreshVdrive();
+          if (s && s.protocol === "android") s.loadAdbDir(s.adbPath);
           this.renderFileDrawer();
         }
       };
@@ -1265,12 +1624,52 @@
         if (s && s.protocol === "rdp") s.refreshVdrive();
       };
 
-      // Stage Drag & Drop
+      // Android File Browser & Nav Bar controls
+      $("androidDropArea").onclick = () => $("androidFileInput").click();
+      $("androidFileInput").onchange = (e) => {
+        const s = this.activeSession();
+        if (s && s.protocol === "android" && e.target.files.length) {
+          s.handleUploadOrApk(e.target.files);
+        }
+        e.target.value = "";
+      };
+      $("btnAdbGo").onclick = () => {
+        const s = this.activeSession();
+        if (s && s.protocol === "android") s.loadAdbDir($("adbPathInput").value.trim() || "/sdcard");
+      };
+      $("adbPathInput").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          const s = this.activeSession();
+          if (s && s.protocol === "android") s.loadAdbDir($("adbPathInput").value.trim() || "/sdcard");
+        }
+      });
+      $("btnAdbUp").onclick = () => {
+        const s = this.activeSession();
+        if (!s || s.protocol !== "android") return;
+        const parts = s.adbPath.split("/").filter(Boolean);
+        parts.pop();
+        s.loadAdbDir("/" + parts.join("/"));
+      };
+      document.querySelectorAll(".js-adb-path").forEach((btn) => {
+        btn.onclick = () => {
+          const s = this.activeSession();
+          if (s && s.protocol === "android") s.loadAdbDir(btn.dataset.path);
+        };
+      });
+      $("androidNavBar").querySelectorAll(".anav-btn").forEach((btn) => {
+        btn.onclick = () => {
+          const s = this.activeSession();
+          if (s && s.protocol === "android") s.sendAction(btn.dataset.act);
+        };
+      });
+
+      // Stage Drag & Drop (RDP + Android)
       let dragDepth = 0;
       const stage = $("stage");
       stage.addEventListener("dragenter", (e) => {
         const s = this.activeSession();
-        if (!s || s.protocol !== "rdp" || s.status !== "connected") return;
+        if (!s || (s.protocol !== "rdp" && s.protocol !== "android") || s.status !== "connected") return;
         e.preventDefault();
         dragDepth++;
         $("dropOverlay").hidden = false;
@@ -1287,12 +1686,15 @@
         dragDepth = 0;
         $("dropOverlay").hidden = true;
         const s = this.activeSession();
-        if (!s || s.protocol !== "rdp" || s.status !== "connected") return;
+        if (!s || s.status !== "connected") return;
         const files = e.dataTransfer && e.dataTransfer.files;
-        if (files && files.length) {
+        if (!files || !files.length) return;
+        if (s.protocol === "rdp") {
           s.advertiseLocalFiles(files);
           if (s.profile.rdpVdrive !== false) s.uploadToVdrive(files);
           toast("已上传 " + files.length + " 个文件（可在远端按 Ctrl+V 或打开 BookStark 共享盘）", "ok");
+        } else if (s.protocol === "android") {
+          s.handleUploadOrApk(files);
         }
       });
 
@@ -1552,9 +1954,11 @@
     renderHostList() {
       const rdpCount = this.profiles.filter((p) => p.protocol === "rdp").length;
       const vncCount = this.profiles.filter((p) => p.protocol === "vnc").length;
+      const androidCount = this.profiles.filter((p) => p.protocol === "android").length;
       $("cntAll").textContent = String(this.profiles.length);
       $("cntRdp").textContent = String(rdpCount);
       $("cntVnc").textContent = String(vncCount);
+      $("cntAndroid").textContent = String(androidCount);
 
       const list = $("hostList");
       const filtered = this.profiles.filter((p) => {
@@ -1588,14 +1992,18 @@
           : activeSess.status === "error"
           ? "err"
           : "busy";
+        const protoBadgeClass = p.protocol === "rdp" ? "proto-rdp" : p.protocol === "android" ? "proto-android" : "proto-vnc";
+        const protoLabel = p.protocol === "android" ? "ADB" : p.protocol.toUpperCase();
         card.innerHTML =
           '<div class="hc-top">' +
           '<div class="hc-name"><span class="status-dot ' + dotClass + '"></span><span>' + escapeHtml(p.name) + "</span></div>" +
-          '<span class="proto-tag ' + (p.protocol === "rdp" ? "proto-rdp" : "proto-vnc") + '">' + p.protocol.toUpperCase() + "</span>" +
+          '<span class="proto-tag ' + protoBadgeClass + '">' + protoLabel + "</span>" +
           "</div>" +
           '<div class="hc-addr">' + escapeHtml(p.host + ":" + p.port) + (p.username ? " · " + escapeHtml(p.username) : "") + "</div>" +
           '<div class="hc-foot">' +
-          (p.hasSecret
+          (p.protocol === "android"
+            ? '<span class="hc-secret"><i class="fa fa-lock"></i> ADB RSA 托管</span>'
+            : p.hasSecret
             ? '<span class="hc-secret"><i class="fa fa-lock"></i> 凭据已加密</span>'
             : "<span>连接时输入密码</span>") +
           '<div class="hc-actions">' +
@@ -1630,7 +2038,7 @@
       this.setModalProtocol(proto, false);
       $("fName").value = profile ? profile.name : "";
       $("fHost").value = profile ? profile.host : "";
-      $("fPort").value = profile ? profile.port : proto === "rdp" ? 3389 : 5900;
+      $("fPort").value = profile ? profile.port : proto === "rdp" ? 3389 : proto === "android" ? 5555 : 5900;
       $("fUsername").value = profile ? profile.username || "" : "";
       $("fPassword").value = "";
       $("fPassword").placeholder = profile && profile.hasSecret ? "已加密保存（留空保持不变）" : "••••••••";
@@ -1641,6 +2049,9 @@
       $("fRdpNla").checked = profile ? profile.rdpNla !== false : true;
       $("fRdpAudio").checked = profile ? profile.rdpAudio !== false : true;
       $("fRdpVdrive").checked = profile ? profile.rdpVdrive !== false : true;
+      $("fAndroidMaxSize").value = profile ? String(profile.androidMaxSize ?? 1280) : "1280";
+      $("fAndroidBitrate").value = profile ? profile.androidBitrate || "4000000:60" : "4000000:60";
+      $("fAndroidAudio").checked = profile ? profile.androidAudio !== false : true;
       $("fSaveSecret").checked = profile ? !!profile.hasSecret : true;
       $("connModal").hidden = false;
       $("fName").focus();
@@ -1651,13 +2062,17 @@
         b.classList.toggle("active", b.dataset.proto === proto);
       });
       const isRdp = proto === "rdp";
+      const isVnc = proto === "vnc";
+      const isAndroid = proto === "android";
       document.querySelectorAll(".rdp-only").forEach((el) => (el.hidden = !isRdp));
-      document.querySelectorAll(".vnc-only").forEach((el) => (el.hidden = isRdp));
+      document.querySelectorAll(".vnc-only").forEach((el) => (el.hidden = !isVnc));
+      document.querySelectorAll(".android-only").forEach((el) => (el.hidden = !isAndroid));
+      document.querySelectorAll(".cred-only").forEach((el) => (el.hidden = isAndroid));
       $("fUsername").placeholder = isRdp ? "Windows / Linux 用户名" : "留空（大多数 VNC 仅需密码）";
       if (updateDefaultPort) {
         const cur = Number($("fPort").value);
-        if (!cur || cur === 3389 || cur === 5900) {
-          $("fPort").value = isRdp ? 3389 : 5900;
+        if (!cur || cur === 3389 || cur === 5900 || cur === 5555) {
+          $("fPort").value = isRdp ? 3389 : isAndroid ? 5555 : 5900;
         }
       }
     }
@@ -1667,7 +2082,7 @@
       const protocol = (activeProtoBtn && activeProtoBtn.dataset.proto) || "rdp";
       const name = $("fName").value.trim();
       const host = $("fHost").value.trim();
-      const port = Number($("fPort").value) || (protocol === "rdp" ? 3389 : 5900);
+      const port = Number($("fPort").value) || (protocol === "rdp" ? 3389 : protocol === "android" ? 5555 : 5900);
       if (!name || !host) {
         toast("请填写连接名称和主机地址", "err");
         return;
@@ -1676,8 +2091,8 @@
       const existingId = $("fId").value;
       const existing = this.profiles.find((p) => p.id === existingId);
       const id = existing ? existing.id : uid();
-      const passwordInput = $("fPassword").value;
-      const saveSecret = $("fSaveSecret").checked;
+      const passwordInput = protocol === "android" ? "" : $("fPassword").value;
+      const saveSecret = protocol !== "android" && $("fSaveSecret").checked;
 
       let hasSecret = existing ? !!existing.hasSecret : false;
       if (saveSecret) {
@@ -1696,7 +2111,7 @@
         name,
         host,
         port,
-        username: $("fUsername").value.trim(),
+        username: protocol === "android" ? "" : $("fUsername").value.trim(),
         domain: $("fDomain").value.trim(),
         resolution: $("fResolution").value,
         vncQuality: Number($("fVncQuality").value || 6),
@@ -1704,6 +2119,9 @@
         rdpNla: $("fRdpNla").checked,
         rdpAudio: $("fRdpAudio").checked,
         rdpVdrive: $("fRdpVdrive").checked,
+        androidMaxSize: Number($("fAndroidMaxSize").value ?? 1280),
+        androidBitrate: $("fAndroidBitrate").value || "4000000:60",
+        androidAudio: $("fAndroidAudio").checked,
         hasSecret,
         updatedAt: Date.now(),
       };
@@ -1746,6 +2164,8 @@
       const session =
         profile.protocol === "rdp"
           ? new RdpSession(profile, creds, this)
+          : profile.protocol === "android"
+          ? new AndroidSession(profile, this)
           : new VncSession(profile, creds, this);
 
       this.sessions.set(session.id, session);
@@ -1801,9 +2221,11 @@
         const tab = document.createElement("div");
         tab.className = "s-tab" + (sess.id === this.activeSessionId ? " active" : "");
         const dotClass = sess.status === "connected" ? "ok" : sess.status === "error" ? "err" : "busy";
+        const badgeCls = sess.protocol === "rdp" ? "proto-rdp" : sess.protocol === "android" ? "proto-android" : "proto-vnc";
+        const badgeTxt = sess.protocol === "android" ? "ADB" : sess.protocol.toUpperCase();
         tab.innerHTML =
           '<span class="status-dot ' + dotClass + '"></span>' +
-          '<span class="proto-tag ' + (sess.protocol === "rdp" ? "proto-rdp" : "proto-vnc") + '">' + sess.protocol.toUpperCase() + "</span>" +
+          '<span class="proto-tag ' + badgeCls + '">' + badgeTxt + "</span>" +
           '<span class="s-tab-name">' + escapeHtml(sess.profile.name) + "</span>" +
           '<button type="button" class="s-tab-close" title="关闭会话">×</button>';
         tab.onclick = (e) => {
@@ -1826,23 +2248,27 @@
       if (!hasActive) {
         $("fileDrawer").hidden = true;
         $("audioUnlockBanner").hidden = true;
+        $("androidNavBar").hidden = true;
         return;
       }
 
       const isRdp = active.protocol === "rdp";
-      $("audioControlWrap").hidden = !isRdp;
-      $("btnFiles").hidden = !isRdp;
-      if (!isRdp) {
+      const isAndroid = active.protocol === "android";
+      $("audioControlWrap").hidden = !(isRdp || isAndroid);
+      $("btnFiles").hidden = !(isRdp || isAndroid);
+      $("androidNavBar").hidden = !isAndroid;
+      if (!isRdp && !isAndroid) {
         $("fileDrawer").hidden = true;
         $("audioUnlockBanner").hidden = true;
+        $("stage").classList.remove("drawer-open");
       }
 
       // Telemetry Pill
       const dot = $("telemetryDot");
       dot.className = "status-dot " + (active.status === "connected" ? "ok" : active.status === "error" ? "err" : "busy");
-      const engineLabel = isRdp ? "Rust IronRDP WASM" : "noVNC";
+      const engineLabel = isRdp ? "Rust IronRDP WASM" : isAndroid ? "ADB Scrcpy WebCodecs" : "noVNC";
       const dim = active.width && active.height ? active.width + "×" + active.height : "";
-      const extra = isRdp && active.tlsInfo ? active.tlsInfo.split(" ")[0] : "";
+      const extra = isRdp && active.tlsInfo ? active.tlsInfo.split(" ")[0] : isAndroid ? active.deviceName || "" : "";
       $("telemetryText").textContent = [engineLabel, dim, extra].filter(Boolean).join(" · ");
 
       if (isRdp) {
@@ -1851,12 +2277,15 @@
         badge.textContent = String(count);
         badge.hidden = count === 0;
         this.refreshAudioUi();
+      } else if (isAndroid) {
+        $("fileBadge").hidden = true;
+        this.refreshAudioUi();
       }
     }
 
     refreshAudioUi() {
       const s = this.activeSession();
-      if (!s || s.protocol !== "rdp") return;
+      if (!s || (s.protocol !== "rdp" && s.protocol !== "android")) return;
       $("audioEnabledToggle").checked = s.audioEnabled;
       $("audioFormatMeta").textContent = s.audioFormat;
       $("audioBtnIco").className = s.audioEnabled ? "fa fa-volume-up" : "fa fa-volume-off";
@@ -1903,7 +2332,50 @@
 
     renderFileDrawer() {
       const s = this.activeSession();
-      if (!s || s.protocol !== "rdp") return;
+      if (!s) return;
+
+      const isAndroid = s.protocol === "android";
+      $("fdRdpTabs").hidden = isAndroid;
+      $("fdPaneAndroid").hidden = !isAndroid;
+      if (isAndroid) {
+        $("fdPaneClip").hidden = true;
+        $("fdPaneVdrive").hidden = true;
+        $("adbPathInput").value = s.adbPath;
+        const aList = $("androidFilesList");
+        if (s.adbLoading) {
+          aList.innerHTML = '<div class="fd-empty">正在读取手机目录…</div>';
+        } else if (!s.adbFiles.length) {
+          aList.innerHTML = '<div class="fd-empty">当前目录为空。可拖放文件上传，拖入 .apk 将自动安装。</div>';
+        } else {
+          aList.innerHTML = "";
+          for (const f of s.adbFiles) {
+            const item = document.createElement("div");
+            item.className = "fd-item";
+            item.innerHTML =
+              '<div class="fd-item-top">' +
+              '<span class="fd-item-name" title="' + escapeHtml(f.name) + '">' + (f.isDir ? "📁 " : "📄 ") + escapeHtml(f.name) + "</span>" +
+              (f.isDir
+                ? '<button type="button" class="btn btn-sec btn-xs js-adb-open">打开</button>'
+                : '<button type="button" class="btn btn-ok btn-xs js-adb-dl"><i class="fa fa-download"></i> 拉取</button>') +
+              "</div>" +
+              '<div class="fd-item-meta"><span>' + (f.isDir ? "文件夹" : formatBytes(f.size)) + "</span><span>ADB Sync</span></div>";
+            if (f.isDir) {
+              item.querySelector(".js-adb-open").onclick = () => {
+                const next = (s.adbPath === "/" ? "" : s.adbPath) + "/" + f.name;
+                s.loadAdbDir(next);
+              };
+            } else {
+              item.querySelector(".js-adb-dl").onclick = () => s.downloadAdbFile(f.name);
+            }
+            aList.appendChild(item);
+          }
+        }
+        return;
+      }
+
+      if (s.protocol !== "rdp") return;
+      $("fdPaneClip").hidden = this.fileDrawerTab !== "clip";
+      $("fdPaneVdrive").hidden = this.fileDrawerTab !== "vdrive";
 
       // Remote copied files (Ctrl+C on Windows)
       $("remoteFilesCount").textContent = s.remoteFiles.length + " 个";

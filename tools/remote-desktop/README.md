@@ -1,11 +1,12 @@
-# 远程桌面（RDP + VNC）— BookStark 工具
+# 远程桌面（RDP + VNC + Android）— BookStark 工具
 
-一体化浏览器内远程桌面工作台，原生支持 **Windows / xrdp RDP（Rust IronRDP WASM）** 与 **Linux / macOS / PVE VNC（noVNC）**，直接复用 BookStark `BookStark.sockets` 裸 TCP 隧道，无需部署向日葵、Guacamole 或 `websockify`。
+三协议一体化浏览器内远程控制工作台，原生支持 **Windows / xrdp RDP（Rust IronRDP WASM）**、**Linux / macOS / PVE VNC（noVNC）** 与 **Android 手机 / Redroid（Tango ADB + Scrcpy v3.3.3 + WebCodecs 60fps 硬件解码）**，全部直接复用 BookStark `BookStark.sockets` 裸 TCP 隧道，零网关、零手机端 App。
 
 ## 核心能力
-- **双协议零网关直连**：
+- **三协议零网关直连**：
   - **RDP（默认 3389）**：基于 Rust `ironrdp-connector` + `ironrdp-session` + `ironrdp-graphics` + 纯 Rust TLS（`rustls` + `rustls-rustcrypto`）编译为 WASM 运行于 Web Worker，支持 TLS 1.2/1.3 与 NLA/CredSSP（NTLMv2）。
   - **VNC（默认 5900）**：内嵌 `noVNC` RFB 协议层直连 `BookStark.sockets`，支持 Tight / ZRLE / Raw 编码与画质/只读模式。
+  - **Android 手机（默认 5555 / Redroid 15555）**：基于 `@yume-chan/adb` + `@yume-chan/adb-scrcpy` + `@yume-chan/scrcpy-decoder-webcodecs` + 内置 `scrcpy-server` v3.3.3（89 KB），浏览器端 RSA 密钥（`BookStark.secrets` 加密托管）直连无线 ADB，60fps H.264 硬件解码、RAW PCM 音频回传、触摸/滑动/滚轮/实体导航栏（返回/主页/多任务/音量/旋转/通知栏/电源）、ADB 目录浏览推拉文件与拖拽自动 `pm install` 安装 APK。
 - **多主机管理与多会话标签**：可折叠侧边栏，支持按协议筛选、搜索、同时保持多个 RDP/VNC 会话并随时切换。
 - **安全机制**：
   - 登录密码通过 `BookStark.secrets`（AES-256-GCM）加密托管；

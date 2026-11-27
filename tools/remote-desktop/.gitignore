@@ -1,4 +1,5 @@
 rdp-wasm/target/
 novnc-vendor/node_modules/
+scrcpy-vendor/node_modules/
 web/rdp_wasm.js
 web/rdp_wasm_bg.wasm

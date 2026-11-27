@@ -1,7 +1,7 @@
 {
   "title": "远程桌面",
-  "description": "一体化 RDP（Rust IronRDP WASM）与 VNC（noVNC）远程控制工作台，零网关直连，支持多会话标签、专业虚拟键盘、粘滞修饰键、中文直传、手机触控板、RDP 音频回传、双向文件传输与虚拟共享盘、凭据加密和 TLS 证书指纹核对。",
-  "version": "1.0.0",
+  "description": "三协议一体化远程控制工作台：Windows/xrdp RDP（Rust IronRDP WASM）、Linux/macOS VNC（noVNC）与 Android 手机（ADB + Scrcpy 60fps 硬件解码），全部复用 BookStark 裸 TCP 零网关直连，支持虚拟键盘、粘滞修饰键、中文直传、手机触控板、音频回传、文件传输、虚拟共享盘与拖拽装 APK。",
+  "version": "1.1.0",
   "category": "development",
   "icon": "desktop",
   "icon_style": "solid",

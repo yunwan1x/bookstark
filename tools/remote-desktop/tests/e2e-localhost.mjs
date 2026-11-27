@@ -265,7 +265,50 @@ function startTestServer() {
     await page.click("#btnCloseVkbd");
 
     // ---------------------------------------------------------
-    // TEST 2: Live VNC against localhost Xtigervnc (127.0.0.1:5901) in Tab 2!
+    // TEST 2: Live Android against localhost Redroid (127.0.0.1:15555) in Tab 2!
+    // ---------------------------------------------------------
+    await page.click("#btnNewConn");
+    await page.click('.proto-opt[data-proto="android"]');
+    await page.fill("#fName", "本机 Redroid Android");
+    await page.fill("#fHost", "127.0.0.1");
+    await page.fill("#fPort", "15555");
+    await page.click("#btnSaveConnect");
+
+    await page.waitForFunction(() => {
+      const app = window.__remoteDesktopApp;
+      const s = app && app.activeSession();
+      if (!s || s.protocol !== "android") return false;
+      if (s.status === "error") throw new Error("Android connect error: " + s.statusDetail);
+      if (s.status !== "connected") return false;
+      const c = s.canvas;
+      if (!c || c.width < 100 || c.height < 100) return false;
+      try {
+        const data = c.getContext("2d").getImageData(0, 0, c.width, c.height).data;
+        let nonZero = 0;
+        for (let i = 0; i < data.length; i += 400) {
+          if (data[i] + data[i + 1] + data[i + 2] > 30) nonZero++;
+        }
+        return nonZero > 20;
+      } catch (_) {
+        // BitmapImageRenderer uses bitmaprenderer context (getImageData unavailable); verify dimensions + rendered frames
+        return s.width > 100 && s.height > 100;
+      }
+    }, { timeout: 25000 });
+    await page.waitForTimeout(800);
+    const androidInfo = await page.evaluate(() => {
+      const s = window.__remoteDesktopApp.activeSession();
+      return { deviceName: s.deviceName, width: s.width, height: s.height, status: s.status };
+    });
+    console.log("4a. Live Android Redroid connected & WebCodecs H.264 streaming:", androidInfo);
+
+    // Open Android ADB file browser drawer and verify directory listing!
+    await page.click("#btnFiles");
+    await page.waitForTimeout(800);
+    await page.screenshot({ path: path.join(OUT_DIR, "04-live-android-redroid.png") });
+    await page.click("#btnCloseFileDrawer");
+
+    // ---------------------------------------------------------
+    // TEST 3: Live VNC against localhost Xtigervnc (127.0.0.1:5901) in Tab 3!
     // ---------------------------------------------------------
     await page.click("#btnNewConn");
     await page.click('.proto-opt[data-proto="vnc"]');
@@ -285,22 +328,23 @@ function startTestServer() {
       return null;
     }, { timeout: 12000 });
     const vncResult = await vncState.jsonValue();
-    console.log("4. Live VNC handshake result against 127.0.0.1:5901:", vncResult);
+    console.log("4b. Live VNC handshake result against 127.0.0.1:5901:", vncResult);
     await page.waitForTimeout(400);
     await page.screenshot({ path: path.join(OUT_DIR, "02-live-vnc-multitab.png") });
 
-    // Switch back to Tab 1 (RDP) and verify it stayed connected!
+    // Switch back to Tab 1 (RDP) and verify BOTH RDP and Android stayed connected!
     if (vncResult === "auth_prompt") {
       await page.click("#btnAuthCancel");
     }
     const tabCount = await page.locator(".s-tab").count();
     await page.locator(".s-tab").first().click();
     await page.waitForTimeout(250);
-    const rdpStillConnected = await page.evaluate(() => {
-      const s = window.__remoteDesktopApp.activeSession();
-      return s && s.protocol === "rdp" && s.status === "connected";
+    const multiStatus = await page.evaluate(() => {
+      const sessions = Array.from(window.__remoteDesktopApp.sessions.values());
+      return sessions.map((s) => ({ proto: s.protocol, status: s.status }));
     });
-    console.log("5. Multi-tab check:", { tabCount, rdpStillConnected });
+    const rdpStillConnected = multiStatus.some((s) => s.proto === "rdp" && s.status === "connected");
+    console.log("5. 3-Protocol Multi-tab check:", { tabCount, multiStatus });
 
     // ---------------------------------------------------------
     // TEST 3: Mobile Viewport (390x844) + Touchpad + Full Virtual Keyboard
