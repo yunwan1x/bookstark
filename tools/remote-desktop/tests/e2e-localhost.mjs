@@ -308,6 +308,44 @@ function startTestServer() {
     await page.click("#btnCloseFileDrawer");
 
     // ---------------------------------------------------------
+    // TEST 2b: In-App Interactive Picture-in-Picture (Android PiP floating over live RDP!)
+    // ---------------------------------------------------------
+    await page.click("#btnPip");
+    await page.click("#btnPipInApp");
+    await page.waitForTimeout(500);
+    const pipState1 = await page.evaluate(() => {
+      const app = window.__remoteDesktopApp;
+      return {
+        mainProto: app.activeSession()?.protocol,
+        pipCount: app.inAppPips.size,
+        pipVisible: document.querySelectorAll(".pip-win").length,
+      };
+    });
+    console.log("4a-PiP. Android floating over live RDP:", pipState1);
+    if (pipState1.mainProto !== "rdp" || pipState1.pipCount !== 1) {
+      throw new Error("In-App PiP state mismatch: " + JSON.stringify(pipState1));
+    }
+    await page.screenshot({ path: path.join(OUT_DIR, "05-live-pip-rdp-plus-android.png") });
+
+    // Swap PiP with Main (Android -> Main, RDP -> Landscape PiP!) and verify swap
+    await page.click(".js-pip-swap");
+    await page.waitForTimeout(350);
+    const pipState2 = await page.evaluate(() => {
+      const app = window.__remoteDesktopApp;
+      return {
+        mainProto: app.activeSession()?.protocol,
+        pipProtos: Array.from(app.inAppPips.keys()).map((id) => app.sessions.get(id)?.protocol),
+      };
+    });
+    console.log("4a-PiP Swap check:", pipState2);
+    if (pipState2.mainProto !== "android" || pipState2.pipProtos[0] !== "rdp") {
+      throw new Error("PiP swap failed: " + JSON.stringify(pipState2));
+    }
+    // Restore PiP cleanly
+    await page.click(".js-pip-restore");
+    await page.waitForTimeout(200);
+
+    // ---------------------------------------------------------
     // TEST 3: Live VNC against localhost Xtigervnc (127.0.0.1:5901) in Tab 3!
     // ---------------------------------------------------------
     await page.click("#btnNewConn");

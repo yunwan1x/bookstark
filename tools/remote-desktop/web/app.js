@@ -1422,6 +1422,11 @@
       // File Drawer tab
       this.fileDrawerTab = "clip";
 
+      // Picture-in-Picture state (In-App multi-PiP + OS-level PiP)
+      this.inAppPips = new Map(); // sessionId -> { winEl, bodyEl }
+      this.pipZCounter = 40;
+      this.osPip = null; // { sessionId, video, stream, rafId, mirror }
+
       // Pending modal resolvers
       this.tlsResolveSession = null;
       this.tlsPendingData = null;
@@ -1520,6 +1525,18 @@
       $("btnScale").onclick = (e) => {
         e.stopPropagation();
         this.togglePopover("scaleMenu");
+      };
+      $("btnPip").onclick = (e) => {
+        e.stopPropagation();
+        this.togglePopover("pipMenu");
+      };
+      $("btnPipInApp").onclick = () => {
+        $("pipMenu").hidden = true;
+        if (this.activeSessionId) this.openInAppPip(this.activeSessionId);
+      };
+      $("btnPipSystem").onclick = () => {
+        $("pipMenu").hidden = true;
+        if (this.activeSessionId) this.startOsPip(this.activeSessionId);
       };
 
       document.addEventListener("click", (e) => {
@@ -2175,18 +2192,23 @@
     }
 
     selectSession(sessionId) {
+      if (this.inAppPips.has(sessionId)) {
+        this.restoreInAppPip(sessionId, false);
+      }
       this.activeSessionId = sessionId;
       for (const [id, sess] of this.sessions.entries()) {
-        sess.viewportEl.hidden = id !== sessionId;
+        if (this.inAppPips.has(id)) {
+          sess.viewportEl.hidden = false;
+        } else {
+          sess.viewportEl.hidden = id !== sessionId;
+        }
       }
       this.applyScaleMode();
       this.refreshChrome();
       this.renderHostList();
       this.renderFileDrawer();
       const s = this.activeSession();
-      if (s && s.protocol === "rdp") {
-        $("clipTextarea").value = s.remoteClipText || "";
-      } else if (s && s.protocol === "vnc") {
+      if (s) {
         $("clipTextarea").value = s.remoteClipText || "";
       }
     }
@@ -2201,17 +2223,280 @@
     }
 
     closeSession(sessionId) {
+      if (this.inAppPips.has(sessionId)) {
+        this.restoreInAppPip(sessionId, false);
+      }
+      if (this.osPip && this.osPip.sessionId === sessionId) {
+        this.stopOsPip();
+      }
       const sess = this.sessions.get(sessionId);
       if (!sess) return;
       sess.destroy();
       this.sessions.delete(sessionId);
       if (this.activeSessionId === sessionId) {
-        const next = this.sessions.keys().next().value || null;
+        const next = Array.from(this.sessions.keys()).find((k) => !this.inAppPips.has(k)) || null;
         this.activeSessionId = next;
         if (next) this.selectSession(next);
       }
       this.refreshChrome();
       this.renderHostList();
+    }
+
+    // =========================================================================
+    // Picture-in-Picture: In-App Interactive Multi-PiP + OS-Level Desktop PiP
+    // =========================================================================
+    openInAppPip(sessionId) {
+      const sess = this.sessions.get(sessionId);
+      if (!sess) return;
+      if (this.inAppPips.has(sessionId)) {
+        const existing = this.inAppPips.get(sessionId);
+        existing.winEl.style.zIndex = String(++this.pipZCounter);
+        return;
+      }
+
+      const stageRect = $("stage").getBoundingClientRect();
+      const isPortrait = sess.protocol === "android" && (sess.height || 1280) > (sess.width || 720);
+      const w = Math.min(isPortrait ? 268 : 420, Math.max(220, Math.floor(stageRect.width * 0.44)));
+      const h = Math.min(isPortrait ? 500 : 286, Math.max(180, Math.floor(stageRect.height * 0.68)));
+      const offset = this.inAppPips.size * 28;
+      const drawerShift = !$("fileDrawer").hidden && window.innerWidth > 860 ? 364 : 16;
+      const left = Math.max(12, Math.floor(stageRect.width - w - drawerShift - offset));
+      const top = Math.max(54, Math.floor(stageRect.height - h - 18 - offset));
+
+      const winEl = document.createElement("div");
+      winEl.className = "pip-win pip-" + sess.protocol;
+      winEl.dataset.sessionId = sessionId;
+      winEl.style.width = w + "px";
+      winEl.style.height = h + "px";
+      winEl.style.left = left + "px";
+      winEl.style.top = top + "px";
+      winEl.style.zIndex = String(++this.pipZCounter);
+
+      const badgeCls = sess.protocol === "rdp" ? "proto-rdp" : sess.protocol === "android" ? "proto-android" : "proto-vnc";
+      const badgeTxt = sess.protocol === "android" ? "ADB" : sess.protocol.toUpperCase();
+      winEl.innerHTML =
+        '<div class="pip-head">' +
+        '<div class="pip-title"><span class="proto-tag ' + badgeCls + '">' + badgeTxt + "</span><span>" + escapeHtml(sess.profile.name) + "</span></div>" +
+        '<div class="pip-actions">' +
+        '<button type="button" class="pip-act js-pip-swap" title="与主画面互换"><i class="fa fa-exchange"></i></button>' +
+        '<button type="button" class="pip-act js-pip-os" title="弹出系统桌面画中画"><i class="fa fa-external-link"></i></button>' +
+        '<button type="button" class="pip-act js-pip-restore" title="还原为标签页"><i class="fa fa-window-maximize"></i></button>' +
+        '<button type="button" class="pip-act close js-pip-close" title="收起小窗"><i class="fa fa-times"></i></button>' +
+        "</div></div>" +
+        '<div class="pip-body"></div>' +
+        (sess.protocol === "android"
+          ? '<div class="pip-android-bar">' +
+            '<button type="button" data-act="back" title="返回"><i class="fa fa-chevron-left"></i></button>' +
+            '<button type="button" data-act="home" title="主页"><i class="fa fa-home"></i></button>' +
+            '<button type="button" data-act="recents" title="多任务"><i class="fa fa-clone"></i></button>' +
+            '<button type="button" data-act="power" title="电源"><i class="fa fa-power-off"></i></button>' +
+            "</div>"
+          : "") +
+        '<div class="pip-resize" title="拖拽缩放大小"></div>';
+
+      const bodyEl = winEl.querySelector(".pip-body");
+      sess.viewportEl.classList.add("is-pip");
+      sess.viewportEl.hidden = false;
+      bodyEl.appendChild(sess.viewportEl);
+      if (sess.protocol === "vnc") sess.setScaleMode("fit");
+
+      // Focus bump
+      winEl.addEventListener("pointerdown", () => {
+        winEl.style.zIndex = String(++this.pipZCounter);
+      });
+
+      // Header drag
+      const headEl = winEl.querySelector(".pip-head");
+      headEl.addEventListener("pointerdown", (e) => {
+        if (e.target.closest(".pip-act")) return;
+        e.preventDefault();
+        headEl.setPointerCapture?.(e.pointerId);
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const origL = winEl.offsetLeft;
+        const origT = winEl.offsetTop;
+        const onMove = (ev) => {
+          const sr = $("stage").getBoundingClientRect();
+          const nl = Math.max(0, Math.min(sr.width - 80, origL + (ev.clientX - startX)));
+          const nt = Math.max(0, Math.min(sr.height - 40, origT + (ev.clientY - startY)));
+          winEl.style.left = nl + "px";
+          winEl.style.top = nt + "px";
+        };
+        const onUp = () => {
+          headEl.removeEventListener("pointermove", onMove);
+          headEl.removeEventListener("pointerup", onUp);
+          headEl.removeEventListener("pointercancel", onUp);
+        };
+        headEl.addEventListener("pointermove", onMove);
+        headEl.addEventListener("pointerup", onUp);
+        headEl.addEventListener("pointercancel", onUp);
+      });
+
+      // Corner resize
+      const resizeEl = winEl.querySelector(".pip-resize");
+      resizeEl.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        resizeEl.setPointerCapture?.(e.pointerId);
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const origW = winEl.offsetWidth;
+        const origH = winEl.offsetHeight;
+        const onMove = (ev) => {
+          const nw = Math.max(210, Math.min(820, origW + (ev.clientX - startX)));
+          const nh = Math.max(170, Math.min(760, origH + (ev.clientY - startY)));
+          winEl.style.width = nw + "px";
+          winEl.style.height = nh + "px";
+        };
+        const onUp = () => {
+          resizeEl.removeEventListener("pointermove", onMove);
+          resizeEl.removeEventListener("pointerup", onUp);
+          resizeEl.removeEventListener("pointercancel", onUp);
+        };
+        resizeEl.addEventListener("pointermove", onMove);
+        resizeEl.addEventListener("pointerup", onUp);
+        resizeEl.addEventListener("pointercancel", onUp);
+      });
+
+      winEl.querySelector(".js-pip-swap").onclick = () => this.swapPipWithMain(sessionId);
+      winEl.querySelector(".js-pip-os").onclick = () => this.startOsPip(sessionId);
+      winEl.querySelector(".js-pip-restore").onclick = () => this.restoreInAppPip(sessionId, true);
+      winEl.querySelector(".js-pip-close").onclick = () => this.restoreInAppPip(sessionId, true);
+      winEl.querySelectorAll(".pip-android-bar button").forEach((btn) => {
+        btn.onclick = () => sess.sendAction(btn.dataset.act);
+      });
+
+      $("pipLayer").appendChild(winEl);
+      this.inAppPips.set(sessionId, { winEl, bodyEl });
+
+      // If we just popped the active main session, activate another non-PiP session behind it
+      if (this.activeSessionId === sessionId) {
+        const nextMain = Array.from(this.sessions.keys()).find((k) => k !== sessionId && !this.inAppPips.has(k)) || null;
+        this.activeSessionId = nextMain;
+        if (nextMain) {
+          this.selectSession(nextMain);
+        } else {
+          this.refreshChrome();
+        }
+      } else {
+        this.refreshChrome();
+      }
+      toast("已开启工作台画中画（可直接拖拽缩放与点击操控）：" + sess.profile.name, "ok");
+    }
+
+    restoreInAppPip(sessionId, selectAfter = true) {
+      const pip = this.inAppPips.get(sessionId);
+      if (!pip) return;
+      this.inAppPips.delete(sessionId);
+      const sess = this.sessions.get(sessionId);
+      if (sess) {
+        sess.viewportEl.classList.remove("is-pip");
+        $("viewportHost").appendChild(sess.viewportEl);
+        sess.viewportEl.hidden = this.activeSessionId !== sessionId;
+      }
+      pip.winEl.remove();
+      if (selectAfter && sess) {
+        this.selectSession(sessionId);
+      } else {
+        this.refreshChrome();
+      }
+    }
+
+    swapPipWithMain(pipSessionId) {
+      const prevMainId = this.activeSessionId;
+      this.restoreInAppPip(pipSessionId, true);
+      if (prevMainId && prevMainId !== pipSessionId && this.sessions.has(prevMainId)) {
+        this.openInAppPip(prevMainId);
+      }
+    }
+
+    async startOsPip(sessionId) {
+      const sess = this.sessions.get(sessionId);
+      if (!sess) return;
+      const srcCanvas = sess.getCanvasForScreenshot();
+      if (!srcCanvas || !srcCanvas.width || !srcCanvas.height) {
+        toast("当前画面尚未就绪，请等待连接出画后再开启系统画中画", "err");
+        return;
+      }
+      if (!document.pictureInPictureEnabled || typeof HTMLVideoElement.prototype.requestPictureInPicture !== "function") {
+        toast("当前浏览器不支持系统级画中画，已为你切换为工作台悬浮小窗", "err");
+        this.openInAppPip(sessionId);
+        return;
+      }
+
+      try {
+        if (this.osPip) await this.stopOsPip();
+
+        // Mirror canvas guarantees consistent 30fps captureStream across 2D (RDP/VNC) AND bitmaprenderer (Android WebCodecs)
+        const mirror = document.createElement("canvas");
+        mirror.width = srcCanvas.width;
+        mirror.height = srcCanvas.height;
+        const mctx = mirror.getContext("2d", { alpha: false });
+        mctx.drawImage(srcCanvas, 0, 0);
+
+        const stream = mirror.captureStream(30);
+        const video = document.createElement("video");
+        video.muted = true;
+        video.playsInline = true;
+        video.autoplay = true;
+        video.style.cssText = "position:fixed;width:2px;height:2px;opacity:0;pointer-events:none;bottom:0;right:0;";
+        video.srcObject = stream;
+        document.body.appendChild(video);
+
+        let alive = true;
+        let lastDraw = 0;
+        const pump = (ts) => {
+          if (!alive) return;
+          if (ts - lastDraw >= 32) {
+            lastDraw = ts;
+            const liveCanvas = sess.getCanvasForScreenshot();
+            if (liveCanvas && liveCanvas.width > 0 && liveCanvas.height > 0) {
+              if (mirror.width !== liveCanvas.width || mirror.height !== liveCanvas.height) {
+                mirror.width = liveCanvas.width;
+                mirror.height = liveCanvas.height;
+              }
+              try { mctx.drawImage(liveCanvas, 0, 0); } catch (_) {}
+            }
+          }
+          if (this.osPip) this.osPip.rafId = requestAnimationFrame(pump);
+        };
+
+        this.osPip = { sessionId, video, stream, rafId: requestAnimationFrame(pump), mirror, stopFlag: () => { alive = false; } };
+
+        await video.play();
+        await video.requestPictureInPicture();
+
+        video.addEventListener(
+          "leavepictureinpicture",
+          () => {
+            this.stopOsPip();
+          },
+          { once: true }
+        );
+        this.refreshChrome();
+        toast("已开启系统桌面画中画（切出浏览器也可置顶监控）：" + sess.profile.name, "ok");
+      } catch (err) {
+        await this.stopOsPip();
+        toast("无法打开系统画中画（" + ((err && err.message) || err) + "），建议使用工作台悬浮小窗", "err");
+      }
+    }
+
+    async stopOsPip() {
+      const pip = this.osPip;
+      this.osPip = null;
+      if (!pip) return;
+      try { pip.stopFlag && pip.stopFlag(); } catch (_) {}
+      try { if (pip.rafId) cancelAnimationFrame(pip.rafId); } catch (_) {}
+      try {
+        if (document.pictureInPictureElement === pip.video) {
+          await document.exitPictureInPicture();
+        }
+      } catch (_) {}
+      try {
+        pip.stream.getTracks().forEach((t) => t.stop());
+      } catch (_) {}
+      try { pip.video.remove(); } catch (_) {}
+      this.refreshChrome();
     }
 
     refreshChrome() {
@@ -2223,14 +2508,23 @@
         const dotClass = sess.status === "connected" ? "ok" : sess.status === "error" ? "err" : "busy";
         const badgeCls = sess.protocol === "rdp" ? "proto-rdp" : sess.protocol === "android" ? "proto-android" : "proto-vnc";
         const badgeTxt = sess.protocol === "android" ? "ADB" : sess.protocol.toUpperCase();
+        const isInPip = this.inAppPips.has(sess.id);
+        const isOsPip = this.osPip && this.osPip.sessionId === sess.id;
         tab.innerHTML =
           '<span class="status-dot ' + dotClass + '"></span>' +
           '<span class="proto-tag ' + badgeCls + '">' + badgeTxt + "</span>" +
           '<span class="s-tab-name">' + escapeHtml(sess.profile.name) + "</span>" +
+          (isInPip || isOsPip
+            ? '<span class="s-tab-pip-badge">' + (isOsPip ? "桌面PiP" : "小窗") + "</span>"
+            : '<button type="button" class="s-tab-pip-btn" title="缩为悬浮画中画小窗"><i class="fa fa-clone"></i></button>') +
           '<button type="button" class="s-tab-close" title="关闭会话">×</button>';
         tab.onclick = (e) => {
           if (e.target.closest(".s-tab-close")) {
             this.closeSession(sess.id);
+            return;
+          }
+          if (e.target.closest(".s-tab-pip-btn")) {
+            this.openInAppPip(sess.id);
             return;
           }
           this.selectSession(sess.id);
@@ -2507,7 +2801,7 @@
     }
 
     closeAllPopovers() {
-      ["comboMenu", "clipboardPopover", "audioPopover", "scaleMenu"].forEach((id) => {
+      ["comboMenu", "clipboardPopover", "audioPopover", "scaleMenu", "pipMenu"].forEach((id) => {
         const el = $(id);
         if (el) el.hidden = true;
       });

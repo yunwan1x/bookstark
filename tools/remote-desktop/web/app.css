@@ -457,6 +457,67 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 .adb-path-input:focus { border-color: #10b981; }
 .adb-quick-paths { display: flex; gap: 5px; flex-wrap: wrap; }
 .android-canvas { border-radius: 14px; border: 1px solid #1f2937; }
+
+/* Picture-in-Picture Menu & In-App Interactive Multi-PiP Windows */
+.pip-menu { width: 256px; right: 0; left: auto; display: flex; flex-direction: column; gap: 4px; padding: 7px; }
+.pip-menu .menu-item { align-items: flex-start; padding: 8px 10px; gap: 9px; }
+.pip-menu .menu-item i { margin-top: 2px; color: #60a5fa; font-size: 13px; }
+.pip-menu .menu-item strong { display: block; font-size: 12.5px; color: #f8fafc; }
+.pip-menu .menu-item small { display: block; font-size: 10.5px; color: #94a3b8; font-weight: 400; margin-top: 2px; }
+
+.pip-layer { position: absolute; inset: 0; pointer-events: none; z-index: 34; overflow: hidden; }
+.pip-win {
+  position: absolute; pointer-events: auto;
+  background: #0b1120; border: 1.5px solid #3b82f6; border-radius: 14px;
+  box-shadow: 0 20px 54px rgba(0, 0, 0, .72);
+  display: flex; flex-direction: column; overflow: hidden;
+  min-width: 210px; min-height: 170px;
+}
+.pip-win.pip-android { border-color: #10b981; }
+.pip-win.pip-vnc { border-color: #8b5cf6; }
+.pip-head {
+  height: 32px; flex-shrink: 0; padding: 0 8px 0 10px;
+  background: rgba(15, 23, 42, .96); border-bottom: 1px solid #1f2937;
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  cursor: move; user-select: none;
+}
+.pip-title {
+  display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700;
+  color: #f8fafc; min-width: 0;
+}
+.pip-title span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pip-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+.pip-act {
+  width: 24px; height: 24px; border: none; border-radius: 6px; background: transparent;
+  color: #94a3b8; cursor: pointer; display: grid; place-items: center; font-size: 11.5px;
+}
+.pip-act:hover { background: rgba(255, 255, 255, .1); color: #fff; }
+.pip-act.close:hover { background: rgba(239, 68, 68, .25); color: #fca5a5; }
+.pip-body { flex: 1; min-height: 0; position: relative; background: #04070d; overflow: hidden; }
+.pip-body .session-viewport.is-pip { padding: 4px; background: #04070d; }
+.pip-body .session-viewport.is-pip canvas { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; border-radius: 6px; }
+.pip-android-bar {
+  height: 30px; flex-shrink: 0; background: #0f172a; border-top: 1px solid #1f2937;
+  display: flex; align-items: center; justify-content: space-around; padding: 0 6px;
+}
+.pip-android-bar button {
+  border: none; background: transparent; color: #cbd5e1; cursor: pointer;
+  padding: 3px 10px; border-radius: 6px; font-size: 11.5px;
+}
+.pip-android-bar button:hover { background: #1e293b; color: #fff; }
+.pip-resize {
+  position: absolute; right: 0; bottom: 0; width: 16px; height: 16px; cursor: nwse-resize; z-index: 5;
+  background: linear-gradient(135deg, transparent 50%, rgba(148, 163, 184, .55) 50%, rgba(148, 163, 184, .55) 65%, transparent 65%, transparent 78%, rgba(148, 163, 184, .75) 78%);
+}
+.s-tab-pip-badge {
+  font-size: 9.5px; font-weight: 800; padding: 1px 5px; border-radius: 4px;
+  background: rgba(245, 158, 11, .2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, .4);
+}
+.s-tab-pip-btn {
+  border: none; background: transparent; color: inherit; opacity: .55; cursor: pointer;
+  padding: 0 2px; font-size: 11px; line-height: 1;
+}
+.s-tab-pip-btn:hover { opacity: 1; color: #60a5fa; }
 .proto-opt {
   text-align: left; padding: 10px 12px; border-radius: 11px; border: 1.5px solid var(--border);
   background: var(--bg); color: var(--text); cursor: pointer; display: flex; flex-direction: column; gap: 3px;

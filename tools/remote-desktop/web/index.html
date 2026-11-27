@@ -166,6 +166,28 @@
               <i class="fa fa-camera"></i><span>截图</span>
             </button>
 
+            <div class="dropdown-wrap">
+              <button id="btnPip" class="tb-btn" type="button" title="画中画悬浮窗（应用内可操控 / 系统置顶）">
+                <i class="fa fa-clone"></i><span>画中画</span><i class="fa fa-caret-down"></i>
+              </button>
+              <div id="pipMenu" class="popover pip-menu" hidden>
+                <button type="button" class="menu-item" id="btnPipInApp">
+                  <i class="fa fa-window-restore"></i>
+                  <div>
+                    <strong>工作台悬浮小窗</strong>
+                    <small>可拖拽缩放 · 可直接点击操控 · 支持多路</small>
+                  </div>
+                </button>
+                <button type="button" class="menu-item" id="btnPipSystem">
+                  <i class="fa fa-external-link"></i>
+                  <div>
+                    <strong>系统桌面画中画</strong>
+                    <small>切出浏览器也能置顶观看（只读监控）</small>
+                  </div>
+                </button>
+              </div>
+            </div>
+
             <button id="btnFullscreen" class="tb-btn" type="button" title="全屏显示">
               <i class="fa fa-arrows-alt"></i><span>全屏</span>
             </button>
@@ -219,6 +241,9 @@
 
         <!-- Live Multi-Session Viewport Container -->
         <div id="viewportHost" class="viewport-host" hidden></div>
+
+        <!-- In-App Interactive Multi-PiP Floating Windows Layer -->
+        <div id="pipLayer" class="pip-layer"></div>
 
         <!-- RDP File Transfer & Virtual Drive Slide-Over Drawer -->
         <aside id="fileDrawer" class="file-drawer" hidden>
