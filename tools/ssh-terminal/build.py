@@ -48,6 +48,9 @@ def build(output):
         crypto = json.loads(subprocess.check_output(
             ["go", "list", "-m", "-json", "golang.org/x/crypto"], cwd=HERE, text=True))
         shutil.copy2(Path(crypto["Dir"]) / "LICENSE", dist / "LICENSE-x-crypto.txt")
+        sftp_mod = json.loads(subprocess.check_output(
+            ["go", "list", "-m", "-json", "github.com/pkg/sftp"], cwd=HERE, text=True))
+        shutil.copy2(Path(sftp_mod["Dir"]) / "LICENSE", dist / "LICENSE-pkg-sftp.txt")
         env = dict(os.environ, GOOS="js", GOARCH="wasm", CGO_ENABLED="0",
                    GOMAXPROCS="2", GOMEMLIMIT="350MiB")
         subprocess.run(["go", "build", "-trimpath", "-ldflags=-s -w", "-o",

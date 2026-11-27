@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>SSH 终端</title>
+    <title>SSH 终端 · SFTP · WebDAV</title>
     <link rel="stylesheet" href="components.css" />
     <link rel="stylesheet" href="font-awesome.css" />
     <link rel="stylesheet" href="xterm.css" />
@@ -30,7 +30,12 @@
         <div class="wide sidebar-body">
           <label class="sr-only" for="hostSearch" data-i18n="searchHosts"
             >搜索连接</label
-          ><input id="hostSearch" type="search" placeholder="搜索连接" />
+          ><input id="hostSearch" type="search" placeholder="搜索 SSH / WebDAV 连接" />
+          <div class="proto-filter" id="protoFilter" role="tablist" aria-label="协议筛选">
+            <button type="button" class="proto-pill active" data-filter="all" data-i18n="filterAll">全部</button>
+            <button type="button" class="proto-pill" data-filter="ssh">SSH</button>
+            <button type="button" class="proto-pill" data-filter="webdav">WebDAV</button>
+          </div>
           <div id="hostList" class="host-list"></div>
         </div>
         <button class="rail-add icon" id="railAdd" title="新建连接">
@@ -62,7 +67,7 @@
             class="tabs"
             id="sessions"
             role="tablist"
-            aria-label="SSH 会话"
+            aria-label="远程会话"
           ></div>
           <button
             class="icon"
@@ -72,9 +77,33 @@
           >
             <i class="fa-solid fa-plus" aria-hidden="true"></i>
           </button>
+          <div class="view-mode-switch" id="viewModeSwitch" hidden role="group" aria-label="视图模式">
+            <button type="button" class="mode-btn active" data-mode="terminal" id="modeTerminal">
+              <i class="fa-solid fa-terminal" aria-hidden="true"></i>
+              <span data-i18n="modeTerminal">终端</span>
+            </button>
+            <button type="button" class="mode-btn" data-mode="split" id="modeSplit">
+              <i class="fa-solid fa-table-columns" aria-hidden="true"></i>
+              <span data-i18n="modeSplit">分屏</span>
+            </button>
+            <button type="button" class="mode-btn" data-mode="files" id="modeFiles">
+              <i class="fa-solid fa-folder-open" aria-hidden="true"></i>
+              <span data-i18n="modeFiles">文件</span>
+            </button>
+          </div>
+          <button
+            type="button"
+            class="mobile-view-toggle"
+            id="mobileViewToggle"
+            hidden
+            aria-label="切换终端与文件"
+          >
+            <i class="fa-solid fa-folder-open" aria-hidden="true"></i>
+            <span id="mobileViewLabel" data-i18n="modeFiles">文件</span>
+          </button>
           <div class="terminal-actions" id="terminalActions" hidden>
             <button
-              class="icon"
+              class="icon ssh-only-btn"
               id="searchTerminal"
               title="搜索"
               aria-label="搜索终端"
@@ -97,7 +126,7 @@
               </button>
               <div class="action-cluster" id="actionCluster">
                 <button
-                  class="icon"
+                  class="icon ssh-only-btn"
                   id="copyTerminal"
                   title="复制选中内容"
                   aria-label="复制选中内容"
@@ -105,7 +134,7 @@
                   <i class="fa-solid fa-copy" aria-hidden="true"></i>
                 </button>
                 <button
-                  class="icon"
+                  class="icon ssh-only-btn"
                   id="pasteTerminal"
                   title="粘贴"
                   aria-label="粘贴"
@@ -113,7 +142,7 @@
                   <i class="fa-solid fa-paste" aria-hidden="true"></i>
                 </button>
                 <button
-                  class="icon font-btn"
+                  class="icon font-btn ssh-only-btn"
                   id="smallerFont"
                   title="减小字号"
                   aria-label="减小字号"
@@ -121,7 +150,7 @@
                   A−
                 </button>
                 <button
-                  class="icon font-btn"
+                  class="icon font-btn ssh-only-btn"
                   id="largerFont"
                   title="增大字号"
                   aria-label="增大字号"
@@ -130,8 +159,17 @@
                 </button>
                 <button
                   class="icon"
+                  id="transferToggle"
+                  title="传输队列"
+                  aria-label="传输队列"
+                  hidden
+                >
+                  <i class="fa-solid fa-arrow-right-arrow-left" aria-hidden="true"></i>
+                </button>
+                <button
+                  class="icon"
                   id="zenToggle"
-                  title="专注模式（最大化终端）"
+                  title="专注模式（最大化工作区）"
                   aria-label="专注模式"
                   aria-pressed="false"
                 >
@@ -157,14 +195,28 @@
             EN
           </button>
         </header>
+
         <section class="editor" id="editor">
           <form id="connectionForm" autocomplete="off">
             <div class="form-heading">
-              <div class="app-mark" aria-hidden="true">›_</div>
+              <div class="form-heading-top">
+                <div class="app-mark" id="formMark" aria-hidden="true">›_</div>
+                <div class="proto-switch" id="protoSwitch" role="tablist" aria-label="连接协议">
+                  <button type="button" class="proto-tab active" data-proto="ssh" id="protoSSH">
+                    <i class="fa-solid fa-terminal" aria-hidden="true"></i>
+                    <span>SSH + SFTP</span>
+                  </button>
+                  <button type="button" class="proto-tab" data-proto="webdav" id="protoDAV">
+                    <i class="fa-solid fa-cloud" aria-hidden="true"></i>
+                    <span>WebDAV</span>
+                  </button>
+                </div>
+              </div>
               <h1 id="formTitle" data-i18n="newConnection">新建连接</h1>
-              <p data-i18n="connectHint">连接你的服务器，开始终端会话。</p>
+              <p id="formHint" data-i18n="connectHint">连接你的服务器，开始终端与 SFTP 会话。</p>
             </div>
             <input type="hidden" id="hostID" />
+            <input type="hidden" id="protocol" value="ssh" />
             <div class="field">
               <label for="hostName" data-i18n="name">连接名称</label
               ><input
@@ -173,71 +225,119 @@
                 placeholder="例如：生产服务器"
               />
             </div>
-            <div class="host-port">
+
+            <!-- SSH + SFTP Fields -->
+            <div id="sshFields">
+              <div class="host-port">
+                <div class="field">
+                  <label for="host" data-i18n="host">主机地址</label
+                  ><input
+                    id="host"
+                    required
+                    maxlength="253"
+                    placeholder="192.168.1.10"
+                    autocapitalize="off"
+                    spellcheck="false"
+                  />
+                </div>
+                <div class="field">
+                  <label for="port" data-i18n="port">端口</label
+                  ><input
+                    id="port"
+                    required
+                    type="number"
+                    min="1"
+                    max="65535"
+                    value="22"
+                  />
+                </div>
+              </div>
               <div class="field">
-                <label for="host" data-i18n="host">主机地址</label
+                <label for="username" data-i18n="user">用户名</label
                 ><input
-                  id="host"
+                  id="username"
                   required
-                  maxlength="253"
-                  placeholder="192.168.1.10"
+                  maxlength="128"
+                  placeholder="root"
                   autocapitalize="off"
                   spellcheck="false"
                 />
               </div>
               <div class="field">
-                <label for="port" data-i18n="port">端口</label
-                ><input
-                  id="port"
-                  required
-                  type="number"
-                  min="1"
-                  max="65535"
-                  value="22"
+                <label for="shell" data-i18n="shell">Shell 程序</label>
+                <select id="shell">
+                  <option value="" data-i18n="defaultShell">
+                    服务器账户默认 Shell
+                  </option>
+                  <option value="sh">sh</option>
+                  <option value="bash">bash</option>
+                  <option value="zsh">zsh</option>
+                  <option value="fish">fish</option>
+                  <option value="custom" data-i18n="customShell">
+                    自定义路径
+                  </option>
+                </select>
+              </div>
+              <div class="field" id="customShellField" hidden>
+                <label for="customShell" data-i18n="shellPath"
+                  >Shell 程序路径</label
+                >
+                <input
+                  id="customShell"
+                  maxlength="512"
+                  placeholder="/usr/local/bin/fish"
+                  autocapitalize="off"
+                  spellcheck="false"
                 />
               </div>
             </div>
-            <div class="field">
-              <label for="username" data-i18n="user">用户名</label
-              ><input
-                id="username"
-                required
-                maxlength="128"
-                placeholder="root"
-                autocapitalize="off"
-                spellcheck="false"
-              />
+
+            <!-- WebDAV Fields -->
+            <div id="davFields" hidden>
+              <div class="field">
+                <label for="davUrl" data-i18n="davUrl">WebDAV 地址 (URL)</label>
+                <input
+                  id="davUrl"
+                  maxlength="1024"
+                  placeholder="https://nas.local:5244/dav"
+                  autocapitalize="off"
+                  spellcheck="false"
+                />
+                <p class="hint" data-i18n="davUrlHint">
+                  支持 Alist / Nextcloud / OwnCloud / 群晖 / 坚果云；通过 BookStark TCP 直连无跨域限制。
+                </p>
+              </div>
+              <div class="host-port dav-user-grid">
+                <div class="field">
+                  <label for="davUser" data-i18n="user">用户名</label>
+                  <input
+                    id="davUser"
+                    maxlength="128"
+                    placeholder="admin"
+                    autocapitalize="off"
+                    spellcheck="false"
+                  />
+                </div>
+                <div class="field">
+                  <label for="davBasePath" data-i18n="davBasePath">初始路径（可选）</label>
+                  <input
+                    id="davBasePath"
+                    maxlength="512"
+                    placeholder="/"
+                    autocapitalize="off"
+                    spellcheck="false"
+                  />
+                </div>
+              </div>
+              <label class="remember-credentials" for="davInsecure">
+                <input type="checkbox" id="davInsecure" />
+                <span data-i18n="davInsecure">允许自签名 HTTPS 证书（适合内网 NAS / PVE）</span>
+              </label>
             </div>
-            <div class="field">
-              <label for="shell" data-i18n="shell">Shell 程序</label>
-              <select id="shell">
-                <option value="" data-i18n="defaultShell">
-                  服务器账户默认 Shell
-                </option>
-                <option value="sh">sh</option>
-                <option value="bash">bash</option>
-                <option value="zsh">zsh</option>
-                <option value="fish">fish</option>
-                <option value="custom" data-i18n="customShell">
-                  自定义路径
-                </option>
-              </select>
-            </div>
-            <div class="field" id="customShellField" hidden>
-              <label for="customShell" data-i18n="shellPath"
-                >Shell 程序路径</label
-              >
-              <input
-                id="customShell"
-                maxlength="512"
-                placeholder="/usr/local/bin/fish"
-                autocapitalize="off"
-                spellcheck="false"
-              />
-            </div>
+
             <fieldset>
               <legend data-i18n="authentication">登录凭据</legend>
-              <div class="segments">
+              <div class="segments" id="authSegments">
                 <label
                   ><input
                     type="radio"
@@ -304,6 +404,13 @@
                 data-i18n="delete"
               >
                 删除连接</button
+              ><button
+                id="testDav"
+                type="button"
+                hidden
+                data-i18n="testConnection"
+              >
+                测试连接</button
               ><span class="spacer"></span
               ><button id="saveHost" type="button" data-i18n="save">
                 保存连接</button
@@ -318,6 +425,7 @@
             </div>
           </form>
         </section>
+
         <section class="terminal-workspace" id="terminalWorkspace" hidden>
           <div
             class="connection-banner"
@@ -328,20 +436,23 @@
             <span id="connectionMessage"></span
             ><button id="reconnect" data-i18n="reconnect">重新连接</button>
           </div>
-          <div id="terminalStack" class="terminal-stack">
-            <div id="searchBar" class="search-bar" hidden>
-              <label class="sr-only" for="terminalQuery" data-i18n="search"
-                >搜索</label
-              ><input
-                type="search"
-                id="terminalQuery"
-                placeholder="搜索终端输出"
-              /><button id="findNext" data-i18n="next">下一处</button
-              ><span id="searchResult" role="status"></span
-              ><button class="icon" id="closeSearch" aria-label="关闭搜索">
-                <i class="fa-solid fa-xmark" aria-hidden="true"></i>
-              </button>
+          <div class="workspace-split" id="workspaceSplit" data-view="terminal" data-orient="horizontal">
+            <div id="terminalStack" class="terminal-stack">
+              <div id="searchBar" class="search-bar" hidden>
+                <label class="sr-only" for="terminalQuery" data-i18n="search"
+                  >搜索</label
+                ><input
+                  type="search"
+                  id="terminalQuery"
+                  placeholder="搜索终端输出"
+                /><button id="findNext" data-i18n="next">下一处</button
+                ><span id="searchResult" role="status"></span
+                ><button class="icon" id="closeSearch" aria-label="关闭搜索">
+                  <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
+              </div>
             </div>
+
             <button
               class="zen-exit"
               id="zenExit"
@@ -352,7 +463,145 @@
               <i class="fa-solid fa-compress" aria-hidden="true"></i>
               <span data-i18n="exitZen">退出专注</span>
             </button>
+
+            <div class="split-handle" id="splitHandle" hidden role="separator" aria-label="调整分屏比例"></div>
+
+            <!-- Unified SFTP / WebDAV File Workbench -->
+            <div class="file-workbench" id="fileWorkbench" hidden>
+              <div class="files-main" id="filesMain">
+                <div class="files-bar">
+                  <button type="button" class="f-btn icon-only" id="fsUp" title="上一级" aria-label="上一级">
+                    <i class="fa-solid fa-arrow-up" aria-hidden="true"></i>
+                  </button>
+                  <button type="button" class="f-btn icon-only" id="fsRefresh" title="刷新" aria-label="刷新">
+                    <i class="fa-solid fa-rotate-right" aria-hidden="true"></i>
+                  </button>
+                  <div class="path-box" id="fsPathBox">
+                    <div class="path-crumb" id="fsBreadcrumb"></div>
+                    <input type="text" class="path-input" id="fsPathInput" hidden spellcheck="false" autocapitalize="off" />
+                  </div>
+                  <input type="file" id="fsUploadInput" multiple hidden />
+                  <button type="button" class="f-btn primary" id="fsUploadBtn" title="上传文件">
+                    <i class="fa-solid fa-upload" aria-hidden="true"></i>
+                    <span data-i18n="upload">上传</span>
+                  </button>
+                  <button type="button" class="f-btn" id="fsMkdirBtn" title="新建文件夹">
+                    <i class="fa-solid fa-folder-plus" aria-hidden="true"></i>
+                    <span class="f-btn-label" data-i18n="mkdir">新建</span>
+                  </button>
+                  <button type="button" class="f-btn" id="fsNewFileBtn" title="新建文件">
+                    <i class="fa-solid fa-file-circle-plus" aria-hidden="true"></i>
+                    <span class="f-btn-label" data-i18n="newFile">新文件</span>
+                  </button>
+                  <button type="button" class="f-btn icon-only" id="fsSplitOrient" title="切换左右 / 上下分屏" aria-label="切换分屏方向" hidden>
+                    <i class="fa-solid fa-arrows-up-down" aria-hidden="true"></i>
+                  </button>
+                </div>
+
+                <div class="files-subbar">
+                  <div class="mini-filter">
+                    <i class="fa-solid fa-filter" aria-hidden="true"></i>
+                    <input type="search" id="fsFilter" placeholder="过滤当前目录..." />
+                  </div>
+                  <button type="button" class="follow-chip" id="fsFollowCwd" aria-pressed="true" hidden>
+                    <i class="fa-solid fa-link" aria-hidden="true"></i>
+                    <span data-i18n="followCwd">跟随终端目录</span>
+                  </button>
+                  <div class="batch-bar" id="fsBatchBar" hidden>
+                    <span id="fsSelectedCount">已选 0 项</span>
+                    <button type="button" class="batch-btn" id="fsBatchDownload" data-i18n="download">下载</button>
+                    <button type="button" class="batch-btn danger" id="fsBatchDelete" data-i18n="deleteItem">删除</button>
+                  </div>
+                  <span class="spacer"></span>
+                  <button type="button" class="sub-toggle" id="fsShowHidden" aria-pressed="false" title="显示隐藏文件">
+                    <i class="fa-solid fa-eye" aria-hidden="true"></i>
+                    <span class="hide-sm" data-i18n="showHidden">隐藏文件</span>
+                  </button>
+                  <span class="fs-count" id="fsCount">0 项</span>
+                </div>
+
+                <div class="files-table-wrap" id="filesTableWrap">
+                  <div class="fs-state" id="fsLoading" hidden>
+                    <i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
+                    <span data-i18n="loadingDir">正在读取目录…</span>
+                  </div>
+                  <div class="fs-state error" id="fsError" hidden></div>
+                  <table class="file-table" id="fileTable">
+                    <thead>
+                      <tr>
+                        <th class="col-check"><input type="checkbox" id="fsSelectAll" aria-label="全选" /></th>
+                        <th class="col-name" data-i18n="colName">名称</th>
+                        <th class="col-size" data-i18n="colSize">大小</th>
+                        <th class="col-mode" id="fsColMode" data-i18n="colMode">权限</th>
+                        <th class="col-time" data-i18n="colTime">修改时间</th>
+                        <th class="col-act" data-i18n="colAct">操作</th>
+                      </tr>
+                    </thead>
+                    <tbody id="fileTbody"></tbody>
+                  </table>
+                  <div class="fs-empty" id="fsEmpty" hidden data-i18n="emptyDir">当前目录为空，可拖拽本地文件到此上传</div>
+                </div>
+
+                <div class="drop-overlay" id="fsDropOverlay" hidden>
+                  <i class="fa-solid fa-cloud-arrow-up" aria-hidden="true"></i>
+                  <span id="fsDropText">松开鼠标上传至当前目录</span>
+                </div>
+              </div>
+
+              <!-- Slide-over Remote Code Editor & File Preview Drawer -->
+              <div class="fs-drawer" id="fsDrawer" hidden>
+                <div class="ed-head">
+                  <button type="button" class="f-btn icon-only" id="fsDrawerClose" title="关闭预览/编辑" aria-label="关闭">
+                    <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+                  </button>
+                  <i class="fa-solid fa-file-code ed-icon" id="fsDrawerIcon" aria-hidden="true"></i>
+                  <strong class="ed-filename" id="fsDrawerName"></strong>
+                  <span class="dirty-dot" id="fsDirtyDot" hidden title="未保存修改"></span>
+                  <span class="spacer"></span>
+                  <button type="button" class="f-btn" id="fsDrawerDownload" title="下载文件">
+                    <i class="fa-solid fa-download" aria-hidden="true"></i>
+                  </button>
+                  <button type="button" class="f-btn primary" id="fsDrawerSave" hidden title="保存到远端 (Ctrl+S)">
+                    <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>
+                    <span data-i18n="saveRemote">保存</span>
+                  </button>
+                </div>
+
+                <div class="ed-body" id="fsEditorBody" hidden>
+                  <div class="ed-gutter" id="fsEditorGutter" aria-hidden="true">1</div>
+                  <textarea id="fsEditorArea" class="ed-textarea" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+                </div>
+
+                <div class="preview-body" id="fsPreviewBody" hidden>
+                  <img id="fsPreviewImg" alt="" hidden />
+                  <iframe id="fsPreviewPdf" title="PDF Preview" hidden></iframe>
+                  <div id="fsPreviewBinary" class="binary-info" hidden>
+                    <i class="fa-solid fa-file" aria-hidden="true"></i>
+                    <p id="fsPreviewBinaryText"></p>
+                  </div>
+                </div>
+
+                <div class="ed-foot">
+                  <span id="fsDrawerMeta">UTF-8</span>
+                  <span class="spacer"></span>
+                  <span id="fsDrawerPath" class="ed-foot-path"></span>
+                </div>
+              </div>
+
+              <!-- Floating Transfer Queue -->
+              <div class="transfer-card" id="transferCard" hidden>
+                <div class="transfer-head">
+                  <i class="fa-solid fa-arrow-right-arrow-left" aria-hidden="true"></i>
+                  <span id="transferTitle">传输队列</span>
+                  <span class="spacer"></span>
+                  <button type="button" class="t-mini-btn" id="transferClear" title="清空已完成">清空</button>
+                  <button type="button" class="t-mini-btn" id="transferClose" title="隐藏队列">×</button>
+                </div>
+                <div class="transfer-list" id="transferList"></div>
+              </div>
+            </div>
           </div>
+
           <div class="extra-keys" id="extraKeys">
             <button data-key="esc">Esc</button
             ><button data-key="tab">Tab</button
@@ -365,16 +614,27 @@
             <span class="dot" id="statusDot"></span
             ><span id="sessionStatus"></span><span class="status-sep">·</span
             ><span class="host-label" id="sessionHost"></span
+            ><span class="status-badge" id="statusProtoBadge" hidden></span
             ><span class="spacer"></span
-            ><span id="dimensions">80 × 24</span><span class="status-meta">SSH · UTF-8</span>
+            ><span id="dimensions">80 × 24</span><span class="status-meta" id="statusMeta">SSH · UTF-8</span>
           </footer>
         </section>
       </main>
     </div>
+
+    <!-- Mobile File Action Sheet -->
+    <div class="mobile-sheet-backdrop" id="mobileSheetBackdrop" hidden></div>
+    <div class="mobile-sheet" id="mobileFileSheet" hidden role="dialog" aria-label="文件操作">
+      <div class="sheet-bar"></div>
+      <div class="sheet-title" id="mobileSheetTitle"></div>
+      <div class="sheet-actions" id="mobileSheetActions"></div>
+    </div>
+
     <script src="utils.js"></script>
     <script src="bs-dialog.js"></script>
     <script src="xterm.js"></script>
     <script src="addon-fit.js"></script>
+    <script src="files.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

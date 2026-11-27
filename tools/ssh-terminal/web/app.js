@@ -18,9 +18,50 @@
     newConnection: ["新建连接", "New connection"],
     editConnection: ["编辑连接", "Edit connection"],
     connectHint: [
-      "连接你的服务器，开始终端会话。",
-      "Connect to your server and start a terminal session.",
+      "连接你的服务器，开始终端与 SFTP 会话。",
+      "Connect to your server for terminal and SFTP.",
     ],
+    davConnectHint: [
+      "通过 BookStark TCP 直连 WebDAV（无跨域限制），支持在线浏览、编辑与上传下载。",
+      "Connect directly to WebDAV via BookStark TCP sockets (no CORS) to browse, edit, and transfer files.",
+    ],
+    filterAll: ["全部", "All"],
+    modeTerminal: ["终端", "Terminal"],
+    modeSplit: ["分屏", "Split"],
+    modeFiles: ["文件", "Files"],
+    davUrl: ["WebDAV 地址 (URL)", "WebDAV URL"],
+    davUrlHint: [
+      "支持 Alist / Nextcloud / OwnCloud / 群晖 / 坚果云；通过 BookStark TCP 直连无跨域限制。",
+      "Works with Alist, Nextcloud, OwnCloud, Synology & more via direct TCP without CORS.",
+    ],
+    davBasePath: ["初始路径（可选）", "Initial path (optional)"],
+    davInsecure: [
+      "允许自签名 HTTPS 证书（适合内网 NAS / PVE）",
+      "Allow self-signed HTTPS certificates (for LAN NAS / homelab)",
+    ],
+    testConnection: ["测试连接", "Test connection"],
+    invalidDavUrl: [
+      "请输入有效的 http:// 或 https:// WebDAV 地址。",
+      "Enter a valid http:// or https:// WebDAV URL.",
+    ],
+    upload: ["上传", "Upload"],
+    mkdir: ["新建", "New folder"],
+    newFile: ["新文件", "New file"],
+    followCwd: ["跟随终端目录", "Follow terminal CWD"],
+    showHidden: ["隐藏文件", "Hidden"],
+    loadingDir: ["正在读取目录…", "Loading directory…"],
+    emptyDir: [
+      "当前目录为空，可拖拽本地文件到此上传",
+      "Directory is empty. Drag & drop files here to upload.",
+    ],
+    colName: ["名称", "Name"],
+    colSize: ["大小", "Size"],
+    colMode: ["权限", "Mode"],
+    colTime: ["修改时间", "Modified"],
+    colAct: ["操作", "Actions"],
+    saveRemote: ["保存", "Save"],
+    download: ["下载", "Download"],
+    deleteItem: ["删除", "Delete"],
     name: ["连接名称", "Connection name"],
     host: ["主机地址", "Host"],
     port: ["端口", "Port"],
@@ -159,12 +200,15 @@
   }
   let hosts = read("ssh.hosts", []);
   if (!Array.isArray(hosts)) hosts = [];
-  hosts = hosts.filter((h) => h && typeof h.host === "string").slice(0, 100);
+  hosts = hosts
+    .filter((h) => h && (typeof h.host === "string" || typeof h.url === "string"))
+    .slice(0, 100);
   let known = read("ssh.known-hosts", {});
   if (!known || typeof known !== "object" || Array.isArray(known)) known = {};
   const sessions = new Map();
   let active = null,
     editorMode = true,
+    hostFilter = "all",
     reconnectTarget = null,
     keyText = "",
     keyName = "",
@@ -181,6 +225,52 @@
     engineTimer,
     trustQueue = Promise.resolve();
   const encoder = new TextEncoder();
+  const filesWB = window.createFileWorkbench({
+    getActiveSession: () => sessions.get(active) || null,
+    getWorker: () => worker,
+    ensureEngine: () => ensureEngine(),
+    getLang: () => lang,
+    fitActive: () => fitActive(),
+    sendTerminalCommand: (text) => sendInput(sessions.get(active), text),
+  });
+  function setFormProtocol(proto) {
+    const isDav = proto === "webdav";
+    $("protocol").value = isDav ? "webdav" : "ssh";
+    $("protoSSH").classList.toggle("active", !isDav);
+    $("protoDAV").classList.toggle("active", isDav);
+    $("sshFields").hidden = isDav;
+    $("davFields").hidden = !isDav;
+    $("authSegments").hidden = isDav;
+    $("testDav").hidden = !isDav;
+    $("host").required = !isDav;
+    $("port").required = !isDav;
+    $("username").required = !isDav;
+    $("davUrl").required = isDav;
+    $("formMark").className = isDav ? "app-mark dav" : "app-mark";
+    $("formMark").innerHTML = isDav ? '<i class="fa-solid fa-cloud" aria-hidden="true"></i>' : "›_";
+    $("formHint").textContent = t(isDav ? "davConnectHint" : "connectHint");
+    if (isDav) {
+      document.querySelector('[name=auth][value="password"]').checked = true;
+      authFields();
+    }
+    $("formError").hidden = true;
+  }
+  $("protoSSH").onclick = () => {
+    clearRestoredCredentials();
+    setFormProtocol("ssh");
+  };
+  $("protoDAV").onclick = () => {
+    clearRestoredCredentials();
+    setFormProtocol("webdav");
+  };
+  for (const pill of $("protoFilter").querySelectorAll(".proto-pill")) {
+    pill.onclick = () => {
+      hostFilter = pill.dataset.filter;
+      for (const p of $("protoFilter").querySelectorAll(".proto-pill"))
+        p.classList.toggle("active", p === pill);
+      renderHosts();
+    };
+  }
   function persist(key, value) {
     try {
       localStorage.setItem(key, JSON.stringify(value));
@@ -229,6 +319,7 @@
     renderHosts();
     renderTabs();
     updateSession();
+    filesWB.onLanguageChange();
   }
   $("language").onclick = () => {
     lang = lang === "zh" ? "en" : "zh";
@@ -262,8 +353,26 @@
     }
   });
   function hostConfig() {
+    const proto = $("protocol").value === "webdav" ? "webdav" : "ssh";
+    if (proto === "webdav") {
+      const url = $("davUrl").value.trim();
+      let hostname = url;
+      try { hostname = new URL(url).hostname; } catch (_) {}
+      return {
+        id: $("hostID").value || crypto.randomUUID?.() || "dav-" + Date.now(),
+        protocol: "webdav",
+        name: $("hostName").value.trim(),
+        host: hostname,
+        url,
+        user: $("davUser").value.trim(),
+        basePath: $("davBasePath").value.trim(),
+        insecureSkipVerify: $("davInsecure").checked,
+        auth: "password",
+      };
+    }
     return {
       id: $("hostID").value || crypto.randomUUID?.() || "host-" + Date.now(),
+      protocol: "ssh",
       name: $("hostName").value.trim(),
       host: $("host")
         .value.trim()
@@ -279,6 +388,16 @@
   }
   function validConfig(cfg) {
     if (!$("connectionForm").reportValidity()) return false;
+    if (cfg.protocol === "webdav") {
+      try {
+        const u = new URL(cfg.url);
+        if (u.protocol !== "http:" && u.protocol !== "https:") throw Error("bad");
+      } catch (_) {
+        showError(t("invalidDavUrl"));
+        return false;
+      }
+      return true;
+    }
     if (
       cfg.shell &&
       !["sh", "bash", "zsh", "fish"].includes(cfg.shell) &&
@@ -351,27 +470,38 @@
     $("showPassword").setAttribute("aria-pressed", "false");
     $("hostID").value = cfg?.id || "";
     $("hostName").value = cfg?.name || "";
-    $("host").value = cfg?.host || "";
-    $("port").value = cfg?.port || 22;
-    $("username").value = cfg?.user || "";
-    document.querySelector(
-      '[name=auth][value="' + (cfg?.auth === "key" ? "key" : "password") + '"]',
-    ).checked = true;
-    $("shell").value = cfg?.shell
-      ? ["sh", "bash", "zsh", "fish"].includes(cfg.shell)
-        ? cfg.shell
-        : "custom"
-      : "";
-    $("customShell").value = $("shell").value === "custom" ? cfg.shell : "";
-    shellFields();
-    authFields();
+    const isDav = cfg?.protocol === "webdav";
+    setFormProtocol(isDav ? "webdav" : "ssh");
+    if (isDav) {
+      $("davUrl").value = cfg?.url || "";
+      $("davUser").value = cfg?.user || "";
+      $("davBasePath").value = cfg?.basePath || "";
+      $("davInsecure").checked = cfg?.insecureSkipVerify === true;
+    } else {
+      $("host").value = cfg?.host || "";
+      $("port").value = cfg?.port || 22;
+      $("username").value = cfg?.user || "";
+      document.querySelector(
+        '[name=auth][value="' + (cfg?.auth === "key" ? "key" : "password") + '"]',
+      ).checked = true;
+      $("shell").value = cfg?.shell
+        ? ["sh", "bash", "zsh", "fish"].includes(cfg.shell)
+          ? cfg.shell
+          : "custom"
+        : "";
+      $("customShell").value = $("shell").value === "custom" ? cfg.shell : "";
+      shellFields();
+      authFields();
+    }
     $("deleteHost").hidden = !hosts.some((h) => h.id === cfg?.id);
     $("formTitle").textContent = t(cfg ? "editConnection" : "newConnection");
     $("formError").hidden = true;
     $("editor").hidden = false;
     $("terminalWorkspace").hidden = true;
     $("terminalActions").hidden = true;
-    $("app").classList.remove("in-terminal", "zen-mode");
+    $("viewModeSwitch").hidden = true;
+    $("mobileViewToggle").hidden = true;
+    $("app").classList.remove("in-terminal", "zen-mode", "is-webdav", "in-files");
     $("zenExit").hidden = true;
     $("zenToggle").setAttribute("aria-pressed", "false");
     $("moreWrap").classList.remove("open");
@@ -379,7 +509,7 @@
     mobile(false);
     renderTabs();
     renderHosts();
-    $("host").focus();
+    $(isDav ? "davUrl" : "host").focus();
     if (cfg?.remember) {
       secretLoading = true;
       setSecretBusy(true);
@@ -402,12 +532,16 @@
     return window.BookStark.secrets;
   }
   function secretName(id) { return "ssh-" + id; }
-  function credentialTarget(cfg) { return JSON.stringify([cfg.host, cfg.port, cfg.user, cfg.auth]); }
+  function credentialTarget(cfg) {
+    if (cfg.protocol === "webdav")
+      return JSON.stringify(["webdav", cfg.url, cfg.user || ""]);
+    return JSON.stringify([cfg.host, cfg.port, cfg.user, cfg.auth]);
+  }
   function setSecretBusy(busy) {
-    for (const id of ["saveHost", "connect", "deleteHost", "rememberCredentials", "password", "privateKey", "passphrase", ...(secretSaving ? ["host", "port", "username", "hostName", "shell", "customShell"] : [])])
+    for (const id of ["saveHost", "connect", "deleteHost", "testDav", "rememberCredentials", "password", "privateKey", "passphrase", ...(secretSaving ? ["host", "port", "username", "hostName", "shell", "customShell", "davUrl", "davUser", "davBasePath", "davInsecure"] : [])])
       $(id).disabled = busy;
     document.querySelectorAll("[name=auth]").forEach(input => input.disabled = busy && secretSaving);
-    if (!busy) for (const id of ["host", "port", "username", "hostName", "shell", "customShell"]) $(id).disabled = false;
+    if (!busy) for (const id of ["host", "port", "username", "hostName", "shell", "customShell", "davUrl", "davUser", "davBasePath", "davInsecure"]) $(id).disabled = false;
   }
   function clearRestoredCredentials() {
     ++editorVersion;
@@ -419,7 +553,7 @@
     keyText = keyName = "";
     $("keyName").textContent = "";
   }
-  for (const id of ["host", "port", "username"])
+  for (const id of ["host", "port", "username", "davUrl", "davUser"])
     $(id).addEventListener("input", clearRestoredCredentials);
   document.querySelectorAll("[name=auth]").forEach(input => input.addEventListener("change", clearRestoredCredentials));
   async function saveCredentials(cfg) {
@@ -437,16 +571,30 @@
   for (const id of ["addHost", "railAdd", "newConnection"])
     $(id).onclick = () => openEditor();
   function saveHost(cfg) {
-    cfg = {
-      id: cfg.id,
-      name: cfg.name || cfg.host,
-      host: cfg.host,
-      port: cfg.port,
-      user: cfg.user,
-      auth: cfg.auth,
-      shell: cfg.shell,
-      remember: cfg.remember === true,
-    };
+    cfg = cfg.protocol === "webdav"
+      ? {
+          id: cfg.id,
+          protocol: "webdav",
+          name: cfg.name || cfg.host || cfg.url,
+          host: cfg.host || cfg.url,
+          url: cfg.url,
+          user: cfg.user || "",
+          basePath: cfg.basePath || "",
+          insecureSkipVerify: cfg.insecureSkipVerify === true,
+          auth: "password",
+          remember: cfg.remember === true,
+        }
+      : {
+          id: cfg.id,
+          protocol: "ssh",
+          name: cfg.name || cfg.host,
+          host: cfg.host,
+          port: cfg.port,
+          user: cfg.user,
+          auth: cfg.auth,
+          shell: cfg.shell,
+          remember: cfg.remember === true,
+        };
     const list = hosts.filter((h) => h.id !== cfg.id);
     if (list.length >= 100) {
       showError(
@@ -499,28 +647,62 @@
     } catch (_) {$("rememberCredentials").checked = true;showError(t("secretFailed"));}
     finally {secretSaving = false;setSecretBusy(false);}
   };
+  $("testDav").onclick = async () => {
+    const cfg = hostConfig();
+    if (!validConfig(cfg)) return;
+    if (!window.BookStark?.sockets?.connect) {
+      showError(t("bridgeMissing"));
+      return;
+    }
+    $("formError").hidden = true;
+    $("testDav").disabled = true;
+    try {
+      const res = await filesWB.testWebDAV({
+        url: cfg.url,
+        user: cfg.user,
+        password: $("password").value,
+        basePath: cfg.basePath,
+        insecureSkipVerify: cfg.insecureSkipVerify,
+      });
+      if (res.ok) {
+        BSDialog.toast(
+          (lang === "zh" ? "WebDAV 连接正常 (" : "WebDAV OK (") + res.ms + "ms · " + res.count + (lang === "zh" ? " 项)" : " items)"),
+          "success",
+        );
+      } else {
+        showError(res.error || t("connectFailed"));
+      }
+    } catch (err) {
+      showError(err.message || t("connectFailed"));
+    } finally {
+      $("testDav").disabled = false;
+    }
+  };
   function renderHosts() {
     const q = $("hostSearch").value.trim().toLowerCase();
     $("hostList").replaceChildren();
-    const items = hosts.filter((h) =>
-      [h.name, h.host, h.user].join(" ").toLowerCase().includes(q),
-    );
+    const items = hosts.filter((h) => {
+      const proto = h.protocol === "webdav" ? "webdav" : "ssh";
+      if (hostFilter !== "all" && proto !== hostFilter) return false;
+      return [h.name, h.host, h.url, h.user].join(" ").toLowerCase().includes(q);
+    });
     for (const cfg of items) {
+      const isDav = cfg.protocol === "webdav";
       const b = document.createElement("button");
       b.type = "button";
       b.className =
         "host-row" +
         (editorMode && $("hostID").value === cfg.id ? " selected" : "");
+      const sub = isDav
+        ? e(cfg.url || cfg.host)
+        : e(cfg.user) + "@" + e(cfg.host) + ":" + e(cfg.port);
       b.innerHTML =
-        '<span class="host-glyph" aria-hidden="true">›_</span><span class="host-text"><strong>' +
+        '<span class="host-glyph' + (isDav ? " dav" : "") + '" aria-hidden="true">' +
+        (isDav ? '<i class="fa-solid fa-cloud"></i>' : "›_") +
+        '</span><span class="host-text"><strong>' +
         e(cfg.name || cfg.host) +
-        "</strong><small>" +
-        e(cfg.user) +
-        "@" +
-        e(cfg.host) +
-        ":" +
-        e(cfg.port) +
-        "</small></span>";
+        '<span class="proto-badge' + (isDav ? " dav" : "") + '">' + (isDav ? "DAV" : "SSH") + "</span>" +
+        "</strong><small>" + sub + "</small></span>";
       b.onclick = () => openEditor(cfg);
       $("hostList").appendChild(b);
     }
@@ -536,17 +718,26 @@
     const container = $("sessions");
     container.replaceChildren();
     for (const s of sessions.values()) {
+      const isDav = s.cfg.protocol === "webdav";
       const el = document.createElement("div");
       el.className = "tab" + (!editorMode && active === s.id ? " active" : "");
-      el.title = s.cfg.user + "@" + s.cfg.host + ":" + s.cfg.port;
+      el.title = isDav
+        ? s.cfg.url
+        : s.cfg.user + "@" + s.cfg.host + ":" + s.cfg.port;
+      const dotClass =
+        s.state === "connected" ? (isDav ? "dav-online" : "online") : "";
       el.innerHTML =
         '<span class="dot ' +
-        (s.state === "connected" ? "online" : "") +
+        dotClass +
         '" aria-hidden="true"></span><button type="button" role="tab" aria-selected="' +
         (!editorMode && active === s.id) +
         '">' +
         e(s.cfg.name || s.cfg.host) +
-        '</button><button type="button" class="close-tab" aria-label="' +
+        '</button><span class="tab-proto' +
+        (isDav ? " dav" : "") +
+        '">' +
+        (isDav ? "DAV" : "SSH") +
+        '</span><button type="button" class="close-tab" aria-label="' +
         e(t("close")) +
         '">×</button>';
       el.querySelector("[role=tab]").onclick = () => activate(s.id);
@@ -566,13 +757,19 @@
     $("terminalWorkspace").hidden = false;
     $("terminalActions").hidden = false;
     $("app").classList.add("in-terminal");
-    for (const s of sessions.values()) s.el.hidden = s.id !== id;
+    for (const s of sessions.values()) {
+      if (s.el) s.el.hidden = s.id !== id;
+    }
     mobile(false);
     renderTabs();
+    const cur = sessions.get(id);
+    filesWB.applyViewMode(cur);
     updateSession();
     requestAnimationFrame(() => {
       fitActive();
-      sessions.get(id)?.term.focus();
+      if (cur?.cfg.protocol !== "webdav" && cur?.viewMode !== "files") {
+        cur?.term?.focus();
+      }
     });
   }
   const reasonLabels = {
@@ -604,17 +801,33 @@
   function updateSession() {
     const s = sessions.get(active);
     if (!s) return;
-    $("sessionHost").textContent =
-      s.cfg.user +
-      "@" +
-      s.cfg.host +
-      ":" +
-      s.cfg.port +
-      " · " +
-      (s.cfg.shell || t("defaultShell"));
+    const isDav = s.cfg.protocol === "webdav";
+    $("sessionHost").textContent = isDav
+      ? s.cfg.url + (s.cfg.user ? " · " + s.cfg.user : "")
+      : s.cfg.user +
+        "@" +
+        s.cfg.host +
+        ":" +
+        s.cfg.port +
+        " · " +
+        (s.cfg.shell || t("defaultShell"));
     $("sessionStatus").textContent = t(s.state);
-    $("statusDot").classList.toggle("online", s.state === "connected");
-    $("dimensions").textContent = s.term.cols + " × " + s.term.rows;
+    $("statusDot").classList.toggle("online", !isDav && s.state === "connected");
+    $("statusDot").classList.toggle("dav-online", isDav && s.state === "connected");
+    const badge = $("statusProtoBadge");
+    if (isDav) {
+      badge.hidden = false;
+      badge.className = "status-badge dav";
+      badge.textContent = lang === "zh" ? "WASM Socket · 无 CORS" : "WASM Socket · No CORS";
+      $("dimensions").textContent = (s.fs?.entries?.length || 0) + (lang === "zh" ? " 项" : " items");
+      $("statusMeta").textContent = "WebDAV · UTF-8";
+    } else {
+      badge.hidden = s.viewMode === "terminal";
+      badge.className = "status-badge";
+      badge.textContent = lang === "zh" ? "SFTP 通道已复用" : "SFTP Multiplexed";
+      $("dimensions").textContent = s.term ? s.term.cols + " × " + s.term.rows : "";
+      $("statusMeta").textContent = s.viewMode === "terminal" ? "SSH · UTF-8" : "SSH + SFTP · UTF-8";
+    }
     $("disconnect").disabled = s.state === "closed";
     $("connectionBanner").hidden = s.state === "connected";
     $("connectionMessage").textContent =
@@ -627,8 +840,9 @@
     if (s.state !== "closed" && !(await BSDialog.confirm2(t("confirmClose"))))
       return;
     stop(s);
-    s.term.dispose();
-    s.el.remove();
+    filesWB.onSessionClosed(s);
+    s.term?.dispose();
+    s.el?.remove();
     sessions.delete(s.id);
     if (active === s.id) {
       const last = [...sessions.keys()].pop();
@@ -648,7 +862,12 @@
     s.readAck = null;
     s.inputAck?.();
     s.inputAck = null;
-    if (worker) worker.postMessage({ type: "close", id: s.run });
+    if (worker) {
+      worker.postMessage({
+        type: s.cfg.protocol === "webdav" ? "dav-close" : "close",
+        id: s.run,
+      });
+    }
     updateSession();
     renderTabs();
   }
@@ -693,9 +912,31 @@
       for (const s of sessions.values()) finish(s, t("moduleFailed"));
       return;
     }
+    if (filesWB.handleWorkerMessage(m)) return;
     const s = [...sessions.values()].find((item) => item.run === m.id);
     if (!s) return;
     switch (m.type) {
+      case "dav-connected":
+        s.state = "connected";
+        s.reason = "";
+        s.fs.cwd = m.cwd || "/";
+        s.fs.entries = JSON.parse(m.entries || "[]");
+        s.fs.loaded = true;
+        s.fs.loading = false;
+        s.fs.error = "";
+        renderTabs();
+        if (active === s.id) {
+          filesWB.applyViewMode(s);
+          filesWB.renderSessionFiles(s);
+          updateSession();
+        }
+        break;
+      case "dav-error":
+        s.fs.loading = false;
+        s.fs.error = m.reason || t("connectFailed");
+        finish(s, m.reason);
+        if (active === s.id) filesWB.renderSessionFiles(s);
+        break;
       case "transport-write": {
         const socket = s.socket;
         Promise.resolve()
@@ -730,6 +971,7 @@
         s.term.focus();
         break;
       case "output":
+        filesWB.onTerminalOutput(s, m.data);
         s.term.write(m.data, () =>
           worker?.postMessage({ type: "output-ack", id: s.run }),
         );
@@ -824,7 +1066,28 @@
     });
   }
   function createSession(cfg) {
-    const id = "ssh-" + Date.now() + "-" + Math.random().toString(36).slice(2);
+    const isDav = cfg.protocol === "webdav";
+    const id = (isDav ? "dav-" : "ssh-") + Date.now() + "-" + Math.random().toString(36).slice(2);
+    if (isDav) {
+      const s = {
+        id,
+        run: id + "-run-1",
+        cfg,
+        term: null,
+        fit: null,
+        el: null,
+        viewMode: "files",
+        fs: { cwd: "/", entries: [], loaded: false, loading: true, error: "" },
+        state: "connecting",
+        reason: "",
+        socket: null,
+        readAck: null,
+        inputAck: null,
+        inputChain: Promise.resolve(),
+      };
+      sessions.set(id, s);
+      return s;
+    }
     const el = document.createElement("div");
     el.className = "terminal-panel";
     const mount = document.createElement("div");
@@ -854,6 +1117,8 @@
       term,
       fit,
       el,
+      viewMode: "terminal",
+      fs: { cwd: "", entries: [], loaded: false, loading: false, error: "", cwdTimer: null },
       state: "connecting",
       reason: "",
       socket: null,
@@ -867,7 +1132,8 @@
       const current = sessions.get(id);
       if (current?.state === "connected")
         worker.postMessage({ type: "resize", id: current.run, cols, rows });
-      if (active === id) $("dimensions").textContent = cols + " × " + rows;
+      if (active === id && current?.cfg.protocol !== "webdav")
+        $("dimensions").textContent = cols + " × " + rows;
     });
     return s;
   }
@@ -966,6 +1232,7 @@
         ...previous,
         cfg,
         run: previous.id + "-run-" + Date.now(),
+        fs: { cwd: cfg.protocol === "webdav" ? "/" : "", entries: [], loaded: false, loading: cfg.protocol === "webdav", error: "", cwdTimer: null },
         state: "connecting",
         reason: "",
         socket: null,
@@ -975,7 +1242,7 @@
         trustDialog: null,
       };
       sessions.set(s.id, s);
-      s.term.writeln("\r\n\x1b[90m— " + t("reconnect") + " —\x1b[0m");
+      s.term?.writeln("\r\n\x1b[90m— " + t("reconnect") + " —\x1b[0m");
     }
     activate(s.id);
     $("connect").disabled = false;
@@ -983,6 +1250,19 @@
     try {
       await ensureEngine();
       if (!current()) return;
+      if (cfg.protocol === "webdav") {
+        worker.postMessage({
+          type: "dav-connect",
+          id: s.run,
+          url: cfg.url,
+          user: cfg.user,
+          password: credentials.password,
+          basePath: cfg.basePath,
+          insecureSkipVerify: cfg.insecureSkipVerify,
+        });
+        credentials.password = "";
+        return;
+      }
       const transport = await BookStark.sockets.connect({
         host: cfg.host,
         port: cfg.port,
@@ -1040,7 +1320,7 @@
   };
   function fitActive() {
     const s = sessions.get(active);
-    if (s && !editorMode) {
+    if (s && !editorMode && s.term && s.viewMode !== "files") {
       try {
         s.fit.fit();
       } catch (_) {}
@@ -1059,7 +1339,9 @@
   function setFont(delta) {
     fontSize = Math.max(10, Math.min(24, fontSize + delta));
     localStorage.setItem("ssh.font-size", String(fontSize));
-    for (const s of sessions.values()) s.term.options.fontSize = fontSize;
+    for (const s of sessions.values()) {
+      if (s.term) s.term.options.fontSize = fontSize;
+    }
     fitActive();
   }
   $("smallerFont").onclick = () => setFont(-1);
@@ -1073,7 +1355,8 @@
     $("mobileMore").setAttribute("aria-expanded", "false");
     requestAnimationFrame(() => {
       fitActive();
-      sessions.get(active)?.term.focus();
+      const s = sessions.get(active);
+      if (s?.term && s.viewMode !== "files") s.term.focus();
     });
   }
   $("zenToggle").onclick = () =>

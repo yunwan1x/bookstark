@@ -15,6 +15,7 @@ import (
 	"syscall/js"
 	"time"
 
+	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -43,13 +44,25 @@ type connection struct {
 	trust     chan bool
 	done      chan struct{}
 	once      sync.Once
+	client    *ssh.Client
+	sftpMu    sync.Mutex
+	sftp      *sftp.Client
 	session   *ssh.Session
 	stdin     io.WriteCloser
 }
 
-var sessions = map[string]*connection{}
+var (
+	sessionsMu sync.Mutex
+	sessions   = map[string]*connection{}
+)
 var emit js.Value
 var callback js.Func
+
+func getSession(id string) *connection {
+	sessionsMu.Lock()
+	defer sessionsMu.Unlock()
+	return sessions[id]
+}
 
 func event(id, kind string, fields map[string]any) {
 	if fields == nil {
@@ -69,10 +82,18 @@ func (c *connection) close(reason string) {
 		close(c.done)
 		c.pipe.Close()
 		c.transport.Close()
+		c.sftpMu.Lock()
+		if c.sftp != nil {
+			c.sftp.Close()
+			c.sftp = nil
+		}
+		c.sftpMu.Unlock()
 		if c.session != nil {
 			c.session.Close()
 		}
+		sessionsMu.Lock()
 		delete(sessions, c.id)
+		sessionsMu.Unlock()
 		event(c.id, "closed", map[string]any{"reason": reason})
 	})
 }
@@ -167,6 +188,7 @@ func (c *connection) start(cfg configuration) {
 		return
 	}
 	client := ssh.NewClient(raw, chans, reqs)
+	c.client = client
 	defer client.Close()
 	sess, err := client.NewSession()
 	if err != nil {
@@ -285,9 +307,29 @@ func main() {
 	emit = js.Global().Get("postMessage")
 	callback = js.FuncOf(func(this js.Value, args []js.Value) any {
 		m := args[0]
-		id := m.Get("id").String()
 		kind := m.Get("type").String()
-		c := sessions[id]
+		switch kind {
+		case "dial-open", "dial-data", "dial-write-ack", "dial-close":
+			handleDialMessage(kind, m)
+			return nil
+		case "dav-test":
+			reqID := m.Get("reqId").String()
+			go handleDavTest(reqID, m)
+			return nil
+		}
+		id := m.Get("id").String()
+		switch kind {
+		case "dav-connect":
+			go handleDavConnect(id, m)
+			return nil
+		case "dav-close":
+			go handleDavClose(id)
+			return nil
+		case "fs-req":
+			go handleFSRequest(id, m)
+			return nil
+		}
+		c := getSession(id)
 		if kind == "connect" {
 			if c != nil {
 				return nil
@@ -298,7 +340,9 @@ func main() {
 			}
 			a, b := net.Pipe()
 			c = &connection{id: id, pipe: a, transport: b, input: make(chan []byte, 4), keyboard: make(chan []byte, 4), resize: make(chan [2]int, 1), output: make(chan bool, 1), writes: make(chan bool, 1), trust: make(chan bool, 1), done: make(chan struct{})}
+			sessionsMu.Lock()
 			sessions[id] = c
+			sessionsMu.Unlock()
 			go c.start(cfg)
 			return nil
 		}

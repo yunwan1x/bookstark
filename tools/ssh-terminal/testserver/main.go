@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/pem"
 	"fmt"
+	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 	"io"
 	"net"
@@ -101,6 +102,20 @@ func main() {
 								channel.SendRequest("exit-status", false, ssh.Marshal(struct{ Code uint32 }{0}))
 								channel.Close()
 							}()
+						case "subsystem":
+							if len(r.Payload) >= 4 && string(r.Payload[4:]) == "sftp" {
+								r.Reply(true, nil)
+								go func() {
+									srv, err := sftp.NewServer(channel)
+									if err == nil {
+										_ = srv.Serve()
+										srv.Close()
+									}
+									channel.Close()
+								}()
+							} else {
+								r.Reply(false, nil)
+							}
 						case "env":
 							r.Reply(true, nil)
 						default:

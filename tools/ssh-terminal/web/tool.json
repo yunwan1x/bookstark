@@ -1,7 +1,7 @@
 {
   "title": "SSH 终端",
-  "description": "多会话 SSH 终端，紧凑单行顶栏与专注全屏最大化终端视口，支持密码与私钥认证、加密保存凭据、主机密钥核对和可折叠连接面板。",
-  "version": "1.0.3",
+  "description": "SSH 终端 + SFTP + WebDAV 一体化远程工作台：38px 紧凑单行顶栏与专注模式，同连接复用 SFTP 分屏文件管理、无 CORS WebDAV 挂载、拖拽传输队列与在线远程代码编辑。",
+  "version": "1.1.0",
   "category": "development",
   "icon": "terminal",
   "icon_style": "solid",
