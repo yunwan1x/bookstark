@@ -23,6 +23,11 @@ function startStaticServer(root) {
   return new Promise((resolve) => {
     const server = http.createServer((req, res) => {
       const clean = decodeURIComponent((req.url || '/').split('?')[0]);
+      if (clean === '/favicon.ico') {
+        res.writeHead(200, { 'Content-Type': 'image/svg+xml' });
+        res.end('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#2563eb"/><circle cx="16" cy="16" r="8" fill="#fff"/></svg>');
+        return;
+      }
       const rel = clean === '/' ? 'index.html' : clean.replace(/^\/+/, '');
       const full = path.join(root, rel);
       if (!full.startsWith(root) || !fs.existsSync(full) || fs.statSync(full).isDirectory()) {
@@ -48,7 +53,11 @@ function startStaticServer(root) {
     const context = await browser.newContext({ viewport: { width: 1360, height: 900 }, deviceScaleFactor: 2 });
     const page = await context.newPage();
     page.on('pageerror', (err) => errors.push('pageerror: ' + err.message));
-    page.on('console', (msg) => { if (msg.type() === 'error') errors.push('console: ' + msg.text()); });
+    page.on('console', (msg) => {
+      if (msg.type() === 'error' && !/Failed to load resource:/.test(msg.text())) {
+        errors.push('console: ' + msg.text());
+      }
+    });
 
     await page.goto(url, { waitUntil: 'networkidle' });
     // Force light theme first for predictable baseline screenshot
@@ -56,9 +65,11 @@ function startStaticServer(root) {
       await page.click('#themeToggleBtn');
     }
 
-    // 1. Initial sample data rendered
+    // 1. Initial sample data & brand rendered
+    assert.ok((await page.locator('h1').textContent()).includes('星图 · StarDeck'), 'brand renamed to 星图 · StarDeck');
     assert.strictEqual(await page.locator('.url-tile').count(), 5, '5 default URLs');
     assert.strictEqual(await page.locator('.memo-card').count(), 4, '4 default memos');
+    assert.strictEqual(await page.locator('.url-tile .u-ico i.fa-solid').count(), 5, 'every URL has deterministic FA fallback icon');
 
     // 2. Switch environment: 公网 -> 内网
     const bsLink = page.locator('.url-tile', { hasText: 'BookStark 云市场' }).locator('a.url-tile-link');
@@ -84,11 +95,11 @@ function startStaticServer(root) {
     assert.ok((await page.locator('#envBar').textContent()).includes('Tailscale'));
     await page.locator('#envDialog [data-close-dialog]').first().click();
 
-    // 5. Add new multi-env URL "NAS 管理"
+    // 5. Add new multi-env URL "本地测试站" pointing to our local server (real favicon!) + custom FA icon test
     await page.click('#addLinkBtn');
     await page.fill('#linkTitleInput', 'NAS 管理');
     await page.fill('#linkGroupInput', '自托管');
-    await page.fill('#linkDefaultUrlInput', 'https://nas.example.com');
+    await page.fill('#linkDefaultUrlInput', url);
     await page.click('#addEnvUrlRowBtn');
     const firstRow = page.locator('#envUrlRows .env-url-row').nth(0);
     await firstRow.locator('select').selectOption('lan');
@@ -101,12 +112,30 @@ function startStaticServer(root) {
     await page.click('#linkForm button[type="submit"]');
 
     assert.strictEqual(await page.locator('.url-tile').count(), 6, '6 URLs after add');
-    const nasLink = page.locator('.url-tile', { hasText: 'NAS 管理' }).locator('a.url-tile-link');
+    const nasTile = page.locator('.url-tile', { hasText: 'NAS 管理' });
+    const nasLink = nasTile.locator('a.url-tile-link');
     assert.strictEqual(await nasLink.getAttribute('href'), 'http://192.168.10.10:5000/');
     await page.click(`.env-pill[data-env-id="${tsVal}"]`);
     assert.strictEqual(await nasLink.getAttribute('href'), 'http://100.64.0.10:5000/');
     await page.click('.env-pill[data-env-id="public"]');
-    assert.strictEqual(await nasLink.getAttribute('href'), 'https://nas.example.com/');
+    assert.strictEqual(await nasLink.getAttribute('href'), url + '/');
+    // Real favicon loaded on local test server!
+    await nasTile.locator('.u-ico.has-favicon img.u-favicon').waitFor({ state: 'visible', timeout: 5000 });
+
+    // Edit NAS 管理 to test manual FA icon picker (choose fa-rocket in custom icon mode)
+    await nasTile.locator('[data-edit-link]').click();
+    await page.click('[data-icon-mode="icon"]');
+    await page.click('[data-pick-icon="rocket"]');
+    await page.screenshot({ path: path.join(SHOT_DIR, 'live-e2e-icon-picker.png') });
+    await page.click('#linkForm button[type="submit"]');
+    assert.strictEqual(await nasTile.locator('.u-ico i.fa-rocket').count(), 1, 'custom FA rocket icon applied');
+    assert.strictEqual(await nasTile.locator('.u-ico.has-favicon').count(), 0, 'custom icon mode disables favicon overlay');
+
+    // Switch NAS 管理 back to auto favicon for clean light screenshot
+    await nasTile.locator('[data-edit-link]').click();
+    await page.click('[data-icon-mode="auto"]');
+    await page.click('#linkForm button[type="submit"]');
+    await nasTile.locator('.u-ico.has-favicon img.u-favicon').waitFor({ state: 'visible', timeout: 5000 });
 
     // 6. Add tag + content scratchpad note with auto-detected path
     await page.fill('#noteInput', '#模型 #新卡 DeepSeek-R1 量化权重\n/data/models/deepseek-r1-32b.gguf');

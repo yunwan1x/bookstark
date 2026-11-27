@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>随手导航台 · BookStark</title>
+  <title>星图 · StarDeck · BookStark</title>
   <link rel="stylesheet" href="./font-awesome.css">
   <link rel="stylesheet" href="./app.css">
 </head>
@@ -14,8 +14,8 @@
       <div class="brand">
         <div class="brand-logo" aria-hidden="true"><i class="fa-solid fa-compass"></i></div>
         <div class="brand-text">
-          <h1>随手导航台</h1>
-          <span class="brand-sub">多环境网址大盘 + 标签随手记</span>
+          <h1>星图 · StarDeck</h1>
+          <span class="brand-sub">多环境导航大盘 · 标签随手记</span>
         </div>
       </div>
 
@@ -121,21 +121,41 @@
           </label>
         </div>
 
-        <div class="form-row form-row-compact">
-          <label class="field">
-            <span>图标简称（1~2 字，留空自动取首字）</span>
-            <input type="text" id="linkBadgeInput" maxlength="2" placeholder="如：C / 东">
-          </label>
-          <label class="field">
-            <span>徽章主题色</span>
-            <div class="color-swatches" id="linkColorSwatches"></div>
-          </label>
-        </div>
-
         <label class="field">
           <span>默认 / 通用网址 * <small>（未配置当前环境地址时自动兜底使用）</small></span>
           <input type="url" id="linkDefaultUrlInput" required placeholder="https://example.com">
         </label>
+
+        <div class="icon-config-box">
+          <div class="icon-config-head">
+            <div class="icon-preview-wrap">
+              <span class="u-ico tone-blue" id="linkIconPreview"><i class="fa-solid fa-globe"></i></span>
+              <div>
+                <div class="icon-config-title">图标设置</div>
+                <div class="icon-config-sub" id="linkIconHint">优先加载网站 Favicon，失败时回退为下方图标</div>
+              </div>
+            </div>
+            <div class="icon-mode-tabs" id="iconModeTabs" role="tablist">
+              <button type="button" class="icon-mode-btn active" data-icon-mode="auto">自动 Favicon</button>
+              <button type="button" class="icon-mode-btn" data-icon-mode="icon">自选图标</button>
+            </div>
+          </div>
+
+          <div class="icon-toolbar">
+            <div class="color-swatches" id="linkColorSwatches"></div>
+            <div class="icon-toolbar-right">
+              <input type="search" id="iconSearchInput" class="icon-search" placeholder="筛选图标…">
+              <button type="button" class="btn btn-soft btn-xs" id="randomIconBtn" title="按 Hash 或随机选一个图标"><i class="fa-solid fa-shuffle"></i> 换一个</button>
+            </div>
+          </div>
+
+          <div class="icon-grid" id="linkIconGrid" role="listbox" aria-label="FontAwesome 图标选择"></div>
+
+          <label class="field" id="customFaviconField">
+            <span>自定义 Favicon 地址 <small>（可选，留空自动尝试网站 /favicon.ico）</small></span>
+            <input type="url" id="linkFaviconUrlInput" placeholder="https://example.com/favicon.svg">
+          </label>
+        </div>
 
         <div class="env-urls-box">
           <div class="env-urls-head">

@@ -17,6 +17,124 @@
   };
   const PRESET_TAGS = ['服务器', '模型', '下载', '定时任务', '临时', '备忘'];
 
+  const FA_ICONS = [
+    { id: 'globe', kw: 'globe web 网站 网页 公网' },
+    { id: 'server', kw: 'server 主机 服务器 vps' },
+    { id: 'cloud', kw: 'cloud 云 网盘 服务' },
+    { id: 'database', kw: 'database db 数据库 sql redis' },
+    { id: 'terminal', kw: 'terminal ssh 终端 命令行' },
+    { id: 'code', kw: 'code 代码 开发 git github' },
+    { id: 'microchip', kw: 'microchip gpu 芯片 硬件 显卡' },
+    { id: 'brain', kw: 'brain ai 模型 llm 人工智能' },
+    { id: 'robot', kw: 'robot bot 机器人 ai 对话' },
+    { id: 'rocket', kw: 'rocket 火箭 启动 加速 部署' },
+    { id: 'bolt', kw: 'bolt 闪电 效率 快捷' },
+    { id: 'compass', kw: 'compass 指南针 导航 星图' },
+    { id: 'layer-group', kw: 'layer 架构 平台 容器' },
+    { id: 'cube', kw: 'cube docker 容器 工具' },
+    { id: 'cubes', kw: 'cubes 集群 微服务' },
+    { id: 'boxes-stacked', kw: 'boxes 资源 仓库 归档' },
+    { id: 'hard-drive', kw: 'drive nas 硬盘 存储 磁盘' },
+    { id: 'network-wired', kw: 'network lan 内网 路由 拓扑' },
+    { id: 'wifi', kw: 'wifi 无线 网络 路由' },
+    { id: 'satellite-dish', kw: 'satellite 信号 雷达 代理' },
+    { id: 'shield-halved', kw: 'shield 安全 密码 防火墙' },
+    { id: 'key', kw: 'key 密钥 token 凭据' },
+    { id: 'lock', kw: 'lock 加密 隐私 锁' },
+    { id: 'download', kw: 'download 下载 bt pt' },
+    { id: 'upload', kw: 'upload 上传 同步 备份' },
+    { id: 'folder-open', kw: 'folder 目录 文件 归档' },
+    { id: 'file-code', kw: 'file 脚本 配置 文档' },
+    { id: 'book', kw: 'book 书 文档 笔记 wiki' },
+    { id: 'bookmark', kw: 'bookmark 书签 收藏' },
+    { id: 'star', kw: 'star 收藏 常用 星标' },
+    { id: 'fire', kw: 'fire 热门 常用 主力' },
+    { id: 'wand-magic-sparkles', kw: 'magic comfyui 绘画 生成 ai' },
+    { id: 'chart-line', kw: 'chart 股票 行情 监控 指标' },
+    { id: 'chart-pie', kw: 'pie 报表 资产 财务' },
+    { id: 'coins', kw: 'coins 金融 基金 理财' },
+    { id: 'wallet', kw: 'wallet 钱包 账单 续费' },
+    { id: 'film', kw: 'film 视频 影视 影音' },
+    { id: 'music', kw: 'music 音乐 音频 播客' },
+    { id: 'image', kw: 'image 图片 相册 图像' },
+    { id: 'camera', kw: 'camera 摄影 截图 监控' },
+    { id: 'gamepad', kw: 'gamepad 游戏 娱乐 掌机' },
+    { id: 'house', kw: 'house 家庭 内网 homelab' },
+    { id: 'building', kw: 'building 公司 办公 生产' },
+    { id: 'wrench', kw: 'wrench 运维 调试 工具' },
+    { id: 'gear', kw: 'gear 设置 后台 管理 控制台' },
+    { id: 'sliders', kw: 'sliders 参数 面板 控制' },
+    { id: 'paper-plane', kw: 'plane 传输 邮件 消息 推送' },
+    { id: 'link', kw: 'link 链接 入口 跳转' }
+  ];
+  const FA_ICON_SET = new Set(FA_ICONS.map((x) => x.id));
+
+  function hashSeed(str) {
+    let h = 2166136261;
+    const s = String(str || '');
+    for (let i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i);
+      h = Math.imul(h, 16777619) >>> 0;
+    }
+    return h >>> 0;
+  }
+
+  function hashFaIcon(seed) {
+    return FA_ICONS[hashSeed(seed) % FA_ICONS.length].id;
+  }
+
+  function resolveIconMeta(link, resolvedUrl) {
+    let hostSeed = '';
+    try { hostSeed = new URL(resolvedUrl || link.defaultUrl || '').hostname; } catch (_) {}
+    const seed = hostSeed || link.title || link.id || 'site';
+    const faIcon = (link.icon && FA_ICON_SET.has(link.icon)) ? link.icon : hashFaIcon(seed);
+    const mode = link.iconMode === 'icon' ? 'icon' : 'auto';
+    const favicons = [];
+    if (mode === 'auto' && navigator.onLine !== false) {
+      const seen = new Set();
+      const push = (u) => { if (u && !seen.has(u)) { seen.add(u); favicons.push(u); } };
+      push(safeUrl(link.faviconUrl));
+      for (const candidate of [resolvedUrl, link.defaultUrl]) {
+        const clean = safeUrl(candidate);
+        if (!clean) continue;
+        try { push(new URL('/favicon.ico', clean).href); } catch (_) {}
+      }
+    }
+    return { mode, faIcon, favicons };
+  }
+
+  function hydrateFavicons(root) {
+    if (!root) return;
+    root.querySelectorAll('.u-ico[data-favicons]').forEach((box) => {
+      let list = [];
+      try { list = JSON.parse(box.dataset.favicons || '[]'); } catch (_) {}
+      if (!list.length) return;
+      let idx = 0;
+      const tryNext = () => {
+        if (idx >= list.length || !box.isConnected) return;
+        const src = list[idx++];
+        const img = document.createElement('img');
+        img.className = 'u-favicon';
+        img.alt = '';
+        img.decoding = 'async';
+        img.referrerPolicy = 'no-referrer';
+        img.onload = () => {
+          if (!box.isConnected) return;
+          if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+            box.querySelectorAll('.u-favicon').forEach((n) => n.remove());
+            box.appendChild(img);
+            box.classList.add('has-favicon');
+          } else {
+            tryNext();
+          }
+        };
+        img.onerror = tryNext;
+        img.src = src;
+      };
+      tryNext();
+    });
+  }
+
   const $ = (id) => document.getElementById(id);
 
   function genId() {
@@ -110,7 +228,9 @@
           id: genId(),
           title: 'BookStark 云市场',
           group: '自托管',
-          badge: 'B',
+          icon: '',
+          iconMode: 'auto',
+          faviconUrl: '',
           color: 'blue',
           defaultUrl: 'https://cloud.vs2010wy.top',
           envUrls: { public: 'https://cloud.vs2010wy.top', lan: 'http://192.168.10.10:8089' }
@@ -119,7 +239,9 @@
           id: genId(),
           title: 'ComfyUI 出图台',
           group: 'AI / 模型',
-          badge: 'C',
+          icon: 'wand-magic-sparkles',
+          iconMode: 'auto',
+          faviconUrl: '',
           color: 'purple',
           defaultUrl: 'http://192.168.10.25:8188',
           envUrls: { public: 'https://comfy.example.com', lan: 'http://192.168.10.25:8188', test: 'http://100.64.0.25:8188' }
@@ -128,7 +250,9 @@
           id: genId(),
           title: 'OpenWebUI',
           group: 'AI / 模型',
-          badge: 'O',
+          icon: 'robot',
+          iconMode: 'auto',
+          faviconUrl: '',
           color: 'green',
           defaultUrl: 'http://192.168.10.25:3000',
           envUrls: { lan: 'http://192.168.10.25:3000', public: 'https://ai.example.com' }
@@ -137,7 +261,9 @@
           id: genId(),
           title: 'GitHub',
           group: '常用',
-          badge: 'G',
+          icon: '',
+          iconMode: 'auto',
+          faviconUrl: '',
           color: 'cyan',
           defaultUrl: 'https://github.com',
           envUrls: {}
@@ -146,7 +272,9 @@
           id: genId(),
           title: 'HF-Mirror 模型站',
           group: 'AI / 模型',
-          badge: 'H',
+          icon: '',
+          iconMode: 'auto',
+          faviconUrl: '',
           color: 'pink',
           defaultUrl: 'https://hf-mirror.com',
           envUrls: {}
@@ -371,13 +499,14 @@
       const endpoints = listLinkEndpoints(link);
       const multi = endpoints.length > 1;
       const tone = TONES.includes(link.color) ? link.color : 'blue';
-      const badge = (link.badge || '').trim() || (link.title || '?').trim().slice(0, 1).toUpperCase();
+      const iconMeta = resolveIconMeta(link, res.url);
       const envTone = res.matched ? res.envColor : 'slate';
       const chipLabel = multi ? (res.envName + ' ▾') : res.envName;
+      const favAttr = iconMeta.favicons.length ? ' data-favicons="' + esc(JSON.stringify(iconMeta.favicons)) + '"' : '';
 
       return '<article class="url-tile' + (res.matched ? ' env-matched tone-' + esc(envTone) : '') + '" data-link-id="' + esc(link.id) + '">'
         + '<a class="url-tile-link" href="' + esc(res.url) + '" target="_blank" rel="noopener noreferrer" title="' + esc(link.title + ' · ' + res.url) + '">'
-        + '<span class="u-ico tone-' + esc(tone) + '">' + esc(badge) + '</span>'
+        + '<span class="u-ico tone-' + esc(tone) + '"' + favAttr + '><i class="fa-solid fa-' + esc(iconMeta.faIcon) + '" aria-hidden="true"></i></span>'
         + '<span class="u-txt"><strong>' + esc(link.title) + '</strong><span class="u-host">' + esc(displayHost(res.url)) + '</span></span>'
         + '</a>'
         + '<div class="u-right">'
@@ -388,6 +517,7 @@
         + '</div>'
         + '</article>';
     }).join('');
+    hydrateFavicons(grid);
   }
 
   // Render Tag Rail + Quick Tags
@@ -578,6 +708,37 @@
 
   // Link Dialog
   let selectedLinkColor = 'blue';
+  let selectedIconMode = 'auto';
+  let selectedLinkIcon = ''; // '' = deterministic hash by domain/title
+
+  function currentPreviewFaIcon() {
+    if (selectedLinkIcon && FA_ICON_SET.has(selectedLinkIcon)) return selectedLinkIcon;
+    let hostSeed = '';
+    try { hostSeed = new URL($('linkDefaultUrlInput').value.trim()).hostname; } catch (_) {}
+    return hashFaIcon(hostSeed || $('linkTitleInput').value.trim() || 'site');
+  }
+
+  function renderIconPicker() {
+    const modeBtns = $('iconModeTabs').querySelectorAll('[data-icon-mode]');
+    modeBtns.forEach((b) => b.classList.toggle('active', b.dataset.iconMode === selectedIconMode));
+    $('customFaviconField').hidden = selectedIconMode === 'icon';
+    $('linkIconHint').textContent = selectedIconMode === 'auto'
+      ? (selectedLinkIcon ? '优先加载网站 Favicon，失败时回退为自选图标' : '优先加载网站 Favicon，失败时按域名 Hash 自动匹配图标')
+      : (selectedLinkIcon ? '始终显示自选 FontAwesome 图标' : '始终按域名 Hash 自动匹配 FontAwesome 图标');
+
+    const prev = $('linkIconPreview');
+    prev.className = 'u-ico tone-' + selectedLinkColor;
+    prev.innerHTML = '<i class="fa-solid fa-' + esc(currentPreviewFaIcon()) + '" aria-hidden="true"></i>';
+
+    const q = ($('iconSearchInput').value || '').trim().toLowerCase();
+    const list = q ? FA_ICONS.filter((ic) => ic.id.includes(q) || ic.kw.toLowerCase().includes(q)) : FA_ICONS;
+    const autoChip = !q
+      ? '<button type="button" class="icon-choice is-auto-chip' + (selectedLinkIcon === '' ? ' active' : '') + '" data-pick-icon="" title="按域名自动 Hash 匹配图标">自动 Hash</button>'
+      : '';
+    $('linkIconGrid').innerHTML = autoChip + list.map((ic) =>
+      '<button type="button" class="icon-choice' + (selectedLinkIcon === ic.id ? ' active' : '') + '" data-pick-icon="' + esc(ic.id) + '" title="fa-' + esc(ic.id) + '" aria-label="' + esc(ic.id) + '"><i class="fa-solid fa-' + esc(ic.id) + '"></i></button>'
+    ).join('');
+  }
 
   function renderLinkSwatches() {
     $('linkColorSwatches').innerHTML = TONES.map((c) =>
@@ -603,10 +764,14 @@
     $('linkIdInput').value = link ? link.id : '';
     $('linkTitleInput').value = link ? link.title : '';
     $('linkGroupInput').value = link ? (link.group || '常用') : (activeGroup !== 'ALL' ? activeGroup : '常用');
-    $('linkBadgeInput').value = link ? (link.badge || '') : '';
     $('linkDefaultUrlInput').value = link ? (link.defaultUrl || '') : '';
+    $('linkFaviconUrlInput').value = link ? (link.faviconUrl || '') : '';
+    $('iconSearchInput').value = '';
     selectedLinkColor = link && TONES.includes(link.color) ? link.color : 'blue';
+    selectedIconMode = link && link.iconMode === 'icon' ? 'icon' : 'auto';
+    selectedLinkIcon = link && link.icon && FA_ICON_SET.has(link.icon) ? link.icon : '';
     renderLinkSwatches();
+    renderIconPicker();
 
     const rowsHost = $('envUrlRows');
     rowsHost.innerHTML = '';
@@ -758,7 +923,7 @@
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = 'bookstark-nav-notes-' + new Date().toISOString().slice(0, 10) + '.json';
+      a.download = 'bookstark-stardeck-' + new Date().toISOString().slice(0, 10) + '.json';
       a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 5000);
       showToast('已导出 JSON 备份');
@@ -858,7 +1023,28 @@
       if (!sw) return;
       selectedLinkColor = sw.dataset.swatch;
       renderLinkSwatches();
+      renderIconPicker();
     };
+    $('iconModeTabs').onclick = (e) => {
+      const btn = e.target.closest('[data-icon-mode]');
+      if (!btn) return;
+      selectedIconMode = btn.dataset.iconMode;
+      renderIconPicker();
+    };
+    $('linkIconGrid').onclick = (e) => {
+      const btn = e.target.closest('[data-pick-icon]');
+      if (!btn) return;
+      selectedLinkIcon = btn.dataset.pickIcon;
+      renderIconPicker();
+    };
+    $('iconSearchInput').oninput = () => renderIconPicker();
+    $('randomIconBtn').onclick = () => {
+      const pool = FA_ICONS.filter((x) => x.id !== selectedLinkIcon);
+      selectedLinkIcon = pool[Math.floor(Math.random() * pool.length)].id;
+      renderIconPicker();
+    };
+    $('linkTitleInput').oninput = () => { if (!selectedLinkIcon) renderIconPicker(); };
+    $('linkDefaultUrlInput').oninput = () => { if (!selectedLinkIcon) renderIconPicker(); };
     $('addEnvUrlRowBtn').onclick = () => {
       const used = new Set(Array.from($('envUrlRows').querySelectorAll('.env-row-select')).map((s) => s.value));
       const next = data.envs.find((e) => !used.has(e.id)) || data.envs[0];
@@ -869,8 +1055,8 @@
       const id = $('linkIdInput').value;
       const title = $('linkTitleInput').value.trim();
       const group = $('linkGroupInput').value.trim() || '常用';
-      const badge = $('linkBadgeInput').value.trim().slice(0, 2);
       const defaultUrl = safeUrl($('linkDefaultUrlInput').value);
+      const faviconUrl = safeUrl($('linkFaviconUrlInput').value);
       if (!title || !defaultUrl) {
         showToast('请填写网站名称与有效的 http/https 网址');
         return;
@@ -881,11 +1067,21 @@
         const u = safeUrl(row.querySelector('.env-row-url').value);
         if (eid && u) envUrls[eid] = u;
       }
+      const patch = {
+        title,
+        group,
+        icon: selectedLinkIcon,
+        iconMode: selectedIconMode,
+        faviconUrl,
+        color: selectedLinkColor,
+        defaultUrl,
+        envUrls
+      };
       if (id) {
         const idx = data.links.findIndex((x) => x.id === id);
-        if (idx >= 0) data.links[idx] = { ...data.links[idx], title, group, badge, color: selectedLinkColor, defaultUrl, envUrls };
+        if (idx >= 0) data.links[idx] = { ...data.links[idx], ...patch };
       } else {
-        data.links.push({ id: genId(), title, group, badge, color: selectedLinkColor, defaultUrl, envUrls });
+        data.links.push({ id: genId(), ...patch });
       }
       saveData('网址已保存');
       $('linkDialog').close();
