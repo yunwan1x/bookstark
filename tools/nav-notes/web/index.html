@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>随手导航台 · BookStark</title>
+  <link rel="stylesheet" href="./font-awesome.css">
+  <link rel="stylesheet" href="./app.css">
+</head>
+<body>
+  <div class="app" id="appRoot">
+    <!-- Top Header -->
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-logo" aria-hidden="true"><i class="fa-solid fa-compass"></i></div>
+        <div class="brand-text">
+          <h1>随手导航台</h1>
+          <span class="brand-sub">多环境网址大盘 + 标签随手记</span>
+        </div>
+      </div>
+
+      <label class="search-wrap" for="globalSearch">
+        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+        <input id="globalSearch" type="search" autocomplete="off" placeholder="搜索网址、#标签、路径、服务器或备忘…">
+        <kbd class="kbd" id="searchShortcut">⌘K</kbd>
+      </label>
+
+      <div class="top-actions">
+        <button type="button" class="btn btn-ghost" id="themeToggleBtn" title="切换浅色 / 暗色主题" aria-label="切换主题">
+          <i class="fa-solid fa-moon" id="themeIcon" aria-hidden="true"></i>
+          <span id="themeLabel">暗色</span>
+        </button>
+        <div class="dropdown" id="backupDropdown">
+          <button type="button" class="btn btn-ghost" id="backupMenuBtn" aria-haspopup="menu" aria-expanded="false">
+            <i class="fa-solid fa-database" aria-hidden="true"></i>
+            <span>数据</span>
+            <i class="fa-solid fa-chevron-down fa-xs" aria-hidden="true"></i>
+          </button>
+          <div class="dropdown-menu" id="backupMenu" role="menu" hidden>
+            <button type="button" role="menuitem" id="exportJsonBtn"><i class="fa-solid fa-download"></i> 导出 JSON 备份</button>
+            <button type="button" role="menuitem" id="importJsonBtn"><i class="fa-solid fa-upload"></i> 导入 JSON 恢复</button>
+            <button type="button" role="menuitem" id="saveSnapshotBtn"><i class="fa-solid fa-cloud-arrow-up"></i> 保存工作区快照</button>
+            <button type="button" role="menuitem" id="loadSnapshotBtn"><i class="fa-solid fa-cloud-arrow-down"></i> 从工作区快照恢复</button>
+            <hr>
+            <button type="button" role="menuitem" id="clearSamplesBtn" class="danger-item"><i class="fa-solid fa-broom"></i> 清空全部数据</button>
+          </div>
+        </div>
+        <input type="file" id="importFileInput" accept="application/json,.json" hidden>
+      </div>
+    </header>
+
+    <!-- Part 1: Multi-Environment URL Dashboard -->
+    <section class="board-card" id="urlBoardSection" aria-label="网址大盘">
+      <div class="board-head">
+        <div class="board-left">
+          <button type="button" class="collapse-btn" id="toggleBoardBtn" aria-expanded="true" title="折叠 / 展开网址大盘">
+            <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+            <span class="sec-title">网址大盘</span>
+          </button>
+          <div class="group-tabs" id="groupTabs" role="tablist" aria-label="网址分组"></div>
+        </div>
+        <div class="board-right">
+          <div class="env-bar" id="envBar" role="radiogroup" aria-label="当前环境"></div>
+          <button type="button" class="btn btn-primary btn-sm" id="addLinkBtn">
+            <i class="fa-solid fa-plus" aria-hidden="true"></i>
+            <span>添加网址</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="board-body" id="urlBoardBody">
+        <div class="url-grid" id="urlGrid"></div>
+      </div>
+    </section>
+
+    <!-- Part 2: Tag + Content Scratchpad -->
+    <section class="notes-layout" aria-label="标签随手记">
+      <!-- Left Tag Rail -->
+      <aside class="tag-rail" id="tagRail" aria-label="标签筛选"></aside>
+
+      <!-- Right Composer + Feed -->
+      <main class="feed-col">
+        <form class="composer" id="noteComposer">
+          <textarea id="noteInput" rows="3" placeholder="随手记一条… 输入 #服务器 #模型 #下载 #定时任务 #临时 自动打标签，路径或反引号命令自动支持一键复制（⌘↵ 发送）"></textarea>
+          <div class="composer-foot">
+            <div class="quick-tags" id="quickTagChips" aria-label="快捷标签"></div>
+            <div class="composer-right">
+              <span class="sync-badge" id="syncStatus"><i class="fa-solid fa-circle-check"></i> 已保存</span>
+              <button type="submit" class="btn btn-dark" id="submitNoteBtn">记下来 <span class="btn-hint">⌘↵</span></button>
+            </div>
+          </div>
+        </form>
+
+        <div class="active-filter-bar" id="activeFilterBar" hidden></div>
+        <div class="memo-grid" id="memoGrid"></div>
+      </main>
+    </section>
+  </div>
+
+  <!-- Single-card Quick Multi-Env Popover -->
+  <div class="env-popover" id="envPopover" hidden role="menu"></div>
+
+  <!-- Add / Edit URL Modal -->
+  <dialog class="modal" id="linkDialog" aria-labelledby="linkDialogTitle">
+    <form class="modal-box" id="linkForm">
+      <div class="modal-head">
+        <h2 id="linkDialogTitle">添加网址</h2>
+        <button type="button" class="icon-close" data-close-dialog aria-label="关闭"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="linkIdInput">
+        <div class="form-row">
+          <label class="field">
+            <span>网站名称 *</span>
+            <input type="text" id="linkTitleInput" required maxlength="60" placeholder="例如：ComfyUI 出图台">
+          </label>
+          <label class="field">
+            <span>所属分组</span>
+            <input type="text" id="linkGroupInput" list="groupSuggestions" maxlength="24" placeholder="例如：常用 / 自托管 / AI">
+            <datalist id="groupSuggestions"></datalist>
+          </label>
+        </div>
+
+        <div class="form-row form-row-compact">
+          <label class="field">
+            <span>图标简称（1~2 字，留空自动取首字）</span>
+            <input type="text" id="linkBadgeInput" maxlength="2" placeholder="如：C / 东">
+          </label>
+          <label class="field">
+            <span>徽章主题色</span>
+            <div class="color-swatches" id="linkColorSwatches"></div>
+          </label>
+        </div>
+
+        <label class="field">
+          <span>默认 / 通用网址 * <small>（未配置当前环境地址时自动兜底使用）</small></span>
+          <input type="url" id="linkDefaultUrlInput" required placeholder="https://example.com">
+        </label>
+
+        <div class="env-urls-box">
+          <div class="env-urls-head">
+            <span>分环境专属网址 <small>（可选，有内外网 / 测试服 / Tailscale 再添加）</small></span>
+            <button type="button" class="btn btn-soft btn-xs" id="addEnvUrlRowBtn"><i class="fa-solid fa-plus"></i> 添加环境地址</button>
+          </div>
+          <div class="env-url-rows" id="envUrlRows"></div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-danger-ghost" id="deleteLinkBtn" hidden><i class="fa-solid fa-trash"></i> 删除</button>
+        <div class="modal-foot-right">
+          <button type="button" class="btn btn-ghost" data-close-dialog>取消</button>
+          <button type="submit" class="btn btn-dark">保存网址</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Manage Environments Modal -->
+  <dialog class="modal" id="envDialog" aria-labelledby="envDialogTitle">
+    <div class="modal-box">
+      <div class="modal-head">
+        <h2 id="envDialogTitle">管理环境</h2>
+        <button type="button" class="icon-close" data-close-dialog aria-label="关闭"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">自由增删适合你的环境（如公网、内网、测试、生产、Tailscale）。不同设备独立记忆当前选中的环境。</p>
+        <div class="env-manage-list" id="envManageList"></div>
+        <form class="env-add-row" id="addEnvForm">
+          <input type="text" id="newEnvNameInput" maxlength="16" required placeholder="输入新环境名称，如：测试 / Tailscale">
+          <select id="newEnvColorInput" aria-label="环境颜色">
+            <option value="blue">蓝色</option>
+            <option value="green">绿色</option>
+            <option value="purple">紫色</option>
+            <option value="amber">橙色</option>
+            <option value="pink">粉色</option>
+            <option value="cyan">青色</option>
+          </select>
+          <button type="submit" class="btn btn-dark btn-sm">新增</button>
+        </form>
+      </div>
+      <div class="modal-foot">
+        <div></div>
+        <div class="modal-foot-right">
+          <button type="button" class="btn btn-dark" data-close-dialog>完成</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Toast -->
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="./app.js"></script>
+</body>
+</html>

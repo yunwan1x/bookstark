@@ -1,0 +1,18 @@
+{
+  "title": "随手导航台",
+  "description": "极简多环境网址大盘与标签随手记：支持自定义公网/内网/测试等环境一键切换（通用网站自动兜底、单卡临时直开其他环境），搭配 #标签 随手记记录服务器、模型路径、下载位置、定时任务与临时备忘，支持路径与命令一键复制、⌘K 全局秒搜、浅暗双主题与完全离线使用。",
+  "version": "1.0.0",
+  "category": "productivity",
+  "icon": "compass",
+  "icon_style": "solid",
+  "icon_color": "#2563eb",
+  "entry": "index.html",
+  "access": "inherit",
+  "permissions": {
+    "read_files": true,
+    "save_files": true,
+    "socket_tcp": false,
+    "schema": 1
+  },
+  "notes": "v1.0.0 首次发布：多环境网址大盘（默认公网/内网，支持自由增删自定义环境、通用网址兜底与单卡临时直开其他环境）+ Flomo 风格 #标签随手记（支持自动识别路径/命令行一键复制、置顶、归档、内联编辑、⌘K 全局秒搜、JSON 导入导出与工作区离线同步）。"
+}
