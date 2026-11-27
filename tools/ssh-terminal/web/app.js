@@ -1331,6 +1331,25 @@
     }
   }
   new ResizeObserver(fitActive).observe($("terminalStack"));
+  if (window.visualViewport) {
+    const syncViewport = () => {
+      const vv = window.visualViewport;
+      const appEl = $("app");
+      const docH = document.documentElement.clientHeight;
+      if (vv && vv.height > 120 && vv.height < docH - 20) {
+        appEl.style.height = Math.round(vv.height) + "px";
+        appEl.style.top = Math.round(vv.offsetTop) + "px";
+        appEl.style.bottom = "auto";
+      } else {
+        appEl.style.height = "";
+        appEl.style.top = "";
+        appEl.style.bottom = "";
+      }
+      fitActive();
+    };
+    window.visualViewport.addEventListener("resize", syncViewport);
+    window.visualViewport.addEventListener("scroll", syncViewport);
+  }
   $("disconnect").onclick = async () => {
     const s = sessions.get(active);
     if (s && (await BSDialog.confirm2(t("confirmDisconnect")))) stop(s);
