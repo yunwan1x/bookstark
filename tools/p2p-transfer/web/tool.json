@@ -1,0 +1,18 @@
+{
+  "title": "极速快传",
+  "description": "基于 WebRTC DataChannel 的点对点文件与剪贴板快传工具，文件不经服务器存储，支持 6 位取件码与二维码扫码配对、多设备同时收发、流控分片传输、SHA-256 完整性校验与实时共享剪贴板。",
+  "version": "1.0.0",
+  "category": "productivity",
+  "icon": "paper-plane",
+  "icon_style": "solid",
+  "icon_color": "#2563eb",
+  "entry": "index.html",
+  "access": "public",
+  "permissions": {
+    "read_files": false,
+    "save_files": false,
+    "socket_tcp": false,
+    "schema": 1
+  },
+  "notes": "首次发布：支持 6 位取件码与二维码配对、自动接入 BookStark 内置 WebRTC 信令服务、局域网直连/公网穿透状态与延迟监测、大文件背压流控分片传输、SHA-256 端到端完整性校验，以及跨设备实时共享剪贴板。"
+}

@@ -214,6 +214,40 @@ func TestWebRTCSignalingAllowsConfiguredOrigin(t *testing.T) {
 	}
 }
 
+func TestWebRTCSignalingAllowsToolSandboxOrigins(t *testing.T) {
+	initWebRTCSignalingSettingsDB(t, map[string]string{
+		"webrtc_signaling_allow_local_file": "0",
+		"tool_runtime_origin":               "https://{instance}.tools.example.com",
+	})
+	gin.SetMode(gin.TestMode)
+	resetWebRTCSignalingHubForTest()
+
+	router := gin.New()
+	RegisterWebRTCSignalingRoutes(router)
+	server := httptest.NewServer(router)
+	defer server.Close()
+
+	// 1. Local isolated tool sandbox host (tool-<32hex>.localhost)
+	wsURL1 := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/webrtc-signaling/ws?room=room-sandbox1&peer=host"
+	h1 := http.Header{}
+	h1.Set("Origin", "http://tool-0123456789abcdef0123456789abcdef.localhost:8080")
+	conn1, _, err := websocket.DefaultDialer.Dial(wsURL1, h1)
+	if err != nil {
+		t.Fatalf("expected local tool sandbox origin to be allowed: %v", err)
+	}
+	conn1.Close()
+
+	// 2. Configured tool_runtime_origin wildcard host
+	wsURL2 := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/webrtc-signaling/ws?room=room-sandbox2&peer=host"
+	h2 := http.Header{}
+	h2.Set("Origin", "https://0123456789abcdef0123456789abcdef.tools.example.com")
+	conn2, _, err := websocket.DefaultDialer.Dial(wsURL2, h2)
+	if err != nil {
+		t.Fatalf("expected configured tool_runtime_origin to be allowed: %v", err)
+	}
+	conn2.Close()
+}
+
 func TestWebRTCSignalingRejectsDuplicatePeerBeforeUpgrade(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	resetWebRTCSignalingHubForTest()

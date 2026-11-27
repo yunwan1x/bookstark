@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>极速快传 · WebRTC 点对点</title>
+    <link rel="stylesheet" href="components.css" />
+    <link rel="stylesheet" href="font-awesome.css" />
+    <link rel="stylesheet" href="dialog.css" />
+    <link rel="stylesheet" href="app.css" />
+  </head>
+  <body>
+    <div id="toast" class="p2p-toast" role="status" aria-live="polite" hidden></div>
+
+    <div class="p2p-shell">
+      <!-- Top Header -->
+      <header class="p2p-header">
+        <div class="header-left">
+          <span class="brand-badge" aria-hidden="true">
+            <i class="fa-solid fa-paper-plane"></i>
+          </span>
+          <div class="brand-meta">
+            <div class="brand-title-row">
+              <h1 data-i18n="appTitle">极速快传</h1>
+              <span class="pill-tag" data-i18n="webrtcTag">WebRTC 点对点</span>
+            </div>
+            <p class="brand-sub" data-i18n="appSubtitle">
+              DTLS 端到端加密直传 · 文件不经服务器存储 · SHA-256 完整性校验
+            </p>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <div id="signalingPill" class="status-pill status-connecting" role="status">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span id="signalingPillText" data-i18n="sigConnecting">正在连接信令...</span>
+          </div>
+
+          <button type="button" class="btn-ghost btn-sm" id="editDeviceBtn" title="本机名称">
+            <i class="fa-solid fa-laptop" id="selfDeviceIcon" aria-hidden="true"></i>
+            <span id="selfDeviceNameLabel" class="truncate-label">本机设备</span>
+          </button>
+
+          <button type="button" class="icon-btn" id="openSettingsBtn" aria-label="设置" title="传输与信令设置">
+            <i class="fa-solid fa-gear" aria-hidden="true"></i>
+          </button>
+
+          <button type="button" class="btn-ghost btn-sm" id="langBtn" title="中文 / English">EN</button>
+        </div>
+      </header>
+
+      <!-- Main Two-Column Grid -->
+      <main class="p2p-grid">
+        <!-- Left Column: Pairing + Connected Peers -->
+        <aside class="left-col">
+          <!-- Pairing Card -->
+          <section class="panel-card pairing-card" aria-label="房间配对">
+            <div class="mode-tabs" role="tablist">
+              <button
+                type="button"
+                class="mode-tab is-active"
+                role="tab"
+                id="tabCreateBtn"
+                aria-selected="true"
+                data-mode="create"
+              >
+                <i class="fa-solid fa-tower-broadcast" aria-hidden="true"></i>
+                <span data-i18n="modeCreate">创建房间</span>
+              </button>
+              <button
+                type="button"
+                class="mode-tab"
+                role="tab"
+                id="tabJoinBtn"
+                aria-selected="false"
+                data-mode="join"
+              >
+                <i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i>
+                <span data-i18n="modeJoin">加入房间</span>
+              </button>
+            </div>
+
+            <!-- Create Room Panel -->
+            <div id="createPane" class="mode-pane">
+              <div class="room-code-box">
+                <div class="room-code-head">
+                  <span class="micro-label" data-i18n="roomCodeLabel">6 位配对取件码</span>
+                  <div class="room-head-actions">
+                    <button type="button" class="mini-btn" id="copyCodeBtn" title="复制取件码">
+                      <i class="fa-solid fa-copy" aria-hidden="true"></i>
+                      <span data-i18n="copy">复制</span>
+                    </button>
+                    <button type="button" class="mini-btn" id="refreshRoomBtn" title="更换新房间码">
+                      <i class="fa-solid fa-rotate" aria-hidden="true"></i>
+                      <span data-i18n="newRoom">换码</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="room-code-display">
+                  <div id="roomCodeValue" class="room-code-digits" aria-live="polite">--- ---</div>
+                  <button
+                    type="button"
+                    id="miniQrTrigger"
+                    class="mini-qr-btn"
+                    title="点击放大配对二维码"
+                    aria-label="放大配对二维码"
+                  >
+                    <div id="miniQrWrap" class="mini-qr-svg"></div>
+                  </button>
+                </div>
+
+                <p class="room-hint" id="createRoomHint" data-i18n="createRoomHint">
+                  在另一台设备打开极速快传，输入上方 6 位码或点击二维码扫码即可直连。
+                </p>
+
+                <div class="room-actions-row">
+                  <button type="button" class="btn-secondary btn-sm btn-flex" id="openQrModalBtn">
+                    <i class="fa-solid fa-qrcode" aria-hidden="true"></i>
+                    <span data-i18n="showQrBtn">放大配对二维码</span>
+                  </button>
+                  <button type="button" class="btn-ghost btn-sm" id="copyUriBtn">
+                    <i class="fa-solid fa-link" aria-hidden="true"></i>
+                    <span data-i18n="copyUriBtn">复制配对串</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Join Room Panel -->
+            <div id="joinPane" class="mode-pane" hidden>
+              <form id="joinForm" class="join-form" autocomplete="off">
+                <label for="joinCodeInput" class="micro-label" data-i18n="joinCodeLabel">
+                  输入对方 6 位取件码或粘贴配对串
+                </label>
+                <div class="join-input-row">
+                  <input
+                    id="joinCodeInput"
+                    type="text"
+                    inputmode="numeric"
+                    maxlength="240"
+                    placeholder="例如：729 405"
+                    autocomplete="off"
+                    spellcheck="false"
+                  />
+                  <button type="submit" class="btn-primary" id="joinSubmitBtn">
+                    <i class="fa-solid fa-plug" aria-hidden="true"></i>
+                    <span data-i18n="joinBtn">连接</span>
+                  </button>
+                </div>
+
+                <p id="joinError" class="form-error" role="alert" hidden></p>
+
+                <div id="joinedBanner" class="joined-banner" hidden>
+                  <div class="joined-info">
+                    <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+                    <span>
+                      <span data-i18n="joinedRoomPrefix">已加入房间</span>
+                      <strong id="joinedRoomCodeText">--- ---</strong>
+                    </span>
+                  </div>
+                  <button type="button" class="mini-btn mini-btn-danger" id="leaveRoomBtn">
+                    <i class="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i>
+                    <span data-i18n="leaveBtn">断开</span>
+                  </button>
+                </div>
+
+                <div class="room-actions-row">
+                  <button type="button" class="btn-secondary btn-sm btn-flex" id="openScanModalBtn">
+                    <i class="fa-solid fa-camera" aria-hidden="true"></i>
+                    <span data-i18n="scanQrBtn">扫码 / 识别二维码图片</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </section>
+
+          <!-- Connected Peers Card -->
+          <section class="panel-card peers-card" aria-label="已配对设备">
+            <div class="card-head">
+              <div class="card-title-group">
+                <i class="fa-solid fa-network-wired card-icon" aria-hidden="true"></i>
+                <h2 data-i18n="peersTitle">已配对设备</h2>
+                <span id="peerCountBadge" class="count-badge">0 / 16</span>
+              </div>
+              <span class="security-chip" title="WebRTC DTLS 1.2+ 传输层加密">
+                <i class="fa-solid fa-lock" aria-hidden="true"></i>
+                <span>DTLS</span>
+              </span>
+            </div>
+
+            <div id="peersEmpty" class="empty-block">
+              <i class="fa-solid fa-satellite-dish empty-icon" aria-hidden="true"></i>
+              <p class="empty-title" data-i18n="peersEmptyTitle">等待设备配对加入</p>
+              <p class="empty-desc" data-i18n="peersEmptyDesc">
+                支持同一局域网满速直连，也支持跨网 NAT 穿透传输，最多 16 台设备同时在线。
+              </p>
+            </div>
+
+            <ul id="peersList" class="peers-list" hidden></ul>
+          </section>
+        </aside>
+
+        <!-- Right Column: File Dropzone + Transfer List + Shared Clipboard -->
+        <section class="right-col">
+          <!-- File Transfer Card -->
+          <div class="panel-card transfer-card">
+            <div class="card-head">
+              <div class="card-title-group">
+                <i class="fa-solid fa-bolt card-icon" aria-hidden="true"></i>
+                <h2 data-i18n="transferTitle">点对点文件传输</h2>
+              </div>
+              <div class="transfer-head-meta">
+                <span id="targetPeersHint" class="target-hint" data-i18n="noTargetPeers">
+                  配对设备后即可发送文件
+                </span>
+                <button type="button" class="mini-btn" id="clearDoneBtn" hidden>
+                  <i class="fa-solid fa-broom" aria-hidden="true"></i>
+                  <span data-i18n="clearDone">清理已完成</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Dropzone -->
+            <div
+              id="dropzone"
+              class="dropzone"
+              role="button"
+              tabindex="0"
+              aria-label="点击或拖拽文件到此发送"
+            >
+              <input type="file" id="fileInput" multiple hidden />
+              <div class="dropzone-icon" aria-hidden="true">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+              </div>
+              <div class="dropzone-text">
+                <p class="dropzone-title" data-i18n="dropzoneTitle">
+                  拖拽任意文件到此处，或点击选择发送
+                </p>
+                <p class="dropzone-sub" data-i18n="dropzoneSub">
+                  原文件无损直传 · 64 KB 流控分片 · 自动 SHA-256 校验 · 不限制文件类型
+                </p>
+              </div>
+              <button type="button" class="btn-primary btn-sm" id="pickFilesBtn">
+                <i class="fa-solid fa-folder-open" aria-hidden="true"></i>
+                <span data-i18n="pickFiles">选择文件</span>
+              </button>
+            </div>
+
+            <!-- Transfers List -->
+            <div id="transfersWrap" class="transfers-wrap" hidden>
+              <ul id="transfersList" class="transfers-list"></ul>
+            </div>
+          </div>
+
+          <!-- Shared Clipboard Card -->
+          <div class="panel-card clipboard-card">
+            <div class="card-head">
+              <div class="card-title-group">
+                <i class="fa-solid fa-clipboard-list card-icon" aria-hidden="true"></i>
+                <h2 data-i18n="clipboardTitle">实时共享剪贴板</h2>
+              </div>
+              <span class="micro-muted" data-i18n="clipboardHint">
+                发送文字、链接或代码片段，对方秒级同步
+              </span>
+            </div>
+
+            <form id="clipboardForm" class="clipboard-form">
+              <textarea
+                id="clipboardInput"
+                rows="2"
+                placeholder="输入或粘贴文本、URL、命令，按 Ctrl+Enter 发送给已配对设备..."
+              ></textarea>
+              <div class="clipboard-actions">
+                <button type="button" class="btn-ghost btn-sm" id="pasteClipboardBtn">
+                  <i class="fa-solid fa-paste" aria-hidden="true"></i>
+                  <span data-i18n="pasteBtn">从剪贴板读取</span>
+                </button>
+                <button type="submit" class="btn-primary btn-sm" id="sendClipboardBtn">
+                  <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+                  <span data-i18n="sendTextBtn">发送文本</span>
+                </button>
+              </div>
+            </form>
+
+            <div id="clipboardEmpty" class="clipboard-empty" data-i18n="clipboardEmpty">
+              暂无剪贴板消息。配对成功后，两端发送的文本会实时显示在这里。
+            </div>
+            <ul id="clipboardList" class="clipboard-list" hidden></ul>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- Pairing QR Modal -->
+    <div id="qrModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="qrModalTitle" hidden>
+      <div class="modal-box modal-sm">
+        <div class="modal-head">
+          <h3 id="qrModalTitle" data-i18n="qrModalTitle">扫码配对房间</h3>
+          <button type="button" class="icon-btn" data-close-modal="qrModal" aria-label="关闭">
+            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="modal-body qr-modal-body">
+          <div id="qrModalSvgWrap" class="qr-svg-large"></div>
+          <div id="qrModalCode" class="qr-code-large">--- ---</div>
+          <p class="modal-desc" data-i18n="qrModalDesc">
+            在另一台设备打开本工具的「加入房间 → 扫码」，或直接输入上方 6 位取件码。
+          </p>
+          <div class="modal-actions-inline">
+            <button type="button" class="btn-primary btn-sm" id="qrModalCopyCodeBtn">
+              <i class="fa-solid fa-copy" aria-hidden="true"></i>
+              <span data-i18n="copyCode">复制 6 位码</span>
+            </button>
+            <button type="button" class="btn-secondary btn-sm" id="qrModalCopyUriBtn">
+              <i class="fa-solid fa-link" aria-hidden="true"></i>
+              <span data-i18n="copyUriBtn">复制配对串</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scan QR Modal -->
+    <div id="scanModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="scanModalTitle" hidden>
+      <div class="modal-box modal-md">
+        <div class="modal-head">
+          <h3 id="scanModalTitle" data-i18n="scanModalTitle">扫码加入房间</h3>
+          <button type="button" class="icon-btn" data-close-modal="scanModal" aria-label="关闭">
+            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="scan-preview-wrap">
+            <video id="scanVideo" playsinline muted hidden></video>
+            <canvas id="scanCanvas" hidden></canvas>
+            <div id="scanPlaceholder" class="scan-placeholder">
+              <i class="fa-solid fa-qrcode" aria-hidden="true"></i>
+              <p data-i18n="scanPlaceholder">可启动摄像头扫码，或上传/粘贴二维码截图自动识别</p>
+            </div>
+          </div>
+
+          <p id="scanStatus" class="scan-status" hidden></p>
+
+          <div class="modal-actions-inline">
+            <button type="button" class="btn-primary btn-sm" id="startCameraBtn">
+              <i class="fa-solid fa-camera" aria-hidden="true"></i>
+              <span data-i18n="startCamera">开启摄像头扫码</span>
+            </button>
+            <button type="button" class="btn-secondary btn-sm" id="uploadQrImgBtn">
+              <i class="fa-solid fa-image" aria-hidden="true"></i>
+              <span data-i18n="uploadQrImg">选择二维码图片</span>
+            </button>
+            <input type="file" id="qrImgFileInput" accept="image/*" hidden />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle" hidden>
+      <div class="modal-box modal-md">
+        <div class="modal-head">
+          <h3 id="settingsModalTitle" data-i18n="settingsTitle">传输与信令设置</h3>
+          <button type="button" class="icon-btn" data-close-modal="settingsModal" aria-label="关闭">
+            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+          </button>
+        </div>
+        <form id="settingsForm" class="modal-body settings-form">
+          <div class="field">
+            <label for="settingDeviceName" data-i18n="deviceNameLabel">本机设备名称</label>
+            <input id="settingDeviceName" type="text" maxlength="48" placeholder="例如：MacBook Pro · Chrome" />
+          </div>
+
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-title" data-i18n="autoAcceptLabel">自动接收发来的文件</div>
+              <div class="toggle-sub" data-i18n="autoAcceptSub">
+                关闭后，收到新文件需手动点击「接收」才会开始传输
+              </div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="settingAutoAccept" checked />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="toggle-row">
+            <div>
+              <div class="toggle-title" data-i18n="autoDownloadLabel">校验通过后自动弹出下载</div>
+              <div class="toggle-sub" data-i18n="autoDownloadSub">
+                关闭时保留在传输列表中，随时点击「保存文件」下载
+              </div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="settingAutoDownload" />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="field">
+            <label for="settingSignalingBase" data-i18n="signalingBaseLabel">
+              自定义信令服务器地址（可选）
+            </label>
+            <input
+              id="settingSignalingBase"
+              type="url"
+              placeholder="留空自动使用当前 BookStark 站点内置信令"
+            />
+            <span class="field-hint" id="detectedSignalingHint"></span>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-ghost btn-sm" data-close-modal="settingsModal" data-i18n="cancel">
+              取消
+            </button>
+            <button type="submit" class="btn-primary btn-sm" id="saveSettingsBtn" data-i18n="save">
+              保存设置
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="qrcode.js"></script>
+    <script src="jsQR.js"></script>
+    <script src="p2p-protocol.js"></script>
+    <script src="p2p-rtc.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

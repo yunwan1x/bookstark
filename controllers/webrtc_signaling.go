@@ -161,6 +161,15 @@ func checkWebRTCSignalingOrigin(r *http.Request) bool {
 	if strings.EqualFold(u.Host, r.Host) {
 		return true
 	}
+	if toolLocalHost.MatchString(strings.ToLower(u.Hostname())) {
+		reqHost := strings.ToLower(strings.Split(r.Host, ":")[0])
+		if reqHost == "localhost" || reqHost == "127.0.0.1" || cfg.AllowLocalFile {
+			return true
+		}
+	}
+	if raw := models.GetSetting("tool_runtime_origin"); raw != "" && matchesToolHostTemplate(strings.TrimPrefix(strings.ToLower(raw), "https://"), u.Host) {
+		return true
+	}
 	for _, allowed := range cfg.AllowedOrigins {
 		if strings.EqualFold(strings.TrimRight(allowed, "/"), strings.TrimRight(origin, "/")) {
 			return true
