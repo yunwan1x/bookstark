@@ -66,7 +66,8 @@ function startStaticServer(root) {
     }
 
     // 1. Initial sample data & brand rendered
-    assert.ok((await page.locator('h1').textContent()).includes('星图 · StarDeck'), 'brand renamed to 星图 · StarDeck');
+    assert.strictEqual((await page.locator('h1').textContent()).trim(), '极简导航 & 随记', 'brand renamed to 极简导航 & 随记');
+    assert.strictEqual(await page.locator('.brand-sub').count(), 0, 'no subtitle in header');
     assert.strictEqual(await page.locator('.url-tile').count(), 5, '5 default URLs');
     assert.strictEqual(await page.locator('.memo-card').count(), 4, '4 default memos');
     assert.strictEqual(await page.locator('.url-tile .u-ico i.fa-solid').count(), 5, 'every URL has deterministic FA fallback icon');

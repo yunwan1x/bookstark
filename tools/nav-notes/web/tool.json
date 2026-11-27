@@ -1,7 +1,7 @@
 {
-  "title": "星图 · StarDeck",
+  "title": "极简导航 & 随记",
   "description": "极简多环境网址大盘与标签随手记：自动抓取网站 Favicon（加载失败或离线时按域名 Hash 降级为稳定的 FontAwesome 图标，也支持手动挑选 48 款图标），支持公网/内网/测试等自定义环境一键切换与单卡临时直开，搭配 #标签随手记记录服务器、模型路径、下载位置与定时任务，路径命令一键复制、⌘K 全局秒搜、完全离线可用。",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "category": "productivity",
   "icon": "compass",
   "icon_style": "solid",
@@ -14,5 +14,5 @@
     "socket_tcp": false,
     "schema": 1
   },
-  "notes": "v1.1.0 升级：更名为「星图 · StarDeck」；网址卡片默认优先显示网站真实 Favicon，加载失败或离线时自动按域名 Hash 降级为稳定的 FontAwesome 图标，并新增可视化 48 款 FontAwesome 图标选择器（支持手动选图标、随机切换与自定义 Favicon 地址），100% 兼容 v1.0.0 数据。"
+  "notes": "v1.1.1：更名为「极简导航 & 随记」，精简顶栏移除副标题，界面更清爽。"
 }
