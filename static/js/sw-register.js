@@ -69,8 +69,19 @@
 
   function cacheModuleName(key) {
     if (key.indexOf('bookstark-static') === 0) return 'static';
-    if (key.indexOf('bookstark-dynamic') === 0) return 'dynamic';
+    if (key.indexOf('bookstark-dynamic') === 0 || key.indexOf('bookstark-tools') === 0) return 'dynamic';
     return 'other';
+  }
+
+  function clearToolOfflineDB() {
+    return new Promise(function(resolve) {
+      try {
+        var req = indexedDB.deleteDatabase('bookstark-tool-offline-v1');
+        req.onsuccess = req.onerror = req.onblocked = function() { resolve(); };
+      } catch (_) {
+        resolve();
+      }
+    });
   }
 
   function getCacheDetails() {
@@ -102,8 +113,11 @@
       });
       return Promise.all(filtered.map(function(key) { return caches.delete(key); })).then(function(results) {
         var count = results.filter(Boolean).length;
-        dispatchPWAChange();
-        return count;
+        var extra = (scope === 'all' || scope === 'dynamic') ? clearToolOfflineDB() : Promise.resolve();
+        return extra.then(function() {
+          dispatchPWAChange();
+          return count;
+        });
       });
     });
   }
@@ -127,19 +141,25 @@
       var dynamicKeys = keys.filter(function(key) {
         return cacheModuleName(key) === 'dynamic';
       });
-      return Promise.all(dynamicKeys.map(function(key) {
-        return caches.open(key).then(function(cache) {
-          return cache.keys().then(function(requests) {
-            var pages = requests.filter(isCachedPageRequest);
-            return Promise.all(pages.map(function(request) {
-              return cache.delete(request);
-            })).then(function(results) {
-              return results.filter(Boolean).length;
+      return Promise.all([
+        Promise.all(dynamicKeys.map(function(key) {
+          if (key.indexOf('bookstark-tools') === 0) {
+            return caches.delete(key).then(function(ok) { return ok ? 1 : 0; });
+          }
+          return caches.open(key).then(function(cache) {
+            return cache.keys().then(function(requests) {
+              var pages = requests.filter(isCachedPageRequest);
+              return Promise.all(pages.map(function(request) {
+                return cache.delete(request);
+              })).then(function(results) {
+                return results.filter(Boolean).length;
+              });
             });
           });
-        });
-      })).then(function(counts) {
-        return counts.reduce(function(total, count) { return total + count; }, 0);
+        })),
+        clearToolOfflineDB()
+      ]).then(function(parts) {
+        return parts[0].reduce(function(total, count) { return total + count; }, 0);
       });
     });
   }

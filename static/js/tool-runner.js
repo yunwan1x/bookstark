@@ -172,8 +172,8 @@
    updateIdentity(meta);
    values=Object.assign(Object.create(null),meta.values||{});info.disabled=false;exportButton.disabled=false;document.getElementById("toolRuntimeExportPackage").hidden=meta.distribution!=="files";
    newTab.hidden=!!window.BookStarkHost?.available;if(window.BookStarkClient)Promise.resolve(BookStarkClient.ready).then(ready=>{if(ready)newTab.hidden=true;}).catch(()=>{});
-   frame=document.createElement('iframe');frame.title=meta.title;const isolated=!!runtime.url&&runtime.instance===meta.instance&&runtime.revision===meta.revision;
-   if(runtime.url&&!isolated)throw Error('conflict');
+   frame=document.createElement('iframe');frame.title=meta.title;const isolated=!meta._offline&&!!runtime.url&&runtime.instance===meta.instance&&runtime.revision===meta.revision;
+   if(!meta._offline&&runtime.url&&!isolated)throw Error('conflict');
    if(isolated&&new URL(runtime.url).origin===location.origin)throw Error('unsafe tool origin');
    frame.setAttribute('sandbox',permissionsUI.sandbox(meta.permissions,isolated));frame.setAttribute('allow',permissionsUI.allow(meta.permissions,isolated));frame.referrerPolicy='no-referrer';
    const token=crypto.randomUUID(),targetOrigin=isolated?runtime.origin:'*',json=value=>JSON.stringify(value).replace(/</g,'\\u003c'),assetPrefix='/api/tool-assets/'+meta.instance+'/';
@@ -183,7 +183,49 @@
    policy.content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' blob: "+assetRoot+network+"; style-src 'unsafe-inline' "+assetRoot+network+"; img-src data: blob: "+assetRoot+network+"; font-src data: "+assetRoot+network+"; media-src blob: data: "+assetRoot+network+"; connect-src "+assetRoot+network+"; form-action "+formAction+"; frame-src 'none'; object-src 'none'";
    doc.head.prepend(policy);
    if(!isolated){const base=doc.createElement('base');base.href=new URL(/^https?:\/\//.test(meta.source)?meta.source:'/market',location.origin).href;doc.head.prepend(base);}
-   if(packageTool&&!isolated){doc.querySelectorAll('base').forEach(el=>el.remove());const base=doc.createElement('base');base.href=new URL('./',new URL(meta.entry||'index.html',location.origin+meta.asset_base)).href;doc.head.prepend(base);}
+   const blobUrls=[];window.addEventListener('pagehide',()=>{for(const u of blobUrls)try{URL.revokeObjectURL(u);}catch(_){}},{once:true});
+   async function blobToDataURL(blob){
+    return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result||''));r.onerror=()=>reject(r.error);r.readAsDataURL(blob);});
+   }
+   async function inlineOfflineAssets(doc,baseHref){
+    if(typeof caches==='undefined')return;
+    const cache=await caches.open('bookstark-tools-v1');
+    const resolveAsset=raw=>{
+     if(!raw||raw.startsWith('data:')||raw.startsWith('blob:')||raw.startsWith('#'))return null;
+     try{const u=new URL(raw,baseHref);return u.origin===location.origin&&u.pathname.startsWith('/api/tool-assets/')?u.href:null;}catch(_){return null;}
+    };
+    // 1. Inline stylesheets + embed url(...) fonts/images as data: URIs
+    for(const link of Array.from(doc.querySelectorAll('link[rel="stylesheet"][href]'))){
+     const href=resolveAsset(link.getAttribute('href'));if(!href)continue;
+     const resp=await cache.match(href);if(!resp)continue;
+     let css=await resp.text();
+     const matches=Array.from(css.matchAll(/url\(\s*(['"]?)([^)'"\s]+)\1\s*\)/g));
+     for(const m of matches){
+      const sub=resolveAsset(new URL(m[2],href).href);if(!sub)continue;
+      const subResp=await cache.match(sub);if(!subResp)continue;
+      const dataUrl=await blobToDataURL(await subResp.blob());
+      css=css.split(m[0]).join('url("'+dataUrl+'")');
+     }
+     const style=doc.createElement('style');style.textContent=css;link.replaceWith(style);
+    }
+    // 2. Inline <script src="..."> directly (opaque srcdoc iframes cannot always load parent-origin blob: URLs)
+    for(const el of Array.from(doc.querySelectorAll('script[src]'))){
+     const href=resolveAsset(el.getAttribute('src'));if(!href)continue;
+     const resp=await cache.match(href);if(!resp)continue;
+     const code=(await resp.text()).replace(/<\/script/gi,'<\\/script');
+     const inline=doc.createElement('script');
+     if(el.type)inline.type=el.type;
+     inline.textContent=code;
+     el.replaceWith(inline);
+    }
+    // 3. Rewrite <img src="..."> to data: URIs
+    for(const img of Array.from(doc.querySelectorAll('img[src]'))){
+     const href=resolveAsset(img.getAttribute('src'));if(!href)continue;
+     const resp=await cache.match(href);if(!resp)continue;
+     img.setAttribute('src',await blobToDataURL(await resp.blob()));
+    }
+   }
+   if(packageTool&&!isolated){doc.querySelectorAll('base').forEach(el=>el.remove());const base=doc.createElement('base');const baseHref=new URL('./',new URL(meta.entry||'index.html',location.origin+meta.asset_base)).href;base.href=baseHref;doc.head.prepend(base);if(meta._offline)await inlineOfflineAssets(doc,baseHref);}
    const script=doc.createElement('script');script.textContent='('+storageBootstrap.toString()+')('+json(meta.values||{})+','+json(token)+','+json(location.origin)+','+json(location.origin+meta.asset_base)+');';doc.head.insertBefore(script,policy.nextSibling);
    const sockets=new Map(),closeSockets=()=>{for(const record of sockets.values()){clearTimeout(record.timer);record.ws.close();}sockets.clear();};
    window.addEventListener('pagehide',closeSockets,{once:true});
@@ -239,10 +281,38 @@
    });
    frame.addEventListener('error',()=>showState('run_resource_failed'),{once:true});
    if(isolated)frame.src=runtime.url;else frame.srcdoc='<!doctype html>'+doc.documentElement.outerHTML;host.append(frame);
-   const notices=[];if(meta.permissions?.socket_tcp&&!runtime.socket_proxy)notices.push(ToolMarketUI.text('此服务器未开启工具 TCP 代理。','The tool TCP proxy is disabled on this server.'));if(notices.length){const note=document.getElementById('toolRuntimeCapabilities');note.textContent=notices.join(' ');note.hidden=false;}
-   const check=async()=>{if(stale)return;try{const current=await store.get('tools',id);if(!current||current.revision!==meta.revision||current.instance!==meta.instance){stale=true;closeSockets();frame.remove();showState('stale');}}catch(_){}};
-   window.addEventListener('tool-market-changed',check);const timer=setInterval(()=>{if(!document.hidden)check();},15000);window.addEventListener('pagehide',()=>clearInterval(timer),{once:true});
-   store.patch(id,{used:Date.now()}).catch(()=>{});
+   const notices=[];
+   if(meta.permissions?.socket_tcp&&!runtime.socket_proxy)notices.push(ToolMarketUI.text('此服务器未开启工具 TCP 代理。','The tool TCP proxy is disabled on this server.'));
+   const note=document.getElementById('toolRuntimeCapabilities');
+   async function refreshOfflineBanner(){
+    const parts=notices.slice();
+    const pending=store.pendingCount?await store.pendingCount(id):0;
+    if(meta._offline||navigator.onLine===false){
+     parts.push(pending>0
+      ?ToolMarketUI.text('离线模式 · 已从本机缓存运行（'+pending+' 项更改待联网同步）','Offline mode · Running from local cache ('+pending+' change(s) pending sync)')
+      :ToolMarketUI.text('离线模式 · 已从本机缓存运行，联网后自动同步更改','Offline mode · Running from local cache; changes sync automatically when online'));
+    }else if(pending>0){
+     parts.push(ToolMarketUI.text('正在同步 '+pending+' 项离线更改…','Syncing '+pending+' offline change(s)…'));
+    }
+    if(parts.length){note.textContent=parts.join(' ');note.hidden=false;}else{note.textContent='';note.hidden=true;}
+   }
+   refreshOfflineBanner();
+   window.addEventListener('tool-offline-queue-changed',ev=>{
+    refreshOfflineBanner();
+    if(ev.detail&&ev.detail.synced>0&&typeof BSDialog!=='undefined'&&BSDialog.toast){
+     BSDialog.toast(ToolMarketUI.text('离线更改已同步到工作区','Offline changes synced to workspace'),'success');
+    }
+   });
+   window.addEventListener('offline',refreshOfflineBanner);
+   window.addEventListener('online',async()=>{
+    meta._offline=false;
+    if(store.flushOfflineQueue)await store.flushOfflineQueue(id).catch(()=>{});
+    refreshOfflineBanner();
+   });
+   if(!meta._offline&&store.warmToolAssets)store.warmToolAssets(meta);
+   const check=async()=>{if(stale||navigator.onLine===false||meta._offline)return;try{const current=await store.get('tools',id);if(!current||current.revision!==meta.revision||current.instance!==meta.instance){stale=true;closeSockets();frame.remove();showState('stale');}}catch(_){}};
+   window.addEventListener('tool-market-changed',check);const timer=setInterval(()=>{if(!document.hidden&&navigator.onLine!==false)check();},15000);window.addEventListener('pagehide',()=>clearInterval(timer),{once:true});
+   if(!meta._offline)store.patch(id,{used:Date.now()}).catch(()=>{});
   }catch(error){showState(error.message==='not_found'?'not_installed':'failed');}
  }
  run();

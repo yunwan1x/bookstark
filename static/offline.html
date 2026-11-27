@@ -482,11 +482,13 @@
             '/topics': { label: '专题', icon: 'topics', order: 8 },
             '/labels': { label: '标签', icon: 'labels', order: 9 },
             '/nav': { label: '网址导航', icon: 'shares', order: 10 },
-            '/tools': { label: '本机创作工具', icon: 'tools', order: 11 }
+            '/market': { label: '工具市场（已安装）', icon: 'tools', order: 11 },
+            '/tools': { label: '本机创作工具', icon: 'tools', order: 12 }
         };
 
         function describeRoute(pathname) {
             if (ROUTES[pathname]) return ROUTES[pathname];
+            if (pathname.indexOf('/tools/run/') === 0) return { label: '已缓存工具 #' + pathname.slice('/tools/run/'.length), icon: 'tools', order: 15 };
             if (pathname.indexOf('/blogs/') === 0) return { label: '已缓存文章', icon: 'blogs', order: 20 };
             if (pathname.indexOf('/books/') === 0) return { label: '已缓存书籍', icon: 'books', order: 21 };
             if (pathname.indexOf('/topics/') === 0) return { label: '已缓存专题', icon: 'topics', order: 22 };
