@@ -321,7 +321,10 @@
         return;
       }
       const isDav = s.cfg.protocol === "webdav";
-      const mode = isDav ? "files" : (s.viewMode || "terminal");
+      let mode = isDav ? "files" : (s.viewMode || "terminal");
+      if (!isDav && mode === "split" && matchMedia("(max-width:640px)").matches) {
+        mode = "terminal";
+      }
       split.dataset.view = mode;
       split.dataset.orient = splitOrient;
 
@@ -396,6 +399,10 @@
       if (!s || s.cfg.protocol === "webdav") return;
       setViewMode(s.viewMode === "files" ? "terminal" : "files");
     };
+    matchMedia("(max-width:640px)").addEventListener("change", () => {
+      const s = activeSession();
+      if (s) applyViewMode(s);
+    });
     $("fsSplitOrient").onclick = () => {
       splitOrient = splitOrient === "horizontal" ? "vertical" : "horizontal";
       localStorage.setItem("ssh.split-orient", splitOrient);
@@ -552,6 +559,13 @@
         const tdName = document.createElement("td");
         tdName.className = "col-name";
         tdName.innerHTML = '<div class="fname"><i class="fa-solid ' + iconFor(item) + '" aria-hidden="true"></i><span>' + e(item.name + (item.isDir ? "/" : "")) + "</span></div>";
+        const mobMore = document.createElement("button");
+        mobMore.type = "button";
+        mobMore.className = "mobile-row-more";
+        mobMore.setAttribute("aria-label", L("更多操作", "Actions"));
+        mobMore.innerHTML = '<i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i>';
+        mobMore.onclick = (ev) => { ev.stopPropagation(); openMobileSheet(s, item); };
+        tdName.querySelector(".fname").appendChild(mobMore);
 
         const tdSize = document.createElement("td");
         tdSize.className = "col-size mono";
@@ -1035,12 +1049,13 @@
     $("fsDrawerSave").onclick = saveRemoteFile;
     $("fsDrawerClose").onclick = () => closeDrawer(false);
 
-    // ---------------- Mobile Bottom Action Sheet ----------------
+    // ---------------- Mobile Action Sheet ----------------
     function closeMobileSheet() {
       $("mobileFileSheet").hidden = true;
       $("mobileSheetBackdrop").hidden = true;
     }
     $("mobileSheetBackdrop").onclick = closeMobileSheet;
+    $("mobileSheetClose").onclick = closeMobileSheet;
 
     function openMobileSheet(s, item) {
       const isDav = s.cfg.protocol === "webdav";
@@ -1048,6 +1063,13 @@
       const box = $("mobileSheetActions");
       box.replaceChildren();
       const defs = [];
+      if (item.isDir && !isDav) {
+        defs.push(["fa-terminal", L("终端 cd", "cd Here"), "blue", () => {
+          host.sendTerminalCommand("cd " + shellQuote(item.path) + "\r");
+          setViewMode("terminal");
+          BSDialog.toast(L("已切换到 ", "cd ") + item.path, "success");
+        }]);
+      }
       if (!item.isDir) {
         defs.push([isTextFile(item.name, item.mime) ? "fa-pen" : "fa-eye", isTextFile(item.name, item.mime) ? L("编辑", "Edit") : L("预览", "Preview"), "blue", () => openFileDrawer(s, item)]);
         defs.push(["fa-download", L("下载", "Download"), "green", () => downloadFile(s, item)]);

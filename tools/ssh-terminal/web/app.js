@@ -62,6 +62,9 @@
     saveRemote: ["保存", "Save"],
     download: ["下载", "Download"],
     deleteItem: ["删除", "Delete"],
+    keyClear: ["清屏", "Clear"],
+    keyCopy: ["复制", "Copy"],
+    keyPaste: ["粘贴", "Paste"],
     name: ["连接名称", "Connection name"],
     host: ["主机地址", "Host"],
     port: ["端口", "Port"],
@@ -1500,19 +1503,34 @@
     down: "\x1b[B",
     up: "\x1b[A",
     right: "\x1b[C",
+    "ctrl-c": "\x03",
+    "ctrl-l": "\x0c",
+    slash: "/",
+    dash: "-",
+    pipe: "|",
+    tilde: "~",
   };
   for (const b of $("extraKeys").querySelectorAll("button")) {
     b.onpointerdown = (event) => event.preventDefault();
     b.onclick = () => {
+      const action = b.dataset.action;
+      if (action === "copy") {
+        $("copyTerminal").click();
+        return;
+      }
+      if (action === "paste") {
+        $("pasteTerminal").click();
+        return;
+      }
       const key = b.dataset.key;
       if (key === "ctrl" || key === "alt") {
         if (key === "ctrl") ctrl = !ctrl;
         else alt = !alt;
         b.setAttribute("aria-pressed", String(key === "ctrl" ? ctrl : alt));
-        sessions.get(active)?.term.focus();
-      } else {
+        sessions.get(active)?.term?.focus();
+      } else if (keys[key]) {
         sendInput(sessions.get(active), keys[key]);
-        sessions.get(active)?.term.focus();
+        sessions.get(active)?.term?.focus();
       }
     };
   }

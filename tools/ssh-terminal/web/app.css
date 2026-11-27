@@ -788,21 +788,41 @@ legend {
   }
   .extra-keys {
     display: flex;
+    flex-direction: column;
     gap: 4px;
     background: #0d121c;
     border-top: 1px solid #1e293b;
-    padding: 3px 6px;
-    overflow: auto;
+    padding: 4px 5px;
+    overflow: hidden;
+  }
+  .extra-keys-row {
+    display: flex;
+    gap: 3px;
+    width: 100%;
   }
   .extra-keys button {
-    min-width: 30px;
-    min-height: 26px;
-    padding: 2px 4px;
-    flex: 1;
+    min-width: 0;
+    min-height: 27px;
+    height: 27px;
+    padding: 0 3px;
+    flex: 1 1 0;
     font-size: 11px;
-    background: #1e293b;
-    border-color: #334155;
+    font-weight: 500;
+    white-space: nowrap;
+    background: #1a2334;
+    border-color: #2d3a50;
     color: #e2e8f0;
+    border-radius: 5px;
+  }
+  .extra-keys button.key-danger {
+    color: #fca5a5;
+    border-color: rgba(239, 68, 68, 0.35);
+    background: rgba(127, 29, 29, 0.28);
+  }
+  .extra-keys button.key-accent {
+    color: #93c5fd;
+    border-color: rgba(59, 130, 246, 0.4);
+    background: rgba(30, 58, 138, 0.32);
   }
   .extra-keys button[aria-pressed="true"] {
     color: #fff;
@@ -1699,40 +1719,61 @@ legend {
   color: #67e8f9;
 }
 
-/* Mobile Action Sheet */
+/* Mobile Action Sheet (Centered floating card so bottom row is NEVER clipped) */
 .mobile-sheet-backdrop {
   position: fixed;
   inset: 0;
   z-index: 40;
-  background: rgba(2, 6, 23, 0.55);
+  background: rgba(2, 6, 23, 0.62);
 }
 .mobile-sheet {
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(352px, calc(100vw - 24px));
+  max-height: calc(100dvh - 80px);
+  overflow-y: auto;
   z-index: 41;
   background: #141c2c;
-  border-top: 1px solid #334155;
-  border-radius: 16px 16px 0 0;
-  padding: 10px 14px calc(14px + env(safe-area-inset-bottom, 0px));
+  border: 1px solid #334155;
+  border-radius: 16px;
+  padding: 14px;
   color: #f8fafc;
+  box-shadow: 0 22px 54px rgba(0, 0, 0, 0.75);
 }
-.sheet-bar {
-  width: 36px;
-  height: 4px;
-  border-radius: 99px;
-  background: #334155;
-  margin: 0 auto 10px;
+.sheet-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 .sheet-title {
+  flex: 1;
+  min-width: 0;
   font-family: ui-monospace, monospace;
   font-size: 12.5px;
   font-weight: 600;
-  margin-bottom: 12px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.sheet-close {
+  min-width: 26px;
+  width: 26px;
+  min-height: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid #334155;
+  background: #1e293b;
+  color: #cbd5e1;
+  border-radius: 7px;
+  font-size: 15px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 .sheet-actions {
   display: grid;
@@ -1740,7 +1781,7 @@ legend {
   gap: 8px;
 }
 .sheet-act {
-  min-height: 54px;
+  min-height: 50px;
   background: #1e293b;
   border: 1px solid #334155;
   border-radius: 10px;
@@ -1750,8 +1791,8 @@ legend {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  padding: 8px 4px;
+  gap: 4px;
+  padding: 7px 4px;
 }
 .sheet-act i { font-size: 15px; }
 .sheet-act.tone-blue i { color: #60a5fa; }
@@ -1759,6 +1800,9 @@ legend {
 .sheet-act.tone-amber i { color: #fbbf24; }
 .sheet-act.tone-red i { color: #f87171; }
 .sheet-act.tone-slate i { color: #cbd5e1; }
+.mobile-row-more {
+  display: none;
+}
 
 .extra-keys.files-hidden {
   display: none !important;
@@ -1778,6 +1822,27 @@ legend {
   .col-act,
   .status-badge {
     display: none !important;
+  }
+  .mobile-row-more {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    width: 28px;
+    min-height: 28px;
+    height: 28px;
+    padding: 0;
+    margin-left: auto;
+    border: 0;
+    background: transparent;
+    color: #64748b;
+    flex-shrink: 0;
+  }
+  .files-table-wrap {
+    padding-bottom: 48px;
+  }
+  .transfer-card {
+    bottom: 28px;
   }
   .mini-filter {
     width: 120px;

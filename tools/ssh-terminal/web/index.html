@@ -603,12 +603,26 @@
           </div>
 
           <div class="extra-keys" id="extraKeys">
-            <button data-key="esc">Esc</button
-            ><button data-key="tab">Tab</button
-            ><button data-key="ctrl" aria-pressed="false">Ctrl</button
-            ><button data-key="alt" aria-pressed="false">Alt</button
-            ><button data-key="left">←</button><button data-key="down">↓</button
-            ><button data-key="up">↑</button><button data-key="right">→</button>
+            <div class="extra-keys-row">
+              <button data-key="ctrl-c" class="key-danger" title="中断 (Ctrl+C)">Ctrl+C</button
+              ><button data-key="tab">Tab</button
+              ><button data-key="esc">Esc</button
+              ><button data-key="ctrl" aria-pressed="false">Ctrl</button
+              ><button data-key="ctrl-l" title="清屏 (Ctrl+L)" data-i18n="keyClear">清屏</button
+              ><button data-action="copy" title="复制" data-i18n="keyCopy">复制</button
+              ><button data-action="paste" class="key-accent" title="粘贴" data-i18n="keyPaste">粘贴</button>
+            </div>
+            <div class="extra-keys-row">
+              <button data-key="left">←</button
+              ><button data-key="down">↓</button
+              ><button data-key="up">↑</button
+              ><button data-key="right">→</button
+              ><button data-key="slash">/</button
+              ><button data-key="dash">-</button
+              ><button data-key="pipe">|</button
+              ><button data-key="tilde">~</button
+              ><button data-key="alt" aria-pressed="false">Alt</button>
+            </div>
           </div>
           <footer class="terminal-status">
             <span class="dot" id="statusDot"></span
@@ -622,11 +636,13 @@
       </main>
     </div>
 
-    <!-- Mobile File Action Sheet -->
+    <!-- Mobile File Action Sheet (Centered Floating Card - never clipped at bottom) -->
     <div class="mobile-sheet-backdrop" id="mobileSheetBackdrop" hidden></div>
     <div class="mobile-sheet" id="mobileFileSheet" hidden role="dialog" aria-label="文件操作">
-      <div class="sheet-bar"></div>
-      <div class="sheet-title" id="mobileSheetTitle"></div>
+      <div class="sheet-head">
+        <div class="sheet-title" id="mobileSheetTitle"></div>
+        <button type="button" class="sheet-close" id="mobileSheetClose" aria-label="关闭">×</button>
+      </div>
       <div class="sheet-actions" id="mobileSheetActions"></div>
     </div>
 
