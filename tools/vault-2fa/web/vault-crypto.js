@@ -309,6 +309,79 @@
     return { score: Math.min(4, score), key: keys[Math.min(4, score)] };
   }
 
+  function buildSshCommand(entry) {
+    if (!entry) return '';
+    const host = String(entry.host || '').trim();
+    if (!host) return '';
+    const user = String(entry.username || 'root').trim() || 'root';
+    const portNum = Number(entry.port);
+    const port = Number.isInteger(portNum) && portNum > 0 && portNum <= 65535 ? portNum : 22;
+    return port === 22 ? 'ssh ' + user + '@' + host : 'ssh -p ' + port + ' ' + user + '@' + host;
+  }
+
+  function daysUntilExpiry(expiresAt, nowMs) {
+    const raw = String(expiresAt || '').trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) return null;
+    const parts = raw.split('-').map(Number);
+    const targetUtc = Date.UTC(parts[0], parts[1] - 1, parts[2], 23, 59, 59);
+    if (!Number.isFinite(targetUtc)) return null;
+    const now = typeof nowMs === 'number' ? nowMs : Date.now();
+    return Math.floor((targetUtc - now) / (24 * 60 * 60 * 1000));
+  }
+
+  function auditVaultEntries(entries, nowMs) {
+    const list = Array.isArray(entries) ? entries : [];
+    const byId = Object.create(null);
+    const pwdCounts = Object.create(null);
+
+    for (let i = 0; i < list.length; i++) {
+      const e = list[i];
+      if (!e || !e.id) continue;
+      if (e.category === 'totp' || e.category === 'note') continue;
+      const p = String(e.password || '');
+      if (p) {
+        pwdCounts[p] = (pwdCounts[p] || 0) + 1;
+      }
+    }
+
+    let flaggedCount = 0;
+    for (let i = 0; i < list.length; i++) {
+      const e = list[i];
+      if (!e || !e.id) continue;
+      const issues = [];
+
+      if (e.category !== 'totp' && e.category !== 'note') {
+        const p = String(e.password || '');
+        if (p) {
+          if (e.category !== 'token' && passwordStrength(p).score <= 1) {
+            issues.push({ type: 'weak_password' });
+          }
+          if (pwdCounts[p] > 1) {
+            issues.push({ type: 'reused_password', count: pwdCounts[p] });
+          }
+        }
+      }
+
+      if (e.expiresAt) {
+        const days = daysUntilExpiry(e.expiresAt, nowMs);
+        if (days !== null) {
+          if (days < 0) {
+            issues.push({ type: 'expired_token', days: days });
+          } else if (days <= 14) {
+            issues.push({ type: 'expiring_token', days: days });
+          }
+        }
+      }
+
+      if (issues.length) {
+        byId[e.id] = issues;
+        flaggedCount++;
+      }
+    }
+
+    return { flaggedCount: flaggedCount, byId: byId };
+  }
+
   return {
     DEFAULT_ITERATIONS: DEFAULT_ITERATIONS,
     bytesToBase64: bytesToBase64,
@@ -327,5 +400,8 @@
     decryptVault: decryptVault,
     generatePassword: generatePassword,
     passwordStrength: passwordStrength,
+    buildSshCommand: buildSshCommand,
+    daysUntilExpiry: daysUntilExpiry,
+    auditVaultEntries: auditVaultEntries,
   };
 });

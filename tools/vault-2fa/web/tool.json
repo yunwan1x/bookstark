@@ -1,7 +1,7 @@
 {
   "title": "密码箱 & 2FA 验证码",
   "description": "端到端前端主密码加密的个人密码箱与离线 TOTP 动态验证码工具，支持工作区加密同步、截图/摄像头扫码、Google Authenticator 批量迁移二维码及主流浏览器 CSV 导入导出。",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "category": "productivity",
   "icon": "shield-halved",
   "icon_style": "solid",
@@ -14,5 +14,5 @@
     "socket_tcp": false,
     "schema": 1
   },
-  "notes": "首次发布：支持前端 PBKDF2 + AES-256-GCM 主密码锁与自动锁定、RFC 6238 离线 TOTP 30 秒动态码、强密码生成器、单码/Google 批量迁移二维码导入、Chrome/Bitwarden/1Password/KeePass/iCloud CSV 导入，以及标准二维码与加密备份导出。"
+  "notes": "v1.1.0 升级：按分类动态表单（网站账号 / 服务器与云主机 / API Token / 仅 2FA / 安全笔记），支持卡片式分类切换、服务器 SSH 命令一键复制与私钥存储、API Token 到期预警、录入 2FA 实时动态码预览与高级参数折叠、通用自定义密文字段、侧栏安全体检（弱密码/重复密码/快过期令牌）、列表悬停快捷复制以及剪贴板 30 秒自动清空，100% 兼容 v1.0.0 加密库数据。"
 }

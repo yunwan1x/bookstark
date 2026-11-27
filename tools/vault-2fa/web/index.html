@@ -120,25 +120,33 @@
             <span class="cat-left"><i class="fa-solid fa-star" aria-hidden="true"></i><span data-i18n="catFavorite">收藏</span></span>
             <span class="cat-count" data-count="favorite">0</span>
           </button>
+          <button type="button" class="cat-item cat-audit" id="catAuditBtn" data-cat="audit">
+            <span class="cat-left"><i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i><span data-i18n="catAudit">安全体检</span></span>
+            <span class="cat-count" data-count="audit">0</span>
+          </button>
           <div class="cat-divider"></div>
           <button type="button" class="cat-item" data-cat="web">
-            <span class="cat-left"><i class="fa-solid fa-globe" aria-hidden="true"></i><span data-i18n="catWeb">网站账号</span></span>
+            <span class="cat-left"><i class="fa-solid fa-globe cat-ic-web" aria-hidden="true"></i><span data-i18n="catWeb">网站账号</span></span>
             <span class="cat-count" data-count="web">0</span>
           </button>
           <button type="button" class="cat-item" data-cat="server">
-            <span class="cat-left"><i class="fa-solid fa-server" aria-hidden="true"></i><span data-i18n="catServer">服务器 / 云</span></span>
+            <span class="cat-left"><i class="fa-solid fa-server cat-ic-server" aria-hidden="true"></i><span data-i18n="catServer">服务器 / 云</span></span>
             <span class="cat-count" data-count="server">0</span>
           </button>
           <button type="button" class="cat-item" data-cat="token">
-            <span class="cat-left"><i class="fa-solid fa-key" aria-hidden="true"></i><span data-i18n="catToken">API Token</span></span>
+            <span class="cat-left"><i class="fa-solid fa-key cat-ic-token" aria-hidden="true"></i><span data-i18n="catToken">API Token</span></span>
             <span class="cat-count" data-count="token">0</span>
           </button>
           <button type="button" class="cat-item" data-cat="totp">
-            <span class="cat-left"><i class="fa-solid fa-qrcode" aria-hidden="true"></i><span data-i18n="catTotpOnly">仅 2FA</span></span>
+            <span class="cat-left"><i class="fa-solid fa-qrcode cat-ic-totp" aria-hidden="true"></i><span data-i18n="catTotpOnly">仅 2FA</span></span>
             <span class="cat-count" data-count="totp">0</span>
           </button>
+          <button type="button" class="cat-item" data-cat="note">
+            <span class="cat-left"><i class="fa-solid fa-file-lines cat-ic-note" aria-hidden="true"></i><span data-i18n="catNote">安全笔记</span></span>
+            <span class="cat-count" data-count="note">0</span>
+          </button>
           <button type="button" class="cat-item" data-cat="other">
-            <span class="cat-left"><i class="fa-solid fa-folder" aria-hidden="true"></i><span data-i18n="catOther">其他</span></span>
+            <span class="cat-left"><i class="fa-solid fa-folder cat-ic-other" aria-hidden="true"></i><span data-i18n="catOther">其他</span></span>
             <span class="cat-count" data-count="other">0</span>
           </button>
         </nav>
@@ -193,6 +201,14 @@
         </div>
 
         <div id="entryList" class="entry-list" role="listbox" aria-label="密码与 2FA 列表"></div>
+
+        <div id="clipClearBanner" class="clip-clear-banner" role="status" hidden>
+          <span class="clip-clear-left">
+            <i class="fa-solid fa-broom" aria-hidden="true"></i>
+            <span id="clipClearText">剪贴板将在 30s 后自动清空</span>
+          </span>
+          <button type="button" class="btn-link btn-xs" id="clipClearNowBtn" data-i18n="clearNow">立即清空</button>
+        </div>
       </section>
 
       <!-- Right Detail / Editor Pane -->
@@ -229,122 +245,240 @@
             </div>
           </div>
 
-          <div class="form-scroll">
+          <div class="form-scroll" id="entryFormBody">
             <input type="hidden" id="entryId" />
+            <select id="fCategory" hidden>
+              <option value="web" data-i18n="catWeb">网站账号</option>
+              <option value="server" data-i18n="catServer">服务器 / 云</option>
+              <option value="token" data-i18n="catToken">API Token</option>
+              <option value="totp" data-i18n="catTotpOnly">仅 2FA</option>
+              <option value="note" data-i18n="catNote">安全笔记</option>
+              <option value="other" data-i18n="catOther">其他</option>
+            </select>
 
-            <div class="form-row-2">
-              <div class="field">
-                <label for="fTitle" data-i18n="fieldTitle">名称 *</label>
-                <input id="fTitle" required maxlength="100" placeholder="例如：GitHub / Cloudflare" />
-              </div>
-              <div class="field">
-                <label for="fCategory" data-i18n="fieldCategory">分类</label>
-                <select id="fCategory">
-                  <option value="web" data-i18n="catWeb">网站账号</option>
-                  <option value="server" data-i18n="catServer">服务器 / 云</option>
-                  <option value="token" data-i18n="catToken">API Token</option>
-                  <option value="totp" data-i18n="catTotpOnly">仅 2FA</option>
-                  <option value="other" data-i18n="catOther">其他</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-row-2">
-              <div class="field">
-                <label for="fIssuer" data-i18n="fieldIssuer">签发方 / 服务名</label>
-                <input id="fIssuer" maxlength="100" placeholder="例如：GitHub" />
-              </div>
-              <div class="field">
-                <label for="fUsername" data-i18n="fieldUsername">账号 / 邮箱</label>
-                <input id="fUsername" maxlength="200" placeholder="user@example.com" autocapitalize="off" spellcheck="false" />
-              </div>
-            </div>
-
-            <div class="field">
-              <div class="label-row">
-                <label for="fPassword" data-i18n="fieldPassword">密码 / Token</label>
-                <button type="button" class="btn-link btn-xs" id="toggleGenBtn">
-                  <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
-                  <span data-i18n="genPassword">生成强密码</span>
+            <!-- Visual Category Picker -->
+            <div class="field cat-picker-wrap">
+              <label data-i18n="pickCategoryLabel">选择条目类型（表单字段自动切换）</label>
+              <div class="cat-picker" id="catPicker" role="radiogroup" aria-label="选择分类">
+                <button type="button" class="cat-card active" data-pick-cat="web">
+                  <i class="fa-solid fa-globe" aria-hidden="true"></i>
+                  <span data-i18n="catWeb">网站账号</span>
                 </button>
-              </div>
-              <div class="input-with-action">
-                <input id="fPassword" type="password" maxlength="4096" placeholder="可选，留空表示仅保存 2FA" />
-                <button type="button" class="icon-btn" id="toggleEntryPwdVis" aria-label="显示或隐藏密码">
-                  <i class="fa-solid fa-eye" aria-hidden="true"></i>
+                <button type="button" class="cat-card" data-pick-cat="server">
+                  <i class="fa-solid fa-server" aria-hidden="true"></i>
+                  <span data-i18n="catServer">服务器 / 云</span>
                 </button>
-              </div>
-              <div id="genPanel" class="gen-panel" hidden>
-                <div class="gen-row">
-                  <label for="genLen"><span data-i18n="genLength">长度</span>: <strong id="genLenVal">20</strong></label>
-                  <input id="genLen" type="range" min="10" max="48" value="20" />
-                </div>
-                <div class="gen-checks">
-                  <label><input type="checkbox" id="genUpper" checked /> A-Z</label>
-                  <label><input type="checkbox" id="genLower" checked /> a-z</label>
-                  <label><input type="checkbox" id="genDigits" checked /> 0-9</label>
-                  <label><input type="checkbox" id="genSymbols" checked /> !@#$</label>
-                  <button type="button" class="btn-primary btn-xs" id="runGenBtn" data-i18n="applyGenerated">生成并填入</button>
-                </div>
-              </div>
-            </div>
-
-            <div class="field">
-              <label for="fUrl" data-i18n="fieldUrl">网址</label>
-              <input id="fUrl" type="url" maxlength="500" placeholder="https://example.com" autocapitalize="off" spellcheck="false" />
-            </div>
-
-            <div class="totp-form-box">
-              <div class="totp-form-head">
-                <strong><i class="fa-solid fa-clock" aria-hidden="true"></i> <span data-i18n="totpSection">2FA 动态验证码（TOTP）</span></strong>
-                <button type="button" class="btn-secondary btn-xs" id="quickScanQrBtn">
+                <button type="button" class="cat-card" data-pick-cat="token">
+                  <i class="fa-solid fa-key" aria-hidden="true"></i>
+                  <span data-i18n="catToken">API Token</span>
+                </button>
+                <button type="button" class="cat-card" data-pick-cat="totp">
                   <i class="fa-solid fa-qrcode" aria-hidden="true"></i>
-                  <span data-i18n="scanOrUploadQr">识别二维码</span>
+                  <span data-i18n="catTotpOnly">仅 2FA</span>
                 </button>
-                <input type="file" id="quickQrFileInput" accept="image/*" hidden />
-              </div>
-              <div class="field">
-                <label for="fTotpSecret" data-i18n="fieldTotpSecret">密钥（Base32 或直接粘贴 otpauth:// 链接）</label>
-                <input
-                  id="fTotpSecret"
-                  maxlength="1024"
-                  placeholder="JBSWY3DPEHPK3PXP 或 otpauth://totp/..."
-                  autocapitalize="off"
-                  spellcheck="false"
-                />
-              </div>
-              <div class="form-row-3">
-                <div class="field">
-                  <label for="fTotpAlgo" data-i18n="fieldAlgo">算法</label>
-                  <select id="fTotpAlgo">
-                    <option value="SHA-1">SHA-1</option>
-                    <option value="SHA-256">SHA-256</option>
-                    <option value="SHA-512">SHA-512</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label for="fTotpDigits" data-i18n="fieldDigits">位数</label>
-                  <select id="fTotpDigits">
-                    <option value="6">6</option>
-                    <option value="8">8</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label for="fTotpPeriod" data-i18n="fieldPeriod">周期 (秒)</label>
-                  <input id="fTotpPeriod" type="number" min="10" max="120" value="30" />
-                </div>
+                <button type="button" class="cat-card" data-pick-cat="note">
+                  <i class="fa-solid fa-file-lines" aria-hidden="true"></i>
+                  <span data-i18n="catNote">安全笔记</span>
+                </button>
               </div>
             </div>
 
-            <div class="field">
-              <label for="fNotes" data-i18n="fieldNotes">备注 / 恢复码</label>
-              <textarea id="fNotes" rows="3" maxlength="8000" placeholder="可存放恢复码、绑定手机号或说明"></textarea>
-            </div>
+            <!-- Dynamic Ordered Form Stack -->
+            <div class="form-dynamic-stack" id="formDynamicStack">
+              <!-- Title & Issuer -->
+              <div class="form-row-2" id="secTitleRow">
+                <div class="field">
+                  <label for="fTitle" id="fTitleLabel" data-i18n="fieldTitle">名称 *</label>
+                  <input id="fTitle" required maxlength="100" placeholder="例如：GitHub / Cloudflare" />
+                </div>
+                <div class="field" id="secIssuerField">
+                  <label for="fIssuer" id="fIssuerLabel" data-i18n="fieldIssuer">签发方 / 服务名</label>
+                  <input id="fIssuer" maxlength="100" placeholder="例如：GitHub" />
+                </div>
+              </div>
 
-            <label class="check-inline">
-              <input type="checkbox" id="fFavorite" />
-              <span data-i18n="markFavorite">加入收藏置顶</span>
-            </label>
+              <!-- Server-Specific Section -->
+              <div id="secServer" class="dynamic-section" hidden>
+                <div class="form-row-server">
+                  <div class="field">
+                    <label for="fHost" data-i18n="fieldHost">主机 IP / 域名</label>
+                    <input id="fHost" maxlength="255" placeholder="例如：113.20.2.97 或 cloud.example.com" autocapitalize="off" spellcheck="false" />
+                  </div>
+                  <div class="field">
+                    <label for="fPort" data-i18n="fieldPort">SSH 端口</label>
+                    <input id="fPort" type="number" min="1" max="65535" value="22" placeholder="22" />
+                  </div>
+                </div>
+                <div id="formSshPreview" class="ssh-cmd-bar" hidden>
+                  <code id="formSshPreviewCode"></code>
+                  <button type="button" class="btn-secondary btn-xs" id="copyFormSshBtn">
+                    <i class="fa-solid fa-copy" aria-hidden="true"></i>
+                    <span data-i18n="copy">复制</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Token-Specific Section -->
+              <div id="secTokenMeta" class="dynamic-section" hidden>
+                <div class="form-row-2">
+                  <div class="field">
+                    <label for="fKeyId" data-i18n="fieldKeyId">Key ID / AccessKey（可选）</label>
+                    <input id="fKeyId" maxlength="255" placeholder="例如：AKIA... / Client ID" autocapitalize="off" spellcheck="false" />
+                  </div>
+                  <div class="field">
+                    <label for="fExpiresAt" data-i18n="fieldExpiresAt">过期日期（可选，提前 14 天提醒）</label>
+                    <input id="fExpiresAt" type="date" />
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="fScope" data-i18n="fieldScope">权限范围 / Scope（可选）</label>
+                  <input id="fScope" maxlength="400" placeholder="例如：zone:read, dns:edit" autocapitalize="off" spellcheck="false" />
+                </div>
+              </div>
+
+              <!-- Account / Username & URL -->
+              <div class="form-row-2" id="secAccountUrlRow">
+                <div class="field" id="secUsernameField">
+                  <label for="fUsername" id="fUsernameLabel" data-i18n="fieldUsername">账号 / 邮箱</label>
+                  <input id="fUsername" maxlength="200" placeholder="user@example.com" autocapitalize="off" spellcheck="false" />
+                </div>
+                <div class="field" id="secUrlField">
+                  <label for="fUrl" id="fUrlLabel" data-i18n="fieldUrl">网址</label>
+                  <input id="fUrl" type="url" maxlength="500" placeholder="https://example.com" autocapitalize="off" spellcheck="false" />
+                </div>
+              </div>
+
+              <!-- Password / Secret Field -->
+              <div class="field" id="secPassword">
+                <div class="label-row">
+                  <label for="fPassword" id="fPasswordLabel" data-i18n="fieldPassword">密码 / Token</label>
+                  <button type="button" class="btn-link btn-xs" id="toggleGenBtn">
+                    <i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+                    <span data-i18n="genPassword">生成强密码</span>
+                  </button>
+                </div>
+                <div class="input-with-action">
+                  <input id="fPassword" type="password" maxlength="4096" placeholder="可选，留空表示仅保存 2FA" />
+                  <button type="button" class="icon-btn" id="toggleEntryPwdVis" aria-label="显示或隐藏密码">
+                    <i class="fa-solid fa-eye" aria-hidden="true"></i>
+                  </button>
+                </div>
+                <div id="entryPwdStrengthWrap" class="strength-wrap" hidden>
+                  <div class="strength-bar"><span id="entryPwdStrengthFill"></span></div>
+                  <span id="entryPwdStrengthLabel" class="strength-text"></span>
+                </div>
+                <div id="genPanel" class="gen-panel" hidden>
+                  <div class="gen-row">
+                    <label for="genLen"><span data-i18n="genLength">长度</span>: <strong id="genLenVal">20</strong></label>
+                    <input id="genLen" type="range" min="10" max="48" value="20" />
+                  </div>
+                  <div class="gen-checks">
+                    <label><input type="checkbox" id="genUpper" checked /> A-Z</label>
+                    <label><input type="checkbox" id="genLower" checked /> a-z</label>
+                    <label><input type="checkbox" id="genDigits" checked /> 0-9</label>
+                    <label><input type="checkbox" id="genSymbols" checked /> !@#$</label>
+                    <button type="button" class="btn-primary btn-xs" id="runGenBtn" data-i18n="applyGenerated">生成并填入</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Server SSH Private Key (optional) -->
+              <div class="field" id="secSshKey" hidden>
+                <label for="fSshKey" data-i18n="fieldSshKey">SSH 私钥（可选，密文存储）</label>
+                <textarea id="fSshKey" rows="3" maxlength="16384" class="mono-ta" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----"></textarea>
+              </div>
+
+              <!-- 2FA TOTP Section (prominent & top-ordered in totp mode; collapsible in others) -->
+              <div class="totp-form-box" id="secTotp">
+                <div class="totp-form-head">
+                  <button type="button" class="totp-collapse-trigger" id="toggleTotpSectionBtn" aria-expanded="true">
+                    <i class="fa-solid fa-clock" aria-hidden="true"></i>
+                    <span id="totpSectionTitle" data-i18n="totpSection">2FA 动态验证码（TOTP）</span>
+                    <i class="fa-solid fa-chevron-down totp-caret" id="totpSectionCaret" aria-hidden="true"></i>
+                  </button>
+                  <button type="button" class="btn-secondary btn-xs" id="quickScanQrBtn">
+                    <i class="fa-solid fa-qrcode" aria-hidden="true"></i>
+                    <span data-i18n="scanOrUploadQr">识别二维码</span>
+                  </button>
+                  <input type="file" id="quickQrFileInput" accept="image/*" hidden />
+                </div>
+
+                <div id="totpBodyWrap">
+                  <div class="field">
+                    <label for="fTotpSecret" data-i18n="fieldTotpSecret">密钥（Base32 或直接粘贴 otpauth:// 链接，也可 Ctrl+V 粘贴二维码截图）</label>
+                    <input
+                      id="fTotpSecret"
+                      maxlength="1024"
+                      placeholder="JBSWY3DPEHPK3PXP 或 otpauth://totp/..."
+                      autocapitalize="off"
+                      spellcheck="false"
+                    />
+                  </div>
+
+                  <!-- Live TOTP Preview inside Form -->
+                  <div id="formTotpPreview" class="form-totp-preview" hidden>
+                    <div>
+                      <div class="form-totp-label" id="formTotpPreviewStatus" data-i18n="liveTotpPreview">实时验证码预览</div>
+                      <div class="form-totp-digits" id="formTotpPreviewCode">--- ---</div>
+                    </div>
+                    <div class="form-totp-right">
+                      <span class="form-totp-badge" id="formTotpPreviewBadge">✓ 有效</span>
+                      <span class="form-totp-rem" id="formTotpPreviewRem">30s</span>
+                    </div>
+                  </div>
+
+                  <button type="button" class="btn-link btn-xs totp-adv-toggle" id="toggleTotpAdvBtn">
+                    <i class="fa-solid fa-sliders" aria-hidden="true"></i>
+                    <span data-i18n="totpAdvParams">高级参数（默认 SHA-1 / 6 位 / 30 秒）</span>
+                  </button>
+
+                  <div class="form-row-3" id="totpAdvRow" hidden>
+                    <div class="field">
+                      <label for="fTotpAlgo" data-i18n="fieldAlgo">算法</label>
+                      <select id="fTotpAlgo">
+                        <option value="SHA-1">SHA-1</option>
+                        <option value="SHA-256">SHA-256</option>
+                        <option value="SHA-512">SHA-512</option>
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label for="fTotpDigits" data-i18n="fieldDigits">位数</label>
+                      <select id="fTotpDigits">
+                        <option value="6">6</option>
+                        <option value="8">8</option>
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label for="fTotpPeriod" data-i18n="fieldPeriod">周期 (秒)</label>
+                      <input id="fTotpPeriod" type="number" min="10" max="120" value="30" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Custom Fields (Key-Value with Secret Mask Toggle) -->
+              <div class="custom-fields-box" id="secCustomFields">
+                <div class="custom-fields-head">
+                  <span data-i18n="customFieldsTitle">自定义字段（支持密文遮罩）</span>
+                  <button type="button" class="btn-link btn-xs" id="addCustomFieldBtn">
+                    <i class="fa-solid fa-plus" aria-hidden="true"></i>
+                    <span data-i18n="addCustomField">添加字段</span>
+                  </button>
+                </div>
+                <div id="customFieldsList" class="custom-fields-list"></div>
+              </div>
+
+              <!-- Notes / Secure Note Body -->
+              <div class="field" id="secNotes">
+                <label for="fNotes" id="fNotesLabel" data-i18n="fieldNotes">备注 / 恢复码</label>
+                <textarea id="fNotes" rows="3" maxlength="16000" placeholder="可存放恢复码、绑定手机号或说明"></textarea>
+              </div>
+
+              <label class="check-inline">
+                <input type="checkbox" id="fFavorite" />
+                <span data-i18n="markFavorite">加入收藏置顶</span>
+              </label>
+            </div>
           </div>
         </form>
       </main>
@@ -494,16 +628,26 @@
         </div>
         <div class="modal-body settings-body">
           <section class="settings-section">
-            <h4 data-i18n="autoLockSection">无操作自动锁定</h4>
-            <div class="field">
-              <label for="autoLockSelect" data-i18n="autoLockLabel">空闲超过以下时长自动清空内存并锁定</label>
-              <select id="autoLockSelect">
-                <option value="1">1 分钟 / 1 min</option>
-                <option value="5">5 分钟 / 5 min</option>
-                <option value="15">15 分钟 / 15 min</option>
-                <option value="30">30 分钟 / 30 min</option>
-                <option value="0">永不自动锁定 / Never</option>
-              </select>
+            <h4 data-i18n="autoLockSection">无操作自动锁定与剪贴板保护</h4>
+            <div class="form-row-2">
+              <div class="field">
+                <label for="autoLockSelect" data-i18n="autoLockLabel">空闲自动锁定</label>
+                <select id="autoLockSelect">
+                  <option value="1">1 分钟 / 1 min</option>
+                  <option value="5">5 分钟 / 5 min</option>
+                  <option value="15">15 分钟 / 15 min</option>
+                  <option value="30">30 分钟 / 30 min</option>
+                  <option value="0">永不自动锁定 / Never</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="clipClearSelect" data-i18n="clipClearLabel">复制敏感内容后自动清空剪贴板</label>
+                <select id="clipClearSelect">
+                  <option value="30">30 秒 / 30s</option>
+                  <option value="60">60 秒 / 60s</option>
+                  <option value="0">不自动清空 / Off</option>
+                </select>
+              </div>
             </div>
           </section>
 

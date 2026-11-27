@@ -5,6 +5,7 @@
   const PREVIEW_STORAGE_KEY = 'bs_vault_preview_envelope_v1';
   const PREF_LANG_KEY = 'bs_vault_lang';
   const PREF_AUTOLOCK_KEY = 'bs_vault_autolock_min';
+  const PREF_CLIPCLEAR_KEY = 'bs_vault_clipclear_sec';
   const RING_CIRCUMFERENCE = 2 * Math.PI * 24;
 
   const I18N = {
@@ -30,11 +31,61 @@
       catAll: '全部条目',
       catHasTotp: '2FA 动态码',
       catFavorite: '收藏',
+      catAudit: '安全体检',
       catWeb: '网站账号',
       catServer: '服务器 / 云',
       catToken: 'API Token',
       catTotpOnly: '仅 2FA',
+      catNote: '安全笔记',
       catOther: '其他',
+      pickCategoryLabel: '选择条目类型（表单字段自动切换）',
+      fieldHost: '主机 IP / 域名',
+      fieldPort: 'SSH 端口',
+      fieldSshKey: 'SSH 私钥（可选，密文存储）',
+      fieldKeyId: 'Key ID / AccessKey（可选）',
+      fieldExpiresAt: '过期日期（可选，提前 14 天提醒）',
+      fieldScope: '权限范围 / Scope（可选）',
+      liveTotpPreview: '实时验证码预览',
+      totpAdvParams: '高级参数（默认 SHA-1 / 6 位 / 30 秒）',
+      customFieldsTitle: '自定义字段（支持密文遮罩）',
+      addCustomField: '添加字段',
+      clearNow: '立即清空',
+      clipClearLabel: '复制敏感内容后自动清空剪贴板',
+      clipClearText: '剪贴板将在 {s}s 后自动清空',
+      clipCleared: '已清空剪贴板',
+      issueWeak: '弱密码',
+      issueReused: '重复密码',
+      issueExpired: '已过期',
+      issueExpiring: '剩 {d} 天过期',
+      sshCmdLabel: 'SSH 快捷命令',
+      noteBodyLabel: '加密正文',
+      cfPlain: '明文',
+      cfSecret: '密文',
+      cfLabelPh: '字段名（如：恢复邮箱）',
+      cfValPh: '字段值',
+      quickCopyUser: '账号',
+      quickCopyPwd: '密码',
+      quickCopySsh: 'SSH',
+      quickCopyToken: 'Token',
+      totpValid: '✓ 密钥有效',
+      totpInvalid: '密钥格式无效',
+      optionalTotpTitle: '附加 2FA 动态验证码（可选）',
+      serverNameLabel: '服务器名称 *',
+      serverUserLabel: '登录用户名',
+      serverPwdLabel: '登录密码 / 密钥口令',
+      serverUrlLabel: '云控制台网址（可选）',
+      tokenNameLabel: 'Token 名称 *',
+      tokenIssuerLabel: '服务商',
+      tokenUrlLabel: 'Endpoint / 控制台',
+      tokenPwdLabel: 'Secret / Bearer Token',
+      totpNameLabel: '服务名 / 名称 *',
+      totpUserLabel: '账号标识（可选）',
+      noteNameLabel: '笔记标题 *',
+      noteTagLabel: '标签 / 说明（可选）',
+      openSite: '打开',
+      revealNote: '点击显示加密正文',
+      hideNote: '隐藏正文',
+      expiresValid: '有效期至 {date}',
       importTitle: '导入（二维码 / CSV）',
       importBtnShort: '扫码 / CSV 导入',
       securitySettings: '安全与备份',
@@ -159,11 +210,61 @@
       catAll: 'All items',
       catHasTotp: '2FA Codes',
       catFavorite: 'Favorites',
+      catAudit: 'Security Audit',
       catWeb: 'Websites',
       catServer: 'Servers / Cloud',
       catToken: 'API Tokens',
       catTotpOnly: '2FA Only',
+      catNote: 'Secure Notes',
       catOther: 'Other',
+      pickCategoryLabel: 'Entry type (form adapts automatically)',
+      fieldHost: 'Host IP / Domain',
+      fieldPort: 'SSH Port',
+      fieldSshKey: 'SSH Private Key (optional, encrypted)',
+      fieldKeyId: 'Key ID / AccessKey (optional)',
+      fieldExpiresAt: 'Expiration Date (warns 14d ahead)',
+      fieldScope: 'Permissions / Scope (optional)',
+      liveTotpPreview: 'Live Code Preview',
+      totpAdvParams: 'Advanced (default SHA-1 / 6 digits / 30s)',
+      customFieldsTitle: 'Custom Fields (supports secret masking)',
+      addCustomField: 'Add field',
+      clearNow: 'Clear now',
+      clipClearLabel: 'Auto-clear clipboard after copying secrets',
+      clipClearText: 'Clipboard clears in {s}s',
+      clipCleared: 'Clipboard cleared',
+      issueWeak: 'Weak password',
+      issueReused: 'Reused password',
+      issueExpired: 'Expired',
+      issueExpiring: 'Expires in {d}d',
+      sshCmdLabel: 'SSH Quick Command',
+      noteBodyLabel: 'Encrypted Note Body',
+      cfPlain: 'Plain',
+      cfSecret: 'Secret',
+      cfLabelPh: 'Field label',
+      cfValPh: 'Value',
+      quickCopyUser: 'User',
+      quickCopyPwd: 'Pwd',
+      quickCopySsh: 'SSH',
+      quickCopyToken: 'Token',
+      totpValid: '✓ Valid secret',
+      totpInvalid: 'Invalid Base32',
+      optionalTotpTitle: 'Attach 2FA Code (Optional)',
+      serverNameLabel: 'Server Name *',
+      serverUserLabel: 'Login Username',
+      serverPwdLabel: 'Password / Passphrase',
+      serverUrlLabel: 'Console URL (optional)',
+      tokenNameLabel: 'Token Name *',
+      tokenIssuerLabel: 'Provider',
+      tokenUrlLabel: 'Endpoint / Console',
+      tokenPwdLabel: 'Secret / Bearer Token',
+      totpNameLabel: 'Service / Title *',
+      totpUserLabel: 'Account Label (optional)',
+      noteNameLabel: 'Note Title *',
+      noteTagLabel: 'Tag / Subtitle (optional)',
+      openSite: 'Open',
+      revealNote: 'Click to reveal encrypted note',
+      hideNote: 'Hide',
+      expiresValid: 'Valid until {date}',
       importTitle: 'Import (QR / CSV)',
       importBtnShort: 'QR / CSV Import',
       securitySettings: 'Security & Backup',
@@ -352,9 +453,17 @@
     selectedId: null,
     editing: false,
     showDetailPassword: false,
+    showDetailSshKey: false,
+    showDetailNote: false,
+    revealedCustomFields: Object.create(null),
     autoLockMinutes: 5,
+    clipClearSeconds: 30,
+    clipClearDeadline: 0,
     idleDeadline: 0,
     totpCache: Object.create(null), // entryId -> { slot, code }
+    auditResult: { flaggedCount: 0, byId: Object.create(null) },
+    formTotpOpen: false,
+    formTotpAdvOpen: false,
     pendingImport: [],
     currentExportUri: '',
     cameraStream: null,
@@ -365,6 +474,10 @@
     const m = localStorage.getItem(PREF_AUTOLOCK_KEY);
     if (m !== null && ['0', '1', '5', '15', '30'].includes(m)) {
       state.autoLockMinutes = Number(m);
+    }
+    const c = localStorage.getItem(PREF_CLIPCLEAR_KEY);
+    if (c !== null && ['0', '30', '60'].includes(c)) {
+      state.clipClearSeconds = Number(c);
     }
   } catch (_) {}
 
@@ -380,29 +493,66 @@
     toastTimer = setTimeout(function () { el.hidden = true; }, 2600);
   }
 
-  async function copyText(text) {
+  function updateClipClearBanner() {
+    const banner = $('clipClearBanner');
+    if (!banner) return;
+    if (!state.clipClearDeadline) {
+      banner.hidden = true;
+      return;
+    }
+    const rem = Math.max(0, Math.ceil((state.clipClearDeadline - Date.now()) / 1000));
+    if (rem <= 0) {
+      clearClipboardNow(false);
+      return;
+    }
+    $('clipClearText').textContent = t('clipClearText', { s: rem });
+    banner.hidden = false;
+  }
+
+  async function clearClipboardNow(notify) {
+    state.clipClearDeadline = 0;
+    const banner = $('clipClearBanner');
+    if (banner) banner.hidden = true;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText('');
+      }
+    } catch (_) {}
+    if (notify) showToast(t('clipCleared'));
+  }
+
+  async function copyText(text, isSensitive) {
     const val = String(text || '');
     if (!val) return;
+    let ok = false;
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(val);
-        showToast(t('copied'));
-        return;
+        ok = true;
       }
     } catch (_) {}
-    const ta = document.createElement('textarea');
-    ta.value = val;
-    ta.style.position = 'fixed';
-    ta.style.opacity = '0';
-    document.body.appendChild(ta);
-    ta.select();
-    try {
-      document.execCommand('copy');
-      showToast(t('copied'));
-    } catch (_) {
-      showToast(t('errSaveFailed'), true);
+    if (!ok) {
+      const ta = document.createElement('textarea');
+      ta.value = val;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        ok = true;
+      } catch (_) {}
+      ta.remove();
     }
-    ta.remove();
+    if (!ok) {
+      showToast(t('errSaveFailed'), true);
+      return;
+    }
+    showToast(t('copied'));
+    if (isSensitive && state.clipClearSeconds > 0) {
+      state.clipClearDeadline = Date.now() + state.clipClearSeconds * 1000;
+      updateClipClearBanner();
+    }
   }
 
   function applyI18n() {
@@ -472,13 +622,18 @@
   function lockVault(reasonKey) {
     stopCamera();
     closeAllModals();
+    clearClipboardNow(false);
     state.derivedKey = null;
     state.cryptoMeta = null;
     state.vault = null;
     state.selectedId = null;
     state.editing = false;
     state.showDetailPassword = false;
+    state.showDetailSshKey = false;
+    state.showDetailNote = false;
+    state.revealedCustomFields = Object.create(null);
     state.totpCache = Object.create(null);
+    state.auditResult = { flaggedCount: 0, byId: Object.create(null) };
     state.pendingImport = [];
     state.idleDeadline = 0;
     state.mode = state.rawEnvelope ? 'unlock' : 'setup';
@@ -511,20 +666,47 @@
     await saveEncryptedEnvelope(envelope);
   }
 
+  const KNOWN_CATEGORIES = ['web', 'server', 'token', 'totp', 'note', 'other'];
+
   function categoryLabel(cat) {
     const map = {
       web: t('catWeb'),
       server: t('catServer'),
       token: t('catToken'),
       totp: t('catTotpOnly'),
+      note: t('catNote'),
       other: t('catOther'),
     };
     return map[cat] || t('catOther');
   }
 
-  function avatarLetters(entry) {
-    const s = (entry.title || entry.issuer || '?').trim();
-    return s.slice(0, 2).toUpperCase();
+  function categoryMeta(cat) {
+    const map = {
+      web: { icon: 'fa-globe', cls: 'cat-web' },
+      server: { icon: 'fa-server', cls: 'cat-server' },
+      token: { icon: 'fa-key', cls: 'cat-token' },
+      totp: { icon: 'fa-qrcode', cls: 'cat-totp' },
+      note: { icon: 'fa-file-lines', cls: 'cat-note' },
+      other: { icon: 'fa-folder', cls: 'cat-other' },
+    };
+    return map[cat] || map.other;
+  }
+
+  function formatIssueBadge(issue) {
+    if (!issue) return '';
+    if (issue.type === 'weak_password') {
+      return '<span class="issue-pill danger"><i class="fa-solid fa-triangle-exclamation"></i> ' + esc(t('issueWeak')) + '</span>';
+    }
+    if (issue.type === 'reused_password') {
+      return '<span class="issue-pill warn"><i class="fa-solid fa-copy"></i> ' + esc(t('issueReused')) + '</span>';
+    }
+    if (issue.type === 'expired_token') {
+      return '<span class="issue-pill danger"><i class="fa-solid fa-calendar-xmark"></i> ' + esc(t('issueExpired')) + '</span>';
+    }
+    if (issue.type === 'expiring_token') {
+      return '<span class="issue-pill warn"><i class="fa-solid fa-hourglass-half"></i> ' + esc(t('issueExpiring', { d: issue.days })) + '</span>';
+    }
+    return '';
   }
 
   function filteredEntries() {
@@ -534,14 +716,18 @@
       .filter(function (e) {
         if (state.activeCategory === 'has_totp' && !(e.totp && e.totp.secret)) return false;
         if (state.activeCategory === 'favorite' && !e.favorite) return false;
+        if (state.activeCategory === 'audit' && !(state.auditResult.byId && state.auditResult.byId[e.id])) return false;
         if (
-          ['web', 'server', 'token', 'totp', 'other'].includes(state.activeCategory) &&
+          KNOWN_CATEGORIES.includes(state.activeCategory) &&
           (e.category || 'other') !== state.activeCategory
         ) {
           return false;
         }
         if (q) {
-          const hay = [e.title, e.issuer, e.username, e.url, e.notes].join(' ').toLowerCase();
+          const cfText = Array.isArray(e.customFields)
+            ? e.customFields.map(function (c) { return (c.label || '') + ' ' + (c.secret ? '' : c.value || ''); }).join(' ')
+            : '';
+          const hay = [e.title, e.issuer, e.username, e.host, e.keyId, e.scope, e.url, e.notes, cfText].join(' ').toLowerCase();
           if (!hay.includes(q)) return false;
         }
         return true;
@@ -554,26 +740,33 @@
 
   function updateCategoryCounts() {
     const entries = (state.vault && state.vault.entries) || [];
+    state.auditResult = VaultCrypto.auditVaultEntries(entries);
     const counts = {
       all: entries.length,
       has_totp: 0,
       favorite: 0,
+      audit: state.auditResult.flaggedCount,
       web: 0,
       server: 0,
       token: 0,
       totp: 0,
+      note: 0,
       other: 0,
     };
     entries.forEach(function (e) {
       if (e.totp && e.totp.secret) counts.has_totp++;
       if (e.favorite) counts.favorite++;
-      const c = ['web', 'server', 'token', 'totp', 'other'].includes(e.category) ? e.category : 'other';
+      const c = KNOWN_CATEGORIES.includes(e.category) ? e.category : 'other';
       counts[c]++;
     });
     Object.keys(counts).forEach(function (k) {
       const node = document.querySelector('[data-count="' + k + '"]');
       if (node) node.textContent = String(counts[k]);
     });
+    const auditBtn = $('catAuditBtn');
+    if (auditBtn) {
+      auditBtn.classList.toggle('has-issues', counts.audit > 0);
+    }
   }
 
   function renderEntries() {
@@ -588,16 +781,52 @@
       .map(function (entry) {
         const active = entry.id === state.selectedId ? ' active' : '';
         const hasTotp = !!(entry.totp && entry.totp.secret);
-        const sub = entry.username || entry.issuer || entry.url || categoryLabel(entry.category);
+        const cat = KNOWN_CATEGORIES.includes(entry.category) ? entry.category : 'other';
+        const meta = categoryMeta(cat);
+        const sshCmd = cat === 'server' ? VaultCrypto.buildSshCommand(entry) : '';
+        const sub =
+          cat === 'server' && entry.host
+            ? (entry.username || 'root') + '@' + entry.host + (entry.port && String(entry.port) !== '22' ? ':' + entry.port : '')
+            : cat === 'token'
+            ? entry.scope || entry.keyId || entry.issuer || categoryLabel(cat)
+            : entry.username || entry.issuer || entry.url || categoryLabel(cat);
+
         const cached = state.totpCache[entry.id];
         const codeStr = cached ? VaultCrypto.formatTOTP(cached.code) : '••• •••';
         const period = hasTotp ? entry.totp.period || 30 : 30;
         const rem = hasTotp ? VaultCrypto.remainingSeconds(period) : 0;
         const urgent = rem <= 5 ? ' urgent' : '';
+
+        const issues = (state.auditResult.byId && state.auditResult.byId[entry.id]) || [];
+        const firstIssueHtml = issues.length ? formatIssueBadge(issues[0]) : '';
+
+        // Quick copy chips
+        const quickBtns = [];
+        if (sshCmd) {
+          quickBtns.push(
+            '<button type="button" class="quick-copy-chip" data-quick-copy="ssh" data-entry-id="' + esc(entry.id) + '">' +
+            '<i class="fa-solid fa-terminal"></i> ' + esc(t('quickCopySsh')) + '</button>'
+          );
+        }
+        if (cat !== 'token' && entry.username) {
+          quickBtns.push(
+            '<button type="button" class="quick-copy-chip" data-quick-copy="username" data-entry-id="' + esc(entry.id) + '">' +
+            esc(t('quickCopyUser')) + '</button>'
+          );
+        }
+        if (entry.password) {
+          quickBtns.push(
+            '<button type="button" class="quick-copy-chip" data-quick-copy="password" data-entry-id="' + esc(entry.id) + '">' +
+            esc(cat === 'token' ? t('quickCopyToken') : t('quickCopyPwd')) + '</button>'
+          );
+        }
+
+        const hasFoot = hasTotp || firstIssueHtml || quickBtns.length > 0;
+
         return (
           '<div class="entry-card' + active + '" role="option" tabindex="0" data-entry-id="' + esc(entry.id) + '">' +
           '<div class="entry-card-top">' +
-          '<div class="entry-avatar">' + esc(avatarLetters(entry)) + '</div>' +
+          '<div class="entry-avatar ' + meta.cls + '"><i class="fa-solid ' + meta.icon + '" aria-hidden="true"></i></div>' +
           '<div class="entry-meta">' +
           '<div class="entry-title-row">' +
           '<span class="entry-title">' + esc(entry.title) + '</span>' +
@@ -606,10 +835,16 @@
           '<div class="entry-sub">' + esc(sub) + '</div>' +
           '</div>' +
           '</div>' +
-          (hasTotp
-            ? '<div class="entry-totp-pill" data-copy-totp="' + esc(entry.id) + '" title="' + esc(t('copyCode')) + '">' +
-              '<span data-list-code="' + esc(entry.id) + '">' + esc(codeStr) + '</span>' +
-              '<span class="entry-totp-rem' + urgent + '" data-list-rem="' + esc(entry.id) + '">' + rem + 's</span>' +
+          (hasFoot
+            ? '<div class="entry-card-foot">' +
+              (hasTotp
+                ? '<div class="entry-totp-pill" data-copy-totp="' + esc(entry.id) + '" title="' + esc(t('copyCode')) + '">' +
+                  '<span data-list-code="' + esc(entry.id) + '">' + esc(codeStr) + '</span>' +
+                  '<span class="entry-totp-rem' + urgent + '" data-list-rem="' + esc(entry.id) + '">' + rem + 's</span>' +
+                  '</div>'
+                : '') +
+              firstIssueHtml +
+              (quickBtns.length ? '<div class="entry-quick-actions">' + quickBtns.join('') + '</div>' : '') +
               '</div>'
             : '') +
           '</div>'
@@ -646,12 +881,15 @@
     const cached = state.totpCache[entry.id];
     const formattedCode = cached ? VaultCrypto.formatTOTP(cached.code) : '••• •••';
     const href = safeHref(entry.url);
+    const cat = KNOWN_CATEGORIES.includes(entry.category) ? entry.category : 'other';
+    const sshCmd = cat === 'server' ? VaultCrypto.buildSshCommand(entry) : '';
     const pwdDisplay = entry.password
       ? state.showDetailPassword
         ? entry.password
-        : '•'.repeat(Math.min(20, Math.max(8, entry.password.length)))
+        : '•'.repeat(Math.min(24, Math.max(8, entry.password.length)))
       : '';
     const updatedStr = entry.updatedAt ? new Date(entry.updatedAt).toLocaleString() : '';
+    const issues = (state.auditResult.byId && state.auditResult.byId[entry.id]) || [];
 
     let html =
       '<div class="detail-bar">' +
@@ -668,6 +906,15 @@
       '</div>' +
       '</div>' +
       '<div class="detail-scroll">';
+
+    if (issues.length) {
+      html +=
+        '<div class="detail-audit-banner">' +
+        '<i class="fa-solid fa-shield-halved" aria-hidden="true"></i>' +
+        '<span>' + esc(t('catAudit')) + '：</span>' +
+        issues.map(formatIssueBadge).join(' ') +
+        '</div>';
+    }
 
     if (hasTotp) {
       const ringClass = rem <= 5 ? ' urgent' : rem <= 10 ? ' warn' : '';
@@ -691,19 +938,47 @@
         '</div>';
     }
 
+    if (sshCmd) {
+      html +=
+        '<div class="ssh-cmd-bar">' +
+        '<code>' + esc(sshCmd) + '</code>' +
+        '<button type="button" class="btn-primary btn-xs" id="detailCopySshBtn"><i class="fa-solid fa-terminal" aria-hidden="true"></i> ' + esc(t('copy')) + '</button>' +
+        '</div>';
+    }
+
     html += '<div class="info-group">';
     html +=
       '<div class="info-row"><div class="info-body"><div class="info-label">' +
       esc(t('fieldCategory')) +
       '</div><div class="info-val">' +
-      esc(categoryLabel(entry.category)) +
+      esc(categoryLabel(cat)) +
       (entry.issuer && entry.issuer !== entry.title ? ' · ' + esc(entry.issuer) : '') +
       '</div></div></div>';
+
+    if (entry.host) {
+      html +=
+        '<div class="info-row"><div class="info-body"><div class="info-label">' +
+        esc(t('fieldHost')) + (entry.port ? ' : ' + esc(t('fieldPort')) : '') +
+        '</div><div class="info-val mono">' +
+        esc(entry.host) + (entry.port ? ':' + esc(entry.port) : '') +
+        '</div></div><div class="info-btns"><button type="button" class="btn-secondary btn-xs" data-copy-field="host"><i class="fa-solid fa-copy" aria-hidden="true"></i> ' +
+        esc(t('copy')) +
+        '</button></div></div>';
+    }
+
+    if (entry.keyId) {
+      html +=
+        '<div class="info-row"><div class="info-body"><div class="info-label">Key ID / AccessKey</div><div class="info-val mono">' +
+        esc(entry.keyId) +
+        '</div></div><div class="info-btns"><button type="button" class="btn-secondary btn-xs" data-copy-field="keyId"><i class="fa-solid fa-copy" aria-hidden="true"></i> ' +
+        esc(t('copy')) +
+        '</button></div></div>';
+    }
 
     if (entry.username) {
       html +=
         '<div class="info-row"><div class="info-body"><div class="info-label">' +
-        esc(t('fieldUsername')) +
+        esc(cat === 'server' ? t('serverUserLabel') : t('fieldUsername')) +
         '</div><div class="info-val mono">' +
         esc(entry.username) +
         '</div></div><div class="info-btns"><button type="button" class="btn-secondary btn-xs" data-copy-field="username"><i class="fa-solid fa-copy" aria-hidden="true"></i> ' +
@@ -714,38 +989,108 @@
     if (entry.password) {
       html +=
         '<div class="info-row"><div class="info-body"><div class="info-label">' +
-        esc(t('fieldPassword')) +
+        esc(cat === 'token' ? t('tokenPwdLabel') : cat === 'server' ? t('serverPwdLabel') : t('fieldPassword')) +
         '</div><div class="info-val mono">' +
         esc(pwdDisplay) +
         '</div></div><div class="info-btns">' +
         '<button type="button" class="icon-btn" id="detailTogglePwdBtn" aria-label="显示或隐藏密码"><i class="fa-solid ' +
         (state.showDetailPassword ? 'fa-eye-slash' : 'fa-eye') +
         '"></i></button>' +
-        '<button type="button" class="btn-secondary btn-xs" data-copy-field="password"><i class="fa-solid fa-copy" aria-hidden="true"></i> ' +
+        '<button type="button" class="btn-secondary btn-xs" data-copy-field="password" data-sensitive="1"><i class="fa-solid fa-copy" aria-hidden="true"></i> ' +
         esc(t('copy')) +
         '</button></div></div>';
+    }
+
+    if (entry.sshKey) {
+      html +=
+        '<div class="info-row"><div class="info-body"><div class="info-label">' +
+        esc(t('fieldSshKey')) +
+        '</div>' +
+        (state.showDetailSshKey
+          ? '<pre class="secret-pre">' + esc(entry.sshKey) + '</pre>'
+          : '<div class="info-val mono">••••••••••••••••••••••••••••</div>') +
+        '</div><div class="info-btns">' +
+        '<button type="button" class="icon-btn" id="detailToggleSshKeyBtn" aria-label="显示或隐藏私钥"><i class="fa-solid ' +
+        (state.showDetailSshKey ? 'fa-eye-slash' : 'fa-eye') +
+        '"></i></button>' +
+        '<button type="button" class="btn-secondary btn-xs" data-copy-field="sshKey" data-sensitive="1"><i class="fa-solid fa-copy" aria-hidden="true"></i> ' +
+        esc(t('copy')) +
+        '</button></div></div>';
+    }
+
+    if (entry.scope) {
+      html +=
+        '<div class="info-row"><div class="info-body"><div class="info-label">' +
+        esc(t('fieldScope')) +
+        '</div><div class="info-val mono">' +
+        esc(entry.scope) +
+        '</div></div></div>';
+    }
+
+    if (entry.expiresAt) {
+      const days = VaultCrypto.daysUntilExpiry(entry.expiresAt);
+      let expPill = '<span class="issue-pill ok">' + esc(t('expiresValid', { date: entry.expiresAt })) + '</span>';
+      if (days !== null && days < 0) {
+        expPill = '<span class="issue-pill danger">' + esc(entry.expiresAt + ' · ' + t('issueExpired')) + '</span>';
+      } else if (days !== null && days <= 14) {
+        expPill = '<span class="issue-pill warn">' + esc(entry.expiresAt + ' · ' + t('issueExpiring', { d: days })) + '</span>';
+      }
+      html +=
+        '<div class="info-row"><div class="info-body"><div class="info-label">' +
+        esc(t('fieldExpiresAt')) +
+        '</div><div class="info-val">' + expPill + '</div></div></div>';
     }
 
     if (entry.url) {
       html +=
         '<div class="info-row"><div class="info-body"><div class="info-label">' +
-        esc(t('fieldUrl')) +
+        esc(cat === 'token' ? t('tokenUrlLabel') : cat === 'server' ? t('serverUrlLabel') : t('fieldUrl')) +
         '</div><div class="info-val">' +
         (href
           ? '<a href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">' + esc(entry.url) + '</a>'
           : esc(entry.url)) +
-        '</div></div><div class="info-btns"><button type="button" class="btn-secondary btn-xs" data-copy-field="url"><i class="fa-solid fa-copy" aria-hidden="true"></i> ' +
+        '</div></div><div class="info-btns">' +
+        (href
+          ? '<a class="btn-secondary btn-xs" href="' + esc(href) + '" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i> ' + esc(t('openSite')) + '</a>'
+          : '') +
+        '<button type="button" class="btn-secondary btn-xs" data-copy-field="url"><i class="fa-solid fa-copy" aria-hidden="true"></i> ' +
         esc(t('copy')) +
         '</button></div></div>';
     }
 
+    if (Array.isArray(entry.customFields) && entry.customFields.length) {
+      entry.customFields.forEach(function (cf, idx) {
+        if (!cf || (!cf.label && !cf.value)) return;
+        const revealed = !cf.secret || !!state.revealedCustomFields[idx];
+        html +=
+          '<div class="info-row"><div class="info-body"><div class="info-label">' +
+          esc(cf.label || ('Field ' + (idx + 1))) +
+          '</div><div class="info-val mono">' +
+          esc(revealed ? cf.value || '' : '•'.repeat(Math.min(20, Math.max(8, (cf.value || '').length)))) +
+          '</div></div><div class="info-btns">' +
+          (cf.secret
+            ? '<button type="button" class="icon-btn" data-toggle-cf="' + idx + '" aria-label="显示或隐藏"><i class="fa-solid ' + (revealed ? 'fa-eye-slash' : 'fa-eye') + '"></i></button>'
+            : '') +
+          '<button type="button" class="btn-secondary btn-xs" data-copy-cf="' + idx + '" data-sensitive="' + (cf.secret ? '1' : '0') + '"><i class="fa-solid fa-copy" aria-hidden="true"></i> ' +
+          esc(t('copy')) +
+          '</button></div></div>';
+      });
+    }
+
     if (entry.notes) {
+      const maskNote = cat === 'note' && !state.showDetailNote;
       html +=
         '<div class="info-row"><div class="info-body"><div class="info-label">' +
-        esc(t('fieldNotes')) +
-        '</div><pre class="notes-pre">' +
-        esc(entry.notes) +
-        '</pre></div><div class="info-btns"><button type="button" class="btn-secondary btn-xs" data-copy-field="notes"><i class="fa-solid fa-copy" aria-hidden="true"></i></button></div></div>';
+        esc(cat === 'note' ? t('noteBodyLabel') : t('fieldNotes')) +
+        '</div>' +
+        (maskNote
+          ? '<button type="button" class="btn-secondary btn-xs" id="detailRevealNoteBtn"><i class="fa-solid fa-eye" aria-hidden="true"></i> ' + esc(t('revealNote')) + '</button>'
+          : '<pre class="notes-pre">' + esc(entry.notes) + '</pre>') +
+        '</div><div class="info-btns">' +
+        (cat === 'note' && !maskNote
+          ? '<button type="button" class="icon-btn" id="detailHideNoteBtn" title="' + esc(t('hideNote')) + '"><i class="fa-solid fa-eye-slash"></i></button>'
+          : '') +
+        '<button type="button" class="btn-secondary btn-xs" data-copy-field="notes" data-sensitive="' + (cat === 'note' ? '1' : '0') + '"><i class="fa-solid fa-copy" aria-hidden="true"></i></button></div></div>';
     }
 
     html += '</div>';
@@ -791,6 +1136,10 @@
       }
     };
 
+    const copySshBtn = $('detailCopySshBtn');
+    if (copySshBtn) {
+      copySshBtn.onclick = function () { copyText(sshCmd, false); };
+    }
     const togglePwd = $('detailTogglePwdBtn');
     if (togglePwd) {
       togglePwd.onclick = function () {
@@ -798,10 +1147,45 @@
         renderDetailView();
       };
     }
+    const toggleSshKey = $('detailToggleSshKeyBtn');
+    if (toggleSshKey) {
+      toggleSshKey.onclick = function () {
+        state.showDetailSshKey = !state.showDetailSshKey;
+        renderDetailView();
+      };
+    }
+    const revealNoteBtn = $('detailRevealNoteBtn');
+    if (revealNoteBtn) {
+      revealNoteBtn.onclick = function () {
+        state.showDetailNote = true;
+        renderDetailView();
+      };
+    }
+    const hideNoteBtn = $('detailHideNoteBtn');
+    if (hideNoteBtn) {
+      hideNoteBtn.onclick = function () {
+        state.showDetailNote = false;
+        renderDetailView();
+      };
+    }
+    $('detailView').querySelectorAll('[data-toggle-cf]').forEach(function (btn) {
+      btn.onclick = function () {
+        const idx = btn.getAttribute('data-toggle-cf');
+        state.revealedCustomFields[idx] = !state.revealedCustomFields[idx];
+        renderDetailView();
+      };
+    });
+    $('detailView').querySelectorAll('[data-copy-cf]').forEach(function (btn) {
+      btn.onclick = function () {
+        const idx = Number(btn.getAttribute('data-copy-cf'));
+        const cf = entry.customFields && entry.customFields[idx];
+        if (cf) copyText(cf.value || '', btn.getAttribute('data-sensitive') === '1');
+      };
+    });
     $('detailView').querySelectorAll('[data-copy-field]').forEach(function (btn) {
       btn.onclick = function () {
         const f = btn.getAttribute('data-copy-field');
-        copyText(entry[f] || '');
+        copyText(entry[f] || '', btn.getAttribute('data-sensitive') === '1');
       };
     });
     const copyTotp = $('detailCopyTotpBtn');
@@ -838,7 +1222,7 @@
     if (!entry || !entry.totp || !entry.totp.secret) return;
     try {
       const code = await computeEntryTotp(entry);
-      await copyText(code);
+      await copyText(code, true);
     } catch (_) {
       showToast(t('errInvalidSecret'), true);
     }
@@ -882,6 +1266,252 @@
     }
   }
 
+  function updateFormSshPreview() {
+    const cat = $('fCategory').value;
+    const bar = $('formSshPreview');
+    if (cat !== 'server') {
+      bar.hidden = true;
+      return;
+    }
+    const cmd = VaultCrypto.buildSshCommand({
+      host: $('fHost').value,
+      username: $('fUsername').value,
+      port: $('fPort').value,
+    });
+    if (!cmd) {
+      bar.hidden = true;
+      return;
+    }
+    $('formSshPreviewCode').textContent = cmd;
+    bar.hidden = false;
+  }
+
+  function updateEntryPasswordStrength() {
+    const cat = $('fCategory').value;
+    const wrap = $('entryPwdStrengthWrap');
+    const pwd = $('fPassword').value;
+    if (!pwd || cat === 'totp' || cat === 'note' || cat === 'token') {
+      wrap.hidden = true;
+      return;
+    }
+    wrap.hidden = false;
+    const info = VaultCrypto.passwordStrength(pwd);
+    const widths = ['0%', '25%', '50%', '75%', '100%'];
+    const colors = ['transparent', '#dc2626', '#d97706', '#2563eb', '#059669'];
+    const labels = {
+      empty: '',
+      weak: t('strengthWeak'),
+      fair: t('strengthFair'),
+      good: t('strengthGood'),
+      strong: t('strengthStrong'),
+    };
+    $('entryPwdStrengthFill').style.width = widths[info.score];
+    $('entryPwdStrengthFill').style.background = colors[info.score];
+    $('entryPwdStrengthLabel').textContent = labels[info.key] || '';
+    $('entryPwdStrengthLabel').style.color = colors[info.score] || 'inherit';
+  }
+
+  async function updateFormTotpPreview() {
+    if (!state.editing) return;
+    const box = $('formTotpPreview');
+    const raw = $('fTotpSecret').value.trim();
+    if (!raw) {
+      box.hidden = true;
+      return;
+    }
+    box.hidden = false;
+    try {
+      let secret = '';
+      let algo = VaultCrypto.normalizeAlgorithm($('fTotpAlgo').value);
+      let digits = Number($('fTotpDigits').value) === 8 ? 8 : 6;
+      let period = Math.max(10, Math.min(120, Number($('fTotpPeriod').value) || 30));
+      if (raw.startsWith('otpauth://')) {
+        const parsed = VaultImport.parseOtpAuthURI(raw);
+        secret = parsed.totp.secret;
+        algo = parsed.totp.algorithm;
+        digits = parsed.totp.digits;
+        period = parsed.totp.period;
+      } else {
+        secret = VaultCrypto.normalizeBase32(raw);
+        if (!VaultCrypto.isValidBase32(secret)) throw new Error('invalid');
+      }
+      const code = await VaultCrypto.generateTOTP(secret, { algorithm: algo, digits: digits, period: period });
+      const rem = VaultCrypto.remainingSeconds(period);
+      box.classList.remove('invalid');
+      $('formTotpPreviewCode').textContent = VaultCrypto.formatTOTP(code);
+      $('formTotpPreviewBadge').textContent = t('totpValid');
+      $('formTotpPreviewRem').textContent = rem + 's';
+    } catch (_) {
+      box.classList.add('invalid');
+      $('formTotpPreviewCode').textContent = t('errInvalidSecret');
+      $('formTotpPreviewBadge').textContent = t('totpInvalid');
+      $('formTotpPreviewRem').textContent = '';
+    }
+  }
+
+  function syncTotpCollapseUI() {
+    const cat = $('fCategory').value;
+    const forcedOpen = cat === 'totp';
+    const isOpen = forcedOpen || state.formTotpOpen;
+    $('totpBodyWrap').hidden = !isOpen;
+    $('toggleTotpSectionBtn').setAttribute('aria-expanded', String(isOpen));
+    $('totpSectionCaret').hidden = forcedOpen;
+    $('totpSectionTitle').textContent = forcedOpen ? t('totpSection') : t('optionalTotpTitle');
+    $('totpAdvRow').hidden = !state.formTotpAdvOpen;
+  }
+
+  function applyFormCategory(cat, opts) {
+    const c = KNOWN_CATEGORIES.includes(cat) ? cat : 'web';
+    $('fCategory').value = c;
+    document.querySelectorAll('#catPicker .cat-card').forEach(function (btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-pick-cat') === c);
+    });
+    $('formDynamicStack').classList.toggle('mode-totp', c === 'totp');
+
+    const isWeb = c === 'web' || c === 'other';
+    const isServer = c === 'server';
+    const isToken = c === 'token';
+    const isTotp = c === 'totp';
+    const isNote = c === 'note';
+
+    $('secServer').hidden = !isServer;
+    $('secSshKey').hidden = !isServer;
+    $('secTokenMeta').hidden = !isToken;
+    $('secAccountUrlRow').hidden = isNote;
+    $('secUsernameField').hidden = isToken || isNote;
+    $('secUrlField').hidden = isTotp || isNote;
+    $('secPassword').hidden = isTotp || isNote;
+    $('secTotp').hidden = isNote;
+
+    // Context-specific labels & placeholders
+    if (isServer) {
+      $('fTitleLabel').textContent = t('serverNameLabel');
+      $('fTitle').placeholder = lang === 'zh' ? '例如：生产云主机 · 香港节点' : 'e.g. Prod Server · HK';
+      $('fIssuerLabel').textContent = t('fieldIssuer');
+      $('fUsernameLabel').textContent = t('serverUserLabel');
+      $('fUsername').placeholder = 'root';
+      $('fPasswordLabel').textContent = t('serverPwdLabel');
+      $('fPassword').placeholder = lang === 'zh' ? 'SSH 登录密码或私钥口令' : 'SSH password or passphrase';
+      $('fUrlLabel').textContent = t('serverUrlLabel');
+      $('fUrl').placeholder = 'https://console.cloud.example.com';
+    } else if (isToken) {
+      $('fTitleLabel').textContent = t('tokenNameLabel');
+      $('fTitle').placeholder = lang === 'zh' ? '例如：Cloudflare DNS Token' : 'e.g. Cloudflare DNS Token';
+      $('fIssuerLabel').textContent = t('tokenIssuerLabel');
+      $('fUrlLabel').textContent = t('tokenUrlLabel');
+      $('fUrl').placeholder = 'https://api.example.com/v1';
+      $('fPasswordLabel').textContent = t('tokenPwdLabel');
+      $('fPassword').placeholder = lang === 'zh' ? '粘贴 API Secret / Bearer Token' : 'Paste API Secret / Bearer Token';
+    } else if (isTotp) {
+      $('fTitleLabel').textContent = t('totpNameLabel');
+      $('fTitle').placeholder = lang === 'zh' ? '例如：AWS Root / GitHub' : 'e.g. AWS Root / GitHub';
+      $('fIssuerLabel').textContent = t('fieldIssuer');
+      $('fUsernameLabel').textContent = t('totpUserLabel');
+      $('fUsername').placeholder = 'user@example.com';
+    } else if (isNote) {
+      $('fTitleLabel').textContent = t('noteNameLabel');
+      $('fTitle').placeholder = lang === 'zh' ? '例如：GitHub 恢复码 / 重要证件' : 'e.g. Recovery Codes / License Key';
+      $('fIssuerLabel').textContent = t('noteTagLabel');
+    } else {
+      $('fTitleLabel').textContent = t('fieldTitle');
+      $('fTitle').placeholder = lang === 'zh' ? '例如：GitHub / Cloudflare' : 'e.g. GitHub / Cloudflare';
+      $('fIssuerLabel').textContent = t('fieldIssuer');
+      $('fUsernameLabel').textContent = t('fieldUsername');
+      $('fUsername').placeholder = 'user@example.com';
+      $('fPasswordLabel').textContent = t('fieldPassword');
+      $('fPassword').placeholder = lang === 'zh' ? '可选，留空表示仅保存 2FA' : 'Optional';
+      $('fUrlLabel').textContent = t('fieldUrl');
+      $('fUrl').placeholder = 'https://example.com';
+    }
+
+    $('fNotesLabel').textContent = isNote ? t('noteBodyLabel') : t('fieldNotes');
+    $('fNotes').rows = isNote ? 7 : 3;
+
+    if (opts && typeof opts.openTotp === 'boolean') {
+      state.formTotpOpen = opts.openTotp;
+    } else if (isTotp) {
+      state.formTotpOpen = true;
+    } else if (!$('fTotpSecret').value.trim()) {
+      state.formTotpOpen = false;
+    }
+
+    syncTotpCollapseUI();
+    updateFormSshPreview();
+    updateEntryPasswordStrength();
+    updateFormTotpPreview();
+  }
+
+  function addCustomFieldRow(cf) {
+    const item = cf || { label: '', value: '', secret: false };
+    const row = document.createElement('div');
+    row.className = 'cf-edit-row';
+
+    const labelInp = document.createElement('input');
+    labelInp.type = 'text';
+    labelInp.className = 'cf-label-inp';
+    labelInp.maxLength = 80;
+    labelInp.placeholder = t('cfLabelPh');
+    labelInp.value = item.label || '';
+
+    const valInp = document.createElement('input');
+    valInp.type = item.secret ? 'password' : 'text';
+    valInp.className = 'cf-val-inp';
+    valInp.maxLength = 2000;
+    valInp.placeholder = t('cfValPh');
+    valInp.value = item.value || '';
+
+    const secBtn = document.createElement('button');
+    secBtn.type = 'button';
+    secBtn.className = 'cf-secret-btn' + (item.secret ? ' is-secret' : '');
+    secBtn.dataset.secret = item.secret ? '1' : '0';
+    secBtn.innerHTML = item.secret
+      ? '<i class="fa-solid fa-lock" aria-hidden="true"></i> ' + esc(t('cfSecret'))
+      : esc(t('cfPlain'));
+    secBtn.onclick = function () {
+      const next = secBtn.dataset.secret !== '1';
+      secBtn.dataset.secret = next ? '1' : '0';
+      secBtn.classList.toggle('is-secret', next);
+      valInp.type = next ? 'password' : 'text';
+      secBtn.innerHTML = next
+        ? '<i class="fa-solid fa-lock" aria-hidden="true"></i> ' + esc(t('cfSecret'))
+        : esc(t('cfPlain'));
+    };
+
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.className = 'icon-btn';
+    delBtn.setAttribute('aria-label', t('delete'));
+    delBtn.innerHTML = '<i class="fa-solid fa-xmark" aria-hidden="true"></i>';
+    delBtn.onclick = function () { row.remove(); };
+
+    row.appendChild(labelInp);
+    row.appendChild(valInp);
+    row.appendChild(secBtn);
+    row.appendChild(delBtn);
+    $('customFieldsList').appendChild(row);
+  }
+
+  function renderCustomFieldRows(list) {
+    $('customFieldsList').innerHTML = '';
+    if (Array.isArray(list)) {
+      list.forEach(addCustomFieldRow);
+    }
+  }
+
+  function readCustomFieldsFromForm() {
+    const rows = $('customFieldsList').querySelectorAll('.cf-edit-row');
+    const out = [];
+    rows.forEach(function (row) {
+      const label = (row.querySelector('.cf-label-inp').value || '').trim();
+      const value = row.querySelector('.cf-val-inp').value || '';
+      const secret = row.querySelector('.cf-secret-btn').dataset.secret === '1';
+      if (label || value) {
+        out.push({ label: label, value: value, secret: secret });
+      }
+    });
+    return out;
+  }
+
   function openEntryForm(entry) {
     state.editing = true;
     closeMobileSidebar();
@@ -895,30 +1525,49 @@
     $('entryFormTitle').textContent = isEdit ? t('editEntry') : t('newEntry');
     $('entryId').value = isEdit ? entry.id : '';
     $('fTitle').value = isEdit ? entry.title || '' : '';
-    $('fCategory').value = isEdit
+
+    const initialCat = isEdit
       ? entry.category || 'web'
-      : ['web', 'server', 'token', 'totp', 'other'].includes(state.activeCategory)
+      : KNOWN_CATEGORIES.includes(state.activeCategory)
       ? state.activeCategory
+      : state.activeCategory === 'has_totp'
+      ? 'totp'
       : 'web';
+
     $('fIssuer').value = isEdit ? entry.issuer || '' : '';
     $('fUsername').value = isEdit ? entry.username || '' : '';
     $('fPassword').value = isEdit ? entry.password || '' : '';
     $('fPassword').type = 'password';
     $('fUrl').value = isEdit ? entry.url || '' : '';
+    $('fHost').value = isEdit ? entry.host || '' : '';
+    $('fPort').value = isEdit ? (entry.port || '22') : '22';
+    $('fSshKey').value = isEdit ? entry.sshKey || '' : '';
+    $('fKeyId').value = isEdit ? entry.keyId || '' : '';
+    $('fExpiresAt').value = isEdit ? entry.expiresAt || '' : '';
+    $('fScope').value = isEdit ? entry.scope || '' : '';
     $('fNotes').value = isEdit ? entry.notes || '' : '';
     $('fFavorite').checked = !!(isEdit && entry.favorite);
 
-    if (isEdit && entry.totp && entry.totp.secret) {
+    const hasTotp = !!(isEdit && entry.totp && entry.totp.secret);
+    if (hasTotp) {
       $('fTotpSecret').value = entry.totp.secret;
       $('fTotpAlgo').value = VaultCrypto.normalizeAlgorithm(entry.totp.algorithm);
       $('fTotpDigits').value = String(entry.totp.digits === 8 ? 8 : 6);
       $('fTotpPeriod').value = String(entry.totp.period || 30);
+      state.formTotpAdvOpen =
+        $('fTotpAlgo').value !== 'SHA-1' ||
+        $('fTotpDigits').value !== '6' ||
+        $('fTotpPeriod').value !== '30';
     } else {
       $('fTotpSecret').value = '';
       $('fTotpAlgo').value = 'SHA-1';
       $('fTotpDigits').value = '6';
       $('fTotpPeriod').value = '30';
+      state.formTotpAdvOpen = false;
     }
+
+    renderCustomFieldRows(isEdit ? entry.customFields : []);
+    applyFormCategory(initialCat, { openTotp: initialCat === 'totp' || hasTotp });
     $('fTitle').focus();
   }
 
@@ -932,6 +1581,9 @@
       $('fTotpAlgo').value = parsed.totp.algorithm;
       $('fTotpDigits').value = String(parsed.totp.digits);
       $('fTotpPeriod').value = String(parsed.totp.period);
+      state.formTotpOpen = true;
+      syncTotpCollapseUI();
+      updateFormTotpPreview();
       showToast('已自动解析 otpauth 链接');
       return true;
     } catch (_) {
@@ -944,7 +1596,8 @@
     const title = $('fTitle').value.trim();
     if (!title) return;
 
-    let rawSecret = $('fTotpSecret').value.trim();
+    const category = $('fCategory').value || 'web';
+    let rawSecret = category === 'note' ? '' : $('fTotpSecret').value.trim();
     let totp = null;
     if (rawSecret) {
       if (rawSecret.startsWith('otpauth://')) {
@@ -972,14 +1625,22 @@
 
     const id = $('entryId').value || genId();
     const existingIndex = state.vault.entries.findIndex(function (e) { return e.id === id; });
+    const customFields = readCustomFieldsFromForm();
     const record = {
       id: id,
       title: title,
-      category: $('fCategory').value || 'web',
+      category: category,
       issuer: $('fIssuer').value.trim(),
-      username: $('fUsername').value.trim(),
-      password: $('fPassword').value,
-      url: $('fUrl').value.trim(),
+      username: category === 'token' || category === 'note' ? '' : $('fUsername').value.trim(),
+      password: category === 'totp' || category === 'note' ? '' : $('fPassword').value,
+      url: category === 'totp' || category === 'note' ? '' : $('fUrl').value.trim(),
+      host: category === 'server' ? $('fHost').value.trim() : '',
+      port: category === 'server' ? ($('fPort').value.trim() || '22') : '',
+      sshKey: category === 'server' ? $('fSshKey').value.trim() : '',
+      keyId: category === 'token' ? $('fKeyId').value.trim() : '',
+      expiresAt: category === 'token' ? $('fExpiresAt').value.trim() : '',
+      scope: category === 'token' ? $('fScope').value.trim() : '',
+      customFields: customFields.length ? customFields : undefined,
       notes: $('fNotes').value,
       favorite: $('fFavorite').checked,
       totp: totp,
@@ -995,6 +1656,9 @@
     delete state.totpCache[id];
     state.selectedId = id;
     state.showDetailPassword = false;
+    state.showDetailSshKey = false;
+    state.showDetailNote = false;
+    state.revealedCustomFields = Object.create(null);
 
     try {
       await persistVault();
@@ -1505,8 +2169,20 @@
       renderEntries();
     });
 
-    // Entry list click & quick TOTP copy
+    // Entry list click, quick TOTP copy & quick field copy
     $('entryList').addEventListener('click', function (e) {
+      const quickBtn = e.target.closest('[data-quick-copy]');
+      if (quickBtn) {
+        e.stopPropagation();
+        const id = quickBtn.getAttribute('data-entry-id');
+        const kind = quickBtn.getAttribute('data-quick-copy');
+        const entry = state.vault && state.vault.entries.find(function (x) { return x.id === id; });
+        if (!entry) return;
+        if (kind === 'ssh') copyText(VaultCrypto.buildSshCommand(entry), false);
+        else if (kind === 'username') copyText(entry.username || '', false);
+        else if (kind === 'password') copyText(entry.password || '', true);
+        return;
+      }
       const copyBtn = e.target.closest('[data-copy-totp]');
       if (copyBtn) {
         e.stopPropagation();
@@ -1517,8 +2193,46 @@
       if (!card) return;
       state.selectedId = card.getAttribute('data-entry-id');
       state.showDetailPassword = false;
+      state.showDetailSshKey = false;
+      state.showDetailNote = false;
+      state.revealedCustomFields = Object.create(null);
       renderEntries();
       renderDetailView();
+    });
+
+    $('clipClearNowBtn').onclick = function () { clearClipboardNow(true); };
+
+    // Category picker & dynamic form interactions
+    $('catPicker').addEventListener('click', function (e) {
+      const btn = e.target.closest('[data-pick-cat]');
+      if (!btn) return;
+      applyFormCategory(btn.getAttribute('data-pick-cat'));
+    });
+    $('fCategory').addEventListener('change', function () {
+      applyFormCategory(this.value);
+    });
+    $('toggleTotpSectionBtn').onclick = function () {
+      if ($('fCategory').value === 'totp') return;
+      state.formTotpOpen = !state.formTotpOpen;
+      syncTotpCollapseUI();
+    };
+    $('toggleTotpAdvBtn').onclick = function () {
+      state.formTotpAdvOpen = !state.formTotpAdvOpen;
+      syncTotpCollapseUI();
+    };
+    $('addCustomFieldBtn').onclick = function () {
+      addCustomFieldRow({ label: '', value: '', secret: false });
+    };
+    ['fHost', 'fPort', 'fUsername'].forEach(function (id) {
+      $(id).addEventListener('input', updateFormSshPreview);
+    });
+    $('copyFormSshBtn').onclick = function () {
+      copyText($('formSshPreviewCode').textContent || '', false);
+    };
+    $('fPassword').addEventListener('input', updateEntryPasswordStrength);
+    ['fTotpSecret', 'fTotpAlgo', 'fTotpDigits', 'fTotpPeriod'].forEach(function (id) {
+      $(id).addEventListener('input', updateFormTotpPreview);
+      $(id).addEventListener('change', updateFormTotpPreview);
     });
 
     // Create / edit form
@@ -1559,6 +2273,7 @@
       });
       $('fPassword').value = pwd;
       $('fPassword').type = 'text';
+      updateEntryPasswordStrength();
     };
 
     $('fTotpSecret').addEventListener('paste', function (e) {
@@ -1651,9 +2366,11 @@
       }
     });
 
-    // Global paste screenshot handler when Import modal is open
+    // Global paste screenshot handler (works in Import modal AND directly in Entry Form)
     document.addEventListener('paste', async function (e) {
-      if ($('importModal').hidden || $('importTabQr').hidden) return;
+      const inImportQr = !$('importModal').hidden && !$('importTabQr').hidden;
+      const inForm = state.editing && $('importModal').hidden;
+      if (!inImportQr && !inForm) return;
       const items = e.clipboardData && e.clipboardData.items;
       if (!items) return;
       for (let i = 0; i < items.length; i++) {
@@ -1663,10 +2380,18 @@
             e.preventDefault();
             try {
               const decoded = await decodeQRFromBlob(blob);
-              handleDecodedOtpPayload(decoded);
+              if (inImportQr) {
+                handleDecodedOtpPayload(decoded);
+              } else if (!fillFormFromOtpText(decoded)) {
+                showToast(t('errInvalidSecret'), true);
+              }
             } catch (_) {
-              $('importError').textContent = t('errNoQrFound');
-              $('importError').hidden = false;
+              if (inImportQr) {
+                $('importError').textContent = t('errNoQrFound');
+                $('importError').hidden = false;
+              } else {
+                showToast(t('errNoQrFound'), true);
+              }
             }
             return;
           }
@@ -1734,6 +2459,7 @@
     $('openSettingsBtn').onclick = function () {
       closeMobileSidebar();
       $('autoLockSelect').value = String(state.autoLockMinutes);
+      $('clipClearSelect').value = String(state.clipClearSeconds);
       $('changeMasterError').hidden = true;
       $('oldMasterInput').value = '';
       $('newMasterInput').value = '';
@@ -1745,6 +2471,15 @@
       state.autoLockMinutes = Number(this.value);
       try { localStorage.setItem(PREF_AUTOLOCK_KEY, String(state.autoLockMinutes)); } catch (_) {}
       resetIdleTimer();
+      showToast(t('msgSaved'));
+    };
+    $('clipClearSelect').onchange = function () {
+      state.clipClearSeconds = Number(this.value);
+      try { localStorage.setItem(PREF_CLIPCLEAR_KEY, String(state.clipClearSeconds)); } catch (_) {}
+      if (!state.clipClearSeconds) {
+        state.clipClearDeadline = 0;
+        updateClipClearBanner();
+      }
       showToast(t('msgSaved'));
     };
     $('changeMasterForm').addEventListener('submit', handleChangeMaster);
@@ -1797,7 +2532,7 @@
     $('workspace').hidden = true;
     $('masterPassword').focus();
 
-    // 1-second loop for live TOTP ticks & auto-lock enforcement
+    // 1-second loop for live TOTP ticks, form preview, clipboard countdown & auto-lock
     setInterval(function () {
       if (state.mode !== 'unlocked') return;
       if (state.idleDeadline && Date.now() >= state.idleDeadline) {
@@ -1805,6 +2540,8 @@
         return;
       }
       refreshAllTotpDisplay();
+      if (state.editing) updateFormTotpPreview();
+      if (state.clipClearDeadline) updateClipClearBanner();
     }, 1000);
   }
 

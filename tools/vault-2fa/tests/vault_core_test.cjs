@@ -164,3 +164,33 @@ test('CSV import supports Chrome and Bitwarden formats with quoted commas and TO
   assert.equal(items[1].category, 'web');
   assert.equal(items[1].totp, null);
 });
+
+test('v1.1 helpers: buildSshCommand, daysUntilExpiry, and auditVaultEntries', () => {
+  assert.equal(VaultCrypto.buildSshCommand({ host: '113.20.2.97', username: 'root', port: '22' }), 'ssh root@113.20.2.97');
+  assert.equal(VaultCrypto.buildSshCommand({ host: '113.20.2.97', username: 'ubuntu', port: '2222' }), 'ssh -p 2222 ubuntu@113.20.2.97');
+  assert.equal(VaultCrypto.buildSshCommand({ host: '' }), '');
+
+  const now = Date.UTC(2026, 10, 27, 12, 0, 0); // 2026-11-27
+  assert.equal(VaultCrypto.daysUntilExpiry('2026-12-07', now), 10);
+  assert.ok(VaultCrypto.daysUntilExpiry('2026-11-20', now) < 0);
+  assert.equal(VaultCrypto.daysUntilExpiry('', now), null);
+
+  const audit = VaultCrypto.auditVaultEntries([
+    { id: '1', category: 'web', password: '123' },
+    { id: '2', category: 'web', password: 'SharedStrong#Password99' },
+    { id: '3', category: 'server', password: 'SharedStrong#Password99' },
+    { id: '4', category: 'token', password: 'cfut_unique_long_token', expiresAt: '2026-12-05' },
+    { id: '5', category: 'token', password: 'cfut_expired_token', expiresAt: '2026-11-01' },
+    { id: '6', category: 'web', password: 'UniqueStrong#Password2026!' },
+    { id: '7', category: 'totp', password: '' },
+  ], now);
+
+  assert.equal(audit.flaggedCount, 5);
+  assert.equal(audit.byId['1'][0].type, 'weak_password');
+  assert.equal(audit.byId['2'][0].type, 'reused_password');
+  assert.equal(audit.byId['3'][0].type, 'reused_password');
+  assert.equal(audit.byId['4'][0].type, 'expiring_token');
+  assert.equal(audit.byId['5'][0].type, 'expired_token');
+  assert.equal(audit.byId['6'], undefined);
+  assert.equal(audit.byId['7'], undefined);
+});
