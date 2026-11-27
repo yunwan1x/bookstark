@@ -281,6 +281,11 @@
    });
    frame.addEventListener('error',()=>showState('run_resource_failed'),{once:true});
    if(isolated)frame.src=runtime.url;else frame.srcdoc='<!doctype html>'+doc.documentElement.outerHTML;host.append(frame);
+   const syncFrameSize=()=>{const h=host.clientHeight,w=host.clientWidth;if(h>0){frame.style.setProperty('height',h+'px','important');frame.style.setProperty('max-height',h+'px','important');}if(w>0){frame.style.setProperty('width',w+'px','important');}};
+   syncFrameSize();
+   if(typeof ResizeObserver!=='undefined')new ResizeObserver(syncFrameSize).observe(host);
+   window.addEventListener('resize',syncFrameSize);
+   if(window.visualViewport){window.visualViewport.addEventListener('resize',syncFrameSize);}
    const notices=[];
    if(meta.permissions?.socket_tcp&&!runtime.socket_proxy)notices.push(ToolMarketUI.text('此服务器未开启工具 TCP 代理。','The tool TCP proxy is disabled on this server.'));
    const note=document.getElementById('toolRuntimeCapabilities');

@@ -1,4 +1,5 @@
-.tool-runtime-body{margin:0;display:flex;flex-direction:column;height:100vh;height:100dvh;min-height:0;overflow:hidden;background:var(--color-bg);color:var(--color-text)}
+html:has(.tool-runtime-body){height:100%;overflow:hidden}
+.tool-runtime-body{position:fixed;inset:0;width:100%;height:100%;margin:0;display:flex;flex-direction:column;min-height:0;overflow:hidden;background:var(--color-bg);color:var(--color-text)}
 .tool-runtime-body .html-tool-topbar{padding-top:env(safe-area-inset-top,0px);padding-left:max(var(--spacing-md),env(safe-area-inset-left,0px));padding-right:max(var(--spacing-md),env(safe-area-inset-right,0px));z-index:2}
 .tool-runtime-bar .row-action,.tool-runtime-more>.bs-action-dd-btn{width:36px;min-width:36px;height:36px;padding:var(--spacing-sm);justify-content:center}
 .tool-runtime-back{display:flex;align-items:center;gap:var(--spacing-sm);font-size:13px;white-space:nowrap;color:var(--color-text)}
