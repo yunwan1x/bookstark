@@ -114,6 +114,7 @@
     disconnect: ["断开", "Disconnect"],
     zenMode: ["专注模式（最大化终端）", "Focus mode (maximize terminal)"],
     exitZen: ["退出专注", "Exit focus"],
+    scrollBottom: ["回到底部", "Jump to bottom"],
     moreActions: ["更多操作", "More actions"],
     search: ["搜索", "Search"],
     next: ["下一处", "Next"],
@@ -794,6 +795,7 @@
     const cur = sessions.get(id);
     filesWB.applyViewMode(cur);
     updateSession();
+    syncScrollBottom(cur);
     requestAnimationFrame(() => {
       fitActive();
       if (cur?.cfg.protocol !== "webdav" && cur?.viewMode !== "files") {
@@ -1158,37 +1160,113 @@
       });
       let tapX = 0,
         tapY = 0,
-        tapMoved = false;
+        tapMoved = false,
+        lastTouchY = 0,
+        lastTouchT = 0,
+        scrollAccum = 0,
+        velY = 0,
+        inertiaRaf = 0;
+      const cellHeight = () =>
+        Math.max(
+          12,
+          term._core?._renderService?.dimensions?.css?.cell?.height ||
+            fontSize * 1.35,
+        );
+      const stopInertia = () => {
+        if (inertiaRaf) {
+          cancelAnimationFrame(inertiaRaf);
+          inertiaRaf = 0;
+        }
+      };
+      mount._stopInertia = stopInertia;
       mount.addEventListener(
         "touchstart",
         (event) => {
+          stopInertia();
+          if (event.touches.length !== 1) {
+            tapMoved = true;
+            return;
+          }
           const touch = event.touches[0];
-          if (!touch) return;
           tapX = touch.clientX;
-          tapY = touch.clientY;
+          tapY = lastTouchY = touch.clientY;
+          lastTouchT = performance.now();
           tapMoved = false;
+          scrollAccum = 0;
+          velY = 0;
         },
         { passive: true },
       );
       mount.addEventListener(
         "touchmove",
         (event) => {
+          if (event.touches.length !== 1) return;
           const touch = event.touches[0];
-          if (!touch) return;
-          if (Math.hypot(touch.clientX - tapX, touch.clientY - tapY) > 10)
+          const now = performance.now();
+          const dy = lastTouchY - touch.clientY;
+          const dt = Math.max(1, now - lastTouchT);
+          lastTouchY = touch.clientY;
+          lastTouchT = now;
+          if (
+            !tapMoved &&
+            Math.hypot(touch.clientX - tapX, touch.clientY - tapY) > 6
+          ) {
             tapMoved = true;
+          }
+          if (tapMoved) {
+            event.preventDefault();
+            velY = velY * 0.4 + (dy / dt) * 0.6;
+            scrollAccum += dy;
+            const ch = cellHeight();
+            const lines = Math.trunc(scrollAccum / ch);
+            if (lines !== 0) {
+              scrollAccum -= lines * ch;
+              term.scrollLines(lines);
+              if (active === id) syncScrollBottom(sessions.get(id));
+            }
+          }
         },
-        { passive: true },
+        { passive: false },
       );
       mount.addEventListener(
         "touchend",
         () => {
-          if (tapMoved) return;
-          lockTerminalKeyboard(term, false);
-          term.focus();
+          if (!tapMoved) {
+            lockTerminalKeyboard(term, false);
+            term.focus();
+            return;
+          }
+          if (Math.abs(velY) > 0.15) {
+            let v = velY;
+            let acc = scrollAccum;
+            let prev = performance.now();
+            const step = (now) => {
+              const dt = Math.min(32, Math.max(1, now - prev));
+              prev = now;
+              acc += v * dt;
+              const ch = cellHeight();
+              const lines = Math.trunc(acc / ch);
+              if (lines !== 0) {
+                acc -= lines * ch;
+                term.scrollLines(lines);
+                if (active === id) syncScrollBottom(sessions.get(id));
+              }
+              v *= Math.pow(0.92, dt / 16);
+              if (Math.abs(v) > 0.04) {
+                inertiaRaf = requestAnimationFrame(step);
+              } else {
+                inertiaRaf = 0;
+              }
+            };
+            inertiaRaf = requestAnimationFrame(step);
+          }
         },
         { passive: true },
       );
+      mount.addEventListener("touchcancel", () => {
+        stopInertia();
+        tapMoved = true;
+      });
       mount.addEventListener("pointerdown", (event) => {
         if (event.pointerType && event.pointerType !== "touch") {
           lockTerminalKeyboard(term, false);
@@ -1212,6 +1290,12 @@
       inputChain: Promise.resolve(),
     };
     sessions.set(id, s);
+    term.onScroll(() => {
+      if (active === id) syncScrollBottom(sessions.get(id));
+    });
+    term.onWriteParsed(() => {
+      if (active === id) syncScrollBottom(sessions.get(id));
+    });
     term.onData((text) => sendInput(sessions.get(id), text));
     term.onResize(({ cols, rows }) => {
       const current = sessions.get(id);
@@ -1463,6 +1547,38 @@
       if (s?.term && s.viewMode !== "files" && !isTouchDevice()) s.term.focus();
     });
   }
+  function syncScrollBottom(s) {
+    const btn = $("scrollBottomBtn");
+    if (!btn) return;
+    if (!s?.term || s.cfg.protocol === "webdav" || s.viewMode === "files") {
+      btn.hidden = true;
+      return;
+    }
+    const buf = s.term.buffer.active;
+    btn.hidden = buf.baseY <= 0 || buf.viewportY >= buf.baseY;
+  }
+  const scrollBottomBtn = $("scrollBottomBtn");
+  const jumpToBottom = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const s = sessions.get(active);
+    if (!s?.term) return;
+    s.el?.querySelector(".terminal-mount")?._stopInertia?.();
+    s.term.scrollToBottom();
+    syncScrollBottom(s);
+    requestAnimationFrame(() => syncScrollBottom(s));
+  };
+  scrollBottomBtn.tabIndex = -1;
+  scrollBottomBtn.addEventListener("touchstart", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+  }, { passive: false });
+  scrollBottomBtn.addEventListener("touchend", jumpToBottom, { passive: false });
+  scrollBottomBtn.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+  });
+  scrollBottomBtn.addEventListener("click", jumpToBottom);
   $("zenToggle").onclick = () =>
     setZen(!$("app").classList.contains("zen-mode"));
   $("zenExit").onclick = () => setZen(false);
