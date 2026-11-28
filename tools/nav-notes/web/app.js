@@ -4,6 +4,7 @@
   const DATA_KEY = 'bookstark_nav_notes_v1';
   const DEVICE_ENV_KEY = 'bookstark_nav_notes_device_env';
   const DEVICE_THEME_KEY = 'bookstark_nav_notes_theme';
+  const DEVICE_VIEW_PREFS_KEY = 'bookstark_nav_notes_view_prefs_v1';
   const WORKSPACE_SNAPSHOT_PATH = 'backups/nav-notes-snapshot.json';
 
   const TONES = ['blue', 'green', 'purple', 'amber', 'pink', 'cyan'];
@@ -348,13 +349,50 @@
     return defaultData();
   }
 
+  function loadViewPrefs() {
+    const fallback = { showNav: true, showNotes: true, defaultView: 'last', lastView: 'nav' };
+    try {
+      const raw = localStorage.getItem(DEVICE_VIEW_PREFS_KEY);
+      if (raw) {
+        const p = JSON.parse(raw);
+        if (p && typeof p === 'object') {
+          const showNav = p.showNav !== false;
+          const showNotes = p.showNotes !== false;
+          const defaultView = ['last', 'nav', 'notes', 'all'].includes(p.defaultView) ? p.defaultView : 'last';
+          const lastView = ['nav', 'notes', 'all'].includes(p.lastView) ? p.lastView : 'nav';
+          return {
+            showNav: showNav || !showNotes ? showNav : true,
+            showNotes: showNotes || !showNav ? showNotes : true,
+            defaultView,
+            lastView
+          };
+        }
+      }
+    } catch (_) {}
+    return fallback;
+  }
+
+  function saveViewPrefs() {
+    try { localStorage.setItem(DEVICE_VIEW_PREFS_KEY, JSON.stringify(viewPrefs)); } catch (_) {}
+  }
+
+  function resolveInitialView(prefs) {
+    if (prefs.showNav && !prefs.showNotes) return 'nav';
+    if (!prefs.showNav && prefs.showNotes) return 'notes';
+    return prefs.defaultView === 'last' ? prefs.lastView : prefs.defaultView;
+  }
+
   // App State
   let data = loadData();
+  let viewPrefs = loadViewPrefs();
+  let activeView = resolveInitialView(viewPrefs); // 'nav' | 'notes' | 'all'
   let activeEnv = readDevicePref(DEVICE_ENV_KEY, data.defaultEnv || (data.envs[0] && data.envs[0].id) || 'public');
   if (!data.envs.some((e) => e.id === activeEnv)) activeEnv = data.envs[0].id;
   let activeGroup = 'ALL';
   let activeTag = 'ALL'; // 'ALL' | 'PINNED' | 'ARCHIVED' | '<tagName>'
   let searchQuery = '';
+  let lastUrlMatchCount = 0;
+  let lastMemoMatchCount = 0;
   let boardCollapsed = false;
   let editingNoteId = null;
   let toastTimer = 0;
@@ -382,8 +420,8 @@
   function applyTheme(theme) {
     const dark = theme === 'dark';
     document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-    $('themeIcon').className = dark ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
-    $('themeLabel').textContent = dark ? '浅色' : '暗色';
+    $('themeLightBtn')?.classList.toggle('active', !dark);
+    $('themeDarkBtn')?.classList.toggle('active', dark);
     writeDevicePref(DEVICE_THEME_KEY, dark ? 'dark' : 'light');
   }
 
@@ -487,6 +525,7 @@
       const allUrls = [link.defaultUrl || '', ...Object.values(link.envUrls || {})].join(' ').toLowerCase();
       return (link.title || '').toLowerCase().includes(q) || g.toLowerCase().includes(q) || allUrls.includes(q);
     });
+    lastUrlMatchCount = list.length;
 
     const grid = $('urlGrid');
     if (!list.length) {
@@ -641,6 +680,7 @@
         return (note.content || '').toLowerCase().includes(q);
       })
       .sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned) || (b.updatedAt || 0) - (a.updatedAt || 0));
+    lastMemoMatchCount = filtered.length;
 
     const filterBar = $('activeFilterBar');
     if (activeTag !== 'ALL' || q) {
@@ -698,12 +738,83 @@
     }
   }
 
+  function applyViewLayout() {
+    const bothEnabled = viewPrefs.showNav && viewPrefs.showNotes;
+    if (!bothEnabled) {
+      activeView = viewPrefs.showNav ? 'nav' : 'notes';
+    } else if (!['nav', 'notes', 'all'].includes(activeView)) {
+      activeView = 'nav';
+    }
+    const showNavPanel = viewPrefs.showNav && (activeView === 'nav' || activeView === 'all');
+    const showNotesPanel = viewPrefs.showNotes && (activeView === 'notes' || activeView === 'all');
+
+    $('urlBoardSection').hidden = !showNavPanel;
+    $('notesSection').hidden = !showNotesPanel;
+    $('viewSeg').hidden = !bothEnabled;
+
+    const singleNav = showNavPanel && !showNotesPanel;
+    $('appRoot').classList.toggle('single-nav-mode', singleNav);
+    if (singleNav) {
+      $('urlBoardBody').hidden = false;
+      $('toggleBoardBtn').setAttribute('aria-expanded', 'true');
+    } else {
+      $('urlBoardBody').hidden = boardCollapsed;
+      $('toggleBoardBtn').setAttribute('aria-expanded', String(!boardCollapsed));
+    }
+
+    $('viewSeg').querySelectorAll('[data-view-tab]').forEach((btn) => {
+      const on = btn.dataset.viewTab === activeView;
+      btn.classList.toggle('active', on);
+      btn.setAttribute('aria-selected', String(on));
+    });
+
+    $('modNavCheck').checked = viewPrefs.showNav;
+    $('modNotesCheck').checked = viewPrefs.showNotes;
+    $('defaultViewPills').querySelectorAll('[data-default-view]').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.defaultView === viewPrefs.defaultView);
+    });
+
+    updateSearchBadges();
+  }
+
+  function updateSearchBadges() {
+    const q = searchQuery.trim();
+    const navBadge = $('navSearchBadge');
+    const notesBadge = $('notesSearchBadge');
+    if (!navBadge || !notesBadge) return;
+    if (q && activeView === 'notes' && viewPrefs.showNav && lastUrlMatchCount > 0) {
+      navBadge.textContent = String(lastUrlMatchCount);
+      navBadge.hidden = false;
+    } else {
+      navBadge.hidden = true;
+    }
+    if (q && activeView === 'nav' && viewPrefs.showNotes && lastMemoMatchCount > 0) {
+      notesBadge.textContent = String(lastMemoMatchCount);
+      notesBadge.hidden = false;
+    } else {
+      notesBadge.hidden = true;
+    }
+  }
+
+  function setActiveView(view) {
+    if (!['nav', 'notes', 'all'].includes(view)) return;
+    if (view === 'nav' && !viewPrefs.showNav) return;
+    if (view === 'notes' && !viewPrefs.showNotes) return;
+    if (view === 'all' && !(viewPrefs.showNav && viewPrefs.showNotes)) return;
+    activeView = view;
+    viewPrefs.lastView = view;
+    saveViewPrefs();
+    closeEnvPopover();
+    applyViewLayout();
+  }
+
   function renderAll() {
     renderEnvBar();
     renderGroupTabs();
     renderUrlGrid();
     renderTagRail();
     renderMemoGrid();
+    applyViewLayout();
   }
 
   // Link Dialog
@@ -865,11 +976,10 @@
 
   // Event Wiring
   function initEvents() {
-    // Theme
-    $('themeToggleBtn').onclick = () => {
-      const cur = document.documentElement.getAttribute('data-theme');
-      applyTheme(cur === 'dark' ? 'light' : 'dark');
-    };
+    function closeSettingsMenu() {
+      $('settingsMenu').hidden = true;
+      $('settingsMenuBtn').setAttribute('aria-expanded', 'false');
+    }
 
     // Search
     const searchInput = $('globalSearch');
@@ -877,6 +987,55 @@
       searchQuery = searchInput.value;
       renderUrlGrid();
       renderMemoGrid();
+      updateSearchBadges();
+    };
+
+    // View Segmented Tabs
+    $('viewSeg').onclick = (e) => {
+      const btn = e.target.closest('[data-view-tab]');
+      if (!btn) return;
+      setActiveView(btn.dataset.viewTab);
+    };
+
+    // Unified Settings Dropdown (View + Theme + Data)
+    $('settingsMenuBtn').onclick = (e) => {
+      e.stopPropagation();
+      const menu = $('settingsMenu');
+      const open = menu.hidden;
+      menu.hidden = !open;
+      $('settingsMenuBtn').setAttribute('aria-expanded', String(open));
+    };
+    $('settingsMenu').onclick = (e) => e.stopPropagation();
+    const onModuleToggle = (key, inputEl) => {
+      const nextNav = key === 'nav' ? inputEl.checked : viewPrefs.showNav;
+      const nextNotes = key === 'notes' ? inputEl.checked : viewPrefs.showNotes;
+      if (!nextNav && !nextNotes) {
+        inputEl.checked = true;
+        showToast('至少保留 1 个显示模块');
+        return;
+      }
+      viewPrefs.showNav = nextNav;
+      viewPrefs.showNotes = nextNotes;
+      if (nextNav && nextNotes && viewPrefs.lastView) {
+        activeView = viewPrefs.lastView;
+      }
+      saveViewPrefs();
+      applyViewLayout();
+    };
+    $('modNavCheck').onchange = () => onModuleToggle('nav', $('modNavCheck'));
+    $('modNotesCheck').onchange = () => onModuleToggle('notes', $('modNotesCheck'));
+    $('defaultViewPills').onclick = (e) => {
+      const btn = e.target.closest('[data-default-view]');
+      if (!btn) return;
+      viewPrefs.defaultView = btn.dataset.defaultView;
+      saveViewPrefs();
+      applyViewLayout();
+      showToast('已更新启动默认页');
+    };
+    $('themePills').onclick = (e) => {
+      const btn = e.target.closest('[data-theme-choice]');
+      if (!btn) return;
+      applyTheme(btn.dataset.themeChoice);
     };
 
     document.addEventListener('keydown', (e) => {
@@ -884,34 +1043,32 @@
         e.preventDefault();
         searchInput.focus();
         searchInput.select();
+      } else if (e.altKey && !e.ctrlKey && !e.metaKey && ['1', '2', '3'].includes(e.key)) {
+        const map = { '1': 'nav', '2': 'notes', '3': 'all' };
+        if (viewPrefs.showNav && viewPrefs.showNotes) {
+          e.preventDefault();
+          setActiveView(map[e.key]);
+        }
       } else if (e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement?.tagName || '')) {
         e.preventDefault();
         searchInput.focus();
       } else if (e.key === 'Escape') {
         closeEnvPopover();
-        $('backupMenu').hidden = true;
+        closeSettingsMenu();
         if (editingNoteId) { editingNoteId = null; renderMemoGrid(); }
         else if (document.activeElement === searchInput && searchInput.value) {
           searchInput.value = '';
           searchQuery = '';
           renderUrlGrid();
           renderMemoGrid();
+          updateSearchBadges();
         }
       }
     });
 
-    // Backup Dropdown
-    $('backupMenuBtn').onclick = (e) => {
-      e.stopPropagation();
-      const menu = $('backupMenu');
-      const open = menu.hidden;
-      menu.hidden = !open;
-      $('backupMenuBtn').setAttribute('aria-expanded', String(open));
-    };
     document.addEventListener('click', (e) => {
-      if (!e.target.closest('#backupDropdown')) {
-        $('backupMenu').hidden = true;
-        $('backupMenuBtn').setAttribute('aria-expanded', 'false');
+      if (!e.target.closest('#settingsDropdown')) {
+        closeSettingsMenu();
       }
       if (!e.target.closest('#envPopover') && !e.target.closest('[data-open-env-pop]')) {
         closeEnvPopover();
@@ -919,7 +1076,7 @@
     });
 
     $('exportJsonBtn').onclick = () => {
-      $('backupMenu').hidden = true;
+      closeSettingsMenu();
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
@@ -929,7 +1086,7 @@
       showToast('已导出 JSON 备份');
     };
     $('importJsonBtn').onclick = () => {
-      $('backupMenu').hidden = true;
+      closeSettingsMenu();
       $('importFileInput').click();
     };
     $('importFileInput').onchange = (e) => {
@@ -953,10 +1110,10 @@
       };
       reader.readAsText(file);
     };
-    $('saveSnapshotBtn').onclick = () => { $('backupMenu').hidden = true; saveWorkspaceSnapshot(); };
-    $('loadSnapshotBtn').onclick = () => { $('backupMenu').hidden = true; loadWorkspaceSnapshot(); };
+    $('saveSnapshotBtn').onclick = () => { closeSettingsMenu(); saveWorkspaceSnapshot(); };
+    $('loadSnapshotBtn').onclick = () => { closeSettingsMenu(); loadWorkspaceSnapshot(); };
     $('clearSamplesBtn').onclick = () => {
-      $('backupMenu').hidden = true;
+      closeSettingsMenu();
       if (!confirm('确定清空全部网址和随手记吗？建议先导出 JSON 备份。')) return;
       data.links = [];
       data.notes = [];
@@ -967,8 +1124,9 @@
       showToast('已清空全部数据');
     };
 
-    // Board Collapse
+    // Board Collapse (only active when both modules are shown together)
     $('toggleBoardBtn').onclick = () => {
+      if (activeView !== 'all') return;
       boardCollapsed = !boardCollapsed;
       $('toggleBoardBtn').setAttribute('aria-expanded', String(!boardCollapsed));
       $('urlBoardBody').hidden = boardCollapsed;

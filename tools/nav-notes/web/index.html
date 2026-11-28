@@ -18,6 +18,23 @@
         </div>
       </div>
 
+      <div class="view-seg" id="viewSeg" role="tablist" aria-label="视图切换">
+        <button type="button" class="view-seg-btn active" role="tab" aria-selected="true" data-view-tab="nav">
+          <i class="fa-solid fa-compass" aria-hidden="true"></i>
+          <span>导航</span>
+          <span class="view-seg-badge" id="navSearchBadge" hidden>0</span>
+        </button>
+        <button type="button" class="view-seg-btn" role="tab" aria-selected="false" data-view-tab="notes">
+          <i class="fa-solid fa-note-sticky" aria-hidden="true"></i>
+          <span>随记</span>
+          <span class="view-seg-badge" id="notesSearchBadge" hidden>0</span>
+        </button>
+        <button type="button" class="view-seg-btn" role="tab" aria-selected="false" data-view-tab="all">
+          <i class="fa-solid fa-table-columns" aria-hidden="true"></i>
+          <span>全部</span>
+        </button>
+      </div>
+
       <label class="search-wrap" for="globalSearch">
         <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
         <input id="globalSearch" type="search" autocomplete="off" placeholder="搜索网址、#标签、路径、服务器或备忘…">
@@ -25,17 +42,39 @@
       </label>
 
       <div class="top-actions">
-        <button type="button" class="btn btn-ghost" id="themeToggleBtn" title="切换浅色 / 暗色主题" aria-label="切换主题">
-          <i class="fa-solid fa-moon" id="themeIcon" aria-hidden="true"></i>
-          <span id="themeLabel">暗色</span>
-        </button>
-        <div class="dropdown" id="backupDropdown">
-          <button type="button" class="btn btn-ghost" id="backupMenuBtn" aria-haspopup="menu" aria-expanded="false">
-            <i class="fa-solid fa-database" aria-hidden="true"></i>
-            <span>数据</span>
-            <i class="fa-solid fa-chevron-down fa-xs" aria-hidden="true"></i>
+        <div class="dropdown" id="settingsDropdown">
+          <button type="button" class="btn btn-ghost" id="settingsMenuBtn" aria-haspopup="menu" aria-expanded="false" title="设置（视图、主题与数据）" aria-label="设置">
+            <i class="fa-solid fa-gear" aria-hidden="true"></i>
+            <span class="btn-label">设置</span>
+            <i class="fa-solid fa-chevron-down fa-xs btn-label" aria-hidden="true"></i>
           </button>
-          <div class="dropdown-menu" id="backupMenu" role="menu" hidden>
+          <div class="dropdown-menu view-settings-menu" id="settingsMenu" role="menu" hidden>
+            <div class="menu-sec-title">启用模块</div>
+            <label class="menu-check-row" for="modNavCheck">
+              <span><i class="fa-solid fa-compass menu-ico-nav" aria-hidden="true"></i>网址导航</span>
+              <input type="checkbox" id="modNavCheck" checked>
+            </label>
+            <label class="menu-check-row" for="modNotesCheck">
+              <span><i class="fa-solid fa-note-sticky menu-ico-notes" aria-hidden="true"></i>标签随记</span>
+              <input type="checkbox" id="modNotesCheck" checked>
+            </label>
+            <p class="menu-hint">仅勾选 1 项时自动隐藏顶部 Tab，变身纯净单模块工具。</p>
+            <hr>
+            <div class="menu-sec-title">启动默认页</div>
+            <div class="default-view-pills" id="defaultViewPills" role="radiogroup" aria-label="启动默认页">
+              <button type="button" class="dv-pill active" data-default-view="last">记住上次</button>
+              <button type="button" class="dv-pill" data-default-view="nav">导航</button>
+              <button type="button" class="dv-pill" data-default-view="notes">随记</button>
+              <button type="button" class="dv-pill" data-default-view="all">全部</button>
+            </div>
+            <hr>
+            <div class="menu-sec-title">外观主题</div>
+            <div class="theme-pills" id="themePills" role="radiogroup" aria-label="外观主题">
+              <button type="button" class="dv-pill" id="themeLightBtn" data-theme-choice="light"><i class="fa-solid fa-sun" aria-hidden="true"></i> 浅色</button>
+              <button type="button" class="dv-pill" id="themeDarkBtn" data-theme-choice="dark"><i class="fa-solid fa-moon" aria-hidden="true"></i> 暗色</button>
+            </div>
+            <hr>
+            <div class="menu-sec-title">数据与备份</div>
             <button type="button" role="menuitem" id="exportJsonBtn"><i class="fa-solid fa-download"></i> 导出 JSON 备份</button>
             <button type="button" role="menuitem" id="importJsonBtn"><i class="fa-solid fa-upload"></i> 导入 JSON 恢复</button>
             <button type="button" role="menuitem" id="saveSnapshotBtn"><i class="fa-solid fa-cloud-arrow-up"></i> 保存工作区快照</button>
@@ -73,7 +112,7 @@
     </section>
 
     <!-- Part 2: Tag + Content Scratchpad -->
-    <section class="notes-layout" aria-label="标签随手记">
+    <section class="notes-layout" id="notesSection" aria-label="标签随手记">
       <!-- Left Tag Rail -->
       <aside class="tag-rail" id="tagRail" aria-label="标签筛选"></aside>
 

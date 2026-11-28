@@ -5,7 +5,7 @@ const assert = require('assert');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { chromium } = require('playwright');
+const { chromium } = require(process.env.PLAYWRIGHT_PATH || '/root/.npm/_npx/f15a2c6009a805b8/node_modules/playwright');
 
 const PKG_DIR = path.resolve(__dirname, '../../../../artifacts/nav-notes/package');
 const SHOT_DIR = path.resolve(__dirname, '../../../../artifacts/nav-notes');
@@ -47,7 +47,10 @@ function startStaticServer(root) {
 
 (async () => {
   const { server, url } = await startStaticServer(PKG_DIR);
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({
+    executablePath: process.env.CHROMIUM_PATH || '/root/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome',
+    args: ['--no-sandbox'],
+  });
   const errors = [];
   try {
     const context = await browser.newContext({ viewport: { width: 1360, height: 900 }, deviceScaleFactor: 2 });
@@ -60,17 +63,34 @@ function startStaticServer(root) {
     });
 
     await page.goto(url, { waitUntil: 'networkidle' });
-    // Force light theme first for predictable baseline screenshot
+    // Force light theme first via unified settings dropdown
     if ((await page.locator('html').getAttribute('data-theme')) === 'dark') {
-      await page.click('#themeToggleBtn');
+      await page.click('#settingsMenuBtn');
+      await page.click('#themeLightBtn');
+      await page.keyboard.press('Escape');
     }
 
-    // 1. Initial sample data & brand rendered
+    // 1. Initial sample data & default single-tab view (导航 only, 随记 hidden!)
     assert.strictEqual((await page.locator('h1').textContent()).trim(), '极简导航 & 随记', 'brand renamed to 极简导航 & 随记');
     assert.strictEqual(await page.locator('.brand-sub').count(), 0, 'no subtitle in header');
+    assert.strictEqual(await page.locator('#urlBoardSection').isVisible(), true, 'URL board visible by default');
+    assert.strictEqual(await page.locator('#notesSection').isVisible(), false, 'Notes hidden on default Nav tab');
+    assert.strictEqual(await page.locator('#viewSeg').isVisible(), true, 'View segmented tab switcher visible');
     assert.strictEqual(await page.locator('.url-tile').count(), 5, '5 default URLs');
-    assert.strictEqual(await page.locator('.memo-card').count(), 4, '4 default memos');
     assert.strictEqual(await page.locator('.url-tile .u-ico i.fa-solid').count(), 5, 'every URL has deterministic FA fallback icon');
+
+    // Cross-module search badge test: searching ComfyUI on Nav tab lights up badge on 随记 tab!
+    await page.fill('#globalSearch', 'ComfyUI');
+    assert.strictEqual(await page.locator('.url-tile').count(), 1);
+    assert.strictEqual(await page.locator('#notesSearchBadge').isVisible(), true, 'notes search badge visible');
+    assert.strictEqual((await page.locator('#notesSearchBadge').textContent()).trim(), '1');
+    await page.click('[data-view-tab="notes"]');
+    assert.strictEqual(await page.locator('#urlBoardSection').isVisible(), false, 'URL board hidden on Notes tab');
+    assert.strictEqual(await page.locator('#notesSection').isVisible(), true, 'Notes visible on Notes tab');
+    assert.strictEqual(await page.locator('.memo-card').count(), 1);
+    assert.strictEqual(await page.locator('#navSearchBadge').isVisible(), true, 'nav search badge visible');
+    await page.fill('#globalSearch', '');
+    await page.click('[data-view-tab="nav"]');
 
     // 2. Switch environment: 公网 -> 内网
     const bsLink = page.locator('.url-tile', { hasText: 'BookStark 云市场' }).locator('a.url-tile-link');
@@ -138,7 +158,9 @@ function startStaticServer(root) {
     await page.click('#linkForm button[type="submit"]');
     await nasTile.locator('.u-ico.has-favicon img.u-favicon').waitFor({ state: 'visible', timeout: 5000 });
 
-    // 6. Add tag + content scratchpad note with auto-detected path
+    // 6. Switch to Notes tab and add tag + content scratchpad note with auto-detected path
+    await page.click('[data-view-tab="notes"]');
+    assert.strictEqual(await page.locator('.memo-card').count(), 4, '4 default memos');
     await page.fill('#noteInput', '#模型 #新卡 DeepSeek-R1 量化权重\n/data/models/deepseek-r1-32b.gguf');
     await page.click('#submitNoteBtn');
     assert.strictEqual(await page.locator('.memo-card').count(), 5, '5 memos after add');
@@ -157,32 +179,65 @@ function startStaticServer(root) {
     await newCard.locator('[data-save-edit]').click();
     assert.ok((await newCard.textContent()).includes('已校验'));
 
-    // 9. Global search filters both URLs and memos
+    // 9. Switch to All view & verify global search filters both
+    await page.click('[data-view-tab="all"]');
+    assert.strictEqual(await page.locator('#urlBoardSection').isVisible(), true);
+    assert.strictEqual(await page.locator('#notesSection').isVisible(), true);
     await page.fill('#globalSearch', 'ComfyUI');
     assert.strictEqual(await page.locator('.url-tile').count(), 1);
     assert.strictEqual(await page.locator('.memo-card').count(), 1);
     await page.fill('#globalSearch', '');
 
-    // Capture live light screenshot
+    // 9b. Unified Settings dropdown: module checkboxes hide #viewSeg when only 1 module enabled
+    await page.click('#settingsMenuBtn');
+    await page.locator('#settingsMenu').waitFor({ state: 'visible' });
+    await page.uncheck('#modNotesCheck');
+    assert.strictEqual(await page.locator('#viewSeg').isVisible(), false, 'Tab switcher auto-hides with single module');
+    assert.strictEqual(await page.locator('#notesSection').isVisible(), false);
+    assert.strictEqual(await page.locator('#urlBoardSection').isVisible(), true);
+    // Attempting to uncheck the last remaining module keeps it checked
+    await page.click('#modNavCheck');
+    assert.strictEqual(await page.locator('#modNavCheck').isChecked(), true, 'at least 1 module stays enabled');
+    // Re-enable notes module -> tab switcher returns
+    await page.check('#modNotesCheck');
+    assert.strictEqual(await page.locator('#viewSeg').isVisible(), true, 'Tab switcher restored');
+    await page.click('[data-default-view="nav"]');
+
+    // Capture live light screenshot (Nav tab with settings dropdown visible)
+    await page.click('[data-view-tab="nav"]');
+    await page.click('#settingsMenuBtn');
     await page.screenshot({ path: path.join(SHOT_DIR, 'live-e2e-light.png'), fullPage: true });
 
-    // 10. Dark theme + reload persistence check
-    await page.click('#themeToggleBtn');
+    // 10. Dark theme via unified settings dropdown + reload persistence check
+    await page.click('#themeDarkBtn');
+    await page.keyboard.press('Escape');
     assert.strictEqual(await page.locator('html').getAttribute('data-theme'), 'dark');
     await page.screenshot({ path: path.join(SHOT_DIR, 'live-e2e-dark.png'), fullPage: true });
 
     await page.reload({ waitUntil: 'networkidle' });
+    assert.strictEqual(await page.locator('#urlBoardSection').isVisible(), true, 'defaultView=nav respected on reload');
+    assert.strictEqual(await page.locator('#notesSection').isVisible(), false, 'notes hidden on reload');
     assert.strictEqual(await page.locator('.url-tile').count(), 6, 'links persisted');
+    await page.click('[data-view-tab="notes"]');
     assert.strictEqual(await page.locator('.memo-card').count(), 5, 'notes persisted');
 
-    // 11. Mobile 390px overflow check
+    // 11. Mobile 390px single-row Brand+Gear topbar & zero overflow check
+    await page.click('[data-view-tab="nav"]');
     await page.setViewportSize({ width: 390, height: 844 });
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
-    assert.strictEqual(overflow, false, 'no horizontal overflow at 390px');
+    const mob = await page.evaluate(() => {
+      const brand = document.querySelector('.brand').getBoundingClientRect();
+      const gear = document.querySelector('#settingsMenuBtn').getBoundingClientRect();
+      return {
+        overflow: document.documentElement.scrollWidth > window.innerWidth + 1,
+        sameRow: Math.abs(brand.top - gear.top) < 10,
+      };
+    });
+    assert.strictEqual(mob.overflow, false, 'no horizontal overflow at 390px');
+    assert.strictEqual(mob.sameRow, true, 'Brand and Settings button share single top row on mobile');
     await page.screenshot({ path: path.join(SHOT_DIR, 'live-e2e-mobile.png'), fullPage: true });
 
     assert.deepStrictEqual(errors, [], 'no console or page errors: ' + errors.join('; '));
-    console.log('PASS: NavNotes E2E (multi-env switch, custom env, fallback, popover, tag notes, auto path copy, inline edit, search, dark mode, persistence, 390px mobile)');
+    console.log('PASS: NavNotes v1.2.0 E2E (3-way tab, cross-search badge, unified settings dropdown, module toggles, default view, dark mode, 390px compact topbar)');
   } finally {
     await browser.close();
     server.close();
