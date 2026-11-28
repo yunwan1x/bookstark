@@ -1515,10 +1515,14 @@
   function fitActive() {
     const s = sessions.get(active);
     if (s && !editorMode && s.term && s.viewMode !== "files") {
+      const buf = s.term.buffer?.active;
+      const wasAtBottom = !buf || buf.viewportY >= buf.baseY - 1;
       try {
         s.fit.fit();
       } catch (_) {}
+      if (wasAtBottom) s.term.scrollToBottom();
       updateSession();
+      syncScrollBottom(s);
     }
   }
   new ResizeObserver(fitActive).observe($("terminalStack"));

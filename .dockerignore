@@ -41,3 +41,5 @@ dist/android
 
 # Optional local developer proxy configuration.
 tools/dev-proxy/mihomo/config.yaml
+tools/**/target
+tools/**/dist

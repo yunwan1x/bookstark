@@ -8,6 +8,7 @@ html:has(.tool-runtime-body){height:100%;overflow:hidden}
 .tool-runtime-more-refresh{display:none}
 .tool-runtime-more .bs-action-dd-menu{min-width:220px;max-width:calc(100vw - 32px)}
 .tool-runtime-main{display:flex;flex:1;flex-direction:column;min-height:0;min-width:0;position:relative;overflow:hidden;padding-bottom:env(safe-area-inset-bottom,0px)}
+.tool-runtime-body.tool-runtime-kb-open .tool-runtime-main{padding-bottom:0}
 .tool-runtime-title .market-icon,.tool-runtime-icon-skeleton{width:24px;height:24px;font-size:14px;border-radius:var(--radius-md)}
 .tool-runtime-icon-skeleton{display:block}
 .tool-runtime-name-skeleton{display:block;width:112px;max-width:100%;height:16px}
