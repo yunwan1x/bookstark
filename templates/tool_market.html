@@ -9,10 +9,17 @@
  <label class="sr-only" for="marketState">{{call .T "market.install_status"}}</label><select id="marketState" class="dialog-input" aria-label="{{call .T "market.install_status"}}"></select>
  <div class="market-sort-actions">
   <label class="sr-only" for="marketSort">{{call .T "market.sort"}}</label><select id="marketSort" class="dialog-input" aria-label="{{call .T "market.sort"}}"></select>
+  <div id="marketFilterControl" class="bs-action-dropdown market-filter-dropdown">
+   <button type="button" id="marketFilterToggle" class="bs-action-dd-btn row-action market-toolbar-icon-btn" data-bs-action-dropdown-toggle aria-haspopup="dialog" aria-expanded="false" aria-controls="marketFilterPanel" aria-label="{{call .T "market.filter_sort"}}" title="{{call .T "market.filter_sort"}}"><i class="fa-solid fa-sliders" aria-hidden="true"></i><span class="market-filter-dot" aria-hidden="true" hidden></span></button>
+   <div id="marketFilterPanel" class="bs-action-dd-menu market-filter-panel" role="dialog" aria-label="{{call .T "market.filter_sort"}}"></div>
+  </div>
   {{if or .CanConfigureTools .CanPublishTools}}
-  <div id="marketActions" class="market-action-group" role="group" aria-label="{{call .T "tools.actions"}}">
-   {{if .CanConfigureTools}}<button type="button" id="marketSettings" class="row-action" aria-label="{{call .T "market.settings"}}" title="{{call .T "market.settings"}}"><i class="fa-solid fa-gear" aria-hidden="true"></i></button>{{end}}
-   {{if .CanPublishTools}}<a href="/market/publish" id="marketPublish" class="row-action" aria-label="{{call .T "market.publish_tool"}}" title="{{call .T "market.publish_tool"}}"><i class="fa-solid fa-plus" aria-hidden="true"></i></a>{{end}}
+  <div id="marketActions" class="market-action-group bs-action-dropdown" role="group" aria-label="{{call .T "tools.actions"}}">
+   <button type="button" class="bs-action-dd-btn row-action market-toolbar-icon-btn market-actions-toggle" data-bs-action-dropdown-toggle aria-haspopup="menu" aria-expanded="false" aria-label="{{call .T "tools.actions"}}" title="{{call .T "tools.actions"}}"><i class="fa-solid fa-ellipsis" aria-hidden="true"></i></button>
+   <div class="market-action-items bs-action-dd-menu" role="menu">
+    {{if .CanConfigureTools}}<button type="button" id="marketSettings" class="row-action" role="menuitem" aria-label="{{call .T "market.settings"}}" title="{{call .T "market.settings"}}"><i class="fa-solid fa-gear" aria-hidden="true"></i><span class="market-action-label">{{call .T "market.tool_settings"}}</span></button>{{end}}
+    {{if .CanPublishTools}}<a href="/market/publish" id="marketPublish" class="row-action" role="menuitem" aria-label="{{call .T "market.publish_tool"}}" title="{{call .T "market.publish_tool"}}"><i class="fa-solid fa-plus" aria-hidden="true"></i><span class="market-action-label">{{call .T "market.publish_tool"}}</span></a>{{end}}
+   </div>
   </div>
   {{end}}
  </div>

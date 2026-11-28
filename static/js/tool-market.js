@@ -59,6 +59,8 @@ window.BookStarkToolMarket={mount(main){
  main.addEventListener('click',event=>{if(event.target.closest('a[data-tool-open]'))U.rememberMarketPosition();},{signal:lifecycle.signal});
  main.addEventListener('click',async event=>{const b=event.target.closest('[data-market-action]');if(!b||busy)return;const id=Number(b.dataset.id);BSActionDropdown.close(b.closest('.bs-action-dropdown'));if(b.dataset.marketAction==='details'){selected=id;render();return;}busy=true;try{if(['install','update'].includes(b.dataset.marketAction))await install(id);else if(b.dataset.marketAction==='uninstall'){const row=installed.find(x=>x.id===id);const d=modal(t('卸载工具','Uninstall tool'),'<div class="market-form"><p>'+e(row.title)+'</p><p class="market-muted">'+t('来源服务端：','Source server: ')+e(rowServer(row).origin)+'</p>'+U.check('keep',t('保留使用数据，重新安装时恢复','Keep data and restore it on reinstall'),true)+'<p role="status" data-status></p><div class="market-actions">'+button(t('取消','Cancel'))+button(t('确认卸载','Uninstall'),true)+'</div></div>');const buttons=d.querySelectorAll('.market-actions button');buttons[0].onclick=()=>d.close();buttons[1].onclick=async()=>{buttons[1].disabled=true;try{await store.remove(id,row.revision,row.instance,d.querySelector('[name=keep]').checked);d.close();await load();}catch(err){d.querySelector('[data-status]').textContent=errorText(err);buttons[1].disabled=false;}};}}catch(err){status(errorText(err));}finally{busy=false;}},{signal:lifecycle.signal});
 
+ const stateOptions=[['all','全部状态','All statuses','全部','All'],['installed','已安装','Installed','已安装','Installed'],['updates','有更新','Updates available','有更新','Updates'],['uninstalled','未安装','Not installed','未安装','Not installed']];
+ const sortOptions=[['updated','最近更新','Recently updated','最近更新','Recently updated'],['name','名称','Name','名称','Name'],['size','下载大小：从小到大','Download size: Smallest first','下载大小','Download size']];
  const options=(id,values,value)=>{const select=$(id);select.innerHTML=values.map(([key,zh,en])=>'<option value="'+key+'">'+e(t(zh,en))+'</option>').join('');select.value=value;};
  const categoryHost=main.querySelector('#marketCategories>div');
  categoryHost.innerHTML=categories.map(([key,zh,en])=>'<a href="/market" data-category="'+key+'">'+e(t(zh,en))+'</a>').join('');
@@ -68,15 +70,34 @@ window.BookStarkToolMarket={mount(main){
   event.preventDefault();category=link.dataset.category;page=1;selected=0;render();
  },{signal:lifecycle.signal});
  updateURL();
- options('marketState',[['all','全部状态','All statuses'],['installed','已安装','Installed'],['updates','有更新','Updates available'],['uninstalled','未安装','Not installed']],state);options('marketSort',[['updated','最近更新','Recently updated'],['name','名称','Name'],['size','下载大小：从小到大','Download size: Smallest first']],sort);
- const filter=()=>{state=$('marketState').value;sort=$('marketSort').value;page=1;selected=0;render();};for(const id of ['marketState','marketSort'])$(id).onchange=filter;
+ options('marketState',stateOptions,state);options('marketSort',sortOptions,sort);
+ const filterPanel=$('marketFilterPanel'),filterToggle=$('marketFilterToggle'),filterDot=filterToggle?.querySelector('.market-filter-dot');
+ if(filterPanel){
+  filterPanel.innerHTML='<div class="market-filter-head"><span class="market-filter-title">'+e(t('筛选与排序','Filter & sort'))+'</span><button type="button" class="market-filter-reset" data-market-filter-reset hidden>'+e(t('重置','Reset'))+'</button></div><div class="market-filter-section"><div class="market-filter-label">'+e(t('安装状态','Installation status'))+'</div><div class="market-filter-pills">'+stateOptions.map(([key,,,zhShort,enShort])=>'<button type="button" class="market-filter-pill" data-market-state="'+key+'" aria-pressed="false">'+e(t(zhShort,enShort))+'</button>').join('')+'</div></div><div class="market-filter-section"><div class="market-filter-label">'+e(t('排序方式','Sort'))+'</div><div class="market-filter-pills">'+sortOptions.map(([key,,,zhShort,enShort])=>'<button type="button" class="market-filter-pill" data-market-sort="'+key+'" aria-pressed="false">'+e(t(zhShort,enShort))+'</button>').join('')+'</div></div>';
+  filterPanel.addEventListener('click',event=>{
+   const stateBtn=event.target.closest('[data-market-state]'),sortBtn=event.target.closest('[data-market-sort]'),resetBtn=event.target.closest('[data-market-filter-reset]');
+   if(stateBtn){state=stateBtn.dataset.marketState;}else if(sortBtn){sort=sortBtn.dataset.marketSort;}else if(resetBtn){state='all';sort='updated';}else return;
+   page=1;selected=0;syncFilters();render();
+  },{signal:lifecycle.signal});
+ }
+ function syncFilters(){
+  $('marketState').value=state;$('marketSort').value=sort;
+  const active=state!=='all'||sort!=='updated';
+  filterToggle?.classList.toggle('has-active-filter',active);
+  if(filterDot)filterDot.hidden=!active;
+  const resetBtn=filterPanel?.querySelector('[data-market-filter-reset]');if(resetBtn)resetBtn.hidden=!active;
+  for(const btn of main.querySelectorAll('[data-market-state]')){const on=btn.dataset.marketState===state;btn.classList.toggle('is-active',on);btn.setAttribute('aria-pressed',String(on));}
+  for(const btn of main.querySelectorAll('[data-market-sort]')){const on=btn.dataset.marketSort===sort;btn.classList.toggle('is-active',on);btn.setAttribute('aria-pressed',String(on));}
+ }
+ syncFilters();
+ const filter=()=>{state=$('marketState').value;sort=$('marketSort').value;page=1;selected=0;syncFilters();render();};for(const id of ['marketState','marketSort'])$(id).onchange=filter;
  const search=$('marketQuery');search.value=query;search.placeholder=t('搜索工具','Search tools');search.oninput=event=>{query=event.target.value;page=1;render();};$('marketSearch').onsubmit=event=>event.preventDefault();
  for(const [id,value]of [['marketGridView','grid'],['marketListView','list']])$(id).onclick=()=>{layout=value;render();};$('marketCheck').onclick=load;
  // Keep the active tool tab visible in the horizontally scrolling plaza navigation.
  const plazaNav=main.querySelector('.public-nav');
  function revealActiveTab(container){const active=container?.querySelector('[aria-current]');if(!active)return;const nav=container.getBoundingClientRect(),tab=active.getBoundingClientRect();if(tab.right>nav.right)container.scrollLeft+=tab.right-nav.right;else if(tab.left<nav.left)container.scrollLeft-=nav.left-tab.left;}
- const revealFilters=()=>{revealActiveTab(plazaNav);revealActiveTab(categoryHost);};revealFilters();window.addEventListener('resize',revealFilters,{signal:lifecycle.signal});
- $('marketSettings')?.addEventListener('click',()=>U.settings({signal:lifecycle.signal}).catch(err=>status(errorText(err))),{signal:lifecycle.signal});const publish=$('marketPublish');if(publish){publish.href=U.publicationChoiceURL();publish.addEventListener('click',()=>{publish.href=U.publicationChoiceURL();U.rememberMarketPosition();},{signal:lifecycle.signal});}
+ const revealFilters=()=>{revealActiveTab(plazaNav);revealActiveTab(categoryHost);if(window.BSActionDropdown){BSActionDropdown.close($('marketFilterControl'));BSActionDropdown.close($('marketActions'));}};revealFilters();window.addEventListener('resize',revealFilters,{signal:lifecycle.signal});
+ $('marketSettings')?.addEventListener('click',()=>{window.BSActionDropdown?.close($('marketActions'));U.settings({signal:lifecycle.signal}).catch(err=>status(errorText(err)));},{signal:lifecycle.signal});const publish=$('marketPublish');if(publish){publish.href=U.publicationChoiceURL();publish.addEventListener('click',()=>{window.BSActionDropdown?.close($('marketActions'));publish.href=U.publicationChoiceURL();U.rememberMarketPosition();},{signal:lifecycle.signal});}
  window.addEventListener('tool-market-source-changed',load,{signal:lifecycle.signal});window.addEventListener('tool-market-changed',load,{signal:lifecycle.signal});load();
  return()=>{alive=false;loadVersion++;lifecycle.abort();for(const d of dialogs)d.close();};
 }};

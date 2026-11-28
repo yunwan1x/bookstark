@@ -6,18 +6,31 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
  await context.addCookies([{name:'lang',value:'zh',url:origin}]);const page=await context.newPage(),errors=[];page.on('pageerror',err=>errors.push(err.message));
  const api=async(path,method='GET',data)=>{const csrf=(await(await context.request.get(origin+'/api/csrf-token')).json()).csrf_token;const response=await context.request.fetch(origin+path,{method,headers:{'X-CSRF-Token':csrf},data});assert.equal(response.ok(),true,await response.text());return response.json();};
  async function until(fn){const deadline=Date.now()+20000;while(!await fn()){if(Date.now()>deadline)throw Error('Timed out waiting for persisted tool state');await new Promise(resolve=>setTimeout(resolve,80));}}
- async function manage(selector){await page.locator(selector).click();}
+ async function manage(selector){
+  const target=page.locator(selector);
+  if(!await target.isVisible()){await page.locator('#marketActions>.market-actions-toggle').click();await target.waitFor({state:'visible'});}
+  await target.click();
+ }
  async function toolbarLayout(target=page){
   const layout=await target.evaluate(()=>{
-   const ids=['marketSearch','marketState','marketSort','marketSettings','marketPublish'];
-   const rects=Object.fromEntries(ids.map(id=>[id,document.getElementById(id)]).filter(([,el])=>el).map(([id,el])=>{const r=el.getBoundingClientRect();return[id,{left:r.left,right:r.right,cy:r.top+r.height/2}];}));
-   return {width:innerWidth,rects,rows:new Set(Object.values(rects).map(r=>Math.round(r.cy))).size,overflow:document.documentElement.scrollWidth>innerWidth+1};
+   const compact=innerWidth<=1024;
+   const ids=compact?['marketSearch','marketFilterToggle']:['marketSearch','marketState','marketSort','marketSettings','marketPublish'];
+   const entries=ids.map(id=>[id,document.getElementById(id)]).filter(([,el])=>el);
+   if(compact){const toggle=document.querySelector('#marketActions>.market-actions-toggle');if(toggle)entries.push(['marketActionsToggle',toggle]);}
+   const rects=Object.fromEntries(entries.map(([id,el])=>{const r=el.getBoundingClientRect();return[id,{left:r.left,right:r.right,cy:r.top+r.height/2}];}));
+   return {width:innerWidth,compact,rects,rows:new Set(Object.values(rects).map(r=>Math.round(r.cy))).size,overflow:document.documentElement.scrollWidth>innerWidth+1};
   });
   assert.equal(layout.overflow,false,'toolbar fits '+layout.width);
-  assert.equal(layout.rows,layout.width<=1024?2:1,'toolbar occupies the approved number of rows: '+JSON.stringify(layout));
+  assert.equal(layout.rows,1,'toolbar occupies a single row at all widths: '+JSON.stringify(layout));
   const r=layout.rects;
-  assert.ok(Math.abs(r.marketState.cy-r.marketSort.cy)<2,'state and sorting share a row');
-  if(layout.width<=1024)assert.ok(r.marketSort.cy>r.marketSearch.cy,'sorting is on the second row');
+  if(layout.compact){
+   assert.ok(r.marketFilterToggle.left>=r.marketSearch.right,'filter toggle sits beside search');
+   if(r.marketActionsToggle)assert.ok(r.marketActionsToggle.left>=r.marketFilterToggle.right,'actions toggle sits beside filter toggle');
+  }else{
+   assert.ok(Math.abs(r.marketState.cy-r.marketSort.cy)<2,'state and sorting share a row');
+   const actions=[r.marketSettings,r.marketPublish].filter(Boolean);
+   if(actions.length){assert.ok(actions[0].left>=r.marketSort.right&&actions[0].left-r.marketSort.right<=12,'action group directly follows sorting');for(const a of actions)assert.ok(Math.abs(a.cy-r.marketSort.cy)<2,'actions remain on the sorting row');}
+  }
   assert.equal(await target.locator('#marketCategory,#marketPageSize').count(),0,'replaced controls are removed');
   assert.equal(await target.locator('#marketCategories a[aria-current]').count(),1,'category tags have one active filter');
   assert.equal(await target.locator('#marketCategories a').count(),7);
@@ -25,8 +38,6 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
   const shell=await target.evaluate(()=>{const c=document.querySelector('.market-content').getBoundingClientRect(),s=document.querySelector('.public-layout>.public-info').getBoundingClientRect(),n=document.getElementById('marketCategories');return {content:{left:c.left,right:c.right,bottom:c.bottom},sidebar:{left:s.left,top:s.top,width:s.width},tagsFit:n.scrollWidth<=n.clientWidth+1};});
   assert.equal(shell.tagsFit,true,'category strip scrolls within the content width');
   if(layout.width>640)assert.ok(shell.sidebar.left>=shell.content.right,'shared sidebar sits to the right');else assert.ok(shell.sidebar.top>=shell.content.bottom,'mobile sidebar follows all tool results');
-  const actions=[r.marketSettings,r.marketPublish].filter(Boolean);
-  if(actions.length){assert.ok(actions[0].left>=r.marketSort.right&&actions[0].left-r.marketSort.right<=12,'action group directly follows sorting');for(const a of actions)assert.ok(Math.abs(a.cy-r.marketSort.cy)<2,'actions remain on the sorting row');}
  }
  async function footerAtBottom(target=page){
   const box=await target.evaluate(()=>{const footer=document.querySelector('.site-footer').getBoundingClientRect(),main=document.getElementById('marketMain').getBoundingClientRect();return {bottom:footer.bottom+scrollY,top:footer.top+scrollY,mainBottom:main.bottom+scrollY,height:innerHeight,pageHeight:document.documentElement.scrollHeight,width:innerWidth,theme:document.documentElement.dataset.themeStyle};});
@@ -241,7 +252,7 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
   await page.unroute(origin+'/api/tool-market');
   const viewer=await browser.newContext();await viewer.addCookies([{name:'lang',value:'zh',url:origin}]);assert.equal((await viewer.request.post(origin+'/api/login',{data:{account:'tools-viewer',password:'viewer-password-2026'}})).status(),200);
   const viewerPage=await viewer.newPage();await viewerPage.goto(origin+'/market?server='+encodeURIComponent(origin+'/market'));await viewerPage.locator('.market-card').waitFor();assert.equal(await viewerPage.locator('#marketSettings').count(),0,'ordinary members must not see configuration');
-  assert.equal(await viewerPage.locator('#marketActions>.row-action:visible').count(),1,'publishers only see their permitted action');await viewerPage.locator('#marketPublish').waitFor();await toolbarLayout(viewerPage);
+  assert.equal(await viewerPage.locator('.market-action-items>.row-action:visible').count(),1,'publishers only see their permitted action');await viewerPage.locator('#marketPublish').waitFor();await toolbarLayout(viewerPage);
   const publicationSettings=await api('/api/tool-market/settings');await api('/api/tool-market/settings','PUT',{...publicationSettings,members_publish:false});await viewerPage.reload();await viewerPage.locator('.market-card').waitFor();assert.equal(await viewerPage.locator('#marketMore,#marketSettings,#marketPublish').count(),0,'no empty management menu after publication permissions are revoked');await api('/api/tool-market/settings','PUT',publicationSettings);
   const viewerConfig=await(await viewer.request.get(origin+'/api/tool-market/client')).json();assert.equal(viewerConfig.can_configure,false);
   const viewerCSRF=(await(await viewer.request.get(origin+'/api/csrf-token')).json()).csrf_token;for(const [path,method]of [['/api/tool-market/client','PUT'],['/api/tool-market/client/test','POST']]){const denied=await viewer.request.fetch(origin+path,{method,headers:{'X-CSRF-Token':viewerCSRF},data:{url:origin+'/market'}});assert.equal(denied.status(),403);}
@@ -271,12 +282,31 @@ const {chromium}=require('playwright');const assert=require('node:assert/strict'
    await toolbarLayout();await footerAtBottom();
    assert.equal(await page.evaluate(()=>[...document.querySelectorAll('.market-card-footer')].every(f=>{const s=f.querySelector('.market-install-state')?.getBoundingClientRect(),a=f.querySelector('.market-actions')?.getBoundingClientRect();return !!s&&!!a&&Math.abs((s.top+s.bottom)/2-(a.top+a.bottom)/2)<8&&a.right<=f.getBoundingClientRect().right+2;})),true,'card footer status and actions remain on a single row');
    assert.equal(await page.locator('#marketIntro,#marketHeading,#marketMore,#marketActionsMenu,#marketActionsSheet').count(),0,'old toolbar menus and sheets are deleted');
-   assert.equal(await page.locator('#marketActions>.row-action:visible').count(),2);
-   for(const id of ['marketSettings','marketPublish']){assert.equal((await page.locator('#'+id).textContent()).trim(),'','management actions are icons only');assert.ok(await page.locator('#'+id).getAttribute('aria-label'));assert.equal(await page.locator('#'+id).evaluate(el=>{const r=el.getBoundingClientRect();return el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));}),true,'direct action receives pointer input');}
+   if(width<=1024){
+    assert.equal(await page.locator('#marketFilterToggle:visible').count(),1);
+    assert.equal(await page.locator('#marketActions>.market-actions-toggle:visible').count(),1);
+    await page.locator('#marketFilterToggle').click();await page.locator('#marketFilterPanel').waitFor({state:'visible'});
+    assert.equal(await page.evaluate(()=>{const r=document.getElementById('marketFilterPanel').getBoundingClientRect();return r.left>=0&&r.right<=innerWidth+1;}),true,'filter panel stays inside viewport');
+    await page.locator('#marketFilterPanel [data-market-state="installed"]').click();
+    assert.equal(await page.locator('#marketFilterToggle.has-active-filter').count(),1);
+    await page.locator('#marketFilterPanel [data-market-filter-reset]').click();
+    assert.equal(await page.locator('#marketFilterToggle.has-active-filter').count(),0);
+    await page.locator('#marketFilterToggle').click();
+   }else{
+    assert.equal(await page.locator('.market-action-items>.row-action:visible').count(),2);
+    for(const id of ['marketSettings','marketPublish']){assert.equal((await page.locator('#'+id).innerText()).trim(),'','desktop management actions are icons only');assert.ok(await page.locator('#'+id).getAttribute('aria-label'));assert.equal(await page.locator('#'+id).evaluate(el=>{const r=el.getBoundingClientRect();return el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2));}),true,'direct action receives pointer input');}
+   }
    assert.equal(await page.evaluate(()=>document.querySelector('.market-results').getBoundingClientRect().top>=document.querySelector('.market-layout').getBoundingClientRect().bottom),true,'counts and pagination sit below results');
-   await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:out+`/two-row-${width}-${lang}-${theme}.png`,animations:'disabled'});
-   await page.locator('#marketSettings').focus();await page.keyboard.press('Enter');await page.locator('dialog input[name=url]').waitFor();await page.getByRole('button',{name:lang==='zh'?'取消':'Cancel',exact:true}).click();await until(async()=>await page.locator('#marketSettings').evaluate(el=>el===document.activeElement));
-   await page.locator('#marketPublish').focus();await page.keyboard.press('Enter');await page.locator('#toolPublishSelection').waitFor();assert.equal(await page.locator('dialog[open]').count(),0,'publishing remains a standalone page');await page.locator('[data-return-market]').first().click();await page.locator('.market-card').first().waitFor();await toolbarLayout();await footerAtBottom();
+   await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:out+`/single-row-${width}-${lang}-${theme}.png`,animations:'disabled'});
+   if(width<=1024){
+    await page.locator('#marketActions>.market-actions-toggle').click();await page.locator('#marketSettings').waitFor({state:'visible'});
+    await page.locator('#marketSettings').click();await page.locator('dialog input[name=url]').waitFor();await page.getByRole('button',{name:lang==='zh'?'取消':'Cancel',exact:true}).click();
+    await page.locator('#marketActions>.market-actions-toggle').click();await page.locator('#marketPublish').waitFor({state:'visible'});
+    await page.locator('#marketPublish').click();await page.locator('#toolPublishSelection').waitFor();assert.equal(await page.locator('dialog[open]').count(),0,'publishing remains a standalone page');await page.locator('[data-return-market]').first().click();await page.locator('.market-card').first().waitFor();await toolbarLayout();await footerAtBottom();
+   }else{
+    await page.locator('#marketSettings').focus();await page.keyboard.press('Enter');await page.locator('dialog input[name=url]').waitFor();await page.getByRole('button',{name:lang==='zh'?'取消':'Cancel',exact:true}).click();await until(async()=>await page.locator('#marketSettings').evaluate(el=>el===document.activeElement));
+    await page.locator('#marketPublish').focus();await page.keyboard.press('Enter');await page.locator('#toolPublishSelection').waitFor();assert.equal(await page.locator('dialog[open]').count(),0,'publishing remains a standalone page');await page.locator('[data-return-market]').first().click();await page.locator('.market-card').first().waitFor();await toolbarLayout();await footerAtBottom();
+   }
   }
   await context.addCookies([{name:'lang',value:'zh',url:origin}]);await page.setViewportSize({width:1440,height:1000});await page.evaluate(()=>localStorage.setItem('bookstark-theme','light'));
   await page.goto(origin+'/blogs/market-browser-1/edit');await page.locator('#editorBackBtn').waitFor();assert.equal(await page.locator('#publish-tool-btn,#unpublish-tool-btn').count(),0,'editor must have no tool publishing controls');

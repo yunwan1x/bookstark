@@ -81,6 +81,8 @@ var zhMessages = map[string]string{
 	"market.source_delete_blocked": "该文章已发布为工具或正在审核，请先在工具发布页下架或撤回，再删除文章。",
 	"market.publish_tool":          "发布工具",
 	"market.settings":              "设置",
+	"market.tool_settings":         "工具市场设置",
+	"market.filter_sort":           "筛选与排序",
 	"market.category":              "分类",
 	"market.install_status":        "安装状态",
 	"market.sort":                  "排序",

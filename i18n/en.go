@@ -81,6 +81,8 @@ var enMessages = map[string]string{
 	"market.source_delete_blocked": "This article is published as a tool or awaiting review. Withdraw it on the tool publishing page before deleting the article.",
 	"market.publish_tool":          "Publish tool",
 	"market.settings":              "Settings",
+	"market.tool_settings":         "Tool settings",
+	"market.filter_sort":           "Filter & sort",
 	"market.category":              "Category",
 	"market.install_status":        "Installation status",
 	"market.sort":                  "Sort",
