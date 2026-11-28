@@ -1,5 +1,6 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::rc::Rc;
 use std::sync::Arc;
 
 use base64::Engine;
@@ -64,7 +65,20 @@ pub enum SshCmd {
     Input(Vec<u8>),
     Resize(u32, u32),
     FsReq(FsReq),
+    ExecReq(ExecReq),
+    ExecStreamStart(ExecStreamReq),
+    ExecStreamStop(String),
     Close(String),
+}
+
+pub struct ExecReq {
+    pub req_id: String,
+    pub command: String,
+}
+
+pub struct ExecStreamReq {
+    pub stream_id: String,
+    pub command: String,
 }
 
 pub struct FsReq {
@@ -352,7 +366,17 @@ async fn run_ssh(
 
     emit_json(&id, "connected", serde_json::json!({}));
 
+    let handle = Arc::new(handle);
     let mut sftp: Option<Arc<SftpSession>> = None;
+    let exec_streams: Rc<RefCell<HashMap<String, oneshot::Sender<()>>>> =
+        Rc::new(RefCell::new(HashMap::new()));
+
+    let cancel_all_streams = |streams: &Rc<RefCell<HashMap<String, oneshot::Sender<()>>>>| {
+        let drained: Vec<_> = streams.borrow_mut().drain().collect();
+        for (_, tx) in drained {
+            let _ = tx.send(());
+        }
+    };
 
     loop {
         tokio::select! {
@@ -379,12 +403,14 @@ async fn run_ssh(
                         let _ = ack_rx.await;
                     }
                     Some(ChannelMsg::ExitStatus { exit_status }) => {
+                        cancel_all_streams(&exec_streams);
                         if exit_status != 0 {
                             return format!("Shell 已退出：status {}", exit_status);
                         }
                         return "会话已结束".to_string();
                     }
                     Some(ChannelMsg::Eof) | Some(ChannelMsg::Close) | None => {
+                        cancel_all_streams(&exec_streams);
                         return "会话已结束".to_string();
                     }
                     _ => {}
@@ -394,6 +420,7 @@ async fn run_ssh(
                 match cmd {
                     Some(SshCmd::Input(bytes)) => {
                         if channel.data(&bytes[..]).await.is_err() {
+                            cancel_all_streams(&exec_streams);
                             return "输入失败".to_string();
                         }
                         emit_json(&id, "input-ack", serde_json::json!({}));
@@ -421,18 +448,214 @@ async fn run_ssh(
                             });
                         }
                     }
+                    Some(SshCmd::ExecReq(req)) => {
+                        let h = handle.clone();
+                        let sid = id.clone();
+                        wasm_bindgen_futures::spawn_local(async move {
+                            execute_ssh_exec(&sid, &h, req).await;
+                        });
+                    }
+                    Some(SshCmd::ExecStreamStart(req)) => {
+                        if let Some(old_tx) = exec_streams.borrow_mut().remove(&req.stream_id) {
+                            let _ = old_tx.send(());
+                        }
+                        let (cancel_tx, cancel_rx) = oneshot::channel();
+                        exec_streams.borrow_mut().insert(req.stream_id.clone(), cancel_tx);
+                        let h = handle.clone();
+                        let sid = id.clone();
+                        let streams = exec_streams.clone();
+                        wasm_bindgen_futures::spawn_local(async move {
+                            execute_ssh_stream(&sid, &h, req, cancel_rx, streams).await;
+                        });
+                    }
+                    Some(SshCmd::ExecStreamStop(stream_id)) => {
+                        if let Some(tx) = exec_streams.borrow_mut().remove(&stream_id) {
+                            let _ = tx.send(());
+                        }
+                    }
                     Some(SshCmd::Close(reason)) => {
+                        cancel_all_streams(&exec_streams);
                         let _ = channel.eof().await;
                         let _ = handle.disconnect(russh::Disconnect::ByApplication, "", "en").await;
                         return reason;
                     }
                     None => {
+                        cancel_all_streams(&exec_streams);
                         return "连接已断开".to_string();
                     }
                 }
             }
         }
     }
+}
+
+async fn execute_ssh_exec(sid: &str, handle: &client::Handle<ClientHandler>, req: ExecReq) {
+    let mut ch = match handle.channel_open_session().await {
+        Ok(c) => c,
+        Err(err) => {
+            emit_json(
+                sid,
+                "exec-res",
+                serde_json::json!({
+                    "reqId": req.req_id,
+                    "ok": false,
+                    "code": -1,
+                    "stdout": "",
+                    "stderr": "",
+                    "error": format!("无法打开 SSH Exec 通道：{}", err),
+                }),
+            );
+            return;
+        }
+    };
+    if let Err(err) = ch.exec(true, req.command.into_bytes()).await {
+        emit_json(
+            sid,
+            "exec-res",
+            serde_json::json!({
+                "reqId": req.req_id,
+                "ok": false,
+                "code": -1,
+                "stdout": "",
+                "stderr": "",
+                "error": format!("命令执行失败：{}", err),
+            }),
+        );
+        return;
+    }
+
+    const MAX_STDOUT: usize = 8 * 1024 * 1024;
+    const MAX_STDERR: usize = 2 * 1024 * 1024;
+    let mut stdout: Vec<u8> = Vec::new();
+    let mut stderr: Vec<u8> = Vec::new();
+    let mut exit_code: i32 = 0;
+
+    while let Some(msg) = ch.wait().await {
+        match msg {
+            ChannelMsg::Data { data } => {
+                if stdout.len() < MAX_STDOUT {
+                    let take = (MAX_STDOUT - stdout.len()).min(data.len());
+                    stdout.extend_from_slice(&data[..take]);
+                }
+            }
+            ChannelMsg::ExtendedData { data, .. } => {
+                if stderr.len() < MAX_STDERR {
+                    let take = (MAX_STDERR - stderr.len()).min(data.len());
+                    stderr.extend_from_slice(&data[..take]);
+                }
+            }
+            ChannelMsg::ExitStatus { exit_status } => {
+                exit_code = exit_status as i32;
+            }
+            ChannelMsg::Close => break,
+            _ => {}
+        }
+    }
+
+    let out_str = String::from_utf8_lossy(&stdout).into_owned();
+    let err_str = String::from_utf8_lossy(&stderr).into_owned();
+    emit_json(
+        sid,
+        "exec-res",
+        serde_json::json!({
+            "reqId": req.req_id,
+            "ok": exit_code == 0,
+            "code": exit_code,
+            "stdout": out_str,
+            "stderr": err_str,
+            "error": if exit_code == 0 { "" } else { err_str.trim() },
+        }),
+    );
+}
+
+async fn execute_ssh_stream(
+    sid: &str,
+    handle: &client::Handle<ClientHandler>,
+    req: ExecStreamReq,
+    mut cancel_rx: oneshot::Receiver<()>,
+    streams: Rc<RefCell<HashMap<String, oneshot::Sender<()>>>>,
+) {
+    let stream_id = req.stream_id;
+    let mut ch = match handle.channel_open_session().await {
+        Ok(c) => c,
+        Err(err) => {
+            streams.borrow_mut().remove(&stream_id);
+            emit_json(
+                sid,
+                "exec-stream-end",
+                serde_json::json!({
+                    "streamId": stream_id,
+                    "code": -1,
+                    "error": format!("无法打开 SSH 流通道：{}", err),
+                }),
+            );
+            return;
+        }
+    };
+    if let Err(err) = ch.exec(true, req.command.into_bytes()).await {
+        streams.borrow_mut().remove(&stream_id);
+        emit_json(
+            sid,
+            "exec-stream-end",
+            serde_json::json!({
+                "streamId": stream_id,
+                "code": -1,
+                "error": format!("无法启动命令流：{}", err),
+            }),
+        );
+        return;
+    }
+
+    let mut exit_code: i32 = 0;
+    let mut cancelled = false;
+
+    loop {
+        tokio::select! {
+            _ = &mut cancel_rx => {
+                cancelled = true;
+                let _ = ch.eof().await;
+                let _ = ch.close().await;
+                break;
+            }
+            msg = ch.wait() => {
+                match msg {
+                    Some(ChannelMsg::Data { data }) => {
+                        let chunk = String::from_utf8_lossy(&data).into_owned();
+                        emit_json(
+                            sid,
+                            "exec-stream",
+                            serde_json::json!({ "streamId": stream_id, "chunk": chunk, "isErr": false }),
+                        );
+                    }
+                    Some(ChannelMsg::ExtendedData { data, .. }) => {
+                        let chunk = String::from_utf8_lossy(&data).into_owned();
+                        emit_json(
+                            sid,
+                            "exec-stream",
+                            serde_json::json!({ "streamId": stream_id, "chunk": chunk, "isErr": true }),
+                        );
+                    }
+                    Some(ChannelMsg::ExitStatus { exit_status }) => {
+                        exit_code = exit_status as i32;
+                    }
+                    Some(ChannelMsg::Close) | None => break,
+                    _ => {}
+                }
+            }
+        }
+    }
+
+    streams.borrow_mut().remove(&stream_id);
+    emit_json(
+        sid,
+        "exec-stream-end",
+        serde_json::json!({
+            "streamId": stream_id,
+            "code": exit_code,
+            "cancelled": cancelled,
+            "error": "",
+        }),
+    );
 }
 
 async fn open_sftp(handle: &client::Handle<ClientHandler>) -> Result<SftpSession, String> {

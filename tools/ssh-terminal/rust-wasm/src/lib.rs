@@ -7,8 +7,8 @@ use wasm_bindgen::prelude::*;
 
 use bridge::{notify_dial_write_ack, notify_ssh_write_ack};
 use ssh_sftp::{
-    FsReq, SshCmd, SshConfig, close_ssh, handle_ssh_output_ack, handle_ssh_trust, push_ssh_data,
-    send_ssh_cmd, start_ssh,
+    ExecReq, ExecStreamReq, FsReq, SshCmd, SshConfig, close_ssh, handle_ssh_output_ack,
+    handle_ssh_trust, push_ssh_data, send_ssh_cmd, start_ssh,
 };
 use webdav::{
     DavConfig, close_dav, handle_dial_close, handle_dial_data, handle_dial_open, start_dav,
@@ -202,6 +202,38 @@ pub fn dispatch_message(m: JsValue) {
                     emit_fs_err(&id, &req_id, "会话已断开");
                 }
             }
+        }
+        "exec-req" => {
+            let req_id = get_str(&m, "reqId");
+            let command = get_str(&m, "command");
+            if !send_ssh_cmd(&id, SshCmd::ExecReq(ExecReq { req_id: req_id.clone(), command })) {
+                emit_json(
+                    &id,
+                    "exec-res",
+                    serde_json::json!({ "reqId": req_id, "ok": false, "code": -1, "stdout": "", "stderr": "", "error": "会话已断开" }),
+                );
+            }
+        }
+        "exec-stream-start" => {
+            let stream_id = get_str(&m, "streamId");
+            let command = get_str(&m, "command");
+            if !send_ssh_cmd(
+                &id,
+                SshCmd::ExecStreamStart(ExecStreamReq {
+                    stream_id: stream_id.clone(),
+                    command,
+                }),
+            ) {
+                emit_json(
+                    &id,
+                    "exec-stream-end",
+                    serde_json::json!({ "streamId": stream_id, "code": -1, "error": "会话已断开" }),
+                );
+            }
+        }
+        "exec-stream-stop" => {
+            let stream_id = get_str(&m, "streamId");
+            let _ = send_ssh_cmd(&id, SshCmd::ExecStreamStop(stream_id));
         }
         _ => {}
     }

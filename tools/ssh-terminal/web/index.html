@@ -3,12 +3,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>SSH 终端 · SFTP · WebDAV</title>
+    <title>SSH 终端 · SFTP · Docker</title>
     <link rel="stylesheet" href="components.css" />
     <link rel="stylesheet" href="font-awesome.css" />
     <link rel="stylesheet" href="xterm.css" />
     <link rel="stylesheet" href="dialog.css" />
     <link rel="stylesheet" href="app.css" />
+    <link rel="stylesheet" href="docker.css" />
   </head>
   <body>
     <div class="app" id="app">
@@ -90,17 +91,31 @@
               <i class="fa-solid fa-folder-open" aria-hidden="true"></i>
               <span data-i18n="modeFiles">文件</span>
             </button>
+            <button type="button" class="mode-btn" data-mode="docker" id="modeDocker">
+              <i class="fa-solid fa-cubes" aria-hidden="true"></i>
+              <span>Docker</span>
+            </button>
           </div>
-          <button
-            type="button"
-            class="mobile-view-toggle"
-            id="mobileViewToggle"
-            hidden
-            aria-label="切换终端与文件"
-          >
-            <i class="fa-solid fa-folder-open" aria-hidden="true"></i>
-            <span id="mobileViewLabel" data-i18n="modeFiles">文件</span>
-          </button>
+          <div class="mobile-mode-group" id="mobileModeGroup" hidden>
+            <button
+              type="button"
+              class="mobile-view-toggle"
+              id="mobileViewToggle"
+              aria-label="切换终端与文件"
+            >
+              <i class="fa-solid fa-folder-open" aria-hidden="true"></i>
+              <span id="mobileViewLabel" data-i18n="modeFiles">文件</span>
+            </button>
+            <button
+              type="button"
+              class="mobile-view-toggle"
+              id="mobileDockerToggle"
+              aria-label="切换 Docker 面板"
+            >
+              <i class="fa-solid fa-cubes" aria-hidden="true"></i>
+              <span id="mobileDockerLabel">Docker</span>
+            </button>
+          </div>
           <div class="terminal-actions" id="terminalActions" hidden>
             <button
               class="icon ssh-only-btn"
@@ -611,6 +626,215 @@
                 <div class="transfer-list" id="transferList"></div>
               </div>
             </div>
+
+            <!-- Multiplexed SSH Docker & Compose Workbench -->
+            <div class="docker-workbench" id="dockerWorkbench" hidden>
+              <div class="dk-head">
+                <div class="dk-subtabs" role="tablist" aria-label="Docker 模块">
+                  <button type="button" class="dk-subtab" data-subtab="compose"><i class="fa-solid fa-layer-group" aria-hidden="true"></i><span>Compose 栈</span><span class="dk-cnt" id="dkCntCompose">0</span></button>
+                  <button type="button" class="dk-subtab active" data-subtab="containers"><i class="fa-solid fa-box" aria-hidden="true"></i><span>容器</span><span class="dk-cnt" id="dkCntContainers">0</span></button>
+                  <button type="button" class="dk-subtab" data-subtab="images"><i class="fa-solid fa-compact-disc" aria-hidden="true"></i><span>镜像</span><span class="dk-cnt" id="dkCntImages">—</span></button>
+                  <button type="button" class="dk-subtab" data-subtab="storage"><i class="fa-solid fa-hard-drive" aria-hidden="true"></i><span>卷 & 网络</span></button>
+                </div>
+                <div class="dk-head-right">
+                  <span class="dk-stat-chip"><i class="fa-solid fa-circle-check" style="color:var(--dk-green)" aria-hidden="true"></i>运行 <strong id="dkStatRun">0 / 0</strong></span>
+                  <span class="dk-stat-chip"><i class="fa-solid fa-database" style="color:var(--dk-cyan)" aria-hidden="true"></i>磁盘 <strong id="dkStatDisk">—</strong></span>
+                  <button type="button" class="dk-btn" id="dkAutoRefreshBtn" title="每 5 秒自动刷新"><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i><span id="dkAutoRefreshText">自动刷新</span></button>
+                  <button type="button" class="dk-btn icon-only" id="dkRefreshBtn" title="立即刷新" aria-label="刷新"><i class="fa-solid fa-rotate" aria-hidden="true"></i></button>
+                  <button type="button" class="dk-btn" id="dkPruneBtn" title="清理悬空镜像与构建缓存"><i class="fa-solid fa-broom" aria-hidden="true"></i><span>清理</span></button>
+                  <button type="button" class="dk-btn primary" id="dkNewComposeBtn"><i class="fa-solid fa-plus" aria-hidden="true"></i><span>部署 Compose</span></button>
+                </div>
+              </div>
+
+              <div class="dk-banner" id="dkBanner" hidden>
+                <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+                <span id="dkBannerText"></span>
+                <span class="spacer"></span>
+                <button type="button" class="dk-btn" id="dkBannerRetry">重试</button>
+              </div>
+
+              <div class="dk-body">
+                <!-- Containers View -->
+                <div class="dk-view" id="dkViewContainers">
+                  <section class="dk-list-pane">
+                    <div class="dk-filter-row">
+                      <div class="dk-search">
+                        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                        <input type="search" id="dkContainerSearch" placeholder="搜索容器名、镜像、端口或 Compose 栈…" />
+                      </div>
+                      <div class="dk-seg" id="dkStatusSeg">
+                        <button type="button" class="active" data-sf="all" id="dkFltAll">全部 (0)</button>
+                        <button type="button" data-sf="running" id="dkFltRun">运行中 (0)</button>
+                        <button type="button" data-sf="stopped" id="dkFltStop">已停止 (0)</button>
+                      </div>
+                      <button type="button" class="dk-btn" id="dkGroupToggle"><i class="fa-solid fa-layer-group" aria-hidden="true"></i><span>按栈分组</span></button>
+                    </div>
+
+                    <div class="dk-table-card">
+                      <div class="dk-tbl-head">
+                        <span>容器 / 镜像</span>
+                        <span>状态</span>
+                        <span>端口映射</span>
+                        <span>CPU / 内存</span>
+                        <span style="text-align:right">快捷操作</span>
+                      </div>
+                      <div class="dk-tbl-scroll" id="dkContainerList"></div>
+                    </div>
+
+                    <div class="dk-summary-strip">
+                      <div class="dk-qcard">
+                        <div><div class="ql">总 CPU 占用</div><div class="qv" id="dkSumCpu">0.0%</div></div>
+                        <span class="dk-qico" style="background:rgba(34,211,238,0.12);color:var(--dk-cyan)"><i class="fa-solid fa-microchip" aria-hidden="true"></i></span>
+                      </div>
+                      <div class="dk-qcard">
+                        <div><div class="ql">容器总内存</div><div class="qv" id="dkSumMem">0 B</div></div>
+                        <span class="dk-qico" style="background:rgba(59,130,246,0.14);color:#60a5fa"><i class="fa-solid fa-memory" aria-hidden="true"></i></span>
+                      </div>
+                      <div class="dk-qcard">
+                        <div><div class="ql">可清理缓存</div><div class="qv" id="dkSumReclaim">—</div></div>
+                        <span class="dk-qico" style="background:rgba(245,158,11,0.14);color:var(--dk-amber)"><i class="fa-solid fa-hard-drive" aria-hidden="true"></i></span>
+                      </div>
+                    </div>
+                  </section>
+
+                  <!-- Right Inspector & Live Logs Drawer -->
+                  <aside class="dk-drawer" id="dkDrawer" hidden>
+                    <div class="dk-dr-head">
+                      <div class="dk-dr-title-row">
+                        <div class="dk-dr-title">
+                          <h3 id="dkDrawerName"></h3>
+                          <span class="dk-status up" id="dkDrawerStatus">running</span>
+                        </div>
+                        <button type="button" class="dk-btn icon-only" id="dkDrawerClose" aria-label="关闭"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+                      </div>
+                      <div class="dk-dr-acts">
+                        <button type="button" class="dk-btn exec" id="dkDrExec"><i class="fa-solid fa-terminal" aria-hidden="true"></i><span>进容器终端</span></button>
+                        <button type="button" class="dk-btn sftp" id="dkDrMount"><i class="fa-solid fa-folder-open" aria-hidden="true"></i><span>打开挂载目录</span></button>
+                        <button type="button" class="dk-btn" id="dkDrRestart"><i class="fa-solid fa-rotate" aria-hidden="true"></i><span>重启</span></button>
+                        <button type="button" class="dk-btn danger" id="dkDrStartStop"><i class="fa-solid fa-stop" aria-hidden="true"></i><span>停止</span></button>
+                        <button type="button" class="dk-btn icon-only danger" id="dkDrRemove" title="删除容器" aria-label="删除容器"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
+                      </div>
+                    </div>
+                    <div class="dk-dr-tabs" id="dkDrawerTabs">
+                      <button type="button" class="dk-dr-tab active" data-dtab="logs">实时日志</button>
+                      <button type="button" class="dk-dr-tab" data-dtab="config">环境变量 & 配置</button>
+                      <button type="button" class="dk-dr-tab" data-dtab="mounts">挂载卷</button>
+                      <button type="button" class="dk-dr-tab" data-dtab="network">网络 & 端口</button>
+                    </div>
+                    <div id="dkLogPane" style="flex:1;min-height:0;display:flex;flex-direction:column">
+                      <div class="dk-log-bar">
+                        <div class="dk-search">
+                          <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                          <input type="search" id="dkLogSearch" placeholder="过滤日志关键词…" />
+                        </div>
+                        <button type="button" class="dk-btn active" id="dkLogFollow"><i class="fa-solid fa-circle" style="font-size:6px" aria-hidden="true"></i><span>实时追踪</span></button>
+                        <select id="dkLogTail" style="width:auto;height:26px;padding:0 6px;font-size:11px;border-radius:5px">
+                          <option value="100">100 行</option>
+                          <option value="200" selected>200 行</option>
+                          <option value="500">500 行</option>
+                        </select>
+                        <button type="button" class="dk-btn icon-only" id="dkLogCopy" title="复制日志" aria-label="复制日志"><i class="fa-solid fa-copy" aria-hidden="true"></i></button>
+                      </div>
+                      <div class="dk-log-body" id="dkLogBody"></div>
+                    </div>
+                    <div class="dk-inspect-body" id="dkInspectPane" hidden></div>
+                    <div class="dk-dr-foot" id="dkDrFoot" hidden>
+                      <span>所属栈：<code id="dkDrStackPath"></code></span>
+                      <button type="button" class="dk-link-btn" id="dkDrEditCompose">去编辑 Compose ↗</button>
+                    </div>
+                  </aside>
+                </div>
+
+                <!-- Compose Stacks View -->
+                <div class="dk-view" id="dkViewCompose" hidden>
+                  <aside class="dk-stack-rail">
+                    <div class="dk-search" style="flex:none">
+                      <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                      <input type="search" id="dkStackSearch" placeholder="搜索 Compose 栈…" />
+                    </div>
+                    <div class="dk-stack-list" id="dkStackList"></div>
+                    <div class="dk-stack-tip">
+                      <strong style="color:#fff;display:block;margin-bottom:2px"><i class="fa-solid fa-shield-halved" style="color:var(--dk-green);margin-right:4px" aria-hidden="true"></i>安全保存机制</strong>
+                      通过同连接 SFTP 读写 YAML 与 .env，保存前自动留 <code>.bak</code> 备份。
+                    </div>
+                  </aside>
+                  <section class="dk-compose-main">
+                    <div class="dk-compose-bar" id="dkComposeBar" hidden>
+                      <div class="dk-ftabs">
+                        <button type="button" class="dk-btn icon-only" id="dkComposeBack" title="返回栈列表" aria-label="返回"><i class="fa-solid fa-arrow-left" aria-hidden="true"></i></button>
+                        <button type="button" class="dk-ftab active" id="dkTabYaml"><i class="fa-solid fa-file-code" style="color:var(--dk-cyan)" aria-hidden="true"></i>docker-compose.yml</button>
+                        <button type="button" class="dk-ftab" id="dkTabEnv"><i class="fa-solid fa-key" style="color:var(--dk-amber)" aria-hidden="true"></i>.env</button>
+                        <button type="button" class="dk-ftab" id="dkOpenStackDir"><i class="fa-solid fa-folder-open" aria-hidden="true"></i>打开目录</button>
+                      </div>
+                      <div class="dk-compose-acts">
+                        <button type="button" class="dk-btn" id="dkComposeSave"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i>保存</button>
+                        <button type="button" class="dk-btn pull" id="dkComposePull"><i class="fa-solid fa-cloud-arrow-down" aria-hidden="true"></i>Pull & 更新</button>
+                        <button type="button" class="dk-btn up" id="dkComposeUp"><i class="fa-solid fa-play" aria-hidden="true"></i>保存并 Up -d</button>
+                        <button type="button" class="dk-btn" id="dkComposeRestart"><i class="fa-solid fa-rotate" aria-hidden="true"></i>重启</button>
+                        <button type="button" class="dk-btn danger" id="dkComposeDown"><i class="fa-solid fa-stop" aria-hidden="true"></i>Down</button>
+                      </div>
+                    </div>
+                    <div class="dk-empty" id="dkComposeEmpty" style="margin:auto">请选择左侧 Compose 栈，或点击右上角「部署 Compose」新建。</div>
+                    <div class="dk-editor-wrap" id="dkComposeEditorWrap" hidden>
+                      <div class="dk-gutter" id="dkComposeGutter" aria-hidden="true">1</div>
+                      <textarea class="dk-textarea" id="dkComposeEditor" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+                    </div>
+                    <div class="dk-exec-box" id="dkComposeExecBox" hidden>
+                      <div class="dk-exec-head">
+                        <span id="dkComposeExecCmd" class="dk-mono">就绪</span>
+                        <span id="dkComposeExecStatus" style="color:#4ade80;font-weight:600"></span>
+                      </div>
+                      <div class="dk-exec-out" id="dkComposeExecOut"></div>
+                    </div>
+                  </section>
+                </div>
+
+                <!-- Images View -->
+                <div class="dk-view" id="dkViewImages" hidden>
+                  <section class="dk-list-pane">
+                    <div class="dk-filter-row">
+                      <div class="dk-search">
+                        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                        <input type="search" id="dkImageSearch" placeholder="搜索镜像名 / Tag…" />
+                      </div>
+                      <button type="button" class="dk-btn primary" id="dkPullImageBtn"><i class="fa-solid fa-cloud-arrow-down" aria-hidden="true"></i><span>拉取镜像</span></button>
+                    </div>
+                    <div class="dk-table-card">
+                      <div class="dk-tbl-scroll">
+                        <table class="dk-simple-table">
+                          <thead><tr><th>镜像 / ID</th><th>大小</th><th>创建时间</th><th style="text-align:right">操作</th></tr></thead>
+                          <tbody id="dkImagesTbody"></tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </section>
+                </div>
+
+                <!-- Volumes & Networks View -->
+                <div class="dk-view" id="dkViewStorage" hidden>
+                  <section class="dk-list-pane" style="overflow:auto">
+                    <div style="font-size:12.5px;font-weight:600;color:#fff">数据卷 (Volumes)</div>
+                    <div class="dk-table-card" style="flex:0 0 auto;max-height:46%">
+                      <div class="dk-tbl-scroll">
+                        <table class="dk-simple-table">
+                          <thead><tr><th>卷名</th><th>驱动</th><th style="text-align:right">操作</th></tr></thead>
+                          <tbody id="dkVolumesTbody"></tbody>
+                        </table>
+                      </div>
+                    </div>
+                    <div style="font-size:12.5px;font-weight:600;color:#fff;margin-top:4px">网络 (Networks)</div>
+                    <div class="dk-table-card" style="flex:0 0 auto;max-height:46%">
+                      <div class="dk-tbl-scroll">
+                        <table class="dk-simple-table">
+                          <thead><tr><th>网络名 / ID</th><th>驱动 / 范围</th><th style="text-align:right">操作</th></tr></thead>
+                          <tbody id="dkNetworksTbody"></tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </section>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div class="extra-keys" id="extraKeys" role="toolbar" aria-label="终端快捷键盘">
@@ -696,6 +920,7 @@
     <script src="xterm.js"></script>
     <script src="addon-fit.js"></script>
     <script src="files.js"></script>
+    <script src="docker.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

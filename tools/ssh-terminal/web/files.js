@@ -314,10 +314,12 @@
     function applyViewMode(s) {
       const split = $("workspaceSplit");
       const modeSwitch = $("viewModeSwitch");
+      const mobGroup = $("mobileModeGroup");
       const mobToggle = $("mobileViewToggle");
+      const mobDocker = $("mobileDockerToggle");
       if (!s) {
         modeSwitch.hidden = true;
-        mobToggle.hidden = true;
+        if (mobGroup) mobGroup.hidden = true;
         return;
       }
       const isDav = s.cfg.protocol === "webdav";
@@ -330,9 +332,10 @@
 
       // Header controls visibility
       modeSwitch.hidden = isDav;
-      mobToggle.hidden = isDav;
+      if (mobGroup) mobGroup.hidden = isDav;
       $("app").classList.toggle("is-webdav", isDav);
       $("app").classList.toggle("in-files", mode === "files");
+      $("app").classList.toggle("in-docker", mode === "docker");
 
       if (!isDav) {
         for (const btn of modeSwitch.querySelectorAll(".mode-btn")) {
@@ -342,18 +345,25 @@
         if (mode === "files") {
           mobIcon.className = "fa-solid fa-terminal";
           $("mobileViewLabel").textContent = L("终端", "Term");
+          mobToggle.classList.add("is-active");
         } else {
           mobIcon.className = "fa-solid fa-folder-open";
           $("mobileViewLabel").textContent = L("文件", "Files");
+          mobToggle.classList.remove("is-active");
+        }
+        if (mobDocker) {
+          mobDocker.classList.toggle("is-active", mode === "docker");
         }
       }
 
-      const showTerm = !isDav && mode !== "files";
-      const showFiles = isDav || mode !== "terminal";
+      const showTerm = !isDav && (mode === "terminal" || mode === "split");
+      const showFiles = isDav || mode === "files" || mode === "split";
+      const showDocker = !isDav && mode === "docker";
       const showHandle = !isDav && mode === "split";
       $("terminalStack").hidden = !showTerm;
       $("splitHandle").hidden = !showHandle;
       $("fileWorkbench").hidden = !showFiles;
+      if ($("dockerWorkbench")) $("dockerWorkbench").hidden = !showDocker;
       $("fsSplitOrient").hidden = !showHandle;
       $("fsFollowCwd").hidden = isDav;
       $("fsColMode").hidden = isDav;
@@ -372,9 +382,15 @@
           loadDir(s, s.fs.cwd || (isDav ? "/" : ""));
         }
       }
+      if (showDocker) {
+        host.onDockerShow?.(s);
+      } else {
+        host.onDockerHide?.(s);
+      }
       if (showTerm) {
         requestAnimationFrame(() => host.fitActive());
       }
+      host.onViewModeApplied?.(s);
     }
 
     function applySplitSize() {
@@ -399,6 +415,13 @@
       if (!s || s.cfg.protocol === "webdav") return;
       setViewMode(s.viewMode === "files" ? "terminal" : "files");
     };
+    if ($("mobileDockerToggle")) {
+      $("mobileDockerToggle").onclick = () => {
+        const s = activeSession();
+        if (!s || s.cfg.protocol === "webdav") return;
+        setViewMode(s.viewMode === "docker" ? "terminal" : "docker");
+      };
+    }
     matchMedia("(max-width:640px)").addEventListener("change", () => {
       const s = activeSession();
       if (s) applyViewMode(s);
@@ -1125,6 +1148,8 @@
       handleWorkerMessage,
       testWebDAV,
       applyViewMode,
+      setViewMode,
+      rpc,
       loadDir,
       renderSessionFiles,
       onTerminalOutput,

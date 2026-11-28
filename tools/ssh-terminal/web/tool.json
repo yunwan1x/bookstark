@@ -1,7 +1,7 @@
 {
   "title": "SSH 终端",
-  "description": "Rust WASM 驱动的 SSH 终端 + SFTP + WebDAV 一体化远程工作台（体积缩减 80%）：38px 紧凑单行顶栏与专注模式，同连接复用 SFTP 分屏文件管理、无 CORS WebDAV 挂载、拖拽传输队列与在线远程代码编辑。",
-  "version": "1.2.6",
+  "description": "Rust WASM 驱动的 SSH 终端 + SFTP + Docker/Compose + WebDAV 一体化远程运维工作台：同连接复用终端、分屏文件管理与 Docker/Compose 面板（自动发现 Compose 栈、在线编辑 YAML/.env、实时日志追踪、一键进容器终端与跳转宿主机挂载目录）。",
+  "version": "1.3.0",
   "category": "development",
   "icon": "terminal",
   "icon_style": "solid",

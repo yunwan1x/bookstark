@@ -255,6 +255,7 @@
     engineTimer,
     trustQueue = Promise.resolve();
   const encoder = new TextEncoder();
+  let dockerWB = null;
   const filesWB = window.createFileWorkbench({
     getActiveSession: () => sessions.get(active) || null,
     getWorker: () => worker,
@@ -262,6 +263,23 @@
     getLang: () => lang,
     fitActive: () => fitActive(),
     sendTerminalCommand: (text) => sendInput(sessions.get(active), text),
+    onDockerShow: (s) => dockerWB?.onShow(s),
+    onDockerHide: (s) => dockerWB?.onHide(s),
+    onViewModeApplied: () => updateSession(),
+  });
+  dockerWB = window.createDockerWorkbench({
+    getActiveSession: () => sessions.get(active) || null,
+    getWorker: () => worker,
+    getLang: () => lang,
+    fsRpc: (runId, op, params) => filesWB.rpc(runId, op, params),
+    setViewMode: (mode) => filesWB.setViewMode(mode),
+    sendTerminalCommand: (text) => sendInput(sessions.get(active), text),
+    openFilesAt: (s, dirPath) => {
+      if (!s) return;
+      s.viewMode = "files";
+      filesWB.applyViewMode(s);
+      filesWB.loadDir(s, dirPath);
+    },
   });
   function setFormProtocol(proto) {
     const isDav = proto === "webdav";
@@ -530,7 +548,7 @@
     $("terminalWorkspace").hidden = true;
     $("terminalActions").hidden = true;
     $("viewModeSwitch").hidden = true;
-    $("mobileViewToggle").hidden = true;
+    $("mobileModeGroup").hidden = true;
     $("app").classList.remove("in-terminal", "zen-mode", "is-webdav", "in-files");
     $("zenExit").hidden = true;
     $("zenToggle").setAttribute("aria-pressed", "false");
@@ -798,7 +816,7 @@
     syncScrollBottom(cur);
     requestAnimationFrame(() => {
       fitActive();
-      if (cur?.cfg.protocol !== "webdav" && cur?.viewMode !== "files") {
+      if (cur?.cfg.protocol !== "webdav" && cur?.viewMode !== "files" && cur?.viewMode !== "docker") {
         if (isTouchDevice()) {
           lockTerminalKeyboard(cur.term, true);
           if (document.activeElement === cur.term?.textarea)
@@ -861,9 +879,15 @@
     } else {
       badge.hidden = s.viewMode === "terminal";
       badge.className = "status-badge";
-      badge.textContent = lang === "zh" ? "SFTP 通道已复用" : "SFTP Multiplexed";
+      badge.textContent = s.viewMode === "docker"
+        ? (lang === "zh" ? "SSH Exec + SFTP 复用" : "SSH Exec + SFTP")
+        : (lang === "zh" ? "SFTP 通道已复用" : "SFTP Multiplexed");
       $("dimensions").textContent = s.term ? s.term.cols + " × " + s.term.rows : "";
-      $("statusMeta").textContent = s.viewMode === "terminal" ? "SSH · UTF-8" : "SSH + SFTP · UTF-8";
+      $("statusMeta").textContent = s.viewMode === "docker"
+        ? "SSH + Docker · UTF-8"
+        : s.viewMode === "terminal"
+          ? "SSH · UTF-8"
+          : "SSH + SFTP · UTF-8";
     }
     $("disconnect").disabled = s.state === "closed";
     $("connectionBanner").hidden = s.state === "connected";
@@ -878,6 +902,7 @@
       return;
     stop(s);
     filesWB.onSessionClosed(s);
+    dockerWB?.onSessionClosed(s);
     s.term?.dispose();
     s.el?.remove();
     sessions.delete(s.id);
@@ -950,6 +975,7 @@
       return;
     }
     if (filesWB.handleWorkerMessage(m)) return;
+    if (dockerWB?.handleWorkerMessage(m)) return;
     const s = [...sessions.values()].find((item) => item.run === m.id);
     if (!s) return;
     switch (m.type) {
@@ -998,6 +1024,7 @@
         s.reason = "";
         renderTabs();
         updateSession();
+        dockerWB?.onConnected(s);
         fitActive();
         worker.postMessage({
           type: "resize",
@@ -1514,7 +1541,7 @@
   };
   function fitActive() {
     const s = sessions.get(active);
-    if (s && !editorMode && s.term && s.viewMode !== "files") {
+    if (s && !editorMode && s.term && s.viewMode !== "files" && s.viewMode !== "docker") {
       const buf = s.term.buffer?.active;
       const wasAtBottom = !buf || buf.viewportY >= buf.baseY - 1;
       try {
@@ -1573,13 +1600,13 @@
     requestAnimationFrame(() => {
       fitActive();
       const s = sessions.get(active);
-      if (s?.term && s.viewMode !== "files" && !isTouchDevice()) s.term.focus();
+      if (s?.term && s.viewMode !== "files" && s.viewMode !== "docker" && !isTouchDevice()) s.term.focus();
     });
   }
   function syncScrollBottom(s) {
     const btn = $("scrollBottomBtn");
     if (!btn) return;
-    if (!s?.term || s.cfg.protocol === "webdav" || s.viewMode === "files") {
+    if (!s?.term || s.cfg.protocol === "webdav" || s.viewMode === "files" || s.viewMode === "docker") {
       btn.hidden = true;
       return;
     }
