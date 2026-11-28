@@ -200,6 +200,9 @@ func ToolMarketReviews(c *gin.Context) {
 		toolAPIError(c, err)
 		return
 	}
+	if req.Approve && m.Package != "" {
+		_ = models.PruneSupersededToolPackages(id, req.Revision, m.Package)
+	}
 	c.JSON(200, gin.H{"ok": true})
 }
 

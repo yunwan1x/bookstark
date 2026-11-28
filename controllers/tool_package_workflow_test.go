@@ -9,7 +9,9 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -360,19 +362,21 @@ func TestToolPackageWorkflowSourceVisibilityAndWithdrawal(t *testing.T) {
 	second := packageWorkflowUploadOK(t, router, token, packageWorkflowFiles("index.html", "1.0.1"), first.ID)
 	secondPub := packageWorkflowPublish(t, router, token, second, "1.0.1", "login")
 	secondURL := "/api/tool-package-assets/" + second.Package.Token + "/assets/protocol.wasm?revision=" + secondPub.Revision
-	for _, path := range []string{firstURL, secondURL} {
-		if w := packageWorkflowGet(router, "", path); w.Code != 401 {
-			t.Fatalf("latest policy bypassed %s: %d %s", path, w.Code, w.Body.String())
-		}
-		if w := packageWorkflowGet(router, token, path); w.Code != 200 {
-			t.Fatalf("authorized source denied %s: %d %s", path, w.Code, w.Body.String())
-		}
+	// Superseded package version is pruned immediately on new publish.
+	if w := packageWorkflowGet(router, token, firstURL); w.Code != 404 {
+		t.Fatalf("superseded package still downloadable: %d %s", w.Code, w.Body.String())
+	}
+	if w := packageWorkflowGet(router, "", secondURL); w.Code != 401 {
+		t.Fatalf("latest policy bypassed %s: %d %s", secondURL, w.Code, w.Body.String())
+	}
+	if w := packageWorkflowGet(router, token, secondURL); w.Code != 200 {
+		t.Fatalf("authorized source denied %s: %d %s", secondURL, w.Code, w.Body.String())
 	}
 	third := packageWorkflowUploadOK(t, router, token, packageWorkflowFiles("index.html", "1.0.2"), first.ID)
 	thirdPub := packageWorkflowPublish(t, router, token, third, "1.0.2", "public")
 	thirdURL := "/api/tool-package-assets/" + third.Package.Token + "/assets/protocol.wasm?revision=" + thirdPub.Revision
-	if w := packageWorkflowGet(router, "", secondURL); w.Code != 401 {
-		t.Fatalf("historical private policy bypassed: %d %s", w.Code, w.Body.String())
+	if w := packageWorkflowGet(router, token, secondURL); w.Code != 404 {
+		t.Fatalf("superseded private package still downloadable: %d %s", w.Code, w.Body.String())
 	}
 	if w := packageWorkflowGet(router, "", thirdURL); w.Code != 200 {
 		t.Fatalf("latest public source unavailable: %d %s", w.Code, w.Body.String())
@@ -719,5 +723,33 @@ func TestToolPublicationPatchUpdatesMetadataWithoutVersionBump(t *testing.T) {
 	}
 	if w := adminAssetRequest(router, token, "PATCH", "/api/tool-publications/"+idStr, badPkg); w.Code != 409 || !strings.Contains(w.Body.String(), "version_bump_required") {
 		t.Fatalf("expected 409 version_bump_required for package replacement, got %d %s", w.Code, w.Body.String())
+	}
+}
+
+func TestToolPackageWorkflowPublishPrunesSupersededPackage(t *testing.T) {
+	router, token := initPackageWorkflow(t)
+	first := packageWorkflowUploadOK(t, router, token, packageWorkflowFiles("index.html", "1.0.0"), 0)
+	packageWorkflowPublish(t, router, token, first, "1.0.0", "public")
+
+	nextFiles := packageWorkflowFiles("index.html", "1.0.1")
+	nextFiles["app.js"] = []byte(`console.log("v1.0.1");`)
+	next := packageWorkflowUploadOK(t, router, token, nextFiles, first.ID)
+	pub2 := packageWorkflowPublish(t, router, token, next, "1.0.1", "public")
+
+	if _, err := models.GetToolPackage(first.Package.Token); !errors.Is(err, sql.ErrNoRows) {
+		t.Fatalf("superseded package metadata retained: %v", err)
+	}
+	if _, err := models.GetDAVNode(1, "/BookStark/tool-packages/"+first.Package.Token); !errors.Is(err, models.ErrDAVNotFound) {
+		t.Fatalf("superseded package files retained: %v", err)
+	}
+	var versionCount int
+	if err := models.DB.QueryRow(`SELECT COUNT(*) FROM md_tool_versions WHERE tool_id=?`, first.ID).Scan(&versionCount); err != nil || versionCount != 1 {
+		t.Fatalf("expected only latest 1 published version row, got %d err=%v", versionCount, err)
+	}
+	if _, err := models.GetToolPackage(next.Package.Token); err != nil {
+		t.Fatalf("latest published package missing: %v", err)
+	}
+	if w := packageWorkflowGet(router, "", "/api/tool-package-assets/"+next.Package.Token+"/app.js?revision="+pub2.Revision); w.Code != 200 {
+		t.Fatalf("latest published asset unreadable: %d %s", w.Code, w.Body.String())
 	}
 }

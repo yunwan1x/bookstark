@@ -298,6 +298,9 @@ func publishToolSource(c *gin.Context, router http.Handler, source models.ToolSo
 		toolAPIError(c, err)
 		return
 	}
+	if req.Status == "published" && req.Package != "" {
+		_ = models.PruneSupersededToolPackages(id, revision, req.Package)
+	}
 	// Store review metadata independently from the editable source article.
 	c.JSON(200, gin.H{"ok": true, "id": id, "revision": revision, "metadata": req.ToolMetadata, "status": req.Status})
 }

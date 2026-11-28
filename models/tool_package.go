@@ -5,7 +5,9 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"time"
@@ -117,6 +119,64 @@ func DiscardToolPackage(member int64, token string) error {
 			return restore
 		}
 		return err
+	}
+	return nil
+}
+
+// PruneSupersededToolPackages removes older published package versions and their
+// staged package files when a newer package version is published for the same tool,
+// keeping only the active published package (and any in-flight pending versions).
+func PruneSupersededToolPackages(toolID int64, keepRevision, keepPackage string) error {
+	if toolID <= 0 || keepRevision == "" || keepPackage == "" {
+		return nil
+	}
+	rows, err := DB.Query(`
+		SELECT v.revision, json_extract(v.metadata,'$.package'), COALESCE(p.member_id, 0)
+		FROM md_tool_versions v
+		LEFT JOIN md_tool_packages p ON p.token = json_extract(v.metadata,'$.package')
+		WHERE v.tool_id=? AND v.revision!=? AND v.status='published'
+		  AND COALESCE(json_extract(v.metadata,'$.package'), '') != ''
+		  AND json_extract(v.metadata,'$.package') != ?`,
+		toolID, keepRevision, keepPackage)
+	if err != nil {
+		return err
+	}
+	type stale struct {
+		revision string
+		token    string
+		memberID int64
+	}
+	var items []stale
+	for rows.Next() {
+		var s stale
+		if err = rows.Scan(&s.revision, &s.token, &s.memberID); err != nil {
+			rows.Close()
+			return err
+		}
+		items = append(items, s)
+	}
+	err = rows.Err()
+	rows.Close()
+	if err != nil || len(items) == 0 {
+		return err
+	}
+	seen := map[string]int64{}
+	for _, item := range items {
+		if _, err = DB.Exec(`
+			DELETE FROM md_tool_versions
+			WHERE tool_id=? AND revision=? AND status='published'
+			  AND NOT EXISTS(SELECT 1 FROM md_tool_releases WHERE tool_id=? AND revision=?)`,
+			toolID, item.revision, toolID, item.revision); err != nil {
+			return err
+		}
+		if item.token != "" && item.memberID > 0 {
+			seen[item.token] = item.memberID
+		}
+	}
+	for token, memberID := range seen {
+		if err = DiscardToolPackage(memberID, token); err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return err
+		}
 	}
 	return nil
 }
