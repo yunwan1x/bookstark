@@ -3,6 +3,32 @@
   "use strict";
   const $ = (id) => document.getElementById(id),
     e = escHtml;
+  const isTouchDevice = () =>
+    Boolean(
+      window.matchMedia?.("(pointer: coarse)")?.matches ||
+        "ontouchstart" in window ||
+        navigator.maxTouchPoints > 0,
+    );
+  let lastViewportWidth = window.innerWidth;
+  let maxViewportHeight = window.visualViewport?.height || window.innerHeight;
+  let keyboardWasOpen = false;
+  function isSoftKeyboardOpen() {
+    const h = window.visualViewport?.height || window.innerHeight;
+    return maxViewportHeight - h >= 120;
+  }
+  function lockTerminalKeyboard(term, locked) {
+    const ta = term?.textarea;
+    if (!ta) return;
+    if (locked) {
+      ta.readOnly = true;
+      ta.setAttribute("inputmode", "none");
+      ta.setAttribute("aria-readonly", "true");
+    } else {
+      ta.readOnly = false;
+      ta.removeAttribute("inputmode");
+      ta.removeAttribute("aria-readonly");
+    }
+  }
   const labels = {
     shell: ["Shell 程序", "Shell program"],
     defaultShell: ["服务器账户默认 Shell", "Account default shell"],
@@ -512,7 +538,7 @@
     mobile(false);
     renderTabs();
     renderHosts();
-    $(isDav ? "davUrl" : "host").focus();
+    if (!isTouchDevice()) $(isDav ? "davUrl" : "host").focus();
     if (cfg?.remember) {
       secretLoading = true;
       setSecretBusy(true);
@@ -771,7 +797,13 @@
     requestAnimationFrame(() => {
       fitActive();
       if (cur?.cfg.protocol !== "webdav" && cur?.viewMode !== "files") {
-        cur?.term?.focus();
+        if (isTouchDevice()) {
+          lockTerminalKeyboard(cur.term, true);
+          if (document.activeElement === cur.term?.textarea)
+            cur.term.textarea.blur();
+        } else {
+          cur?.term?.focus();
+        }
       }
     });
   }
@@ -971,7 +1003,13 @@
           cols: s.term.cols,
           rows: s.term.rows,
         });
-        s.term.focus();
+        if (isTouchDevice()) {
+          lockTerminalKeyboard(s.term, true);
+          if (document.activeElement === s.term?.textarea)
+            s.term.textarea.blur();
+        } else {
+          s.term.focus();
+        }
         break;
       case "output":
         filesWB.onTerminalOutput(s, m.data);
@@ -1113,6 +1151,50 @@
     const fit = new FitAddon.FitAddon();
     term.loadAddon(fit);
     term.open(mount);
+    if (isTouchDevice()) {
+      lockTerminalKeyboard(term, true);
+      term.textarea?.addEventListener("blur", () => {
+        lockTerminalKeyboard(term, true);
+      });
+      let tapX = 0,
+        tapY = 0,
+        tapMoved = false;
+      mount.addEventListener(
+        "touchstart",
+        (event) => {
+          const touch = event.touches[0];
+          if (!touch) return;
+          tapX = touch.clientX;
+          tapY = touch.clientY;
+          tapMoved = false;
+        },
+        { passive: true },
+      );
+      mount.addEventListener(
+        "touchmove",
+        (event) => {
+          const touch = event.touches[0];
+          if (!touch) return;
+          if (Math.hypot(touch.clientX - tapX, touch.clientY - tapY) > 10)
+            tapMoved = true;
+        },
+        { passive: true },
+      );
+      mount.addEventListener(
+        "touchend",
+        () => {
+          if (tapMoved) return;
+          lockTerminalKeyboard(term, false);
+          term.focus();
+        },
+        { passive: true },
+      );
+      mount.addEventListener("pointerdown", (event) => {
+        if (event.pointerType && event.pointerType !== "touch") {
+          lockTerminalKeyboard(term, false);
+        }
+      });
+    }
     const s = {
       id,
       run: id + "-run-1",
@@ -1378,7 +1460,7 @@
     requestAnimationFrame(() => {
       fitActive();
       const s = sessions.get(active);
-      if (s?.term && s.viewMode !== "files") s.term.focus();
+      if (s?.term && s.viewMode !== "files" && !isTouchDevice()) s.term.focus();
     });
   }
   $("zenToggle").onclick = () =>
@@ -1404,7 +1486,7 @@
   $("closeSearch").onclick = () => {
     $("searchBar").hidden = true;
     fitActive();
-    sessions.get(active)?.term.focus();
+    if (!isTouchDevice()) sessions.get(active)?.term.focus();
   };
   function findNext() {
     const s = sessions.get(active),
@@ -1486,7 +1568,7 @@
     if (/[\r\n]/.test(text) && !(await BSDialog.confirm2(t("pasteWarning"))))
       return;
     s.term.paste(text);
-    if (refocus) s.term.focus();
+    if (refocus && !isTouchDevice()) s.term.focus();
   }
   async function triggerPaste(refocus = true) {
     try {
@@ -1513,7 +1595,7 @@
       dialog.close();
       pasteText(text, refocus);
     };
-    $("pasteText").focus();
+    if (!isTouchDevice()) $("pasteText").focus();
   }
   $("pasteTerminal").onclick = () => triggerPaste(true);
   const keys = {
@@ -1530,32 +1612,125 @@
     pipe: "|",
     tilde: "~",
   };
-  for (const b of $("extraKeys").querySelectorAll("button")) {
+  function updateViewportMetrics() {
+    const w = window.innerWidth;
+    const h = window.visualViewport?.height || window.innerHeight;
+    if (Math.abs(w - lastViewportWidth) > 80) {
+      lastViewportWidth = w;
+      maxViewportHeight = h;
+      keyboardWasOpen = false;
+      return;
+    }
+    if (h > maxViewportHeight) maxViewportHeight = h;
+    if (!isTouchDevice()) return;
+    if (maxViewportHeight - h >= 120) {
+      keyboardWasOpen = true;
+    } else if (keyboardWasOpen && maxViewportHeight - h < 80) {
+      keyboardWasOpen = false;
+      const cur = sessions.get(active);
+      if (cur?.term) {
+        if (document.activeElement === cur.term.textarea)
+          cur.term.textarea.blur();
+        lockTerminalKeyboard(cur.term, true);
+      }
+    }
+  }
+  window.addEventListener("resize", updateViewportMetrics);
+  window.visualViewport?.addEventListener("resize", updateViewportMetrics);
+  const extraKeysEl = $("extraKeys");
+  const preventExtraFocus = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+  };
+  extraKeysEl.addEventListener("touchstart", preventExtraFocus, {
+    passive: false,
+  });
+  extraKeysEl.addEventListener("pointerdown", preventExtraFocus);
+  extraKeysEl.addEventListener("mousedown", preventExtraFocus);
+  let lastExtraTouchAt = 0;
+  function ensureExtraKeyNoKeyboard() {
+    if (!isTouchDevice()) return;
+    const s = sessions.get(active);
+    const ta = s?.term?.textarea;
+    if (!ta) return;
+    if (!isSoftKeyboardOpen()) {
+      lockTerminalKeyboard(s.term, true);
+      if (document.activeElement === ta) ta.blur();
+    }
+  }
+  function triggerExtraKey(b) {
+    ensureExtraKeyNoKeyboard();
+    const action = b.dataset.action;
+    if (action === "copy") {
+      $("copyTerminal").click();
+      return;
+    }
+    if (action === "paste") {
+      triggerPaste(false);
+      return;
+    }
+    const key = b.dataset.key;
+    if (key === "ctrl" || key === "alt") {
+      if (key === "ctrl") ctrl = !ctrl;
+      else alt = !alt;
+      b.setAttribute("aria-pressed", String(key === "ctrl" ? ctrl : alt));
+    } else if (keys[key]) {
+      sendInput(sessions.get(active), keys[key]);
+    }
+  }
+  for (const b of extraKeysEl.querySelectorAll("button")) {
+    b.type = "button";
     b.tabIndex = -1;
-    b.onpointerdown = (event) => event.preventDefault();
-    b.onmousedown = (event) => event.preventDefault();
-    b.onclick = () => {
-      const hadTermFocus = Boolean(
-        document.activeElement?.classList?.contains("xterm-helper-textarea"),
-      );
-      const action = b.dataset.action;
-      if (action === "copy") {
-        $("copyTerminal").click();
-        return;
-      }
-      if (action === "paste") {
-        triggerPaste(hadTermFocus);
-        return;
-      }
-      const key = b.dataset.key;
-      if (key === "ctrl" || key === "alt") {
-        if (key === "ctrl") ctrl = !ctrl;
-        else alt = !alt;
-        b.setAttribute("aria-pressed", String(key === "ctrl" ? ctrl : alt));
-      } else if (keys[key]) {
-        sendInput(sessions.get(active), keys[key]);
-      }
-    };
+    let touchActive = false;
+    let touchX = 0;
+    let touchY = 0;
+    b.addEventListener(
+      "touchstart",
+      (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        ensureExtraKeyNoKeyboard();
+        const touch = event.changedTouches[0];
+        if (touch) {
+          touchX = touch.clientX;
+          touchY = touch.clientY;
+        }
+        touchActive = true;
+        b.classList.add("pressed");
+      },
+      { passive: false },
+    );
+    b.addEventListener(
+      "touchend",
+      (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        b.classList.remove("pressed");
+        if (!touchActive) return;
+        touchActive = false;
+        const touch = event.changedTouches[0];
+        const moved =
+          touch &&
+          Math.hypot(touch.clientX - touchX, touch.clientY - touchY) > 28;
+        if (!moved) {
+          lastExtraTouchAt = Date.now();
+          triggerExtraKey(b);
+        }
+      },
+      { passive: false },
+    );
+    b.addEventListener("touchcancel", () => {
+      touchActive = false;
+      b.classList.remove("pressed");
+    });
+    b.addEventListener("pointerdown", preventExtraFocus);
+    b.addEventListener("mousedown", preventExtraFocus);
+    b.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (Date.now() - lastExtraTouchAt < 500) return;
+      triggerExtraKey(b);
+    });
   }
   window.addEventListener("beforeunload", (event) => {
     if ([...sessions.values()].some((s) => s.state !== "closed")) {
