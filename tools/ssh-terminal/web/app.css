@@ -843,6 +843,15 @@ legend {
     padding: 5px 5px 4px;
     overflow: hidden;
   }
+  .extra-keys-page {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+  }
+  .extra-keys-page[hidden] {
+    display: none !important;
+  }
   .extra-keys-row {
     display: flex;
     align-items: stretch;
@@ -866,7 +875,7 @@ legend {
     border: 1px solid rgba(59, 130, 246, 0.28);
   }
   .extra-key-group.nav-group {
-    flex: 4.1 1 0;
+    flex: 3.6 1 0;
     background: rgba(148, 163, 184, 0.08);
     border: 1px solid rgba(148, 163, 184, 0.16);
   }

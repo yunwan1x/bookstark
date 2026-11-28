@@ -1848,18 +1848,18 @@
       if (document.activeElement === ta) ta.blur();
     }
   }
-  let symPage = 1;
-  function setSymPage(page) {
-    symPage = page;
-    extraKeysEl.querySelectorAll(".extra-sym-row").forEach((row) => {
-      row.hidden = Number(row.dataset.symPage) !== symPage;
+  let keysPage = 1;
+  function setKeysPage(page) {
+    keysPage = page;
+    extraKeysEl.querySelectorAll(".extra-keys-page").forEach((el) => {
+      el.hidden = Number(el.dataset.keysPage) !== keysPage;
     });
   }
   function triggerExtraKey(b) {
     ensureExtraKeyNoKeyboard();
     const action = b.dataset.action;
-    if (action === "sym-page") {
-      setSymPage(symPage === 1 ? 2 : 1);
+    if (action === "keys-page") {
+      setKeysPage(keysPage === 1 ? 2 : 1);
       return;
     }
     if (action === "copy") {
@@ -1912,9 +1912,14 @@
         if (!touchActive) return;
         touchActive = false;
         const touch = event.changedTouches[0];
-        const moved =
-          touch &&
-          Math.hypot(touch.clientX - touchX, touch.clientY - touchY) > 28;
+        const dx = touch ? touch.clientX - touchX : 0;
+        const dy = touch ? touch.clientY - touchY : 0;
+        if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+          lastExtraTouchAt = Date.now();
+          setKeysPage(dx < 0 ? 2 : 1);
+          return;
+        }
+        const moved = Math.hypot(dx, dy) > 28;
         if (!moved) {
           lastExtraTouchAt = Date.now();
           triggerExtraKey(b);
