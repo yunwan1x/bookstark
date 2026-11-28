@@ -1480,18 +1480,18 @@
       BSDialog.toast(t("copyFallback"));
     }
   };
-  async function pasteText(text) {
+  async function pasteText(text, refocus = true) {
     const s = sessions.get(active);
     if (s?.state !== "connected" || !text) return;
     if (/[\r\n]/.test(text) && !(await BSDialog.confirm2(t("pasteWarning"))))
       return;
     s.term.paste(text);
-    s.term.focus();
+    if (refocus) s.term.focus();
   }
-  $("pasteTerminal").onclick = async () => {
+  async function triggerPaste(refocus = true) {
     try {
       const text = await navigator.clipboard.readText();
-      await pasteText(text);
+      await pasteText(text, refocus);
       return;
     } catch (_) {}
     const dialog = createBSDialog(
@@ -1511,10 +1511,11 @@
     $("sendPaste").onclick = () => {
       const text = $("pasteText").value;
       dialog.close();
-      pasteText(text);
+      pasteText(text, refocus);
     };
     $("pasteText").focus();
-  };
+  }
+  $("pasteTerminal").onclick = () => triggerPaste(true);
   const keys = {
     esc: "\x1b",
     tab: "\t",
@@ -1530,15 +1531,20 @@
     tilde: "~",
   };
   for (const b of $("extraKeys").querySelectorAll("button")) {
+    b.tabIndex = -1;
     b.onpointerdown = (event) => event.preventDefault();
+    b.onmousedown = (event) => event.preventDefault();
     b.onclick = () => {
+      const hadTermFocus = Boolean(
+        document.activeElement?.classList?.contains("xterm-helper-textarea"),
+      );
       const action = b.dataset.action;
       if (action === "copy") {
         $("copyTerminal").click();
         return;
       }
       if (action === "paste") {
-        $("pasteTerminal").click();
+        triggerPaste(hadTermFocus);
         return;
       }
       const key = b.dataset.key;
@@ -1546,10 +1552,8 @@
         if (key === "ctrl") ctrl = !ctrl;
         else alt = !alt;
         b.setAttribute("aria-pressed", String(key === "ctrl" ? ctrl : alt));
-        sessions.get(active)?.term?.focus();
       } else if (keys[key]) {
         sendInput(sessions.get(active), keys[key]);
-        sessions.get(active)?.term?.focus();
       }
     };
   }
