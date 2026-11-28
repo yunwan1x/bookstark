@@ -29,16 +29,9 @@
 <section class="public-feed market-feed"><div class="market-layout"><section id="marketItems" class="market-grid" aria-label="{{call .T "market.tools"}}" aria-busy="true">{{template "market-card-skeleton" .}}{{template "market-card-skeleton" .}}{{template "market-card-skeleton" .}}{{template "market-card-skeleton" .}}{{template "market-card-skeleton" .}}{{template "market-card-skeleton" .}}</section><aside id="marketDetail" class="market-detail" hidden></aside></div>
 <div class="market-results">
  <span id="marketResultCount" role="status">{{call .T "public.loading"}}</span>
- <nav id="marketPagination" class="market-pagination" aria-label="{{call .T "market.pagination"}}"></nav>
  <div class="market-actions">
-  <div id="marketViewMenu" class="bs-action-dropdown market-view-dropdown">
-   <button type="button" id="marketViewToggle" class="bs-action-dd-btn row-action market-view-toggle" data-bs-action-dropdown-toggle aria-haspopup="menu" aria-expanded="false" aria-label="{{call .T "tools.actions"}}" title="{{call .T "tools.actions"}}"><i class="fa-solid fa-table-cells-large" data-market-view-icon aria-hidden="true"></i><i class="fa-solid fa-chevron-down bs-action-dd-arrow" aria-hidden="true"></i></button>
-   <div class="market-view-actions bs-action-dd-menu" role="menu">
-    <button type="button" id="marketGridView" class="row-action" role="menuitemradio" aria-label="{{call .T "market.grid_view"}}" aria-pressed="true" aria-checked="true"><i class="fa-solid fa-table-cells-large" aria-hidden="true"></i><span>{{call .T "market.grid_view"}}</span></button>
-    <button type="button" id="marketListView" class="row-action" role="menuitemradio" aria-label="{{call .T "market.list_view"}}" aria-pressed="false" aria-checked="false"><i class="fa-solid fa-list" aria-hidden="true"></i><span>{{call .T "market.list_view"}}</span></button>
-    <button type="button" id="marketCheck" class="row-action" role="menuitem" aria-label="{{call .T "market.check"}}"><i class="fa-solid fa-rotate" aria-hidden="true"></i><span>{{call .T "market.check"}}</span></button>
-   </div>
-  </div>
+  <div class="market-view-actions"><button type="button" id="marketGridView" class="row-action" aria-label="{{call .T "market.grid_view"}}" aria-pressed="true"><i class="fa-solid fa-table-cells-large" aria-hidden="true"></i></button><button type="button" id="marketListView" class="row-action" aria-label="{{call .T "market.list_view"}}" aria-pressed="false"><i class="fa-solid fa-list" aria-hidden="true"></i></button><button type="button" id="marketCheck" class="row-action" aria-label="{{call .T "market.check"}}"><i class="fa-solid fa-rotate" aria-hidden="true"></i></button></div>
+  <nav id="marketPagination" class="market-pagination" aria-label="{{call .T "market.pagination"}}"></nav>
  </div>
 </div>
 </section>
