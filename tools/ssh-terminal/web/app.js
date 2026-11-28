@@ -1307,18 +1307,29 @@
     return s;
   }
   let ctrl = false,
-    alt = false;
-  function sendInput(s, text) {
-    if (s?.state !== "connected") return;
-    if (ctrl && text.length === 1) {
-      const code = text.toUpperCase().charCodeAt(0);
-      if (code >= 64 && code <= 95) text = String.fromCharCode(code - 64);
-    }
-    if (alt) text = "\x1b" + text;
-    ctrl = alt = false;
+    alt = false,
+    shift = false;
+  const shiftCharMap = {
+    "/": "?",
+    "-": "_",
+    "=": "+",
+    "\\": "|",
+    "`": "~",
+    "[": "{",
+    "]": "}",
+    ";": ":",
+    "'": '"',
+    ",": "<",
+    ".": ">",
+  };
+  function clearModifiers() {
+    ctrl = alt = shift = false;
     document
-      .querySelectorAll("[data-key=ctrl],[data-key=alt]")
+      .querySelectorAll("[data-key=ctrl],[data-key=alt],[data-key=shift]")
       .forEach((el) => el.setAttribute("aria-pressed", "false"));
+  }
+  function sendRawInput(s, text) {
+    if (s?.state !== "connected") return;
     const bytes = encoder.encode(text);
     if (bytes.length > 1024 * 1024) {
       BSDialog.toast(
@@ -1345,6 +1356,20 @@
         }
       })
       .catch(() => {});
+  }
+  function sendInput(s, text) {
+    if (s?.state !== "connected") return;
+    if (shift && text.length === 1) {
+      if (text >= "a" && text <= "z") text = text.toUpperCase();
+      else if (shiftCharMap[text]) text = shiftCharMap[text];
+    }
+    if (ctrl && text.length === 1) {
+      const code = text.toUpperCase().charCodeAt(0);
+      if (code >= 64 && code <= 95) text = String.fromCharCode(code - 64);
+    }
+    if (alt) text = "\x1b" + text;
+    clearModifiers();
+    sendRawInput(s, text);
   }
   function friendlyError(error) {
     const code = error?.code || error?.message || "";
@@ -1717,17 +1742,62 @@
   const keys = {
     esc: "\x1b",
     tab: "\t",
+    del: "\x1b[3~",
     left: "\x1b[D",
     down: "\x1b[B",
     up: "\x1b[A",
     right: "\x1b[C",
+    home: "\x1b[H",
+    end: "\x1b[F",
+    pgup: "\x1b[5~",
+    pgdn: "\x1b[6~",
     "ctrl-c": "\x03",
     "ctrl-l": "\x0c",
     slash: "/",
     dash: "-",
     pipe: "|",
     tilde: "~",
+    backslash: "\\",
+    underscore: "_",
+    equal: "=",
+    dollar: "$",
+    amp: "&",
+    backtick: "`",
+    lbrace: "{",
+    rbrace: "}",
+    lbracket: "[",
+    rbracket: "]",
+    lt: "<",
+    gt: ">",
+    star: "*",
   };
+  const csiLetterKeys = { up: "A", down: "B", right: "C", left: "D", home: "H", end: "F" };
+  const csiTildeKeys = { del: "3", pgup: "5", pgdn: "6" };
+  function sendExtraKey(s, key) {
+    if (s?.state !== "connected") return;
+    if (key === "ctrl-c" || key === "ctrl-l") {
+      clearModifiers();
+      sendRawInput(s, keys[key]);
+      return;
+    }
+    const mod = 1 + (shift ? 1 : 0) + (alt ? 2 : 0) + (ctrl ? 4 : 0);
+    if (key === "tab" && shift && !ctrl && !alt) {
+      clearModifiers();
+      sendRawInput(s, "\x1b[Z");
+      return;
+    }
+    if (mod > 1 && csiLetterKeys[key]) {
+      clearModifiers();
+      sendRawInput(s, `\x1b[1;${mod}${csiLetterKeys[key]}`);
+      return;
+    }
+    if (mod > 1 && csiTildeKeys[key]) {
+      clearModifiers();
+      sendRawInput(s, `\x1b[${csiTildeKeys[key]};${mod}~`);
+      return;
+    }
+    sendInput(s, keys[key]);
+  }
   function updateViewportMetrics() {
     const w = window.innerWidth;
     const h = window.visualViewport?.height || window.innerHeight;
@@ -1774,9 +1844,20 @@
       if (document.activeElement === ta) ta.blur();
     }
   }
+  let symPage = 1;
+  function setSymPage(page) {
+    symPage = page;
+    extraKeysEl.querySelectorAll(".extra-sym-row").forEach((row) => {
+      row.hidden = Number(row.dataset.symPage) !== symPage;
+    });
+  }
   function triggerExtraKey(b) {
     ensureExtraKeyNoKeyboard();
     const action = b.dataset.action;
+    if (action === "sym-page") {
+      setSymPage(symPage === 1 ? 2 : 1);
+      return;
+    }
     if (action === "copy") {
       $("copyTerminal").click();
       return;
@@ -1786,12 +1867,14 @@
       return;
     }
     const key = b.dataset.key;
-    if (key === "ctrl" || key === "alt") {
+    if (key === "ctrl" || key === "alt" || key === "shift") {
       if (key === "ctrl") ctrl = !ctrl;
-      else alt = !alt;
-      b.setAttribute("aria-pressed", String(key === "ctrl" ? ctrl : alt));
+      else if (key === "alt") alt = !alt;
+      else shift = !shift;
+      const on = key === "ctrl" ? ctrl : key === "alt" ? alt : shift;
+      b.setAttribute("aria-pressed", String(on));
     } else if (keys[key]) {
-      sendInput(sessions.get(active), keys[key]);
+      sendExtraKey(sessions.get(active), key);
     }
   }
   for (const b of extraKeysEl.querySelectorAll("button")) {

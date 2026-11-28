@@ -838,53 +838,130 @@ legend {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    background: #0d121c;
+    background: #0b101a;
     border-top: 1px solid #1e293b;
-    padding: 4px 5px;
+    padding: 5px 5px 4px;
     overflow: hidden;
   }
   .extra-keys-row {
     display: flex;
+    align-items: stretch;
     gap: 3px;
     width: 100%;
   }
+  .extra-keys-row[hidden] {
+    display: none !important;
+  }
+  .extra-key-group {
+    display: flex;
+    align-items: stretch;
+    gap: 2px;
+    padding: 2px;
+    border-radius: 6px;
+    min-width: 0;
+  }
+  .extra-key-group.mod-group {
+    flex: 3.25 1 0;
+    background: rgba(37, 99, 235, 0.12);
+    border: 1px solid rgba(59, 130, 246, 0.28);
+  }
+  .extra-key-group.nav-group {
+    flex: 4.1 1 0;
+    background: rgba(148, 163, 184, 0.08);
+    border: 1px solid rgba(148, 163, 184, 0.16);
+  }
   .extra-keys button {
     min-width: 0;
-    min-height: 27px;
-    height: 27px;
-    padding: 0 3px;
+    min-height: 29px;
+    height: 29px;
+    padding: 0 2px;
     flex: 1 1 0;
     font-size: 11px;
     font-weight: 500;
+    letter-spacing: -0.01em;
     white-space: nowrap;
-    background: #1a2334;
-    border-color: #2d3a50;
+    background: #172033;
+    border: 1px solid #28354d;
     color: #e2e8f0;
     border-radius: 5px;
     touch-action: manipulation;
     user-select: none;
     -webkit-user-select: none;
     -webkit-touch-callout: none;
+    transition: background 0.08s ease, transform 0.08s ease;
   }
-  .extra-keys button.pressed {
-    background: #2b3a55;
-    border-color: #475d85;
-    transform: scale(0.96);
+  .extra-key-group button {
+    min-height: 23px;
+    height: 23px;
+    border-radius: 4px;
   }
-  .extra-keys button.key-danger {
-    color: #fca5a5;
-    border-color: rgba(239, 68, 68, 0.35);
-    background: rgba(127, 29, 29, 0.28);
+  .extra-keys button.key-wide {
+    flex: 1.35 1 0;
   }
   .extra-keys button.key-accent {
     color: #93c5fd;
-    border-color: rgba(59, 130, 246, 0.4);
-    background: rgba(30, 58, 138, 0.32);
+    border-color: rgba(59, 130, 246, 0.42);
+    background: rgba(30, 58, 138, 0.34);
+    font-weight: 600;
+  }
+  .extra-keys button.key-mod {
+    background: rgba(30, 58, 138, 0.34);
+    border-color: rgba(59, 130, 246, 0.32);
+    color: #bfdbfe;
+    font-weight: 600;
+  }
+  .extra-keys button.key-nav {
+    background: #1c283e;
+    border-color: #33435e;
+    color: #f8fafc;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .extra-keys button.key-subtle {
+    background: #131b2b;
+    border-color: #243047;
+    color: #94a3b8;
+    font-size: 10px;
+  }
+  .extra-keys button.key-sym {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 13px;
+    font-weight: 600;
+    background: #141c2c;
+    border-color: #25334a;
+    color: #e2e8f0;
+  }
+  .extra-keys button.key-switch {
+    flex: 1.15 1 0;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 11px;
+    font-weight: 600;
+    background: rgba(51, 65, 85, 0.55);
+    border-color: #475569;
+    color: #93c5fd;
+  }
+  .extra-keys button.pressed {
+    background: #2b3a55;
+    border-color: #60a5fa;
+    transform: scale(0.95);
+  }
+  .extra-keys button.key-warn {
+    color: #fcd34d;
+    border-color: rgba(245, 158, 11, 0.32);
+    background: rgba(120, 53, 15, 0.24);
+    font-weight: 600;
+  }
+  .extra-keys button.key-danger {
+    color: #fca5a5;
+    border-color: rgba(239, 68, 68, 0.38);
+    background: rgba(127, 29, 29, 0.3);
+    font-weight: 600;
   }
   .extra-keys button[aria-pressed="true"] {
     color: #fff;
     background: var(--color-primary);
-    border-color: var(--color-primary);
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.35);
   }
   .terminal-status {
     height: 20px;

@@ -613,26 +613,57 @@
             </div>
           </div>
 
-          <div class="extra-keys" id="extraKeys">
+          <div class="extra-keys" id="extraKeys" role="toolbar" aria-label="终端快捷键盘">
+            <!-- Row 1: Control + Unified Modifiers Cluster + Edit/Interrupt -->
             <div class="extra-keys-row">
-              <button data-key="ctrl-c" class="key-danger" title="中断 (Ctrl+C)">Ctrl+C</button
-              ><button data-key="tab">Tab</button
-              ><button data-key="esc">Esc</button
-              ><button data-key="ctrl" aria-pressed="false">Ctrl</button
-              ><button data-key="ctrl-l" title="清屏 (Ctrl+L)" data-i18n="keyClear">清屏</button
-              ><button data-action="copy" title="复制" data-i18n="keyCopy">复制</button
-              ><button data-action="paste" class="key-accent" title="粘贴" data-i18n="keyPaste">粘贴</button>
+              <button type="button" data-key="esc" title="Esc">Esc</button
+              ><button type="button" data-key="tab" title="Tab / Shift+Tab">Tab</button
+              ><div class="extra-key-group mod-group" role="group" aria-label="修饰键">
+                <button type="button" data-key="ctrl" class="key-mod" aria-pressed="false" title="Ctrl">Ctrl</button
+                ><button type="button" data-key="alt" class="key-mod" aria-pressed="false" title="Alt">Alt</button
+                ><button type="button" data-key="shift" class="key-mod" aria-pressed="false" title="Shift">Shift</button>
+              </div
+              ><button type="button" data-key="del" class="key-warn" title="Delete">Del</button
+              ><button type="button" data-key="ctrl-c" class="key-danger" title="中断 (Ctrl+C)">^C</button>
             </div>
+            <!-- Row 2: Direction Arrows + Line Navigation + Copy/Paste -->
             <div class="extra-keys-row">
-              <button data-key="left">←</button
-              ><button data-key="down">↓</button
-              ><button data-key="up">↑</button
-              ><button data-key="right">→</button
-              ><button data-key="slash">/</button
-              ><button data-key="dash">-</button
-              ><button data-key="pipe">|</button
-              ><button data-key="tilde">~</button
-              ><button data-key="alt" aria-pressed="false">Alt</button>
+              <div class="extra-key-group nav-group" role="group" aria-label="方向键">
+                <button type="button" data-key="left" class="key-nav" aria-label="左">←</button
+                ><button type="button" data-key="down" class="key-nav" aria-label="下">↓</button
+                ><button type="button" data-key="up" class="key-nav" aria-label="上">↑</button
+                ><button type="button" data-key="right" class="key-nav" aria-label="右">→</button>
+              </div
+              ><button type="button" data-key="home" class="key-subtle" title="Home">Home</button
+              ><button type="button" data-key="end" class="key-subtle" title="End">End</button
+              ><button type="button" data-action="copy" class="key-subtle" title="复制" data-i18n="keyCopy">复制</button
+              ><button type="button" data-action="paste" class="key-accent" title="粘贴" data-i18n="keyPaste">粘贴</button>
+            </div>
+            <!-- Row 3 (Page 1): High-frequency Shell Symbols -->
+            <div class="extra-keys-row extra-sym-row" data-sym-page="1">
+              <button type="button" data-key="slash" class="key-sym">/</button
+              ><button type="button" data-key="dash" class="key-sym">-</button
+              ><button type="button" data-key="pipe" class="key-sym">|</button
+              ><button type="button" data-key="tilde" class="key-sym">~</button
+              ><button type="button" data-key="backslash" class="key-sym">\</button
+              ><button type="button" data-key="underscore" class="key-sym">_</button
+              ><button type="button" data-key="equal" class="key-sym">=</button
+              ><button type="button" data-key="dollar" class="key-sym">$</button
+              ><button type="button" data-key="amp" class="key-sym">&amp;</button
+              ><button type="button" data-action="sym-page" class="key-switch" title="更多符号">{}</button>
+            </div>
+            <!-- Row 3 (Page 2): Page Nav, Brackets & Redirects -->
+            <div class="extra-keys-row extra-sym-row" data-sym-page="2" hidden>
+              <button type="button" data-key="pgup" class="key-subtle key-wide" title="Page Up">PgUp</button
+              ><button type="button" data-key="pgdn" class="key-subtle key-wide" title="Page Down">PgDn</button
+              ><button type="button" data-key="backtick" class="key-sym">`</button
+              ><button type="button" data-key="lbrace" class="key-sym">{</button
+              ><button type="button" data-key="rbrace" class="key-sym">}</button
+              ><button type="button" data-key="lbracket" class="key-sym">[</button
+              ><button type="button" data-key="rbracket" class="key-sym">]</button
+              ><button type="button" data-key="lt" class="key-sym">&lt;</button
+              ><button type="button" data-key="gt" class="key-sym">&gt;</button
+              ><button type="button" data-action="sym-page" class="key-switch" title="返回常用符号">/-|</button>
             </div>
           </div>
           <footer class="terminal-status">
